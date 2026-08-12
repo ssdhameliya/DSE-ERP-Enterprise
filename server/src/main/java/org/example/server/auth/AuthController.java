@@ -22,9 +22,6 @@ public class AuthController {
         return result.success() ? ResponseEntity.ok(result) : ResponseEntity.status(401).body(result);
     }
 
-    @PostMapping("/lookup")
-    public AuthDtos.LookupResponse lookup(@RequestBody AuthDtos.LookupRequest request) { return auth.lookup(request); }
-
     @PostMapping("/login-complete")
     public AuthDtos.OperationResponse loginComplete(@RequestBody AuthDtos.UserIdRequest request,
                                                      @AuthenticationPrincipal org.example.server.security.AuthenticatedUser current) {
@@ -44,6 +41,34 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthDtos.OperationResponse> register(@RequestBody AuthDtos.RegisterRequest request) {
         AuthDtos.OperationResponse result = auth.register(request);
+        return result.success() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
+    }
+
+    @PostMapping("/registration/request")
+    public ResponseEntity<AuthDtos.ChallengeResponse> requestRegistrationOtp(
+            @RequestBody AuthDtos.RegistrationOtpRequest request) {
+        AuthDtos.ChallengeResponse result = auth.requestRegistrationOtp(request);
+        return result.success() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
+    }
+
+    @PostMapping("/registration/complete")
+    public ResponseEntity<AuthDtos.OperationResponse> completeRegistration(
+            @RequestBody AuthDtos.RegistrationCompleteRequest request) {
+        AuthDtos.OperationResponse result = auth.completeRegistration(request);
+        return result.success() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<AuthDtos.ChallengeResponse> requestPasswordReset(
+            @RequestBody AuthDtos.PasswordResetOtpRequest request) {
+        AuthDtos.ChallengeResponse result = auth.requestPasswordReset(request);
+        return result.success() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
+    }
+
+    @PostMapping("/password-reset/complete")
+    public ResponseEntity<AuthDtos.OperationResponse> completePasswordReset(
+            @RequestBody AuthDtos.PasswordResetCompleteRequest request) {
+        AuthDtos.OperationResponse result = auth.completePasswordReset(request);
         return result.success() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
     }
 

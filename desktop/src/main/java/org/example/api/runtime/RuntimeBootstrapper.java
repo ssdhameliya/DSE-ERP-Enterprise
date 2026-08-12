@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 
 /**
- * 5.1.51 runtime foundation.
+ * 7.0.0 runtime foundation.
  *
  * Ensures managed PostgreSQL and the packaged Spring Boot backend are running before API-backed JavaFX screens open.
  */
@@ -305,6 +305,12 @@ public final class RuntimeBootstrapper {
             builder.environment().put("DSE_DB_PASSWORD", ConfigManager.getDbPassword());
             builder.environment().putIfAbsent("DSE_SERVER_PORT", serverPort());
             builder.environment().put("DSE_INTERNAL_BRIDGE_TOKEN", ConfigManager.getRuntimeInternalBridgeToken());
+            builder.environment().put("DSE_SMTP_HOST", ConfigManager.getSmtpHost());
+            builder.environment().put("DSE_SMTP_PORT", ConfigManager.getSmtpPort());
+            builder.environment().put("DSE_SMTP_EMAIL", ConfigManager.getSmtpEmail());
+            builder.environment().put("DSE_SMTP_PASSWORD", ConfigManager.getSmtpPassword());
+            builder.environment().put("DSE_SMTP_CONFIG_FILE",
+                    WorkspaceManager.getConfigurationFolder().resolve("config.properties").toString());
             return builder.start();
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to start packaged DSE ERP backend from " + jar, exception);

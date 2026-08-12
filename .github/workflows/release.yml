@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: target/windows-installer/*
+          path: ../DSE-ERP-${{ needs.validate.outputs.version }}-RELEASE/*
           if-no-files-found: error
           retention-days: 7
 

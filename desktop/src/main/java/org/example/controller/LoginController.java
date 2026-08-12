@@ -48,7 +48,7 @@ public class LoginController {
 
     private final UserService users = new UserService();
     private AppUser pendingUser;
-    private AppUser resetUser;
+    private String resetChallengeId;
 
     @FXML public void initialize() {
         if (lblVersion != null) lblVersion.setText("Version " + BuildInfo.version());
@@ -105,6 +105,7 @@ public class LoginController {
 
         txtUsername.textProperty().addListener((obs, oldValue, newValue) -> resetPendingLogin());
         txtPassword.textProperty().addListener((obs, oldValue, newValue) -> resetPendingLogin());
+        txtResetIdentity.textProperty().addListener((obs, oldValue, newValue) -> resetChallengeId = null);
         cmbRole.valueProperty().addListener((obs, oldValue, newValue) -> {
             clearFieldError(cmbRole, lblRoleError);
             resetPendingLogin();
@@ -303,7 +304,9 @@ public class LoginController {
     @FXML private void forgotPassword() {
         resetPendingLogin();
         OtpService.clear();
-        message("For account security, ask an Admin to reset your password from User Access.", false);
+        resetChallengeId = null;
+        showResetPanel();
+        message("Enter your email or username to receive a reset code.", false);
     }
 
     @FXML private void sendResetOtp() {
@@ -315,23 +318,12 @@ public class LoginController {
         }
 
         try {
-            AppUser user = users.findActiveByIdentity(identity);
-            if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
-                // Keep the wording deliberately neutral so the reset screen does
-                // not disclose whether an arbitrary account exists.
-                message("If the account is eligible, a reset code will be sent to its registered email.", false);
-                return;
-            }
-
-            resetUser = user;
-            boolean sent = OtpService.issueAndSend(user.getEmail());
-            message(sent
-                    ? "Password reset code sent to " + maskedEmail(user.getEmail()) + "."
-                    : "A reset code was already sent. Please check your email.", false);
+            var challenge = users.requestPasswordReset(identity);
+            resetChallengeId = challenge.challengeId();
+            message(challenge.message() + ".", false);
             txtResetOtp.requestFocus();
         } catch (Exception exception) {
-            resetUser = null;
-            OtpService.clear();
+            resetChallengeId = null;
             message("Unable to send reset code: " + exception.getMessage(), true);
         }
     }
@@ -339,7 +331,7 @@ public class LoginController {
     @FXML private void resetPassword() {
         clearResetErrors();
 
-        if (resetUser == null) {
+        if (resetChallengeId == null) {
             message("Send a password reset code first.", true);
             txtResetIdentity.requestFocus();
             return;
@@ -354,9 +346,9 @@ public class LoginController {
             showFieldError(txtResetOtp, lblResetOtpError, "Reset code is required.");
             valid = false;
         }
-        if (password.length() < 6) {
+        if (password.length() < 8 || !password.matches(".*[A-Za-z].*") || !password.matches(".*[0-9].*")) {
             showFieldError(txtNewPassword, lblNewPasswordError,
-                    "New password must contain at least 6 characters.");
+                    "Use 8+ characters with a letter and number.");
             valid = false;
         }
         if (!password.equals(confirm)) {
@@ -366,16 +358,10 @@ public class LoginController {
         }
         if (!valid) return;
 
-        if (!OtpService.verify(otp)) {
-            showFieldError(txtResetOtp, lblResetOtpError, "The reset code is invalid or expired.");
-            message("The reset code is invalid or expired.", true);
-            return;
-        }
-
         try {
-            users.changePassword(resetUser.getId(), password);
+            users.completePasswordReset(resetChallengeId, otp, password);
             String identity = txtResetIdentity.getText().trim();
-            resetUser = null;
+            resetChallengeId = null;
             showLoginPanel();
             txtUsername.setText(identity);
             txtPassword.clear();
@@ -387,7 +373,7 @@ public class LoginController {
     }
 
     @FXML private void backToLogin() {
-        resetUser = null;
+        resetChallengeId = null;
         OtpService.clear();
         showLoginPanel();
         lblMessage.setText("");
@@ -402,6 +388,18 @@ public class LoginController {
             resetPanel.setManaged(false);
             resetPanel.setVisible(false);
         }
+    }
+
+    private void showResetPanel() {
+        if (loginPanel != null) {
+            loginPanel.setManaged(false);
+            loginPanel.setVisible(false);
+        }
+        if (resetPanel != null) {
+            resetPanel.setManaged(true);
+            resetPanel.setVisible(true);
+        }
+        txtResetIdentity.requestFocus();
     }
 
     private String selectedDatabaseRole() {
@@ -447,15 +445,6 @@ public class LoginController {
         PREFS.remove(PREF_REMEMBER);
         PREFS.remove(PREF_IDENTITY);
         PREFS.remove(PREF_ROLE);
-    }
-
-    private String maskedEmail(String email) {
-        if (email == null || email.isBlank() || !email.contains("@")) return "registered email";
-        int at = email.indexOf('@');
-        String local = email.substring(0, at);
-        String domain = email.substring(at);
-        if (local.length() <= 2) return "*".repeat(Math.max(1, local.length())) + domain;
-        return local.substring(0, 2) + "***" + domain;
     }
 
     @FXML private void register() { SceneManager.showRegistration(); }

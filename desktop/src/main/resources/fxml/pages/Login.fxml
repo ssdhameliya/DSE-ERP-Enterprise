@@ -88,7 +88,7 @@
 
                     <VBox spacing="5" maxWidth="620">
                         <Label text="New password *" styleClass="auth-field-label"/>
-                        <PasswordField fx:id="txtNewPassword" promptText="Minimum 6 characters" prefHeight="44" styleClass="auth-input"/>
+                        <PasswordField fx:id="txtNewPassword" promptText="8+ characters, letter and number" prefHeight="44" styleClass="auth-input"/>
                         <Label fx:id="lblNewPasswordError" managed="false" visible="false" styleClass="field-error"/>
                     </VBox>
 

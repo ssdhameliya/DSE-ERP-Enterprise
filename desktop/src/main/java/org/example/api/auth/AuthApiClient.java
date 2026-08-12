@@ -51,12 +51,6 @@ public final class AuthApiClient {
         return toAppUser(response.user());
     }
 
-    public AppUser findActiveByIdentity(String identity) {
-        LookupResponse response = post("/api/auth/lookup",
-                new LookupRequest(identity), LookupResponse.class);
-        return response == null || !response.found() ? null : toAppUser(response.user());
-    }
-
     public void recordSuccessfulLogin(int userId) {
         post("/api/auth/login-complete", new UserIdRequest(userId), OperationResponse.class);
     }
@@ -78,6 +72,38 @@ public final class AuthApiClient {
         }
     }
 
+    public ChallengeResponse requestRegistrationOtp(AppUser user) {
+        ChallengeResponse response = post("/api/auth/registration/request",
+                new RegistrationOtpRequest(user.getUsername(), user.getFullName(), user.getEmail(), user.getRole()),
+                ChallengeResponse.class);
+        if (response == null || !response.success())
+            throw new IllegalStateException(response == null ? "Registration verification failed" : response.message());
+        return response;
+    }
+
+    public void completeRegistration(AppUser user, String challengeId, String otp) {
+        OperationResponse response = post("/api/auth/registration/complete",
+                new RegistrationCompleteRequest(challengeId, otp, user.getUsername(), user.getPassword(),
+                        user.getFullName(), user.getEmail(), user.getRole()), OperationResponse.class);
+        if (response == null || !response.success())
+            throw new IllegalStateException(response == null ? "Registration failed" : response.message());
+    }
+
+    public ChallengeResponse requestPasswordReset(String identity) {
+        ChallengeResponse response = post("/api/auth/password-reset/request",
+                new PasswordResetOtpRequest(identity), ChallengeResponse.class);
+        if (response == null || !response.success())
+            throw new IllegalStateException(response == null ? "Password reset request failed" : response.message());
+        return response;
+    }
+
+    public void completePasswordReset(String challengeId, String otp, String password) {
+        OperationResponse response = post("/api/auth/password-reset/complete",
+                new PasswordResetCompleteRequest(challengeId, otp, password), OperationResponse.class);
+        if (response == null || !response.success())
+            throw new IllegalStateException(response == null ? "Password reset failed" : response.message());
+    }
+
     public void logout() {
         String token = ApiSession.token();
         try {
@@ -93,7 +119,6 @@ public final class AuthApiClient {
                     .timeout(REQUEST_TIMEOUT)
                     .header("Accept", "application/json")
                     .GET();
-            ApiSession.authorize(builder);
             HttpRequest request = builder.build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
@@ -128,14 +153,12 @@ public final class AuthApiClient {
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(payload));
-            if (!"/api/auth/login".equals(path)) ApiSession.authorize(builder);
+            if (!isPublicAuthPath(path)) ApiSession.authorize(builder);
             HttpRequest request = builder.build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 401 || response.statusCode() == 404) return null;
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                String message = response.body() == null || response.body().isBlank()
-                        ? "HTTP " + response.statusCode() : response.body();
-                throw new IllegalStateException("Authentication API error: " + message);
+                throw new IllegalStateException(apiErrorMessage(response));
             }
             return json.readValue(response.body(), responseType);
         } catch (InterruptedException exception) {
@@ -190,13 +213,31 @@ public final class AuthApiClient {
         return url;
     }
 
+    private static boolean isPublicAuthPath(String path) {
+        return "/api/auth/login".equals(path)
+                || path.startsWith("/api/auth/registration/")
+                || path.startsWith("/api/auth/password-reset/");
+    }
+
+    private String apiErrorMessage(HttpResponse<String> response) {
+        try {
+            OperationResponse error = json.readValue(response.body(), OperationResponse.class);
+            if (error.message() != null && !error.message().isBlank()) return error.message();
+        } catch (Exception ignored) { }
+        return "Authentication request failed (HTTP " + response.statusCode() + ")";
+    }
+
     public record LoginRequest(String identity, String password) {}
-    public record LookupRequest(String identity) {}
     public record UserIdRequest(int userId) {}
     public record ChangePasswordRequest(int userId, String password) {}
     public record RegisterRequest(String username, String password, String fullName, String email, String role) {}
+    public record RegistrationOtpRequest(String username, String fullName, String email, String role) {}
+    public record RegistrationCompleteRequest(String challengeId, String otp, String username, String password,
+                                               String fullName, String email, String role) {}
+    public record PasswordResetOtpRequest(String identity) {}
+    public record PasswordResetCompleteRequest(String challengeId, String otp, String password) {}
+    public record ChallengeResponse(boolean success, String challengeId, String message) {}
     public record LoginResponse(boolean success, UserPayload user, String message, String accessToken, String expiresAt) {}
-    public record LookupResponse(boolean found, UserPayload user) {}
     public record OperationResponse(boolean success, String message) {}
     public record RoleOption(String code, String displayName) {
         @Override public String toString() { return displayName; }
@@ -205,4 +246,3 @@ public final class AuthApiClient {
                               String email, boolean active, String department, String branch,
                               String accessLevel, boolean locked, boolean mfaEnabled) {}
 }
-
