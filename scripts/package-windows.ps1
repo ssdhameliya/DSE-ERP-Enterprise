@@ -30,11 +30,12 @@ Copy-Item $Jar (Join-Path $Input "DSE_Final.jar")
 New-Item -ItemType Directory -Path (Join-Path $Input "server") -Force | Out-Null
 Copy-Item $ServerJar (Join-Path $Input "server\dse-erp-server.jar")
 
-# 7.0.0 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
+# 7.0.1 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
 # PostgreSQL 18 binary distribution. Development/release machines can also use the standard install.
 $PostgresCandidates = @()
 if ($env:DSE_POSTGRES_RUNTIME_DIR) { $PostgresCandidates += $env:DSE_POSTGRES_RUNTIME_DIR }
-$PostgresCandidates += @('C:\Program Files\PostgreSQL\18', 'D:\PostgreSQL\18\pgsql')
+if ($env:ProgramFiles) { $PostgresCandidates += (Join-Path $env:ProgramFiles 'PostgreSQL\18') }
+if (${env:ProgramFiles(x86)}) { $PostgresCandidates += (Join-Path ${env:ProgramFiles(x86)} 'PostgreSQL\18') }
 $PostgresRuntime = $PostgresCandidates | Where-Object {
     Test-Path (Join-Path $_ 'bin\initdb.exe')
 } | Select-Object -First 1
@@ -57,7 +58,9 @@ $RequiredBundleFiles = @(
     (Join-Path $Input 'runtime\postgresql\bin\initdb.exe'),
     (Join-Path $Input 'runtime\postgresql\bin\pg_ctl.exe'),
     (Join-Path $Input 'runtime\postgresql\bin\psql.exe'),
-    (Join-Path $Input 'runtime\postgresql\bin\createdb.exe')
+    (Join-Path $Input 'runtime\postgresql\bin\createdb.exe'),
+    (Join-Path $Input 'runtime\postgresql\bin\pg_dump.exe'),
+    (Join-Path $Input 'runtime\postgresql\bin\pg_restore.exe')
 )
 $MissingBundleFiles = $RequiredBundleFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }
 if ($MissingBundleFiles) {
@@ -87,11 +90,15 @@ $AppImageArgs = @('--type', 'app-image') + $CommonArgs + @('--dest', $AppImage)
 & jpackage @AppImageArgs
 if ($LASTEXITCODE -ne 0) { throw "jpackage app-image creation failed." }
 
-$BundledJava = Join-Path $AppImage "DSE ERP\runtime\bin\java.exe"
-if (-not (Test-Path $BundledJava)) {
-    throw "Production app image is missing bundled Java launcher: $BundledJava"
+$AppLauncher = Join-Path $AppImage "DSE ERP\DSE ERP.exe"
+$BundledJvm = Join-Path $AppImage "DSE ERP\runtime\bin\server\jvm.dll"
+if (-not (Test-Path -LiteralPath $AppLauncher -PathType Leaf)) {
+    throw "Production app image is missing the DSE ERP launcher: $AppLauncher"
 }
-Write-Host "Verified bundled Java launcher: $BundledJava" -ForegroundColor DarkCyan
+if (-not (Test-Path -LiteralPath $BundledJvm -PathType Leaf)) {
+    throw "Production app image is missing the bundled JVM: $BundledJvm"
+}
+Write-Host "Verified native launcher and bundled JVM: $AppLauncher" -ForegroundColor DarkCyan
 
 $ExeArgs = @(
     '--type', 'exe'

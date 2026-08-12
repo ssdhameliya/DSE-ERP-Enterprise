@@ -103,7 +103,7 @@ public final class ConfigManager {
     private static String requirePostgresUrl(String url) {
         String value = url == null ? "" : url.trim();
         if (!value.startsWith("jdbc:postgresql:")) {
-            throw new IllegalStateException("DSE ERP 7.0.0 production runtime requires PostgreSQL. Invalid database URL: " + value);
+            throw new IllegalStateException("DSE ERP 7.0.1 production runtime requires PostgreSQL. Invalid database URL: " + value);
         }
         return value;
     }
@@ -156,7 +156,7 @@ public final class ConfigManager {
     public static String getAuthApiBaseUrl() {
         String runtime = runtimeAuthApiBaseUrl;
         if (runtime != null && !runtime.isBlank()) return runtime;
-        return get("auth.api.baseUrl", System.getenv().getOrDefault("DSE_AUTH_API_URL", "http://127.0.0.1:8080"));
+        return get("auth.api.baseUrl", System.getenv().getOrDefault("DSE_AUTH_API_URL", "http://127.0.1.1:8080"));
     }
 
     public static synchronized void applyRuntimeApiBaseUrl(String baseUrl) {

@@ -6274,6 +6274,28 @@ TABLE ACTION BUTTONS
     -fx-background-color: #1a3556;
     -fx-border-color: #4f8cff;
 }
+
+/* 7.0.1 final popup authority: JavaFX popup cells must always paint their own text/surface. */
+.combo-box-popup > .list-view,
+.combo-box-popup .list-view {
+    -fx-background-color: #142238;
+    -fx-control-inner-background: #142238;
+    -fx-border-color: #49627f;
+}
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
+.combo-box-popup .list-cell,
+.combo-box-popup .list-cell:filled {
+    -fx-background-color: #142238;
+    -fx-text-fill: #f5f8fc;
+    -fx-opacity: 1;
+}
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:hover,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected,
+.combo-box-popup .list-cell:filled:hover,
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #285c9c;
+    -fx-text-fill: #ffffff;
+}
 .import-choice-card .label { -fx-text-fill: #f4f7fb; }
 .import-choice-card .muted-label { -fx-text-fill: #aebed3; }
 .import-choice-icon { -fx-alignment: CENTER_LEFT; }
@@ -6347,7 +6369,7 @@ TABLE ACTION BUTTONS
 .sales-register-page .sales-screen-title { -fx-font-size: 22px; }
 
 
-/* ===== DSE ERP 7.0.0 Sales Register split-safe KPI stabilization =====
+/* ===== DSE ERP 7.0.1 Sales Register split-safe KPI stabilization =====
    KPI strip now lives inside the left SplitPane workspace so opening invoice
    details resizes KPI/filter/table together instead of allowing overlap. */
 .sales-register-page .sales-register-workspace > .sales-kpi-panel {
@@ -6384,10 +6406,10 @@ TABLE ACTION BUTTONS
 .sales-register-page .sales-register-workspace {
     -fx-spacing: 10px;
 }
-/* ===== End DSE ERP 7.0.0 Sales Register split-safe KPI stabilization ===== */
+/* ===== End DSE ERP 7.0.1 Sales Register split-safe KPI stabilization ===== */
 
 
-/* ===== DSE ERP 7.0.0 approved startup splash ===== */
+/* ===== DSE ERP 7.0.1 approved startup splash ===== */
 .dse-startup-splash {
     -fx-background-color: linear-gradient(to bottom right, #06172d 0%, #082b59 48%, #06172d 100%);
     -fx-font-family: "Segoe UI", "Inter", sans-serif;
@@ -6460,10 +6482,10 @@ TABLE ACTION BUTTONS
     -fx-border-width: 1 0 0 0; -fx-padding: 11 4 0 4;
 }
 .dse-startup-splash .splash-footer-text { -fx-text-fill: #8fa3bd; -fx-font-size: 11px; }
-/* ===== End DSE ERP 7.0.0 approved startup splash ===== */
+/* ===== End DSE ERP 7.0.1 approved startup splash ===== */
 
 
-/* ===== DSE ERP 7.0.0 approved splash exact-view override ===== */
+/* ===== DSE ERP 7.0.1 approved splash exact-view override ===== */
 .dse-startup-splash {
     -fx-background-color: radial-gradient(center 50% 18%, radius 78%, #0b3c78 0%, #072a55 46%, #04162c 100%);
 }
@@ -6478,4 +6500,4 @@ TABLE ACTION BUTTONS
 .dse-startup-splash .splash-stage-icon { -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 7, 0.10, 0, 2); }
 .dse-startup-splash .splash-info-strip { -fx-padding: 12 0 7 0; }
 .dse-startup-splash .splash-footer { -fx-padding: 12 5 2 5; }
-/* ===== End DSE ERP 7.0.0 approved splash exact-view override ===== */
+/* ===== End DSE ERP 7.0.1 approved splash exact-view override ===== */
