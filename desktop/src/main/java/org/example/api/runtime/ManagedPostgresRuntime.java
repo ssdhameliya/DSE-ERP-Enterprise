@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 6.0.4 managed PostgreSQL runtime.
+ * 6.0.5 managed PostgreSQL runtime.
  *
  * Fresh workspaces use a private PostgreSQL cluster owned by DSE ERP. Existing installations
  * that explicitly configure db.url or DSE_DB_URL remain external and are never reconfigured.
@@ -403,8 +403,15 @@ public final class ManagedPostgresRuntime {
             // support the exact backend/dyld/initdb failure even if the app is later removed.
             Path diagnosticLog = WorkspaceManager.getLogsFolder().resolve("postgresql-initdb.log");
             Files.createDirectories(diagnosticLog.getParent());
-            ProcessResult result = run(command, null, Duration.ofSeconds(120), false);
-            String diagnostic = "DSE ERP 6.0.4 managed PostgreSQL initdb" + System.lineSeparator()
+            Properties initdbEnvironment = new Properties();
+            // Keep first-workspace initialization deterministic when launched from Finder.
+            // initdb spawns the bundled `postgres` backend while probing max_connections,
+            // shared_buffers and timezone; these values are inherited by every child.
+            initdbEnvironment.setProperty("LC_ALL", "C");
+            initdbEnvironment.setProperty("LANG", "C");
+            initdbEnvironment.setProperty("TZ", "UTC");
+            ProcessResult result = run(command, initdbEnvironment, Duration.ofSeconds(120), false);
+            String diagnostic = "DSE ERP 6.0.5 managed PostgreSQL initdb" + System.lineSeparator()
                     + "Runtime: " + home + System.lineSeparator()
                     + "Bootstrap share: " + initdbShare + System.lineSeparator()
                     + "Data staging: " + data + System.lineSeparator()

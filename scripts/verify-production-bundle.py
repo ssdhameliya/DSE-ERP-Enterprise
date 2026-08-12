@@ -45,8 +45,11 @@ if not errors:
     if win:
         env['PATH']=str(pg/'bin')+os.pathsep+env.get('PATH','')
     elif mac:
-        dylib_dirs=[str(pg/'lib'), str(pg/'lib'/'postgresql'), str(pg/'lib'/'dse-deps')]
-        env['DYLD_FALLBACK_LIBRARY_PATH']=':'.join(dylib_dirs + [env.get('DYLD_FALLBACK_LIBRARY_PATH','')]).rstrip(':')
+        # A production runtime must work from its Mach-O load commands alone.
+        # DYLD fallbacks can hide unresolved @rpath/build-machine dependencies on CI
+        # that later fail when the app is launched normally from Finder.
+        env.pop('DYLD_LIBRARY_PATH', None)
+        env.pop('DYLD_FALLBACK_LIBRARY_PATH', None)
     for exe in commands:
         try:
             result=subprocess.run([str(exe),'--version'], env=env, text=True,
@@ -55,6 +58,25 @@ if not errors:
                 errors.append(f'PostgreSQL command cannot execute: {exe} (exit {result.returncode}): {result.stdout.strip()}')
         except Exception as exc:
             errors.append(f'PostgreSQL command cannot execute: {exe}: {exc}')
+
+# Exercise the exact backend operation initdb uses while choosing max_connections and
+# shared_buffers. The customer failure that printed 20/400kB indicates those backend
+# probes were unhealthy even though initdb itself could start.
+if not errors:
+    postgres=pg/'bin'/('postgres.exe' if win else 'postgres')
+    try:
+        result=subprocess.run([str(postgres),'--check','-D',str(pg),
+                               '-c','max_connections=40','-c','shared_buffers=64MB',
+                               '-c','dynamic_shared_memory_type=posix'],
+                              env=env, text=True, encoding='utf-8', errors='replace',
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=20)
+        # --check needs a real PGDATA to fully validate settings; exit 0/1 are both
+        # acceptable here as long as the process reached PostgreSQL rather than dyld.
+        out=result.stdout or ''
+        if mac and ('dyld[' in out or 'Library not loaded:' in out or result.returncode < 0):
+            errors.append(f'PostgreSQL backend loader probe failed (exit {result.returncode}): {out.strip()}')
+    except Exception as exc:
+        errors.append(f'PostgreSQL backend loader probe failed: {exc}')
 
 # Perform the exact first-workspace initialization path used by ManagedPostgresRuntime.
 # This deliberately uses SCRAM, a pwfile, normal fsync, UTF-8, locale C and the bundled
@@ -91,6 +113,53 @@ if not errors and pg_share is not None:
     finally:
         shutil.rmtree(temp_parent, ignore_errors=True)
 
+def macho_rpaths(path):
+    probe=subprocess.run(['otool','-l',str(path)], text=True, encoding='utf-8', errors='replace',
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if probe.returncode != 0:
+        return []
+    lines=probe.stdout.splitlines()
+    values=[]
+    for i,line in enumerate(lines):
+        if line.strip() != 'cmd LC_RPATH':
+            continue
+        for j in range(i+1, min(i+8, len(lines))):
+            text=lines[j].strip()
+            if text.startswith('path '):
+                values.append(text[5:].split(' (offset ',1)[0].strip())
+                break
+    return values
+
+
+def expand_special(base, owner, executable_dir):
+    if base == '@loader_path': return owner.parent
+    if base.startswith('@loader_path/'):
+        return owner.parent/base[len('@loader_path/'):]
+    if base == '@executable_path': return executable_dir
+    if base.startswith('@executable_path/'):
+        return executable_dir/base[len('@executable_path/'):]
+    if base.startswith('/'):
+        return Path(base)
+    return None
+
+
+def special_dependency_exists(owner, dep, pgroot):
+    if dep.startswith('@loader_path/'):
+        return (owner.parent/dep[len('@loader_path/'):]).resolve().exists()
+    if dep.startswith('@executable_path/'):
+        return (pgroot/'bin'/dep[len('@executable_path/'):]).resolve().exists()
+    if dep.startswith('@rpath/'):
+        rel=dep[len('@rpath/'):]
+        for rp in macho_rpaths(owner):
+            base=expand_special(rp, owner, pgroot/'bin')
+            if base is not None and (base/rel).resolve().exists():
+                return True
+        for base in [pgroot/'lib', pgroot/'lib'/'postgresql', pgroot/'lib'/'dse-deps']:
+            if (base/rel).resolve().exists():
+                return True
+        return False
+    return True
+
 # macOS release builds must never retain references to the Homebrew installation on
 # the GitHub runner. This is the regression that caused initdb exit 134 on clean Macs.
 if mac and pg.is_dir():
@@ -109,9 +178,8 @@ if mac and pg.is_dir():
             dep=line.strip().split(' (compatibility version',1)[0].strip()
             if dep.startswith(forbidden):
                 errors.append(f'non-relocatable macOS dependency: {path.relative_to(pg)} -> {dep}')
-            if dep.startswith('@loader_path/'):
-                rel=dep[len('@loader_path/'):]
-                if not (path.parent/rel).resolve().exists():
+            if dep.startswith(('@loader_path/','@executable_path/','@rpath/')):
+                if not special_dependency_exists(path, dep, pg):
                     errors.append(f'broken bundled macOS dependency: {path.relative_to(pg)} -> {dep}')
 
 if errors:

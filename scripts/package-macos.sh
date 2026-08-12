@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 6.0.4 managed PostgreSQL payload. For release packaging, point
+# 6.0.5 managed PostgreSQL payload. For release packaging, point
 # DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 if [[ -z "$POSTGRES_RUNTIME" ]]; then
@@ -51,29 +51,25 @@ for folder in bin lib share; do
   cp -RL "$POSTGRES_RUNTIME/$folder" "$INPUT/runtime/postgresql/$folder"
 done
 
-# Homebrew's PostgreSQL formula keeps initdb bootstrap files in pkgshare
-# (typically /opt/homebrew/share/postgresql@18), which is outside the formula's
-# opt prefix on some runners.  A copied bin/lib runtime can therefore execute
-# but initdb later fails on a clean Mac looking for the build-machine postgres.bki.
-# Ensure postgres.bki and its companion bootstrap files are physically bundled.
-if ! find "$INPUT/runtime/postgresql/share" -name postgres.bki -type f -print -quit | grep -q .; then
-  HOMEBREW_PREFIX="$(brew --prefix 2>/dev/null || true)"
-  PG_PKGSHARE=""
-  for candidate in \
-      "$POSTGRES_RUNTIME/share/postgresql@18" \
-      "$POSTGRES_RUNTIME/share" \
-      "${HOMEBREW_PREFIX:+$HOMEBREW_PREFIX/share/postgresql@18}"; do
-    if [[ -n "$candidate" && -f "$candidate/postgres.bki" ]]; then
-      PG_PKGSHARE="$candidate"
-      break
-    fi
-  done
-  [[ -n "$PG_PKGSHARE" ]] || {
-    echo "PostgreSQL bootstrap files not found (postgres.bki). Refusing to build an incomplete macOS runtime." >&2
-    exit 1
-  }
-  mkdir -p "$INPUT/runtime/postgresql/share/postgresql@18"
-  cp -RL "$PG_PKGSHARE/." "$INPUT/runtime/postgresql/share/postgresql@18/"
+# Homebrew can compile PostgreSQL with sharedir/pkglibdir outside the formula opt
+# prefix. Always ask pg_config for the authoritative locations and merge those
+# resources into the app. This includes postgres.bki, timezone/config samples,
+# extension SQL/control files and server-side modules needed by child `postgres`
+# processes during initdb. Do this unconditionally rather than only when postgres.bki
+# is absent; a partial share tree can pass the old check and still fail on a clean Mac.
+PG_CONFIG="$POSTGRES_RUNTIME/bin/pg_config"
+[[ -x "$PG_CONFIG" ]] || { echo "PostgreSQL pg_config is missing: $PG_CONFIG" >&2; exit 1; }
+PG_SHARE_SOURCE="$($PG_CONFIG --sharedir)"
+PG_PKGLIB_SOURCE="$($PG_CONFIG --pkglibdir)"
+[[ -d "$PG_SHARE_SOURCE" && -f "$PG_SHARE_SOURCE/postgres.bki" ]] || {
+  echo "PostgreSQL pg_config sharedir is incomplete: $PG_SHARE_SOURCE" >&2
+  exit 1
+}
+mkdir -p "$INPUT/runtime/postgresql/share/postgresql@18"
+cp -RL "$PG_SHARE_SOURCE/." "$INPUT/runtime/postgresql/share/postgresql@18/"
+if [[ -d "$PG_PKGLIB_SOURCE" ]]; then
+  mkdir -p "$INPUT/runtime/postgresql/lib/postgresql"
+  cp -RL "$PG_PKGLIB_SOURCE/." "$INPUT/runtime/postgresql/lib/postgresql/"
 fi
 
 BUNDLED_PG_BKI="$(find "$INPUT/runtime/postgresql/share" -name postgres.bki -type f -print -quit)"
@@ -142,7 +138,26 @@ jpackage --type dmg "${COMMON[@]}" --dest "$DEST"
 
 DMG="$(find "$DEST" -maxdepth 1 -name '*.dmg' -print -quit)"
 [[ -n "$DMG" ]] || { echo "macOS DMG was not produced." >&2; exit 1; }
+
+# 6.0.5 final-artifact gate: verify the exact application stored inside the DMG,
+# not only the staging tree/app-image. Run with DYLD overrides removed so unresolved
+# @rpath/@executable_path dependencies cannot be masked by the GitHub runner.
+MOUNT_POINT="$(mktemp -d /tmp/dse-erp-dmg-verify.XXXXXX)"
+cleanup_dmg_verify() {
+  hdiutil detach "$MOUNT_POINT" -quiet >/dev/null 2>&1 || true
+  rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+}
+trap cleanup_dmg_verify EXIT
+hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT_POINT" -quiet
+DMG_APP="$MOUNT_POINT/DSE ERP.app"
+[[ -d "$DMG_APP" ]] || { echo "ERROR: DSE ERP.app not found inside generated DMG" >&2; exit 1; }
+echo "Running exact first-workspace PostgreSQL smoke test from generated DMG..."
+env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH   python3 "$ROOT/scripts/verify-production-bundle.py" "$DMG_APP/Contents/app"
+hdiutil detach "$MOUNT_POINT" -quiet
+trap - EXIT
+rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+
 FINAL="DSE-ERP-$VERSION-macOS-$ARCH_LABEL.dmg"
 mv "$DMG" "$DEST/$FINAL"
 shasum -a 256 "$DEST/$FINAL" | sed "s#  .*/#  #" > "$DEST/checksums-macos-$ARCH_LABEL.txt"
-echo "Created: $DEST/$FINAL"
+echo "Created and final-DMG verified: $DEST/$FINAL"

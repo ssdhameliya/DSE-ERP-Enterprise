@@ -84,6 +84,50 @@ def loader_reference(owner: Path, target: Path) -> str:
     return "@loader_path/" + rel
 
 
+def rpaths(path: Path) -> list[str]:
+    """Return LC_RPATH entries declared by a Mach-O file."""
+    result = run("otool", "-l", str(path), check=False)
+    if result.returncode != 0:
+        return []
+    lines = result.stdout.splitlines()
+    out: list[str] = []
+    for i, line in enumerate(lines):
+        if line.strip() != "cmd LC_RPATH":
+            continue
+        for j in range(i + 1, min(i + 8, len(lines))):
+            text = lines[j].strip()
+            if text.startswith("path "):
+                value = text[5:].split(" (offset ", 1)[0].strip()
+                if value:
+                    out.append(value)
+                break
+    return out
+
+
+def expand_runtime_path(value: str, owner: Path, executable_dir: Path) -> Path | None:
+    if value.startswith("@loader_path/"):
+        return owner.parent / value[len("@loader_path/"):]
+    if value == "@loader_path":
+        return owner.parent
+    if value.startswith("@executable_path/"):
+        return executable_dir / value[len("@executable_path/"):]
+    if value == "@executable_path":
+        return executable_dir
+    if value.startswith("/"):
+        return Path(value)
+    return None
+
+
+def find_named_dependency(name: str, bases: list[Path]) -> Path | None:
+    for base in bases:
+        if base is None:
+            continue
+        candidate = base / name
+        if candidate.exists():
+            return candidate.resolve()
+    return None
+
+
 def resolve_dep(
     dep: str, owner: Path, source_prefix: Path, bundle_root: Path, deps_dir: Path,
     origins: dict[Path, Path],
@@ -91,30 +135,90 @@ def resolve_dep(
     if dep.startswith(SYSTEM_PREFIXES):
         return None
 
-    # A copied third-party dylib may itself contain @loader_path references to
-    # sibling libraries from its original Homebrew formula.  Because copy2()
-    # dereferences symlinks, those sibling aliases are not automatically present
-    # in dse-deps.  Resolve the missing reference against the original dylib
-    # location, copy that dependency, and let the caller rewrite the load command
-    # to the actual bundled filename.  This is required for ICU, where e.g.
-    # libicuuc.78.3.dylib loads @loader_path/libicudata.78.dylib.
+    executable_dir = bundle_root / "bin"
+    original_owner = origins.get(owner.resolve())
+    original_exec_dir = source_prefix / "bin"
+
+    # Resolve loader-relative dependencies against both the bundled owner and, for
+    # copied third-party libraries, the original Homebrew owner. This is required
+    # for versioned ICU/OpenSSL aliases that disappear when symlinks are dereferenced.
     if dep.startswith("@loader_path/"):
         rel = dep[len("@loader_path/"):]
         candidate = owner.parent / rel
         if candidate.exists():
             return candidate.resolve()
-
-        original_owner = origins.get(owner.resolve())
         if original_owner is not None:
-            original_candidate = original_owner.parent / rel
-            if original_candidate.exists():
-                return copy_dependency(original_candidate, deps_dir, origins)
+            candidate = original_owner.parent / rel
+            if candidate.exists():
+                return copy_dependency(candidate, deps_dir, origins)
         return None
 
-    if dep.startswith("@executable_path/") or dep.startswith("@rpath/"):
-        # Homebrew PostgreSQL generally resolves these through its own copied tree.
-        # Leave them intact; final verification executes every required command and
-        # rejects build-machine absolute paths.
+    # Do not leave @executable_path references dependent on the process that happens
+    # to load a dylib. Resolve them now and rewrite to a direct @loader_path target.
+    if dep.startswith("@executable_path/"):
+        rel = dep[len("@executable_path/"):]
+        candidate = executable_dir / rel
+        if candidate.exists():
+            return candidate.resolve()
+        original_candidate = original_exec_dir / rel
+        if original_candidate.exists():
+            try:
+                relative = original_candidate.resolve().relative_to(source_prefix.resolve())
+                bundled = bundle_root / relative
+                if bundled.exists():
+                    return bundled.resolve()
+            except ValueError:
+                pass
+            return copy_dependency(original_candidate, deps_dir, origins)
+        return None
+
+    # @rpath is the common remaining source of "works on the build Mac, fails on a
+    # customer Mac" bugs. Resolve every rpath candidate, including the rpaths from
+    # the original Homebrew dylib, and rewrite the load command to a concrete bundled
+    # @loader_path reference. CI therefore no longer relies on DYLD_* environment
+    # variables to make an incomplete runtime appear healthy.
+    if dep.startswith("@rpath/"):
+        rel = dep[len("@rpath/"):]
+        bases: list[Path] = []
+        for rp in rpaths(owner):
+            expanded = expand_runtime_path(rp, owner, executable_dir)
+            if expanded is not None:
+                bases.append(expanded)
+        bases.extend([bundle_root / "lib", bundle_root / "lib" / "postgresql", deps_dir])
+        bundled = find_named_dependency(rel, bases)
+        if bundled is not None:
+            return bundled
+
+        if original_owner is not None:
+            original_bases: list[Path] = []
+            for rp in rpaths(original_owner):
+                expanded = expand_runtime_path(rp, original_owner, original_exec_dir)
+                if expanded is not None:
+                    original_bases.append(expanded)
+            original_bases.extend([
+                original_owner.parent,
+                source_prefix / "lib",
+                source_prefix / "lib" / "postgresql",
+            ])
+            original = find_named_dependency(rel, original_bases)
+            if original is not None:
+                try:
+                    relative = original.resolve().relative_to(source_prefix.resolve())
+                    candidate = bundle_root / relative
+                    if candidate.exists():
+                        return candidate.resolve()
+                except ValueError:
+                    pass
+                return copy_dependency(original, deps_dir, origins)
+
+        # Last chance: PostgreSQL/Homebrew dependencies are shallow enough that a
+        # basename search in known library roots is deterministic and safer than
+        # shipping an unresolved @rpath reference.
+        for base in [source_prefix / "lib", source_prefix.parent / "lib"]:
+            if base.is_dir():
+                matches = list(base.rglob(Path(rel).name))
+                if len(matches) == 1:
+                    return copy_dependency(matches[0], deps_dir, origins)
         return None
 
     src = Path(dep)
@@ -131,7 +235,6 @@ def resolve_dep(
 
     # Dependency belongs to another Homebrew formula (OpenSSL, ICU, readline, zstd, ...).
     return copy_dependency(src, deps_dir, origins)
-
 
 def all_macho(root: Path) -> list[Path]:
     return sorted(p for p in root.rglob("*") if is_macho(p))
