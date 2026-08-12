@@ -32,16 +32,15 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.49 managed PostgreSQL payload. For release packaging, point
-# DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
+# 5.1.50 managed PostgreSQL payload. Release packaging must point
+# DSE_POSTGRES_RUNTIME_DIR at the relocatable runtime produced by build-postgresql-macos.sh.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
-if [[ -z "$POSTGRES_RUNTIME" ]]; then
-  for candidate in "/opt/homebrew/opt/postgresql@18" "/usr/local/opt/postgresql@18" "/Library/PostgreSQL/18"; do
-    if [[ -x "$candidate/bin/initdb" ]]; then POSTGRES_RUNTIME="$candidate"; break; fi
-  done
-fi
 [[ -n "$POSTGRES_RUNTIME" && -x "$POSTGRES_RUNTIME/bin/initdb" ]] || {
-  echo "PostgreSQL 18 runtime not found. Set DSE_POSTGRES_RUNTIME_DIR to a verified PostgreSQL 18 binary distribution." >&2
+  echo "Relocatable PostgreSQL 18 runtime not found. Run scripts/build-postgresql-macos.sh and set DSE_POSTGRES_RUNTIME_DIR." >&2
+  exit 1
+}
+[[ -x "$POSTGRES_RUNTIME/bin/pg_config" ]] || {
+  echo "PostgreSQL runtime is missing pg_config: $POSTGRES_RUNTIME/bin/pg_config" >&2
   exit 1
 }
 mkdir -p "$INPUT/runtime/postgresql"
@@ -50,10 +49,25 @@ for folder in bin lib share; do
   cp -R "$POSTGRES_RUNTIME/$folder" "$INPUT/runtime/postgresql/$folder"
 done
 
-# Homebrew bottles retain absolute references to their Cellar dependencies.
+BUNDLED_POSTGRES="$INPUT/runtime/postgresql"
+for specification in "--bindir:$BUNDLED_POSTGRES/bin" "--sharedir:$BUNDLED_POSTGRES/share" "--pkglibdir:$BUNDLED_POSTGRES/lib"; do
+  flag="${specification%%:*}"
+  expected="${specification#*:}"
+  actual="$($BUNDLED_POSTGRES/bin/pg_config "$flag")"
+  [[ "$actual" == "$expected" ]] || {
+    echo "PostgreSQL runtime is not relocatable: pg_config $flag returned $actual, expected $expected" >&2
+    exit 1
+  }
+done
+if grep -R -a -l -m 1 -E '/opt/homebrew|/usr/local/(opt|Cellar)' \
+    "$BUNDLED_POSTGRES/bin" "$BUNDLED_POSTGRES/lib" >/dev/null 2>&1; then
+  echo "PostgreSQL runtime contains a forbidden Homebrew installation path." >&2
+  exit 1
+fi
+
 # Collect every non-system dependency into the application and rewrite each
 # Mach-O load command relative to the binary that uses it. This makes the
-# managed PostgreSQL runtime independent of Homebrew on the customer's Mac.
+# managed PostgreSQL runtime independent of build-machine library locations.
 bundle_postgres_dylibs() {
   local bundle="$1"
   local dependencies="$bundle/lib/dse-deps"
@@ -217,26 +231,36 @@ PACKAGED_INITDB="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/bin/init
   echo "ERROR: Production app image is missing managed PostgreSQL initdb: $PACKAGED_INITDB" >&2
   exit 1
 }
+PACKAGED_PG_CONFIG="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/bin/pg_config"
+PACKAGED_POSTGRES_HOME="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql"
+for specification in "--bindir:$PACKAGED_POSTGRES_HOME/bin" "--sharedir:$PACKAGED_POSTGRES_HOME/share" "--pkglibdir:$PACKAGED_POSTGRES_HOME/lib"; do
+  flag="${specification%%:*}"
+  expected="${specification#*:}"
+  actual="$($PACKAGED_PG_CONFIG "$flag")"
+  [[ "$actual" == "$expected" ]] || {
+    echo "ERROR: Packaged PostgreSQL is not relocatable: pg_config $flag returned $actual, expected $expected" >&2
+    exit 1
+  }
+done
 PACKAGED_SHARE_ROOT="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/share"
 PACKAGED_BKI="$(find "$PACKAGED_SHARE_ROOT" -type f -name postgres.bki -print -quit)"
 [[ -n "$PACKAGED_BKI" ]] || {
   echo "ERROR: Production app image is missing managed PostgreSQL postgres.bki under: $PACKAGED_SHARE_ROOT" >&2
   exit 1
 }
-PACKAGED_SHARE="$(dirname "$PACKAGED_BKI")"
 (
   VERIFY_DATA="$ROOT/target/macos-postgres-initdb-check"
   trap 'rm -rf "$VERIFY_DATA"' EXIT
   rm -rf "$VERIFY_DATA"
-  env -i HOME="$HOME" PATH="/usr/bin:/bin" "$PACKAGED_INITDB" \
-    -D "$VERIFY_DATA" -L "$PACKAGED_SHARE" -U dse_erp_verify \
+  env -i HOME="$HOME" PATH="/usr/bin:/bin" TZ="Asia/Kolkata" "$PACKAGED_INITDB" \
+    -D "$VERIFY_DATA" -U dse_erp_verify \
     --no-sync --encoding=UTF8 --locale=C --auth-local=trust --auth-host=trust
   [[ -f "$VERIFY_DATA/PG_VERSION" ]] || {
     echo "ERROR: Packaged PostgreSQL initdb did not create a valid test cluster." >&2
     exit 1
   }
 )
-echo "Verified managed PostgreSQL can initialize a database without Homebrew from inside the app image."
+echo "Verified managed PostgreSQL can initialize an Asia/Kolkata database without Homebrew from inside the app image."
 
 jpackage --type dmg "${COMMON[@]}" --dest "$DEST"
 
