@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.44 managed PostgreSQL payload. For release packaging, point
+# 5.1.46 managed PostgreSQL payload. For release packaging, point
 # DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 if [[ -z "$POSTGRES_RUNTIME" ]]; then
@@ -57,7 +57,7 @@ done
 bundle_postgres_dylibs() {
   local bundle="$1"
   local dependencies="$bundle/lib/dse-deps"
-  local candidate binary dependency name destination relative reference install_id
+  local candidate binary dependency name digest destination relative reference install_id
   local index=1
   typeset -a queue
   typeset -A processed
@@ -97,13 +97,20 @@ bundle_postgres_dylibs() {
       }
 
       name="$(basename "$dependency")"
-      destination="$dependencies/$name"
+      # Different Homebrew formulae can legitimately depend on different files
+      # with the same basename (for example libcrypto.3.dylib). Keep each unique
+      # payload in a content-addressed directory so every Mach-O binary remains
+      # linked to the exact library it was built against.
+      digest="$(shasum -a 256 "$dependency" | awk '{print substr($1,1,16)}')"
+      [[ -n "$digest" ]] || {
+        echo "Could not fingerprint PostgreSQL dependency: $dependency" >&2
+        exit 1
+      }
+      destination="$dependencies/$digest/$name"
       if [[ ! -e "$destination" ]]; then
+        mkdir -p "$(dirname "$destination")"
         cp -L "$dependency" "$destination"
         queue+=("$destination")
-      elif ! cmp -s "$dependency" "$destination"; then
-        echo "Conflicting PostgreSQL dependencies share the filename $name" >&2
-        exit 1
       fi
 
       relative="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[2], os.path.dirname(sys.argv[1])))' "$binary" "$destination")"
