@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.46 managed PostgreSQL payload. For release packaging, point
+# 5.1.47 managed PostgreSQL payload. For release packaging, point
 # DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 if [[ -z "$POSTGRES_RUNTIME" ]]; then
@@ -57,15 +57,18 @@ done
 bundle_postgres_dylibs() {
   local bundle="$1"
   local dependencies="$bundle/lib/dse-deps"
-  local candidate binary dependency name digest destination relative reference install_id
+  local candidate binary dependency original_reference source_dependency
+  local local_candidate origin_path name digest destination relative reference install_id
   local index=1
   typeset -a queue
   typeset -A processed
+  typeset -A origins
 
   mkdir -p "$dependencies"
   while IFS= read -r -d '' candidate; do
     if file -b "$candidate" | grep -q 'Mach-O'; then
       queue+=("$candidate")
+      origins[$candidate]="$POSTGRES_RUNTIME/${candidate#$bundle/}"
     fi
   done < <(find "$bundle/bin" "$bundle/lib" -type f -print0)
 
@@ -82,40 +85,53 @@ bundle_postgres_dylibs() {
 
     while IFS= read -r dependency; do
       [[ -n "$dependency" ]] || continue
+      original_reference="$dependency"
+      source_dependency="$dependency"
       case "$dependency" in
-        /System/Library/*|/usr/lib/*|@loader_path/*|@executable_path/*|@rpath/*)
+        /System/Library/*|/usr/lib/*|@executable_path/*|@rpath/*)
           continue
           ;;
+        @loader_path/*)
+          local_candidate="$(dirname "$binary")/${dependency#@loader_path/}"
+          [[ -e "$local_candidate" ]] && continue
+          origin_path="${origins[$binary]-}"
+          [[ -n "$origin_path" ]] || {
+            echo "Cannot resolve $dependency because the original location of $binary is unknown" >&2
+            exit 1
+          }
+          source_dependency="$(python3 -c 'import os,sys; print(os.path.realpath(os.path.join(os.path.dirname(sys.argv[1]), sys.argv[2])))' "$origin_path" "${dependency#@loader_path/}")"
+          ;;
       esac
-      [[ "$dependency" == /* ]] || {
+      [[ "$source_dependency" == /* ]] || {
         echo "Unsupported PostgreSQL library reference in $binary: $dependency" >&2
         exit 1
       }
-      [[ -e "$dependency" ]] || {
-        echo "PostgreSQL dependency is missing on the build runner: $dependency" >&2
+      [[ -e "$source_dependency" ]] || {
+        echo "PostgreSQL dependency is missing on the build runner: $source_dependency (referenced as $dependency by $binary)" >&2
         exit 1
       }
 
-      name="$(basename "$dependency")"
+      name="$(basename "$source_dependency")"
       # Different Homebrew formulae can legitimately depend on different files
       # with the same basename (for example libcrypto.3.dylib). Keep each unique
       # payload in a content-addressed directory so every Mach-O binary remains
       # linked to the exact library it was built against.
-      digest="$(shasum -a 256 "$dependency" | awk '{print substr($1,1,16)}')"
+      digest="$(shasum -a 256 "$source_dependency" | awk '{print substr($1,1,16)}')"
       [[ -n "$digest" ]] || {
-        echo "Could not fingerprint PostgreSQL dependency: $dependency" >&2
+        echo "Could not fingerprint PostgreSQL dependency: $source_dependency" >&2
         exit 1
       }
       destination="$dependencies/$digest/$name"
       if [[ ! -e "$destination" ]]; then
         mkdir -p "$(dirname "$destination")"
-        cp -L "$dependency" "$destination"
+        cp -L "$source_dependency" "$destination"
         queue+=("$destination")
       fi
+      origins[$destination]="$source_dependency"
 
       relative="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[2], os.path.dirname(sys.argv[1])))' "$binary" "$destination")"
       reference="@loader_path/$relative"
-      install_name_tool -change "$dependency" "$reference" "$binary"
+      install_name_tool -change "$original_reference" "$reference" "$binary"
     done < <(otool -L "$binary" | tail -n +2 | awk '{print $1}')
   done
 
