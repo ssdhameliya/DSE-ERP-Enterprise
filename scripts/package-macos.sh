@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.42 managed PostgreSQL payload. For release packaging, point
+# 5.1.44 managed PostgreSQL payload. For release packaging, point
 # DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 if [[ -z "$POSTGRES_RUNTIME" ]]; then
@@ -49,6 +49,101 @@ for folder in bin lib share; do
   [[ -d "$POSTGRES_RUNTIME/$folder" ]] || { echo "PostgreSQL runtime folder missing: $POSTGRES_RUNTIME/$folder" >&2; exit 1; }
   cp -R "$POSTGRES_RUNTIME/$folder" "$INPUT/runtime/postgresql/$folder"
 done
+
+# Homebrew bottles retain absolute references to their Cellar dependencies.
+# Collect every non-system dependency into the application and rewrite each
+# Mach-O load command relative to the binary that uses it. This makes the
+# managed PostgreSQL runtime independent of Homebrew on the customer's Mac.
+bundle_postgres_dylibs() {
+  local bundle="$1"
+  local dependencies="$bundle/lib/dse-deps"
+  local candidate binary dependency name destination relative reference install_id
+  local index=1
+  typeset -a queue
+  typeset -A processed
+
+  mkdir -p "$dependencies"
+  while IFS= read -r -d '' candidate; do
+    if file -b "$candidate" | grep -q 'Mach-O'; then
+      queue+=("$candidate")
+    fi
+  done < <(find "$bundle/bin" "$bundle/lib" -type f -print0)
+
+  while (( index <= ${#queue[@]} )); do
+    binary="${queue[$index]}"
+    (( index += 1 ))
+    [[ -n "${processed[$binary]-}" ]] && continue
+    processed[$binary]=1
+
+    install_id="$(otool -D "$binary" 2>/dev/null | tail -n +2 | head -n 1 || true)"
+    if [[ -n "$install_id" && "$install_id" != @loader_path/* ]]; then
+      install_name_tool -id "@loader_path/$(basename "$binary")" "$binary"
+    fi
+
+    while IFS= read -r dependency; do
+      [[ -n "$dependency" ]] || continue
+      case "$dependency" in
+        /System/Library/*|/usr/lib/*|@loader_path/*|@executable_path/*|@rpath/*)
+          continue
+          ;;
+      esac
+      [[ "$dependency" == /* ]] || {
+        echo "Unsupported PostgreSQL library reference in $binary: $dependency" >&2
+        exit 1
+      }
+      [[ -e "$dependency" ]] || {
+        echo "PostgreSQL dependency is missing on the build runner: $dependency" >&2
+        exit 1
+      }
+
+      name="$(basename "$dependency")"
+      destination="$dependencies/$name"
+      if [[ ! -e "$destination" ]]; then
+        cp -L "$dependency" "$destination"
+        queue+=("$destination")
+      elif ! cmp -s "$dependency" "$destination"; then
+        echo "Conflicting PostgreSQL dependencies share the filename $name" >&2
+        exit 1
+      fi
+
+      relative="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[2], os.path.dirname(sys.argv[1])))' "$binary" "$destination")"
+      reference="@loader_path/$relative"
+      install_name_tool -change "$dependency" "$reference" "$binary"
+    done < <(otool -L "$binary" | tail -n +2 | awk '{print $1}')
+  done
+
+  for binary in "${queue[@]}"; do
+    codesign --force --sign - "$binary" >/dev/null
+  done
+
+  for binary in "${queue[@]}"; do
+    while IFS= read -r dependency; do
+      case "$dependency" in
+        /System/Library/*|/usr/lib/*|@loader_path/*|@executable_path/*|@rpath/*|'')
+          ;;
+        /*)
+          echo "Unbundled absolute library reference remains in $binary: $dependency" >&2
+          exit 1
+          ;;
+      esac
+    done < <(otool -L "$binary" | tail -n +2 | awk '{print $1}')
+
+    while IFS= read -r reference; do
+      case "$reference" in
+        /System/Library/*|/usr/lib/*|@loader_path/*|@executable_path/*|@rpath/*|'')
+          ;;
+        /*)
+          echo "Unbundled absolute runtime search path remains in $binary: $reference" >&2
+          exit 1
+          ;;
+      esac
+    done < <(otool -l "$binary" | awk '$1 == "cmd" && $2 == "LC_RPATH" { getline; getline; print $2 }')
+  done
+
+  echo "Bundled and relocated ${#queue[@]} PostgreSQL Mach-O files."
+}
+
+bundle_postgres_dylibs "$INPUT/runtime/postgresql"
 cp "$ROOT/runtime/runtime-manifest.properties" "$INPUT/runtime/runtime-manifest.properties"
 echo "Bundled PostgreSQL runtime: $POSTGRES_RUNTIME"
 python3 "$ROOT/scripts/verify-production-bundle.py" "$INPUT"
@@ -93,6 +188,14 @@ if [[ ! -x "$BUNDLED_JAVA" ]]; then
   exit 1
 fi
 echo "Verified bundled Java launcher: $BUNDLED_JAVA"
+
+PACKAGED_INITDB="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/bin/initdb"
+[[ -x "$PACKAGED_INITDB" ]] || {
+  echo "ERROR: Production app image is missing managed PostgreSQL initdb: $PACKAGED_INITDB" >&2
+  exit 1
+}
+env -i HOME="$HOME" PATH="/usr/bin:/bin" "$PACKAGED_INITDB" --version
+echo "Verified managed PostgreSQL starts without Homebrew from inside the app image."
 
 jpackage --type dmg "${COMMON[@]}" --dest "$DEST"
 
