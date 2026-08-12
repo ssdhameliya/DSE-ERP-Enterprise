@@ -12,6 +12,11 @@ win=platform.system().lower().startswith('win')
 for name in ['initdb','pg_ctl','psql','createdb']:
     exe=pg/'bin'/(name+'.exe' if win else name)
     if not exe.is_file(): errors.append(f'missing PostgreSQL command: {exe}')
+share=pg/'share'
+if not share.is_dir():
+    errors.append(f'missing PostgreSQL share directory: {share}')
+elif not any(share.rglob('postgres.bki')):
+    errors.append(f'missing PostgreSQL bootstrap catalog: {share}/**/postgres.bki')
 manifest=root/'runtime'/'runtime-manifest.properties'
 if not manifest.is_file(): errors.append(f'missing runtime manifest: {manifest}')
 if errors:

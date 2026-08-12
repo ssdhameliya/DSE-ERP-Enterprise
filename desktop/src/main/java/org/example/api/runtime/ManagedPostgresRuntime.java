@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 5.1.47 managed PostgreSQL runtime.
+ * 5.1.48 managed PostgreSQL runtime.
  *
  * Fresh workspaces use a private PostgreSQL cluster owned by DSE ERP. Existing installations
  * that explicitly configure db.url or DSE_DB_URL remain external and are never reconfigured.
@@ -208,6 +208,7 @@ public final class ManagedPostgresRuntime {
                 throw new IllegalStateException("DSE ERP installation is incomplete: PostgreSQL command missing: " + command);
             }
         }
+        postgresShare(home);
     }
 
     private static boolean isPackagedRuntime() {
@@ -217,6 +218,23 @@ public final class ManagedPostgresRuntime {
     private static Path bin(Path home, String name) {
         boolean windows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
         return home.resolve("bin").resolve(windows ? name + ".exe" : name);
+    }
+
+    private static Path postgresShare(Path home) {
+        Path shareRoot = home.resolve("share");
+        if (!Files.isDirectory(shareRoot)) {
+            throw new IllegalStateException(
+                    "DSE ERP installation is incomplete: bundled PostgreSQL share directory is missing.");
+        }
+        try (var paths = Files.find(shareRoot, 4,
+                (path, attributes) -> attributes.isRegularFile()
+                        && "postgres.bki".equals(path.getFileName().toString()))) {
+            return paths.map(Path::getParent).sorted().findFirst().orElseThrow(() ->
+                    new IllegalStateException(
+                            "DSE ERP installation is incomplete: bundled PostgreSQL postgres.bki is missing."));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to inspect bundled PostgreSQL share directory", exception);
+        }
     }
 
     private static RuntimeState loadState(Path file) {
@@ -323,7 +341,8 @@ public final class ManagedPostgresRuntime {
         try {
             Files.writeString(passwordFile, state.ownerPassword(), StandardCharsets.UTF_8);
             restrictPermissions(passwordFile);
-            run(List.of(bin(home, "initdb").toString(), "-D", data.toString(), "-U", OWNER_USER,
+            run(List.of(bin(home, "initdb").toString(), "-D", data.toString(),
+                    "-L", postgresShare(home).toString(), "-U", OWNER_USER,
                     "--pwfile=" + passwordFile, "--encoding=UTF8", "--locale=C",
                     "--auth-local=scram-sha-256", "--auth-host=scram-sha-256"), null, COMMAND_TIMEOUT);
         } finally {

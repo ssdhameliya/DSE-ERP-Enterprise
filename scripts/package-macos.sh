@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.47 managed PostgreSQL payload. For release packaging, point
+# 5.1.48 managed PostgreSQL payload. For release packaging, point
 # DSE_POSTGRES_RUNTIME_DIR at a verified PostgreSQL 18 binary distribution for this architecture.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 if [[ -z "$POSTGRES_RUNTIME" ]]; then
@@ -217,8 +217,26 @@ PACKAGED_INITDB="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/bin/init
   echo "ERROR: Production app image is missing managed PostgreSQL initdb: $PACKAGED_INITDB" >&2
   exit 1
 }
-env -i HOME="$HOME" PATH="/usr/bin:/bin" "$PACKAGED_INITDB" --version
-echo "Verified managed PostgreSQL starts without Homebrew from inside the app image."
+PACKAGED_SHARE_ROOT="$APP_IMAGE/DSE ERP.app/Contents/app/runtime/postgresql/share"
+PACKAGED_BKI="$(find "$PACKAGED_SHARE_ROOT" -type f -name postgres.bki -print -quit)"
+[[ -n "$PACKAGED_BKI" ]] || {
+  echo "ERROR: Production app image is missing managed PostgreSQL postgres.bki under: $PACKAGED_SHARE_ROOT" >&2
+  exit 1
+}
+PACKAGED_SHARE="$(dirname "$PACKAGED_BKI")"
+(
+  VERIFY_DATA="$ROOT/target/macos-postgres-initdb-check"
+  trap 'rm -rf "$VERIFY_DATA"' EXIT
+  rm -rf "$VERIFY_DATA"
+  env -i HOME="$HOME" PATH="/usr/bin:/bin" "$PACKAGED_INITDB" \
+    -D "$VERIFY_DATA" -L "$PACKAGED_SHARE" -U dse_erp_verify \
+    --no-sync --encoding=UTF8 --locale=C --auth-local=trust --auth-host=trust
+  [[ -f "$VERIFY_DATA/PG_VERSION" ]] || {
+    echo "ERROR: Packaged PostgreSQL initdb did not create a valid test cluster." >&2
+    exit 1
+  }
+)
+echo "Verified managed PostgreSQL can initialize a database without Homebrew from inside the app image."
 
 jpackage --type dmg "${COMMON[@]}" --dest "$DEST"
 
