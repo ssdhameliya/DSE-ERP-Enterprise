@@ -32,7 +32,7 @@ cp "$JAR" "$INPUT/DSE_Final.jar"
 mkdir -p "$INPUT/server"
 cp "$SERVER_JAR" "$INPUT/server/dse-erp-server.jar"
 
-# 5.1.50 managed PostgreSQL payload. Release packaging must point
+# 5.1.51 managed PostgreSQL payload. Release packaging must point
 # DSE_POSTGRES_RUNTIME_DIR at the relocatable runtime produced by build-postgresql-macos.sh.
 POSTGRES_RUNTIME="${DSE_POSTGRES_RUNTIME_DIR:-}"
 [[ -n "$POSTGRES_RUNTIME" && -x "$POSTGRES_RUNTIME/bin/initdb" ]] || {
@@ -59,9 +59,14 @@ for specification in "--bindir:$BUNDLED_POSTGRES/bin" "--sharedir:$BUNDLED_POSTG
     exit 1
   }
 done
-if grep -R -a -l -m 1 -E '/opt/homebrew|/usr/local/(opt|Cellar)' \
-    "$BUNDLED_POSTGRES/bin" "$BUNDLED_POSTGRES/lib" >/dev/null 2>&1; then
-  echo "PostgreSQL runtime contains a forbidden Homebrew installation path." >&2
+# External library references are rewritten below, so build metadata may still
+# mention a package-manager prefix at this stage. Reject only PostgreSQL's
+# compiled resource roots, which caused the missing timezone/share failures.
+RESOURCE_PATH_PATTERN='/(opt/homebrew|usr/local)/(share|lib)/postgresql(@[0-9]+)?'
+if resource_matches="$(grep -R -a -n -m 5 -E "$RESOURCE_PATH_PATTERN" \
+    "$BUNDLED_POSTGRES/bin" "$BUNDLED_POSTGRES/lib" 2>/dev/null)"; then
+  echo "PostgreSQL runtime contains forbidden package-manager resource paths:" >&2
+  echo "$resource_matches" >&2
   exit 1
 fi
 
