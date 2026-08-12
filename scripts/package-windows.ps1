@@ -30,7 +30,7 @@ Copy-Item $Jar (Join-Path $Input "DSE_Final.jar")
 New-Item -ItemType Directory -Path (Join-Path $Input "server") -Force | Out-Null
 Copy-Item $ServerJar (Join-Path $Input "server\dse-erp-server.jar")
 
-# 7.1.1 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
+# 7.1.2 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
 # PostgreSQL 18 binary distribution. Development/release machines can also use the standard install.
 $PostgresCandidates = @()
 if ($env:DSE_POSTGRES_RUNTIME_DIR) { $PostgresCandidates += $env:DSE_POSTGRES_RUNTIME_DIR }
@@ -69,6 +69,12 @@ if ($MissingBundleFiles) {
 Write-Host 'DSE ERP production bundle verification PASS' -ForegroundColor Green
 
 $Icon = Join-Path $Root "desktop/src/main/resources/installer/DSE-ERP.ico"
+$ServerLauncherProperties = Join-Path $Root "target/windows-server-launcher.properties"
+@(
+    'main-jar=server/dse-erp-server.jar',
+    'main-class=org.springframework.boot.loader.launch.JarLauncher',
+    'java-options=-Dfile.encoding=UTF-8'
+) | Set-Content -LiteralPath $ServerLauncherProperties -Encoding ascii
 $CommonArgs = @(
     '--name', 'DSE ERP',
     '--app-version', $Version,
@@ -78,6 +84,7 @@ $CommonArgs = @(
     '--input', $Input,
     '--main-jar', 'DSE_Final.jar',
     '--main-class', 'org.example.app.Launcher',
+    '--add-launcher', "DSE ERP Server=$ServerLauncherProperties",
     '--java-options', '-Dfile.encoding=UTF-8',
     '--java-options', '--enable-native-access=ALL-UNNAMED',
     '--java-options', '-Ddse.erp.nativeAccessRelaunch=true',
@@ -91,6 +98,8 @@ $AppImageArgs = @('--type', 'app-image') + $CommonArgs + @('--dest', $AppImage)
 if ($LASTEXITCODE -ne 0) { throw "jpackage app-image creation failed." }
 
 $AppLauncher = Join-Path $AppImage "DSE ERP\DSE ERP.exe"
+$ServerLauncher = Join-Path $AppImage "DSE ERP\DSE ERP Server.exe"
+$ServerLauncherConfig = Join-Path $AppImage "DSE ERP\app\DSE ERP Server.cfg"
 $BundledJvm = Join-Path $AppImage "DSE ERP\runtime\bin\server\jvm.dll"
 if (-not (Test-Path -LiteralPath $AppLauncher -PathType Leaf)) {
     throw "Production app image is missing the DSE ERP launcher: $AppLauncher"
@@ -98,7 +107,17 @@ if (-not (Test-Path -LiteralPath $AppLauncher -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $BundledJvm -PathType Leaf)) {
     throw "Production app image is missing the bundled JVM: $BundledJvm"
 }
-Write-Host "Verified native launcher and bundled JVM: $AppLauncher" -ForegroundColor DarkCyan
+if (-not (Test-Path -LiteralPath $ServerLauncher -PathType Leaf)) {
+    throw "Production app image is missing the Spring Boot launcher: $ServerLauncher"
+}
+if (-not (Test-Path -LiteralPath $ServerLauncherConfig -PathType Leaf)) {
+    throw "Production app image is missing the Spring Boot launcher configuration: $ServerLauncherConfig"
+}
+$ServerLauncherConfigText = Get-Content -LiteralPath $ServerLauncherConfig -Raw
+if ($ServerLauncherConfigText -notmatch 'org\.springframework\.boot\.loader\.launch\.JarLauncher') {
+    throw "Spring Boot launcher configuration has the wrong main class: $ServerLauncherConfig"
+}
+Write-Host "Verified desktop launcher, Spring Boot launcher and bundled JVM." -ForegroundColor DarkCyan
 
 $ExeArgs = @(
     '--type', 'exe'

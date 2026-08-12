@@ -7061,7 +7061,7 @@ SECTION TITLES
 .dse-startup-splash .splash-footer { -fx-padding: 12 5 2 5; }
 /* ===== End DSE ERP 7.0.1 approved splash exact-view override ===== */
 
-/* ===== DSE ERP 7.1.1 interactive workspaces: light mode ===== */
+/* ===== DSE ERP 7.1.2 interactive workspaces: light mode ===== */
 .quotation-editor-page, .quotation-editor-scroll, .quotation-editor-scroll > .viewport { -fx-background-color: #f4f7fb; }
 .quotation-editor-card, .quotation-summary-card, .bank-bulk-toolbar, .notification-filter-bar {
     -fx-background-color: #ffffff; -fx-border-color: #d6e0ec; -fx-border-width: 1;
@@ -7079,4 +7079,4 @@ SECTION TITLES
 .bank-menu-section .label { -fx-text-fill: #6a7b91; -fx-font-size: 10px; -fx-font-weight: 800; }
 .bank-bulk-toolbar { -fx-padding: 8 10; }
 .import-choice-icon { -fx-min-width: 64; -fx-pref-width: 64; -fx-min-height: 64; -fx-pref-height: 64; -fx-alignment: CENTER; -fx-background-color: #eaf2ff; -fx-background-radius: 14; }
-/* ===== End DSE ERP 7.1.1 light mode ===== */
+/* ===== End DSE ERP 7.1.2 light mode ===== */
