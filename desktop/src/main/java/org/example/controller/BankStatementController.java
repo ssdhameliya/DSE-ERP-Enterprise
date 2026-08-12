@@ -4,9 +4,12 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.geometry.Insets;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.util.converter.DoubleStringConverter;
 import org.example.api.bank.BankStatementApiClient;
 import org.example.bank.KotakBankStatementCsvParser;
 import org.example.navigation.NavigationManager;
@@ -23,15 +26,19 @@ import java.util.*;
 public class BankStatementController {
     @FXML private StackPane pageIcon,kpiTotalIcon,kpiUnmatchedIcon,kpiSuggestedIcon,kpiMatchedIcon,kpiExpenseIcon,kpiCreditsIcon,kpiDebitsIcon,kpiReconciledIcon,howIcon,flowImportIcon,flowReviewIcon,flowAuditIcon;
     @FXML private Button btnImport,btnSearch,btnReset,btnRefresh;
+    @FXML private CheckBox chkSelectAll;
+    @FXML private MenuButton bulkActions;
     @FXML private ComboBox<BankStatementApiClient.BatchDto> cmbBatch;
     @FXML private ComboBox<String> cmbStatus,cmbDirection;
     @FXML private DatePicker fromDate,toDate;
     @FXML private TextField txtSearch;
     @FXML private TableView<Row> table;
     @FXML private TableColumn<Row,String> colDate,colValueDate,colReference,colDescription,colStatus,colMatch;
+    @FXML private TableColumn<Row,Boolean> colSelect;
     @FXML private TableColumn<Row,Number> colDebit,colCredit,colBalance;
     @FXML private TableColumn<Row,Void> colAction;
     @FXML private Label kpiTotal,kpiUnmatched,kpiSuggested,kpiMatched,kpiExpense,kpiCredits,kpiDebits,kpiReconciled,lblShowing,lblProgressText,lblBatchStatus;
+    @FXML private Label lblSelected;
     @FXML private ProgressBar reconciliationProgress;
 
     private final BankStatementApiClient api = new BankStatementApiClient();
@@ -64,6 +71,9 @@ public class BankStatementController {
     private void setIcon(StackPane pane,String name,int size){ if(pane!=null)pane.getChildren().setAll(IconFactory.icon(name,size)); }
 
     private void configureTable() {
+        colSelect.setCellValueFactory(v->v.getValue().selected);
+        colSelect.setCellFactory(CheckBoxTableCell.forTableColumn(colSelect));
+        colSelect.setEditable(true);table.setEditable(true);
         colDate.setCellValueFactory(v->v.getValue().date); colValueDate.setCellValueFactory(v->v.getValue().valueDate);
         colReference.setCellValueFactory(v->v.getValue().reference); colDescription.setCellValueFactory(v->v.getValue().description);
         colDebit.setCellValueFactory(v->v.getValue().debit); colCredit.setCellValueFactory(v->v.getValue().credit); colBalance.setCellValueFactory(v->v.getValue().balance);
@@ -107,25 +117,39 @@ public class BankStatementController {
     private MenuButton actionMenu(Row row){
         MenuButton m=new MenuButton("•••"); m.getStyleClass().addAll("approved-button","approved-secondary-button","bank-row-action");
         String s=up(row.dto.status());
-        add(m,"View / Edit Transaction","view",()->viewEdit(row));
+        section(m,"VIEW");
+        add(m,"View Transaction Details","view",()->viewEdit(row));
+        add(m,"View Imported Statement","document",this::viewStatementSource);
+        add(m,"View Audit History","document",()->audit(row));
         if(Set.of("UNMATCHED","SUGGESTED","REVIEW").contains(s)){
+            section(m,"RECONCILIATION");
             add(m,s.equals("SUGGESTED")?"Review Suggested Match":"Match Transaction","link",()->match(row));
             if(row.dto.debit()>0)add(m,"Move to Expense","payment",()->moveToExpense(row));
-            add(m,"View Imported Statement","document",this::viewStatementSource);
+            section(m,"STATUS");
             if(!"REVIEW".equals(s)) add(m,"Mark for Review","status",()->markReview(row));
             add(m,"Mark as Ignored","cancel",()->ignore(row));
         } else if("MATCHED".equals(s)){
+            section(m,"RECONCILIATION");
             add(m,"View Match / Linked Invoice","link",()->openLinked(row));
             add(m,"View Bank Entry","bank",()->openFinance(row,BankExpenseController.Mode.BANK));
+            section(m,"REVERSAL");
             add(m,"Unmatch / Reverse","return",()->reverse(row));
         } else if("EXPENSE".equals(s)){
+            section(m,"RECONCILIATION");
             add(m,"View Expense","payment",()->openFinance(row,BankExpenseController.Mode.EXPENSE));
+            section(m,"REVERSAL");
             add(m,"Unmatch / Reverse","return",()->reverse(row));
-        } else if("IGNORED".equals(s)) add(m,"Return to Unmatched","return",()->reverse(row));
-        add(m,"View Audit History","document",()->audit(row));
+        } else if("IGNORED".equals(s)) {
+            section(m,"STATUS");
+            add(m,"Return to Unmatched","return",()->reverse(row));
+        }
         return m;
     }
     private void add(MenuButton m,String text,String icon,Runnable action){MenuItem i=new MenuItem(text);i.setGraphic(IconFactory.compactIcon(icon,15));i.setOnAction(e->action.run());m.getItems().add(i);}
+    private void section(MenuButton m,String text){
+        if(!m.getItems().isEmpty())m.getItems().add(new SeparatorMenuItem());
+        MenuItem heading=new MenuItem(text);heading.setDisable(true);heading.getStyleClass().add("bank-menu-section");m.getItems().add(heading);
+    }
 
     @FXML private void importStatement(){
         FileChooser f=new FileChooser();f.setTitle("Import Bank Statement CSV");f.getExtensionFilters().add(new FileChooser.ExtensionFilter("Bank statement CSV","*.csv"));
@@ -156,24 +180,123 @@ public class BankStatementController {
     @FXML private void applyFilters(){
         String q=txtSearch.getText()==null?"":txtSearch.getText().trim().toLowerCase(Locale.ROOT); String status=cmbStatus.getValue(); String direction=cmbDirection==null?"All":cmbDirection.getValue(); LocalDate from=fromDate.getValue(),to=toDate.getValue(); List<Row> rows=new ArrayList<>();
         for(var t:all){LocalDate d=parseDate(t.transactionDate());if(from!=null&&d!=null&&d.isBefore(from))continue;if(to!=null&&d!=null&&d.isAfter(to))continue;if(status!=null&&!status.startsWith("All")&&!status.equalsIgnoreCase(t.status()))continue;if("Credit".equalsIgnoreCase(direction)&&t.credit()<=0)continue;if("Debit".equalsIgnoreCase(direction)&&t.debit()<=0)continue;String hay=(safe(t.description())+" "+safe(t.reference())+" "+t.debit()+" "+t.credit()+" "+safe(t.status())).toLowerCase(Locale.ROOT);if(!q.isBlank()&&!hay.contains(q))continue;rows.add(new Row(t));}
-        table.getItems().setAll(rows);lblShowing.setText("Showing "+rows.size()+" of "+all.size()+" records");
+        rows.forEach(row->row.selected.addListener((o,a,b)->updateSelectionState()));
+        table.getItems().setAll(rows);lblShowing.setText("Showing "+rows.size()+" of "+all.size()+" records");updateSelectionState();
     }
     @FXML private void resetFilters(){applyBatchPeriod();cmbStatus.setValue("All Status");if(cmbDirection!=null)cmbDirection.setValue("All");txtSearch.clear();applyFilters();}
     @FXML private void refresh(){if(cmbBatch.getValue()!=null)loadBatch(cmbBatch.getValue().id());else loadBatches();}
+
+    @FXML private void selectAllVisible(){boolean selected=chkSelectAll.isSelected();table.getItems().forEach(row->row.selected.set(selected));updateSelectionState();}
+    private List<Row> selectedRows(){return table.getItems().stream().filter(row->row.selected.get()).toList();}
+    private void updateSelectionState(){int count=selectedRows().size();if(lblSelected!=null)lblSelected.setText(count+" selected");if(bulkActions!=null)bulkActions.setDisable(count==0);if(chkSelectAll!=null){chkSelectAll.setIndeterminate(count>0&&count<table.getItems().size());if(!chkSelectAll.isIndeterminate())chkSelectAll.setSelected(count>0&&!table.getItems().isEmpty());}}
+    @FXML private void bulkMarkReview(){bulkWithReason("Mark Selected for Review","Explain what must be checked for these bank transactions.","REVIEW");}
+    @FXML private void bulkIgnore(){bulkWithReason("Ignore Selected Transactions","Enter the audit reason for excluding the selected bank transactions.","IGNORE");}
+    private void bulkWithReason(String title,String prompt,String action){
+        List<Row> rows=selectedRows().stream().filter(row->Set.of("UNMATCHED","SUGGESTED","REVIEW").contains(up(row.dto.status()))).toList();
+        if(rows.isEmpty()){info(title,"None of the selected transactions can use this action.");return;}
+        requiredReason(title,prompt).ifPresent(reason->{
+            Alert confirmation=new OwnedAlert(Alert.AlertType.CONFIRMATION,"Apply this action to "+rows.size()+" eligible transaction(s)?\n\nReason: "+reason);confirmation.setHeaderText(title);
+            confirmation.showAndWait().filter(ButtonType.OK::equals).ifPresent(x->{int completed=0;for(Row row:rows){try{if("REVIEW".equals(action))api.review(row.dto.id(),new BankStatementApiClient.NoteRequest(reason,user()));else api.ignore(row.dto.id(),new BankStatementApiClient.IgnoreRequest(reason,user()));completed++;}catch(Exception e){error(e);break;}}info(title,completed+" transaction(s) updated successfully.");refresh();});
+        });
+    }
 
     private void match(Row row){
         try{
             List<BankStatementApiClient.CandidateDto> cs=api.suggest(row.dto.id());
             if(cs.isEmpty()){info("Match Transaction","No open Sales/Purchase transaction was found. You can move debit transactions to Expense or review later.");refresh();return;}
             var top=cs.getFirst();
-            if(top.confidence()>=75&&Math.abs(top.outstanding()-bankAmount(row.dto))<=.01){
+            if(Boolean.getBoolean("dse.legacyBankMatchDialog")&&top.confidence()>=75&&Math.abs(top.outstanding()-bankAmount(row.dto))<=.01){
                 Alert a=new OwnedAlert(Alert.AlertType.CONFIRMATION,"Suggested Match\n\n"+top+"\n\nWhy suggested: amount/reference/party/date signals.\n\nConfirm this match?");
                 a.setHeaderText(String.format(Locale.ENGLISH,"High Confidence Match • %.0f%%",top.confidence()));
                 ButtonType find=new ButtonType("Find Another",ButtonBar.ButtonData.OTHER);ButtonType confirm=new ButtonType("Confirm Match",ButtonBar.ButtonData.OK_DONE);a.getButtonTypes().setAll(confirm,find,ButtonType.CANCEL);
                 var r=a.showAndWait();if(r.isPresent()&&r.get()==confirm){confirm(row,List.of(top));return;}if(r.isEmpty()||r.get()==ButtonType.CANCEL)return;
             }
-            showCandidatePicker(row,cs);
+            showCandidateWorkspace(row,cs);
         }catch(Exception e){error(e);}
+    }
+
+    private void showCandidateWorkspace(Row bankRow,List<BankStatementApiClient.CandidateDto> candidates){
+        double bankValue=bankAmount(bankRow.dto);
+        List<CandidateRow> rows=new ArrayList<>();
+        double remaining=bankValue;
+        for(var candidate:candidates){
+            double allocation=Math.min(candidate.outstanding(),Math.max(0,remaining));
+            CandidateRow row=new CandidateRow(candidate,allocation);
+            rows.add(row);
+            remaining-=allocation;
+        }
+
+        TableView<CandidateRow> candidatesTable=new TableView<>(FXCollections.observableArrayList(rows));
+        candidatesTable.setEditable(true);
+        candidatesTable.setPrefSize(1100,430);
+        TableColumn<CandidateRow,Boolean> selected=new TableColumn<>("Select");
+        selected.setCellValueFactory(v->v.getValue().selected);
+        selected.setCellFactory(CheckBoxTableCell.forTableColumn(selected));
+        selected.setPrefWidth(64);
+        TableColumn<CandidateRow,Number> score=new TableColumn<>("Score");
+        score.setCellValueFactory(v->v.getValue().confidence);
+        score.setPrefWidth(70);
+        TableColumn<CandidateRow,String> type=new TableColumn<>("Type");
+        type.setCellValueFactory(v->v.getValue().type);
+        TableColumn<CandidateRow,String> document=new TableColumn<>("Document");
+        document.setCellValueFactory(v->v.getValue().document);
+        document.setPrefWidth(130);
+        TableColumn<CandidateRow,String> party=new TableColumn<>("Customer / Supplier");
+        party.setCellValueFactory(v->v.getValue().party);
+        party.setPrefWidth(190);
+        TableColumn<CandidateRow,String> date=new TableColumn<>("Date");
+        date.setCellValueFactory(v->v.getValue().date);
+        TableColumn<CandidateRow,Number> total=new TableColumn<>("Invoice Total");
+        total.setCellValueFactory(v->v.getValue().total);
+        total.setPrefWidth(105);
+        TableColumn<CandidateRow,Number> paid=new TableColumn<>("Paid");
+        paid.setCellValueFactory(v->v.getValue().paid);
+        paid.setPrefWidth(90);
+        TableColumn<CandidateRow,Number> outstanding=new TableColumn<>("Outstanding");
+        outstanding.setCellValueFactory(v->v.getValue().outstanding);
+        outstanding.setPrefWidth(105);
+        TableColumn<CandidateRow,Double> allocation=new TableColumn<>("Allocation");
+        allocation.setCellValueFactory(v->v.getValue().allocation.asObject());
+        allocation.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
+        allocation.setOnEditCommit(e->{e.getRowValue().allocation.set(e.getNewValue()==null?0:e.getNewValue());e.getRowValue().selected.set(true);});
+        allocation.setPrefWidth(110);
+        candidatesTable.getColumns().setAll(selected,score,type,document,party,date,total,paid,outstanding,allocation);
+
+        Label title=sectionTitle("Match Bank Transaction");
+        Label bank=new Label(safe(bankRow.dto.transactionDate())+"  |  "+safe(bankRow.dto.reference())+"  |  "+safe(bankRow.dto.description()));
+        bank.setWrapText(true);
+        Label amount=new Label((bankRow.dto.credit()>0?"Bank Credit: ":"Bank Debit: ")+money(bankValue));
+        amount.getStyleClass().add("bank-dialog-amount");
+        Label help=new Label("Select every invoice included in this payment and edit Allocation directly in the table. The total allocation must equal the bank amount and cannot exceed an invoice's outstanding amount.");
+        help.setWrapText(true);help.getStyleClass().add("bank-dialog-help");
+        Label allocationStatus=new Label();allocationStatus.getStyleClass().add("bank-dialog-help");
+        Runnable refreshStatus=()->{
+            double allocated=rows.stream().filter(r->r.selected.get()).mapToDouble(r->r.allocation.get()).sum();
+            allocationStatus.setText("Allocated: "+money(allocated)+"   |   Remaining: "+money(bankValue-allocated));
+        };
+        rows.forEach(r->{r.selected.addListener((o,a,b)->refreshStatus.run());r.allocation.addListener((o,a,b)->refreshStatus.run());});
+        refreshStatus.run();
+        VBox content=new VBox(10,title,new VBox(4,new Label("BANK TRANSACTION"),bank,amount),help,candidatesTable,allocationStatus);
+        content.setPadding(new Insets(8));content.setPrefWidth(1120);
+        Dialog<ButtonType> dialog=new OwnedDialog<>();dialog.setTitle("Match Transaction");dialog.setHeaderText("Review and allocate the complete bank transaction");dialog.getDialogPane().setContent(content);
+        ButtonType confirm=new ButtonType("Confirm Match",ButtonBar.ButtonData.OK_DONE);dialog.getDialogPane().getButtonTypes().addAll(confirm,ButtonType.CANCEL);
+        dialog.showAndWait().filter(confirm::equals).ifPresent(x->{
+            List<BankStatementApiClient.AllocationRequest> allocations=new ArrayList<>();
+            double allocated=0;
+            for(CandidateRow row:rows){
+                if(!row.selected.get())continue;
+                double value=row.allocation.get();
+                if(value<=0||value-row.dto.outstanding()>.01){info("Allocation needs attention","Each selected allocation must be greater than zero and cannot exceed its outstanding amount.");return;}
+                allocations.add(new BankStatementApiClient.AllocationRequest(row.dto.type(),row.dto.id(),value));allocated+=value;
+            }
+            if(allocations.isEmpty()){info("Match Transaction","Select at least one Sales or Purchase transaction.");return;}
+            if(Math.abs(allocated-bankValue)>.01){info("Allocation needs attention","Allocated amount must equal the bank amount. Remaining: "+money(bankValue-allocated));return;}
+            confirmAllocations(bankRow,allocations);
+        });
+    }
+
+    private void confirmAllocations(Row row,List<BankStatementApiClient.AllocationRequest> allocations){
+        try{var result=api.match(row.dto.id(),new BankStatementApiClient.MatchRequest(user(),allocations));info("Match Successful",result.message()+"\n\nBank Entry and invoice payment allocations were updated together.");refresh();}catch(Exception e){error(e);}
     }
     private void showCandidatePicker(Row row,List<BankStatementApiClient.CandidateDto> cs){
         Label title=new Label("Find a Sales / Purchase transaction"); title.getStyleClass().add("bank-dialog-title");
@@ -247,8 +370,24 @@ public class BankStatementController {
     }
     private Label sectionTitle(String text){Label l=new Label(text);l.getStyleClass().add("bank-dialog-title");return l;}
     private void addDialogRow(GridPane g,int row,String label,String value){Label a=new Label(label);a.getStyleClass().add("bank-dialog-label");Label b=new Label(value==null||value.isBlank()?"Not available":value);b.setWrapText(true);b.getStyleClass().add("bank-dialog-value");g.add(a,0,row);g.add(b,1,row);GridPane.setHgrow(b,Priority.ALWAYS);}
-    private void markReview(Row row){try{api.review(row.dto.id(),new BankStatementApiClient.NoteRequest("Marked for review by user",user()));refresh();}catch(Exception e){error(e);}}
-    private void ignore(Row row){Alert a=new OwnedAlert(Alert.AlertType.CONFIRMATION,"Mark this bank transaction as intentionally ignored? It remains in the statement and audit history.");a.showAndWait().filter(x->x==ButtonType.OK).ifPresent(x->{try{api.ignore(row.dto.id(),new BankStatementApiClient.IgnoreRequest("Intentionally ignored during reconciliation",user()));refresh();}catch(Exception e){error(e);}});}
+    private void markReview(Row row){
+        requiredReason("Mark for Review","Explain what must be checked before this transaction is reconciled.").ifPresent(reason->{
+            try{api.review(row.dto.id(),new BankStatementApiClient.NoteRequest(reason,user()));refresh();}catch(Exception e){error(e);}
+        });
+    }
+    private void ignore(Row row){
+        requiredReason("Ignore Bank Transaction","Enter the reason this statement line should be excluded from reconciliation. The reason is retained in the audit history.").ifPresent(reason->{
+            Alert a=new OwnedAlert(Alert.AlertType.CONFIRMATION,"This transaction will remain visible in the imported statement and audit trail, but will be excluded from reconciliation totals.\n\nReason: "+reason);
+            a.setHeaderText("Confirm ignored transaction");
+            a.showAndWait().filter(x->x==ButtonType.OK).ifPresent(x->{try{api.ignore(row.dto.id(),new BankStatementApiClient.IgnoreRequest(reason,user()));refresh();}catch(Exception e){error(e);}});
+        });
+    }
+    private Optional<String> requiredReason(String title,String prompt){
+        OwnedTextInputDialog dialog=new OwnedTextInputDialog("");dialog.setTitle(title);dialog.setHeaderText(prompt);dialog.setContentText("Required reason:");
+        Optional<String> value=dialog.showAndWait().map(String::trim).filter(s->!s.isBlank());
+        if(value.isEmpty())info(title,"A reason is required so the decision can be understood from the audit history.");
+        return value;
+    }
     private void reverse(Row row){Alert a=new OwnedAlert(Alert.AlertType.CONFIRMATION,"Reverse this reconciliation? Linked payment/finance records will be safely reversed and the bank transaction will return to UNMATCHED.");a.showAndWait().filter(x->x==ButtonType.OK).ifPresent(x->{try{api.reverse(row.dto.id(),user());refresh();}catch(Exception e){error(e);}});}
     private void audit(Row row){
         try{
@@ -275,7 +414,19 @@ public class BankStatementController {
     private void error(Throwable e){Alert a=new OwnedAlert(Alert.AlertType.ERROR,e.getMessage()==null?e.toString():e.getMessage());a.setHeaderText("Bank Statement operation failed");a.showAndWait();}
 
     public static final class Row{
-        final BankStatementApiClient.TransactionDto dto;final StringProperty date,valueDate,reference,description,status,match;final DoubleProperty debit,credit,balance;
+        final BankStatementApiClient.TransactionDto dto;final BooleanProperty selected=new SimpleBooleanProperty(false);final StringProperty date,valueDate,reference,description,status,match;final DoubleProperty debit,credit,balance;
         Row(BankStatementApiClient.TransactionDto t){dto=t;date=new SimpleStringProperty(safe(t.transactionDate()));valueDate=new SimpleStringProperty(safe(t.valueDate()));reference=new SimpleStringProperty(safe(t.reference()));description=new SimpleStringProperty(safe(t.description()));status=new SimpleStringProperty(safe(t.status()));match=new SimpleStringProperty(safe(t.matchLink()));debit=new SimpleDoubleProperty(t.debit());credit=new SimpleDoubleProperty(t.credit());balance=new SimpleDoubleProperty(t.balance());}
+    }
+
+    private static final class CandidateRow{
+        final BankStatementApiClient.CandidateDto dto;
+        final BooleanProperty selected=new SimpleBooleanProperty(false);
+        final DoubleProperty confidence=new SimpleDoubleProperty();
+        final StringProperty type=new SimpleStringProperty(),document=new SimpleStringProperty(),party=new SimpleStringProperty(),date=new SimpleStringProperty();
+        final DoubleProperty total=new SimpleDoubleProperty(),paid=new SimpleDoubleProperty(),outstanding=new SimpleDoubleProperty(),allocation=new SimpleDoubleProperty();
+        CandidateRow(BankStatementApiClient.CandidateDto dto,double allocation){
+            this.dto=dto;confidence.set(dto.confidence());type.set(safe(dto.type()));document.set(safe(dto.documentNo()));party.set(safe(dto.partyName()));date.set(safe(dto.documentDate()));
+            total.set(dto.totalAmount());paid.set(dto.paidAmount());outstanding.set(dto.outstanding());this.allocation.set(allocation);selected.set(allocation>0);
+        }
     }
 }

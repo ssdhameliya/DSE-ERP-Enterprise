@@ -19,6 +19,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.PasswordField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -47,6 +48,7 @@ import org.example.util.PerformanceMonitor;
 import org.example.util.PlatformUiSupport;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -680,7 +682,8 @@ public class DashboardController {
         };
 
         ListView<NotificationService.NotificationItem> notificationList = new ListView<>();
-        notificationList.getItems().setAll(NotificationService.findRecent(100));
+        List<NotificationService.NotificationItem> allNotifications = new ArrayList<>(NotificationService.findRecent(100));
+        notificationList.getItems().setAll(allNotifications);
         notificationList.setPlaceholder(new Label("You are all caught up. New sales, payments, returns and reminders will appear here."));
         notificationList.getStyleClass().add("notification-list");
         notificationList.setPrefWidth(620);
@@ -727,6 +730,35 @@ public class DashboardController {
             refreshNotificationBadge();
         });
 
+        TextField notificationSearch = new TextField();
+        notificationSearch.setPromptText("Search title, message or reference...");
+        notificationSearch.setPrefWidth(330);
+        notificationSearch.getStyleClass().add("notification-search");
+        ComboBox<String> viewFilter = new ComboBox<>();
+        viewFilter.getItems().setAll("All", "Unread", "Action Needed");
+        viewFilter.setValue("All");
+        viewFilter.setPrefWidth(150);
+        Runnable applyNotificationFilter = () -> {
+            String query = notificationSearch.getText() == null ? "" : notificationSearch.getText().trim().toLowerCase(Locale.ROOT);
+            String mode = viewFilter.getValue();
+            notificationList.getItems().setAll(allNotifications.stream().filter(item -> {
+                if ("Unread".equals(mode) && item.read()) return false;
+                String severity = item.severity() == null ? "INFO" : item.severity().toUpperCase(Locale.ROOT);
+                if ("Action Needed".equals(mode) && !List.of("WARN", "ERROR", "CRITICAL", "FATAL").contains(severity)) return false;
+                String haystack = (String.valueOf(item.title()) + " " + String.valueOf(item.message()) + " " + String.valueOf(item.referenceNo())).toLowerCase(Locale.ROOT);
+                return query.isBlank() || haystack.contains(query);
+            }).toList());
+        };
+        notificationSearch.textProperty().addListener((o,a,b)->applyNotificationFilter.run());
+        viewFilter.valueProperty().addListener((o,a,b)->applyNotificationFilter.run());
+        Label filterLabel = new Label("View");
+        filterLabel.getStyleClass().add("notification-filter-label");
+        Region filterSpacer = new Region();
+        HBox.setHgrow(filterSpacer, Priority.ALWAYS);
+        HBox filters = new HBox(10, notificationSearch, filterSpacer, filterLabel, viewFilter);
+        filters.setAlignment(Pos.CENTER_LEFT);
+        filters.getStyleClass().add("notification-filter-bar");
+
         Label title = new Label("Notifications");
         title.getStyleClass().add("modern-dialog-title");
         Label subtitle = new Label("Recent application activity");
@@ -746,16 +778,24 @@ public class DashboardController {
         markAll.getProperties().put("erp.icon.semantic", "complete");
         markAll.setOnAction(event -> {
             NotificationService.markAllRead();
-            notificationList.getItems().setAll(NotificationService.findRecent(100));
+            allNotifications.clear();
+            allNotifications.addAll(NotificationService.findRecent(100));
+            applyNotificationFilter.run();
             refreshNotificationBadge();
         });
         Button clear = new Button("Clear history");
         clear.setGraphic(IconFactory.compactIcon("delete", 16));
         clear.getProperties().put("erp.icon.semantic", "delete");
         clear.setOnAction(event -> {
-            NotificationService.clear();
-            notificationList.getItems().clear();
-            refreshNotificationBadge();
+            Alert confirmation = new OwnedAlert(Alert.AlertType.CONFIRMATION,
+                "Clear the complete notification history? This cannot be undone.");
+            confirmation.setHeaderText("Confirm notification cleanup");
+            confirmation.showAndWait().filter(ButtonType.OK::equals).ifPresent(result -> {
+                NotificationService.clear();
+                allNotifications.clear();
+                notificationList.getItems().clear();
+                refreshNotificationBadge();
+            });
         });
         Button close = new Button("Close");
         close.setGraphic(IconFactory.compactIcon("cancel", 16));
@@ -767,7 +807,7 @@ public class DashboardController {
         actions.setAlignment(Pos.CENTER_LEFT);
         actions.getStyleClass().add("notification-dialog-actions");
 
-        VBox content = new VBox(titleBar, notificationList, actions);
+        VBox content = new VBox(titleBar, filters, notificationList, actions);
         content.getStyleClass().add("notification-dialog-content");
         pane.setContent(content);
         dialog.setOnCloseRequest(event -> dialog.setResult(ButtonType.CLOSE));

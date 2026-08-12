@@ -30,7 +30,7 @@ Copy-Item $Jar (Join-Path $Input "DSE_Final.jar")
 New-Item -ItemType Directory -Path (Join-Path $Input "server") -Force | Out-Null
 Copy-Item $ServerJar (Join-Path $Input "server\dse-erp-server.jar")
 
-# 7.0.1 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
+# 7.1.0 managed PostgreSQL payload. DSE_POSTGRES_RUNTIME_DIR may point to an extracted
 # PostgreSQL 18 binary distribution. Development/release machines can also use the standard install.
 $PostgresCandidates = @()
 if ($env:DSE_POSTGRES_RUNTIME_DIR) { $PostgresCandidates += $env:DSE_POSTGRES_RUNTIME_DIR }
@@ -123,12 +123,14 @@ $Hash = (Get-FileHash $FinalPath -Algorithm SHA256).Hash.ToLowerInvariant()
 $ChecksumPath = Join-Path $Dest 'checksums-windows.sha256'
 "$Hash  $FinalName" | Set-Content $ChecksumPath -Encoding utf8
 
-$ReleaseDir = Join-Path (Split-Path -Parent $Root) "DSE-ERP-$Version-RELEASE"
+$ReleaseDir = Join-Path $Root "release-artifacts\windows"
+if (Test-Path -LiteralPath $ReleaseDir) { Remove-Item -LiteralPath $ReleaseDir -Recurse -Force }
 New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
 Copy-Item -LiteralPath $FinalPath -Destination (Join-Path $ReleaseDir $FinalName) -Force
 Copy-Item -LiteralPath $ChecksumPath -Destination (Join-Path $ReleaseDir 'checksums-windows.sha256') -Force
 
-# Release artifacts live beside the source copy; remove generated Maven output.
+# Release artifacts stay inside the repository so GitHub upload-artifact never
+# needs a forbidden parent-directory (../) path. Remove Maven output only.
 $GeneratedTarget = Join-Path $Root 'target'
 if (Test-Path -LiteralPath $GeneratedTarget) {
     Get-ChildItem -LiteralPath $GeneratedTarget -Recurse -File -Force | ForEach-Object {

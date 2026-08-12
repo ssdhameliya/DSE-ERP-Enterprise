@@ -7060,3 +7060,23 @@ SECTION TITLES
 .dse-startup-splash .splash-info-strip { -fx-padding: 12 0 7 0; }
 .dse-startup-splash .splash-footer { -fx-padding: 12 5 2 5; }
 /* ===== End DSE ERP 7.0.1 approved splash exact-view override ===== */
+
+/* ===== DSE ERP 7.1.0 interactive workspaces: light mode ===== */
+.quotation-editor-page, .quotation-editor-scroll, .quotation-editor-scroll > .viewport { -fx-background-color: #f4f7fb; }
+.quotation-editor-card, .quotation-summary-card, .bank-bulk-toolbar, .notification-filter-bar {
+    -fx-background-color: #ffffff; -fx-border-color: #d6e0ec; -fx-border-width: 1;
+    -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 16;
+}
+.quotation-summary-card { -fx-effect: dropshadow(gaussian, rgba(15,23,42,.08), 14, .08, 0, 3); }
+.quotation-editor-grand-total { -fx-text-fill: #155bd7; -fx-font-size: 26px; -fx-font-weight: 900; }
+.quotation-editor-page .label, .bank-bulk-toolbar .label, .notification-filter-bar .label { -fx-text-fill: #17243a; }
+.quotation-editor-page .muted-label { -fx-text-fill: #68788e; }
+.quotation-editor-page .text-field, .quotation-editor-page .text-area, .quotation-editor-page .date-picker {
+    -fx-background-color: #ffffff; -fx-text-fill: #17243a; -fx-border-color: #c9d6e6;
+}
+.notification-filter-bar { -fx-padding: 10 14; -fx-background-radius: 0; -fx-border-radius: 0; }
+.notification-search { -fx-background-color: #f8fafc; -fx-text-fill: #17243a; -fx-prompt-text-fill: #718096; }
+.bank-menu-section .label { -fx-text-fill: #6a7b91; -fx-font-size: 10px; -fx-font-weight: 800; }
+.bank-bulk-toolbar { -fx-padding: 8 10; }
+.import-choice-icon { -fx-min-width: 64; -fx-pref-width: 64; -fx-min-height: 64; -fx-pref-height: 64; -fx-alignment: CENTER; -fx-background-color: #eaf2ff; -fx-background-radius: 14; }
+/* ===== End DSE ERP 7.1.0 light mode ===== */

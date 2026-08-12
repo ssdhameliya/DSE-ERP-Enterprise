@@ -65,7 +65,7 @@ public final class NotificationService {
         if (text.contains("update")) return Category.UPDATE;
         if (text.contains("security") || text.contains("login") || text.contains("password")) return Category.SECURITY;
         if (text.contains("purchase") || text.contains("supplier")) return Category.PURCHASES;
-        return Category.SALES;
+        return Category.SYSTEM;
     }
 
     public static List<NotificationItem> findRecent(int limit) {

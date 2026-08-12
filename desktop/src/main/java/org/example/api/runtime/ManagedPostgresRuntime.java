@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 7.0.1 managed PostgreSQL runtime.
+ * 7.1.0 managed PostgreSQL runtime.
  *
  * Fresh workspaces use a private PostgreSQL cluster owned by DSE ERP. Existing installations
  * that explicitly configure db.url or DSE_DB_URL remain external and are never reconfigured.
@@ -186,8 +186,7 @@ public final class ManagedPostgresRuntime {
         if (!isPackagedRuntime()) {
             String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
             if (os.contains("win")) {
-                addWindowsInstallCandidate(candidates, System.getenv("ProgramFiles"));
-                addWindowsInstallCandidate(candidates, System.getenv("ProgramFiles(x86)"));
+                addDevelopmentWindowsCandidates(candidates);
             } else if (os.contains("mac")) {
                 candidates.add(Path.of("/opt/homebrew/opt/postgresql@18"));
                 candidates.add(Path.of("/usr/local/opt/postgresql@18"));
@@ -204,7 +203,9 @@ public final class ManagedPostgresRuntime {
         }
         throw new IllegalStateException(isPackagedRuntime()
                 ? "DSE ERP installation is incomplete: bundled PostgreSQL runtime is missing."
-                : "PostgreSQL 18 runtime was not found. Development can set DSE_POSTGRES_HOME.");
+                : "PostgreSQL 18 runtime was not found for this IntelliJ/development run. "
+                    + "DSE ERP checked the project runtime, PATH and common Windows developer installations. "
+                    + "Set DSE_POSTGRES_HOME to the PostgreSQL 18 folder, or configure an external PostgreSQL server.");
     }
 
     /**
@@ -234,6 +235,27 @@ public final class ManagedPostgresRuntime {
     private static void addWindowsInstallCandidate(List<Path> candidates, String programFiles) {
         if (programFiles != null && !programFiles.isBlank()) {
             candidates.add(Path.of(programFiles, "PostgreSQL", "18"));
+        }
+    }
+
+    /** Development-only discovery. Packaged apps never call this method and must use their bundle. */
+    private static void addDevelopmentWindowsCandidates(List<Path> candidates) {
+        addWindowsInstallCandidate(candidates, System.getenv("ProgramFiles"));
+        addWindowsInstallCandidate(candidates, System.getenv("ProgramFiles(x86)"));
+        addWindowsInstallCandidate(candidates, System.getenv("ProgramW6432"));
+        String local=System.getenv("LOCALAPPDATA");
+        if(local!=null&&!local.isBlank())candidates.add(Path.of(local,"Programs","PostgreSQL","18"));
+        String scoop=System.getenv("SCOOP");
+        if(scoop!=null&&!scoop.isBlank())candidates.add(Path.of(scoop,"apps","postgresql","current"));
+        String path=System.getenv("PATH");
+        if(path==null||path.isBlank())return;
+        for(String entry:path.split(java.util.regex.Pattern.quote(System.getProperty("path.separator",";")))){
+            if(entry==null||entry.isBlank())continue;
+            try{
+                Path folder=Path.of(entry).toAbsolutePath().normalize();
+                if(Files.isRegularFile(folder.resolve("initdb.exe")))
+                    candidates.add("bin".equalsIgnoreCase(String.valueOf(folder.getFileName()))?folder.getParent():folder);
+            }catch(Exception ignored){}
         }
     }
 
