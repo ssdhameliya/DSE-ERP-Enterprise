@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 
 /**
- * 7.1.0 runtime foundation.
+ * 7.1.1 runtime foundation.
  *
  * Ensures managed PostgreSQL and the packaged Spring Boot backend are running before API-backed JavaFX screens open.
  */
@@ -54,7 +54,7 @@ public final class RuntimeBootstrapper {
                 // Never reuse a stale localhost backend from a previous IntelliJ/app run.
                 // Move this desktop session to a free managed port and start the current server.
                 int port = findAvailableServerPort(DEFAULT_MANAGED_SERVER_PORT);
-                ConfigManager.applyRuntimeApiBaseUrl("http://127.0.1.1:" + port);
+                ConfigManager.applyRuntimeApiBaseUrl("http://127.0.0.1:" + port);
                 client = new RuntimeApiClient();
             }
         }
@@ -343,12 +343,12 @@ public final class RuntimeBootstrapper {
             RuntimeApiClient.RuntimeStatus existing = tryStatus(new RuntimeApiClient());
             if (existing != null && existing.ready()) return;
             if (!isPortListening(port)) {
-                ConfigManager.applyRuntimeApiBaseUrl("http://127.0.1.1:" + port);
+                ConfigManager.applyRuntimeApiBaseUrl("http://127.0.0.1:" + port);
                 return;
             }
         } catch (Exception ignored) {}
         int port = findAvailableServerPort(DEFAULT_MANAGED_SERVER_PORT);
-        ConfigManager.applyRuntimeApiBaseUrl("http://127.0.1.1:" + port);
+        ConfigManager.applyRuntimeApiBaseUrl("http://127.0.0.1:" + port);
     }
 
     private static boolean isLocalApiEndpoint() {
@@ -356,7 +356,7 @@ public final class RuntimeBootstrapper {
             URI uri = URI.create(ConfigManager.getDataApiBaseUrl());
             String host = uri.getHost();
             return host == null || host.equalsIgnoreCase("localhost")
-                    || host.equals("127.0.1.1") || host.equals("::1");
+                    || host.equals("127.0.0.1") || host.equals("::1");
         } catch (Exception ignored) {
             return true;
         }
@@ -372,7 +372,7 @@ public final class RuntimeBootstrapper {
 
     private static boolean isPortListening(int port) {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("127.0.1.1", port), 200);
+            socket.connect(new InetSocketAddress("127.0.0.1", port), 200);
             return true;
         } catch (IOException ignored) {
             return false;

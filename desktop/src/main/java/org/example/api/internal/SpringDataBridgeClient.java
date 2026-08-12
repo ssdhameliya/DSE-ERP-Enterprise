@@ -22,7 +22,7 @@ public final class SpringDataBridgeClient {
 
     public SpringDataBridgeClient() {
         String value = ConfigManager.getDataApiBaseUrl();
-        if (value == null || value.isBlank()) value = "http://127.0.1.1:8080";
+        if (value == null || value.isBlank()) value = "http://127.0.0.1:8080";
         while (value.endsWith("/")) value = value.substring(0, value.length() - 1);
         base = value;
     }

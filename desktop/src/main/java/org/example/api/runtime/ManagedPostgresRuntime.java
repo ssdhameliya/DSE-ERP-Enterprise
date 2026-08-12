@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 7.1.0 managed PostgreSQL runtime.
+ * 7.1.1 managed PostgreSQL runtime.
  *
  * Fresh workspaces use a private PostgreSQL cluster owned by DSE ERP. Existing installations
  * that explicitly configure db.url or DSE_DB_URL remain external and are never reconfigured.
@@ -108,7 +108,7 @@ public final class ManagedPostgresRuntime {
 
             waitForPort(port, Duration.ofSeconds(25));
             ensureRoleAndDatabase(home, port, state);
-            String url = "jdbc:postgresql://127.0.1.1:" + port + "/" + DATABASE;
+            String url = "jdbc:postgresql://127.0.0.1:" + port + "/" + DATABASE;
             ConfigManager.applyRuntimeDatabase(url, APP_USER, state.appPassword());
             activeHome = home;
             activeData = data;
@@ -151,8 +151,8 @@ public final class ManagedPostgresRuntime {
     private static boolean isLegacyLocalDefault(String url) {
         if (url == null) return false;
         String normalized = url.trim().toLowerCase(Locale.ROOT)
-                .replace("jdbc:postgresql://localhost:", "jdbc:postgresql://127.0.1.1:");
-        return normalized.equals("jdbc:postgresql://127.0.1.1:5432/dse_erp");
+                .replace("jdbc:postgresql://localhost:", "jdbc:postgresql://127.0.0.1:");
+        return normalized.equals("jdbc:postgresql://127.0.0.1:5432/dse_erp");
     }
 
     private static Path locatePostgresHome() {
@@ -416,7 +416,7 @@ public final class ManagedPostgresRuntime {
         int markerAt = content.indexOf(marker);
         if (markerAt >= 0) content = content.substring(0, markerAt).stripTrailing() + System.lineSeparator();
         content += System.lineSeparator() + marker + System.lineSeparator()
-                + "listen_addresses = '127.0.1.1'" + System.lineSeparator()
+                + "listen_addresses = '127.0.0.1'" + System.lineSeparator()
                 + "port = " + port + System.lineSeparator()
                 + "max_connections = 40" + System.lineSeparator()
                 + "shared_buffers = '64MB'" + System.lineSeparator()
@@ -436,7 +436,7 @@ public final class ManagedPostgresRuntime {
 
     private static void startCluster(Path home, Path data, Path log, int port) throws Exception {
         run(List.of(bin(home, "pg_ctl").toString(), "-D", data.toString(), "-l", log.toString(),
-                "-w", "-t", "30", "-o", "-p " + port + " -h 127.0.1.1", "start"), null, COMMAND_TIMEOUT);
+                "-w", "-t", "30", "-o", "-p " + port + " -h 127.0.0.1", "start"), null, COMMAND_TIMEOUT);
     }
 
     private static void ensureRoleAndDatabase(Path home, int port, RuntimeState state) throws Exception {
@@ -458,24 +458,24 @@ public final class ManagedPostgresRuntime {
         }
         String dbExists = scalar(home, port, env, "SELECT 1 FROM pg_database WHERE datname='" + DATABASE + "'");
         if (!"1".equals(dbExists)) {
-            run(List.of(bin(home, "createdb").toString(), "-h", "127.0.1.1", "-p", Integer.toString(port),
+            run(List.of(bin(home, "createdb").toString(), "-h", "127.0.0.1", "-p", Integer.toString(port),
                     "-U", OWNER_USER, "-O", APP_USER, DATABASE), env, COMMAND_TIMEOUT);
         }
         Properties appEnv = new Properties();
         appEnv.setProperty("PGPASSWORD", state.appPassword());
-        run(List.of(bin(home, "psql").toString(), "-h", "127.0.1.1", "-p", Integer.toString(port),
+        run(List.of(bin(home, "psql").toString(), "-h", "127.0.0.1", "-p", Integer.toString(port),
                 "-U", APP_USER, "-d", DATABASE, "-v", "ON_ERROR_STOP=1", "-tAc", "SELECT 1"),
                 appEnv, Duration.ofSeconds(15));
     }
 
     private static String scalar(Path home, int port, Properties env, String sql) throws Exception {
-        ProcessResult result = run(List.of(bin(home, "psql").toString(), "-h", "127.0.1.1", "-p", Integer.toString(port),
+        ProcessResult result = run(List.of(bin(home, "psql").toString(), "-h", "127.0.0.1", "-p", Integer.toString(port),
                 "-U", OWNER_USER, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-tAc", sql), env, Duration.ofSeconds(15));
         return result.output().trim();
     }
 
     private static void psql(Path home, int port, Properties env, String database, String sql) throws Exception {
-        run(List.of(bin(home, "psql").toString(), "-h", "127.0.1.1", "-p", Integer.toString(port),
+        run(List.of(bin(home, "psql").toString(), "-h", "127.0.0.1", "-p", Integer.toString(port),
                 "-U", OWNER_USER, "-d", database, "-v", "ON_ERROR_STOP=1", "-c", sql), env, Duration.ofSeconds(15));
     }
 
@@ -489,7 +489,7 @@ public final class ManagedPostgresRuntime {
 
     private static boolean isPortListening(int port) {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("127.0.1.1", port), 250);
+            socket.connect(new InetSocketAddress("127.0.0.1", port), 250);
             return true;
         } catch (IOException ignored) {
             return false;
@@ -502,7 +502,7 @@ public final class ManagedPostgresRuntime {
             if (isPortListening(port)) return;
             Thread.sleep(250);
         }
-        throw new IllegalStateException("Managed PostgreSQL did not start on 127.0.1.1:" + port);
+        throw new IllegalStateException("Managed PostgreSQL did not start on 127.0.0.1:" + port);
     }
 
     private static ProcessResult run(List<String> command, Properties environment, Duration timeout) throws Exception {

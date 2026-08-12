@@ -6502,7 +6502,7 @@ TABLE ACTION BUTTONS
 .dse-startup-splash .splash-footer { -fx-padding: 12 5 2 5; }
 /* ===== End DSE ERP 7.0.1 approved splash exact-view override ===== */
 
-/* ===== DSE ERP 7.1.0 interactive workspaces: dark mode ===== */
+/* ===== DSE ERP 7.1.1 interactive workspaces: dark mode ===== */
 .quotation-editor-page, .quotation-editor-scroll, .quotation-editor-scroll > .viewport { -fx-background-color: #0b1522; }
 .quotation-editor-card, .quotation-summary-card, .bank-bulk-toolbar, .notification-filter-bar {
     -fx-background-color: #142238; -fx-border-color: #344b67; -fx-border-width: 1;
@@ -6521,4 +6521,4 @@ TABLE ACTION BUTTONS
 .bank-menu-section .label { -fx-text-fill: #9fb0c5; -fx-font-size: 10px; -fx-font-weight: 800; }
 .bank-bulk-toolbar { -fx-padding: 8 10; }
 .import-choice-icon { -fx-min-width: 64; -fx-pref-width: 64; -fx-min-height: 64; -fx-pref-height: 64; -fx-alignment: CENTER; -fx-background-color: #1e3a5f; -fx-background-radius: 14; }
-/* ===== End DSE ERP 7.1.0 dark mode ===== */
+/* ===== End DSE ERP 7.1.1 dark mode ===== */
