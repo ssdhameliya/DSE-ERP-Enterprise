@@ -7,6 +7,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.util.converter.DoubleStringConverter;
@@ -71,9 +74,19 @@ public class BankStatementController {
     private void setIcon(StackPane pane,String name,int size){ if(pane!=null)pane.getChildren().setAll(IconFactory.icon(name,size)); }
 
     private void configureTable() {
+        table.getProperties().put("erp-keep-selection", true);
         colSelect.setCellValueFactory(v->v.getValue().selected);
         colSelect.setCellFactory(CheckBoxTableCell.forTableColumn(colSelect));
         colSelect.setEditable(true);table.setEditable(true);
+        CheckBox headerSelection=new CheckBox();
+        headerSelection.getProperties().put("erp.icon.skip",true);
+        chkSelectAll.getProperties().put("erp.icon.skip",true);
+        headerSelection.setTooltip(new Tooltip("Select all visible transactions"));
+        headerSelection.setOnAction(e->{chkSelectAll.setSelected(headerSelection.isSelected());selectAllVisible();});
+        chkSelectAll.selectedProperty().addListener((o,a,b)->{if(!headerSelection.isIndeterminate())headerSelection.setSelected(b);});
+        chkSelectAll.indeterminateProperty().addListener((o,a,b)->headerSelection.setIndeterminate(b));
+        colSelect.setText("");colSelect.setGraphic(headerSelection);
+        colSelect.getProperties().put("erp-header-preserve",true);
         colDate.setCellValueFactory(v->v.getValue().date); colValueDate.setCellValueFactory(v->v.getValue().valueDate);
         colReference.setCellValueFactory(v->v.getValue().reference); colDescription.setCellValueFactory(v->v.getValue().description);
         colDebit.setCellValueFactory(v->v.getValue().debit); colCredit.setCellValueFactory(v->v.getValue().credit); colBalance.setCellValueFactory(v->v.getValue().balance);
@@ -101,9 +114,9 @@ public class BankStatementController {
             }
         });
         IconFactory.applyTableHeaderIcon(colDate,"calendar"); IconFactory.applyTableHeaderIcon(colValueDate,"calendar");
-        IconFactory.applyTableHeaderIcon(colReference,"reference"); IconFactory.applyTableHeaderIcon(colDescription,"document");
-        IconFactory.applyTableHeaderIcon(colDebit,"payment"); IconFactory.applyTableHeaderIcon(colCredit,"payment");
-        IconFactory.applyTableHeaderIcon(colBalance,"bank"); IconFactory.applyTableHeaderIcon(colStatus,"status");
+        IconFactory.applyTableHeaderIcon(colReference,"reference"); IconFactory.applyTableHeaderIcon(colDescription,"notes");
+        IconFactory.applyTableHeaderIcon(colDebit,"debit"); IconFactory.applyTableHeaderIcon(colCredit,"credit");
+        IconFactory.applyTableHeaderIcon(colBalance,"balance"); IconFactory.applyTableHeaderIcon(colStatus,"status");
         IconFactory.applyTableHeaderIcon(colMatch,"link"); IconFactory.applyTableHeaderIcon(colAction,"actions");
     }
 
@@ -181,6 +194,7 @@ public class BankStatementController {
         String q=txtSearch.getText()==null?"":txtSearch.getText().trim().toLowerCase(Locale.ROOT); String status=cmbStatus.getValue(); String direction=cmbDirection==null?"All":cmbDirection.getValue(); LocalDate from=fromDate.getValue(),to=toDate.getValue(); List<Row> rows=new ArrayList<>();
         for(var t:all){LocalDate d=parseDate(t.transactionDate());if(from!=null&&d!=null&&d.isBefore(from))continue;if(to!=null&&d!=null&&d.isAfter(to))continue;if(status!=null&&!status.startsWith("All")&&!status.equalsIgnoreCase(t.status()))continue;if("Credit".equalsIgnoreCase(direction)&&t.credit()<=0)continue;if("Debit".equalsIgnoreCase(direction)&&t.debit()<=0)continue;String hay=(safe(t.description())+" "+safe(t.reference())+" "+t.debit()+" "+t.credit()+" "+safe(t.status())).toLowerCase(Locale.ROOT);if(!q.isBlank()&&!hay.contains(q))continue;rows.add(new Row(t));}
         rows.forEach(row->row.selected.addListener((o,a,b)->updateSelectionState()));
+        chkSelectAll.setSelected(false);chkSelectAll.setIndeterminate(false);
         table.getItems().setAll(rows);lblShowing.setText("Showing "+rows.size()+" of "+all.size()+" records");updateSelectionState();
     }
     @FXML private void resetFilters(){applyBatchPeriod();cmbStatus.setValue("All Status");if(cmbDirection!=null)cmbDirection.setValue("All");txtSearch.clear();applyFilters();}
@@ -192,11 +206,28 @@ public class BankStatementController {
     @FXML private void bulkMarkReview(){bulkWithReason("Mark Selected for Review","Explain what must be checked for these bank transactions.","REVIEW");}
     @FXML private void bulkIgnore(){bulkWithReason("Ignore Selected Transactions","Enter the audit reason for excluding the selected bank transactions.","IGNORE");}
     private void bulkWithReason(String title,String prompt,String action){
-        List<Row> rows=selectedRows().stream().filter(row->Set.of("UNMATCHED","SUGGESTED","REVIEW").contains(up(row.dto.status()))).toList();
+        List<Row> selected=selectedRows();
+        List<Row> rows=selected.stream().filter(row->Set.of("UNMATCHED","SUGGESTED","REVIEW").contains(up(row.dto.status()))).toList();
+        int skipped=selected.size()-rows.size();
         if(rows.isEmpty()){info(title,"None of the selected transactions can use this action.");return;}
         requiredReason(title,prompt).ifPresent(reason->{
-            Alert confirmation=new OwnedAlert(Alert.AlertType.CONFIRMATION,"Apply this action to "+rows.size()+" eligible transaction(s)?\n\nReason: "+reason);confirmation.setHeaderText(title);
-            confirmation.showAndWait().filter(ButtonType.OK::equals).ifPresent(x->{int completed=0;for(Row row:rows){try{if("REVIEW".equals(action))api.review(row.dto.id(),new BankStatementApiClient.NoteRequest(reason,user()));else api.ignore(row.dto.id(),new BankStatementApiClient.IgnoreRequest(reason,user()));completed++;}catch(Exception e){error(e);break;}}info(title,completed+" transaction(s) updated successfully.");refresh();});
+            Alert confirmation=new OwnedAlert(Alert.AlertType.CONFIRMATION,
+                    "Selected: "+selected.size()+"\nEligible: "+rows.size()+"\nSkipped: "+skipped+"\n\nReason: "+reason);
+            confirmation.setHeaderText(title);
+            confirmation.showAndWait().filter(ButtonType.OK::equals).ifPresent(x->{
+                int completed=0,failed=0;String firstFailure="";
+                for(Row row:rows){
+                    try{
+                        if("REVIEW".equals(action))api.review(row.dto.id(),new BankStatementApiClient.NoteRequest(reason,user()));
+                        else api.ignore(row.dto.id(),new BankStatementApiClient.IgnoreRequest(reason,user()));
+                        completed++;
+                    }catch(Exception e){failed++;if(firstFailure.isBlank())firstFailure=safe(e.getMessage());}
+                }
+                String result="Updated: "+completed+"\nSkipped: "+skipped+"\nFailed: "+failed;
+                if(!firstFailure.isBlank())result+="\n\nFirst failure: "+firstFailure;
+                if(failed==0)info(title,result);else new OwnedAlert(Alert.AlertType.WARNING,result).showAndWait();
+                refresh();
+            });
         });
     }
 
@@ -261,6 +292,12 @@ public class BankStatementController {
         allocation.setOnEditCommit(e->{e.getRowValue().allocation.set(e.getNewValue()==null?0:e.getNewValue());e.getRowValue().selected.set(true);});
         allocation.setPrefWidth(110);
         candidatesTable.getColumns().setAll(selected,score,type,document,party,date,total,paid,outstanding,allocation);
+        selected.setGraphic(new CheckBox());selected.getProperties().put("erp-header-preserve",true);
+        IconFactory.applyTableHeaderIcon(score,"status");IconFactory.applyTableHeaderIcon(type,"category");
+        IconFactory.applyTableHeaderIcon(document,"document");IconFactory.applyTableHeaderIcon(party,"customer");
+        IconFactory.applyTableHeaderIcon(date,"calendar");IconFactory.applyTableHeaderIcon(total,"currency");
+        IconFactory.applyTableHeaderIcon(paid,"payment");IconFactory.applyTableHeaderIcon(outstanding,"bank");
+        IconFactory.applyTableHeaderIcon(allocation,"currency");
 
         Label title=sectionTitle("Match Bank Transaction");
         Label bank=new Label(safe(bankRow.dto.transactionDate())+"  |  "+safe(bankRow.dto.reference())+"  |  "+safe(bankRow.dto.description()));
@@ -276,10 +313,12 @@ public class BankStatementController {
         };
         rows.forEach(r->{r.selected.addListener((o,a,b)->refreshStatus.run());r.allocation.addListener((o,a,b)->refreshStatus.run());});
         refreshStatus.run();
-        VBox content=new VBox(10,title,new VBox(4,new Label("BANK TRANSACTION"),bank,amount),help,candidatesTable,allocationStatus);
+        VBox transactionCard=new VBox(4,new Label("BANK TRANSACTION"),bank,amount);transactionCard.getStyleClass().add("bank-dialog-section");
+        VBox content=new VBox(12,dialogHero("link","Review and allocate the complete bank transaction","Match invoices to allocate the bank amount. The total allocation must equal the bank amount."),transactionCard,help,candidatesTable,allocationStatus);
         content.setPadding(new Insets(8));content.setPrefWidth(1120);
-        Dialog<ButtonType> dialog=new OwnedDialog<>();dialog.setTitle("Match Transaction");dialog.setHeaderText("Review and allocate the complete bank transaction");dialog.getDialogPane().setContent(content);
-        ButtonType confirm=new ButtonType("Confirm Match",ButtonBar.ButtonData.OK_DONE);dialog.getDialogPane().getButtonTypes().addAll(confirm,ButtonType.CANCEL);
+        Dialog<ButtonType> dialog=new OwnedDialog<>();dialog.setTitle("Match Transaction");dialog.setHeaderText(null);dialog.getDialogPane().getStyleClass().addAll("bank-workspace-dialog","bank-match-dialog");dialog.getDialogPane().setContent(content);
+        ButtonType refreshType=new ButtonType("Refresh Suggestions",ButtonBar.ButtonData.OTHER);ButtonType confirm=new ButtonType("Confirm Match",ButtonBar.ButtonData.OK_DONE);dialog.getDialogPane().getButtonTypes().addAll(refreshType,ButtonType.CANCEL,confirm);
+        Button refreshButton=(Button)dialog.getDialogPane().lookupButton(refreshType);refreshButton.setGraphic(IconFactory.compactIcon("refresh",15));refreshButton.addEventFilter(javafx.event.ActionEvent.ACTION,e->{e.consume();dialog.close();javafx.application.Platform.runLater(()->match(bankRow));});
         dialog.showAndWait().filter(confirm::equals).ifPresent(x->{
             List<BankStatementApiClient.AllocationRequest> allocations=new ArrayList<>();
             double allocated=0;
@@ -350,8 +389,17 @@ public class BankStatementController {
         addDialogRow(grid,r++,"Reconciliation Status",safe(t.status())); addDialogRow(grid,r++,"Match / Link",safe(t.matchLink()).isBlank()?"Not linked yet":safe(t.matchLink()));
         Label evidence=new Label("Original imported bank values are preserved and cannot be overwritten. Add only an ERP note below."); evidence.setWrapText(true); evidence.getStyleClass().add("bank-dialog-help");
         TextArea note=new TextArea(); note.setPromptText("Add an internal ERP note for this bank transaction..."); note.setPrefRowCount(3); note.setWrapText(true);
-        VBox content=new VBox(10,sectionTitle("Bank Transaction Details"),grid,evidence,new Label("ERP Note"),note); content.setPadding(new Insets(8)); content.setPrefWidth(610);
-        Dialog<ButtonType>d=new OwnedDialog<>(); d.setTitle("Bank Transaction"); d.setHeaderText("View / Edit Transaction"); d.getDialogPane().setContent(content);
+        note.setTextFormatter(new TextFormatter<String>(change->change.getControlNewText().length()<=500?change:null));
+        Label counter=new Label("0 / 500");counter.getStyleClass().add("bank-note-counter");note.textProperty().addListener((o,a,b)->counter.setText(b.length()+" / 500"));
+        VBox overview=new VBox(10,sectionTitle("Transaction Overview"),grid);overview.getStyleClass().add("bank-dialog-section");
+        Label direction=new Label(t.credit()>0?"Bank Credit":"Bank Debit");Label amount=new Label("₹ "+money(bankAmount(t)));amount.getStyleClass().add("bank-transaction-hero-amount");
+        VBox amountCard=new VBox(6,dialogIcon("bank",38),direction,amount);amountCard.getStyleClass().add("bank-transaction-amount-card");
+        VBox side=new VBox(10,amountCard,metricCard("Account Balance","₹ "+money(t.balance()),"bank"),metricCard("Status",safe(t.status()),"status"));side.setPrefWidth(190);
+        HBox details=new HBox(12,overview,side);HBox.setHgrow(overview,Priority.ALWAYS);
+        Region counterSpace=new Region();HBox.setHgrow(counterSpace,Priority.ALWAYS);HBox noteFooter=new HBox(counterSpace,counter);
+        VBox noteCard=new VBox(6,new Label("ERP Note (Internal)"),note,noteFooter);noteCard.getStyleClass().add("bank-dialog-section");
+        VBox content=new VBox(12,dialogHero("view","View / Edit Transaction","Detailed information of the imported bank transaction."),details,evidence,noteCard); content.setPadding(new Insets(8)); content.setPrefWidth(760);
+        Dialog<ButtonType>d=new OwnedDialog<>(); d.setTitle("Bank Transaction"); d.setHeaderText(null);d.getDialogPane().getStyleClass().addAll("bank-workspace-dialog","bank-transaction-dialog"); d.getDialogPane().setContent(content);
         ButtonType save=new ButtonType("Save Note",ButtonBar.ButtonData.OK_DONE); d.getDialogPane().getButtonTypes().addAll(save,ButtonType.CLOSE);
         d.showAndWait().filter(x->x==save).ifPresent(x->{try{api.updateNote(t.id(),new BankStatementApiClient.NoteRequest(note.getText().trim(),user()));info("Bank Transaction","ERP note saved successfully.");audit(row);}catch(Exception e){error(e);}});
     }
@@ -362,10 +410,14 @@ public class BankStatementController {
             GridPane meta=new GridPane();meta.setHgap(14);meta.setVgap(7);meta.getStyleClass().add("bank-dialog-grid");int r=0;
             addDialogRow(meta,r++,"Bank",safe(b.bankName()));addDialogRow(meta,r++,"Account",safe(b.bankAccount()));addDialogRow(meta,r++,"Account Holder",safe(b.accountHolder()));
             addDialogRow(meta,r++,"Statement Period",safe(b.statementFrom())+"  to  "+safe(b.statementTo()));addDialogRow(meta,r++,"Source File",safe(src.fileName()));addDialogRow(meta,r++,"SHA-256",safe(src.fingerprint()));
-            TextArea preview=new TextArea(safe(src.csvContent()));preview.setEditable(false);preview.setWrapText(false);preview.setPrefRowCount(12);preview.getStyleClass().add("bank-evidence-preview");
+            ListView<String> preview=new ListView<>();String[] csvLines=safe(src.csvContent()).split("\\R",-1);for(int i=0;i<csvLines.length;i++)preview.getItems().add(String.format("%4d   %s",i+1,csvLines[i]));preview.setPrefHeight(300);preview.getStyleClass().add("bank-evidence-preview");
             Label help=new Label("This is the original imported CSV evidence retained for reconciliation and audit. Bank values are never changed by ERP matching.");help.setWrapText(true);help.getStyleClass().add("bank-dialog-help");
-            VBox content=new VBox(10,sectionTitle("Imported Statement Evidence"),meta,help,new Label("CSV Evidence Preview"),preview);content.setPadding(new Insets(8));content.setPrefWidth(720);
-            Dialog<ButtonType>d=new OwnedDialog<>();d.setTitle("Imported Bank Statement");d.setHeaderText("Statement Source & Evidence");d.getDialogPane().setContent(content);d.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);d.showAndWait();
+            Button copy=new Button("Copy SHA-256",IconFactory.compactIcon("copy",14));copy.getStyleClass().addAll("approved-button","approved-secondary-button");copy.setOnAction(e->{ClipboardContent cc=new ClipboardContent();cc.putString(safe(src.fingerprint()));Clipboard.getSystemClipboard().setContent(cc);});
+            Region titleSpace=new Region();HBox.setHgrow(titleSpace,Priority.ALWAYS);HBox evidenceTitle=new HBox(8,sectionTitle("Imported Statement Evidence"),titleSpace,copy);evidenceTitle.setAlignment(Pos.CENTER_LEFT);
+            VBox evidenceCard=new VBox(10,evidenceTitle,meta);evidenceCard.getStyleClass().add("bank-dialog-section");
+            VBox previewCard=new VBox(8,new Label("CSV Evidence Preview"),preview);previewCard.getStyleClass().add("bank-dialog-section");
+            VBox content=new VBox(12,dialogHero("document","Statement Source & Evidence","Review the source file and evidence of this imported statement."),evidenceCard,help,previewCard);content.setPadding(new Insets(8));content.setPrefWidth(780);
+            Dialog<ButtonType>d=new OwnedDialog<>();d.setTitle("Imported Bank Statement");d.setHeaderText(null);d.getDialogPane().getStyleClass().addAll("bank-workspace-dialog","bank-evidence-dialog");d.getDialogPane().setContent(content);d.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);d.showAndWait();
         }catch(Exception e){error(e);}
     }
     private Label sectionTitle(String text){Label l=new Label(text);l.getStyleClass().add("bank-dialog-title");return l;}
@@ -398,13 +450,20 @@ public class BankStatementController {
                 Label event=new Label(safe(a.eventType())+"  •  "+safe(a.createdAt()));event.getStyleClass().add("bank-audit-event");
                 Label detail=new Label(safe(a.detail()));detail.setWrapText(true);detail.getStyleClass().add("bank-audit-detail");
                 Label who=new Label("Performed by: "+safe(a.performedBy())+(safe(a.previousStatus()).isBlank()?"":"   •   "+safe(a.previousStatus())+" → "+safe(a.newStatus())));who.getStyleClass().add("bank-audit-meta");
-                VBox card=new VBox(3,event,detail,who);card.getStyleClass().add("bank-audit-card");list.getChildren().add(card);
+                Label badge=new Label(safe(a.newStatus()).isBlank()?"SUCCESS":safe(a.newStatus()));badge.getStyleClass().add("bank-audit-badge");
+                Region eventSpace=new Region();HBox.setHgrow(eventSpace,Priority.ALWAYS);HBox eventLine=new HBox(8,dialogIcon("status",18),event,eventSpace,badge);eventLine.setAlignment(Pos.CENTER_LEFT);
+                VBox card=new VBox(5,eventLine,detail,who);card.getStyleClass().add("bank-audit-card");list.getChildren().add(card);
             }
             ScrollPane scroll=new ScrollPane(list);scroll.setFitToWidth(true);scroll.setPrefViewportHeight(360);scroll.setPrefViewportWidth(650);
             VBox content=new VBox(10,sectionTitle("Complete Reconciliation History"),new Label("Bank transaction: "+safe(row.dto.reference())+"  •  "+safe(row.dto.description())),scroll);content.setPadding(new Insets(8));
-            Dialog<ButtonType>d=new OwnedDialog<>();d.setTitle("Audit History");d.setHeaderText("Audit Trail & Evidence");d.getDialogPane().setContent(content);d.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);d.showAndWait();
+            content.getChildren().add(0,dialogHero("security","Audit Trail & Evidence","Complete history of reconciliation and evidence for this bank transaction."));content.setPrefWidth(760);
+            Dialog<ButtonType>d=new OwnedDialog<>();d.setTitle("Audit History");d.setHeaderText(null);d.getDialogPane().getStyleClass().addAll("bank-workspace-dialog","bank-audit-dialog");d.getDialogPane().setContent(content);d.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);d.showAndWait();
         }catch(Exception e){error(e);}
     }
+
+    private StackPane dialogIcon(String semantic,double size){StackPane pane=new StackPane(IconFactory.icon(semantic,size*.55));pane.getStyleClass().add("bank-dialog-icon");pane.setMinSize(size,size);pane.setPrefSize(size,size);pane.setMaxSize(size,size);return pane;}
+    private HBox dialogHero(String semantic,String title,String subtitle){Label h=new Label(title);h.getStyleClass().add("bank-dialog-hero-title");Label s=new Label(subtitle);s.setWrapText(true);s.getStyleClass().add("bank-dialog-subtitle");HBox box=new HBox(12,dialogIcon(semantic,44),new VBox(3,h,s));box.setAlignment(Pos.CENTER_LEFT);box.getStyleClass().add("bank-dialog-hero");return box;}
+    private VBox metricCard(String caption,String value,String semantic){Label c=new Label(caption);c.getStyleClass().add("bank-dialog-label");Label v=new Label(value);v.getStyleClass().add("bank-dialog-metric-value");VBox box=new VBox(4,new HBox(6,IconFactory.compactIcon(semantic,15),c),v);box.getStyleClass().add("bank-dialog-metric-card");return box;}
 
     private static String user(){var u=SessionService.current();return u==null?"User":safe(u.getFullName());}
     private static double bankAmount(BankStatementApiClient.TransactionDto t){return t.credit()>0?t.credit():t.debit();}

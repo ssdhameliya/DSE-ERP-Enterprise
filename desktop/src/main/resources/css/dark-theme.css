@@ -6566,3 +6566,48 @@ TABLE ACTION BUTTONS
 }
 .quotation-editor-title-icon .ikonli-font-icon { -fx-icon-color: #c4b5fd; }
 /* ===== End DSE ERP 7.1.3 final single-viewport sale + quotation identity ===== */
+
+/* ===== DSE ERP 7.1.4 Bank Statement workspace: dark mode ===== */
+.bank-recon-root { -fx-background-color:#071421; -fx-padding:12px; }
+.bank-recon-top-stack { -fx-spacing:10px; }
+.bank-recon-header, .bank-recon-kpi-panel, .bank-recon-filter-panel,
+.bank-recon-table-panel, .bank-recon-flow-panel, .bank-recon-how-panel {
+    -fx-background-color:#102238; -fx-border-color:#29445f; -fx-border-width:1px;
+    -fx-background-radius:12px; -fx-border-radius:12px;
+    -fx-effect:dropshadow(gaussian,rgba(0,0,0,.22),12,.08,0,3);
+}
+.bank-recon-header { -fx-padding:10px 14px; }
+.bank-recon-kpi-panel { -fx-padding:8px; }
+.bank-recon-kpi { -fx-padding:8px 10px; -fx-min-height:74px; -fx-pref-height:78px; }
+.bank-recon-kpi-icon { -fx-min-width:28px; -fx-pref-width:28px; -fx-min-height:28px; -fx-pref-height:28px; }
+.bank-recon-filter-panel { -fx-padding:10px 12px; }
+.bank-recon-table-panel { -fx-padding:10px; }
+.bank-recon-flow-panel { -fx-padding:12px; }
+.bank-recon-how-panel { -fx-padding:8px 12px; }
+.bank-recon-table .check-box { -fx-alignment:CENTER; }
+.bank-workspace-dialog { -fx-background-color:#08172a; -fx-padding:14px; }
+.bank-workspace-dialog > .content { -fx-padding:0; }
+.bank-dialog-hero {
+    -fx-padding:14px; -fx-background-color:linear-gradient(to right,#102f58,#0b2344);
+    -fx-background-radius:12px; -fx-border-color:#315d91; -fx-border-radius:12px;
+}
+.bank-dialog-icon { -fx-background-color:#203f70; -fx-background-radius:12px; }
+.bank-dialog-hero-title { -fx-text-fill:#f5f8ff; -fx-font-size:21px; -fx-font-weight:900; }
+.bank-dialog-subtitle { -fx-text-fill:#a9bdd6; -fx-font-size:12px; }
+.bank-dialog-section, .bank-dialog-metric-card, .bank-transaction-amount-card {
+    -fx-background-color:#12243b; -fx-border-color:#304b69; -fx-border-width:1px;
+    -fx-background-radius:11px; -fx-border-radius:11px; -fx-padding:12px;
+}
+.bank-dialog-grid { -fx-padding:4px; }
+.bank-dialog-label { -fx-text-fill:#9eb1c9; -fx-font-weight:700; }
+.bank-dialog-value, .bank-dialog-metric-value { -fx-text-fill:#eef5ff; -fx-font-weight:800; }
+.bank-transaction-amount-card { -fx-background-color:linear-gradient(to bottom right,#123c43,#102d36); -fx-border-color:#277f72; -fx-alignment:CENTER; }
+.bank-transaction-hero-amount { -fx-text-fill:#42dc7b; -fx-font-size:24px; -fx-font-weight:900; }
+.bank-note-counter { -fx-text-fill:#8da2bd; }
+.bank-evidence-preview { -fx-font-family:"Consolas"; -fx-font-size:12px; -fx-background-color:#07172c; -fx-control-inner-background:#07172c; }
+.bank-evidence-preview .list-cell { -fx-background-color:#07172c; -fx-text-fill:#c8d8eb; -fx-padding:3px 8px; }
+.bank-audit-card { -fx-background-color:#122a43; -fx-border-color:#315473; -fx-border-radius:10px; -fx-background-radius:10px; -fx-padding:11px; }
+.bank-audit-badge { -fx-background-color:#174d39; -fx-text-fill:#63e6a7; -fx-background-radius:999px; -fx-padding:3px 8px; -fx-font-size:10px; -fx-font-weight:800; }
+.bank-match-dialog .table-view { -fx-min-height:360px; }
+.bank-match-dialog .bank-dialog-help { -fx-background-color:#3a2b12; -fx-border-color:#93651b; }
+/* ===== End DSE ERP 7.1.4 Bank Statement workspace ===== */
