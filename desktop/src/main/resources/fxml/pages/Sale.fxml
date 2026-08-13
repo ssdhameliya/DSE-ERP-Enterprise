@@ -95,16 +95,14 @@
                                   styleClass="approved-input,sales-entry-payment-terms"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="1">
-                        <Label text="Charges Type" styleClass="sales-entry-field-label,field-label-payment"/>
-                        <ComboBox fx:id="cmbChargeType" maxWidth="Infinity" promptText="Select charges..."
-                                  styleClass="approved-input,sales-entry-charge-type"/>
-                    </VBox>
-
-                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="2">
-                        <Label text="Charge Amount" styleClass="sales-entry-field-label,field-label-payment"/>
-                        <TextField fx:id="txtChargeAmount" text="0" promptText="0.00"
-                                   styleClass="approved-input,sales-entry-charge-amount"/>
+                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="1" GridPane.columnSpan="2">
+                        <Label text="Additional Charges" styleClass="sales-entry-field-label,field-label-payment"/>
+                        <HBox alignment="CENTER_LEFT" spacing="7" styleClass="sales-entry-charge-manager">
+                            <Label fx:id="lblChargeManagerSummary" text="No additional charges" maxWidth="Infinity"
+                                   HBox.hgrow="ALWAYS" styleClass="sales-entry-charge-manager-summary"/>
+                            <Button fx:id="btnManageCharges" text="Manage" onAction="#manageCharges"
+                                    styleClass="sales-entry-manage-charges,approved-button,approved-secondary-button"/>
+                        </HBox>
                     </VBox>
                     <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="3">
                         <Label text="PO Date" styleClass="sales-entry-field-label,field-label-due"/>
@@ -126,6 +124,8 @@
                 <TextField fx:id="txtReference" visible="false" managed="false"/>
                 <TextField fx:id="txtAttachment" visible="false" managed="false"/>
                 <TextArea fx:id="txtInvoiceMessage" text="" visible="false" managed="false"/>
+                <ComboBox fx:id="cmbChargeType" visible="false" managed="false"/>
+                <TextField fx:id="txtChargeAmount" text="0" visible="false" managed="false"/>
             </VBox>
 
             <VBox spacing="8" styleClass="purchase-card,flow-card,sales-entry-card,sales-entry-items-card" VBox.vgrow="ALWAYS">

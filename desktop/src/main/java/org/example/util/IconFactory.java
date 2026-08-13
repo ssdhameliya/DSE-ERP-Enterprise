@@ -394,7 +394,7 @@ public final class IconFactory {
             case "reminder" -> "fas-clock";
             case "complete" -> "fas-check-circle";
             case "more" -> "fas-ellipsis-h";
-            case "actions" -> "fas-ellipsis-h";
+            case "actions" -> "fas-tools";
             case "backup" -> "fas-database";
             case "restore" -> "fas-history";
             case "validate" -> "fas-shield-alt";

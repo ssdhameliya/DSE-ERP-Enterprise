@@ -25,7 +25,9 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
             new Migration("V5_1_18__security_financial_integrity",
                     "db/migration/V5_1_18__security_financial_integrity.sql"),
             new Migration("V7_1_3__sale_gstin_details",
-                    "db/migration/V7_1_3__sale_gstin_details.sql")
+                    "db/migration/V7_1_3__sale_gstin_details.sql"),
+            new Migration("V7_1_5__multiple_sales_charges",
+                    "db/migration/V7_1_5__multiple_sales_charges.sql")
     );
     private static final long MIGRATION_LOCK = 51018001L;
     private final JpaNativeRepository database;

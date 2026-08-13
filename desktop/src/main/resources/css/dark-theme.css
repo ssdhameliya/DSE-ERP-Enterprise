@@ -6611,3 +6611,36 @@ TABLE ACTION BUTTONS
 .bank-match-dialog .table-view { -fx-min-height:360px; }
 .bank-match-dialog .bank-dialog-help { -fx-background-color:#3a2b12; -fx-border-color:#93651b; }
 /* ===== End DSE ERP 7.1.4 Bank Statement workspace ===== */
+
+/* ===== DSE ERP 7.1.5 sales charges: dark mode ===== */
+.sales-entry-charge-manager {
+    -fx-padding: 0; -fx-min-height: 34px; -fx-pref-height: 36px;
+}
+.sales-entry-charge-manager-summary {
+    -fx-padding: 7px 10px; -fx-background-color: #14283e;
+    -fx-border-color: #35516e; -fx-border-radius: 7px; -fx-background-radius: 7px;
+    -fx-text-fill: #dce8f7; -fx-font-weight: 700;
+}
+.sales-charge-dialog { -fx-background-color: #08182a; }
+.sales-charge-editor-scroll,
+.sales-charge-editor-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+.sales-charge-editor-scroll {
+    -fx-border-color: transparent; -fx-padding: 0;
+}
+.sales-charge-editor-row {
+    -fx-padding: 10px; -fx-spacing: 8px; -fx-alignment: CENTER_LEFT;
+    -fx-background-color: #12253c; -fx-border-color: #31506f;
+    -fx-border-radius: 9px; -fx-background-radius: 9px;
+}
+.register-total-amount { -fx-text-fill: #73a9ff; -fx-font-weight: 800; }
+.register-balance-pending { -fx-text-fill: #fb7185; -fx-font-weight: 900; }
+.register-balance-settled { -fx-text-fill: #4ade80; -fx-font-weight: 800; }
+.invoice-payment-dialog { -fx-background-color: #08172a; }
+.invoice-payment-table { -fx-min-height: 300px; }
+.payment-metric-total { -fx-text-fill: #73a9ff; }
+.payment-metric-paid, .payment-metric-settled { -fx-text-fill: #4ade80; }
+.payment-metric-pending { -fx-text-fill: #fb7185; }
+.payment-history-total { -fx-text-fill: #eef5ff; -fx-font-weight: 900; }
+/* ===== End DSE ERP 7.1.5 sales charges ===== */

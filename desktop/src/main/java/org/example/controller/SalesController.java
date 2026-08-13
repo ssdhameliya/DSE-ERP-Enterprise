@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import org.example.util.OwnedAlert;
+import org.example.util.OwnedDialog;
 import org.example.util.OwnedTextInputDialog;
 
 import javafx.collections.FXCollections;
@@ -19,6 +20,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Region;
 import javafx.geometry.Pos;
@@ -26,6 +30,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import org.example.model.*;
+import org.example.config.ConfigManager;
 import org.example.service.LookupService;
 
 import org.example.navigation.NavigationManager;
@@ -137,6 +142,8 @@ public class SalesController {
     @FXML
     private Button btnAddLine;
     @FXML private Button btnRemoveLine, btnSaveDraft;
+    @FXML private Button btnManageCharges;
+    @FXML private Label lblChargeManagerSummary;
 
 
 
@@ -168,6 +175,8 @@ public class SalesController {
 
     private int editingIndex = -1;
     private final ObservableList<Item> allItems = FXCollections.observableArrayList();
+    private final ObservableList<SalesCharge> invoiceCharges = FXCollections.observableArrayList();
+    private final ObservableList<String> availableChargeTypes = FXCollections.observableArrayList();
 
     //-------------------------------------------------------
     // Initialize
@@ -205,7 +214,15 @@ public class SalesController {
         safeLoad("Payment Terms", initializationErrors, () -> cmbPaymentTerms.getItems().setAll(lookupService.getValuesByCategoryCode("PAYMENT_TERMS")));
         if (cmbPaymentTerms.getItems().contains("15 Days")) cmbPaymentTerms.setValue("15 Days");
         else if (!cmbPaymentTerms.getItems().isEmpty()) cmbPaymentTerms.getSelectionModel().selectFirst();
-        if (cmbChargeType != null) safeLoad("Charges", initializationErrors, () -> cmbChargeType.getItems().setAll(lookupService.getValuesByCategoryCode("CHARGES")));
+        safeLoad("Charges", initializationErrors, () -> {
+            availableChargeTypes.setAll(lookupService.getValuesByCategoryCode("CHARGES"));
+            if (cmbChargeType != null) cmbChargeType.getItems().setAll(availableChargeTypes);
+        });
+        if (btnManageCharges != null) {
+            btnManageCharges.setGraphic(IconFactory.compactIcon("payment", 15));
+            btnManageCharges.getProperties().put("erp-icon-preserve", true);
+        }
+        updateChargeManagerSummary();
         dpInvoiceDate.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
         cmbPaymentTerms.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
 
@@ -237,7 +254,7 @@ public class SalesController {
         cmbGstType.valueProperty().addListener((o,a,b) -> updateGstHeaders());
         updateGstHeaders();
 
-        if (txtChargeAmount != null) txtChargeAmount.textProperty().addListener((o,a,b)->recalculate());
+        invoiceCharges.addListener((javafx.collections.ListChangeListener<SalesCharge>) change -> {updateChargeManagerSummary();recalculate();});
 
         tableLines.getSelectionModel()
             .selectedItemProperty()
@@ -365,6 +382,7 @@ public class SalesController {
             }
             if (editingSale == null && chkSameAsBilling != null) chkSameAsBilling.setSelected(true);
             syncDeliveryAddressState();
+            suggestGstTypeFromGstin();
         });
 
         //-------------------------------------------------------
@@ -384,6 +402,31 @@ public class SalesController {
 
         newSale();
 
+    }
+
+    /**
+     * Suggests intra-state versus inter-state tax from the first two GSTIN
+     * digits. This runs only when a customer is selected, so the user can still
+     * override the suggested GST type afterwards.
+     */
+    private void suggestGstTypeFromGstin() {
+        if (cmbGstType == null || cmbGstType.getItems().isEmpty() || txtBillingGstin == null) return;
+        String companyGstin = ConfigManager.get("company.gstin", "").trim();
+        String customerGstin = txtBillingGstin.getText() == null ? "" : txtBillingGstin.getText().trim();
+        if (companyGstin.length() < 2 || customerGstin.length() < 2
+                || !companyGstin.substring(0, 2).matches("\\d{2}")
+                || !customerGstin.substring(0, 2).matches("\\d{2}")) return;
+
+        boolean interstate = !companyGstin.substring(0, 2).equals(customerGstin.substring(0, 2));
+        cmbGstType.getItems().stream()
+                .filter(value -> {
+                    String normalized = value == null ? "" : value.toUpperCase(java.util.Locale.ROOT);
+                    return interstate
+                            ? normalized.contains("IGST") || normalized.contains("INTER")
+                            : normalized.contains("CGST") || normalized.contains("SGST") || normalized.contains("INTRA");
+                })
+                .findFirst()
+                .ifPresent(cmbGstType::setValue);
     }
 
     private void configureItemSearch() {
@@ -824,13 +867,16 @@ public class SalesController {
                 )
                 .sum();
 
-        double charges = number(txtChargeAmount);
-        double total = net + gst + charges;
+        String chargeError = validateCharges(invoiceCharges);
+        if (chargeError != null) { warn(chargeError); return null; }
+        double charges = invoiceCharges.stream().mapToDouble(SalesCharge::getAmount).sum();
+        double chargeTax = invoiceCharges.stream().mapToDouble(SalesCharge::getTaxAmount).sum();
+        double total = net + gst + charges + chargeTax;
 
         sale.setSubtotal(net);
         sale.setDiscountAmount(discount);
 
-        sale.setGstAmount(gst);
+        sale.setGstAmount(gst + chargeTax);
 
         sale.setTotalAmount(total);
 
@@ -856,8 +902,7 @@ public class SalesController {
         sale.setVehicleNumber(txtVehicleNumber == null ? "" : txtVehicleNumber.getText());
         sale.setContactPerson(txtContactPerson == null ? "" : txtContactPerson.getText());
         sale.setContactPersonMobile(txtContactPersonMobile == null ? "" : txtContactPersonMobile.getText());
-        sale.setChargeType(cmbChargeType == null || cmbChargeType.getValue() == null ? "" : cmbChargeType.getValue());
-        sale.setChargeAmount(charges);
+        sale.setCharges(invoiceCharges);
         sale.setTransportNote(txtTransportNote == null ? "" : txtTransportNote.getText());
         sale.setReferenceNo("");
 
@@ -945,8 +990,7 @@ public class SalesController {
         if (txtContactPerson != null) txtContactPerson.clear();
         if (txtContactPersonMobile != null) txtContactPersonMobile.clear();
         if (txtTransportNote != null) txtTransportNote.clear();
-        if (cmbChargeType != null) cmbChargeType.setValue(null);
-        if (txtChargeAmount != null) txtChargeAmount.setText("0");
+        invoiceCharges.clear();
 
         tableLines.getItems().clear();
 
@@ -977,8 +1021,9 @@ public class SalesController {
                 )
                 .sum();
 
-        double charges = number(txtChargeAmount);
-        double total = net + gst + charges;
+        double charges = invoiceCharges.stream().mapToDouble(SalesCharge::getAmount).sum();
+        double chargeTax = invoiceCharges.stream().mapToDouble(SalesCharge::getTaxAmount).sum();
+        double total = net + gst + charges + chargeTax;
 
         lblNetAmount.setText(
             String.format("₹ %.2f", net)
@@ -987,7 +1032,7 @@ public class SalesController {
         lblDiscount.setText(String.format("₹ %.2f", discount));
 
         lblGst.setText(
-            String.format("₹ %.2f", gst)
+            String.format("₹ %.2f", gst + chargeTax)
         );
 
         lblGrandTotal.setText(
@@ -996,17 +1041,138 @@ public class SalesController {
 
         if (lblTotalItems != null) lblTotalItems.setText(Integer.toString(tableLines.getItems().size()));
         if (lblBottomDiscount != null) lblBottomDiscount.setText(String.format("₹ %.2f", discount));
-        if (lblBottomTax != null) lblBottomTax.setText(String.format("₹ %.2f", gst));
+        if (lblBottomTax != null) lblBottomTax.setText(String.format("₹ %.2f", gst + chargeTax));
         if (lblBottomCharges != null) lblBottomCharges.setText(String.format("₹ %.2f", charges));
         if (lblBottomNet != null) lblBottomNet.setText(String.format("₹ %.2f", total));
-        if (lblTaxableAmount != null) lblTaxableAmount.setText(String.format("₹ %.2f", net));
+        double taxableCharges = invoiceCharges.stream().filter(SalesCharge::isTaxable).mapToDouble(SalesCharge::getAmount).sum();
+        if (lblTaxableAmount != null) lblTaxableAmount.setText(String.format("₹ %.2f", net + taxableCharges));
         if (lblCharges != null) lblCharges.setText(String.format("₹ %.2f", charges));
         if (lblChargeCaption != null) {
-            String chargeType = cmbChargeType == null ? "" : cmbChargeType.getValue();
-            lblChargeCaption.setText(chargeType == null || chargeType.isBlank() ? "Charges" : "Charges • " + chargeType);
+            lblChargeCaption.setText(invoiceCharges.isEmpty()?"Additional Charges":"Additional Charges • "+invoiceCharges.size());
         }
 
     }
+
+    @FXML
+    private void manageCharges() {
+        List<SalesCharge> draft = invoiceCharges.stream().map(SalesCharge::copy)
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+        Dialog<ButtonType> dialog = new OwnedDialog<>();
+        dialog.setTitle("Additional Charges");
+        dialog.setHeaderText("Add up to two additional invoice charges");
+        dialog.getDialogPane().getStyleClass().add("sales-charge-dialog");
+
+        VBox rows = new VBox(9);
+        rows.getStyleClass().add("sales-charge-editor-rows");
+        Label totals = new Label();
+        totals.getStyleClass().add("sales-charge-editor-total");
+        Button add = new Button("Add Charge", IconFactory.compactIcon("add", 14));
+        add.getStyleClass().addAll("approved-button", "approved-primary-button", "sales-charge-add");
+        Label limit = new Label("Maximum: 2 charges");
+        limit.getStyleClass().add("sales-charge-limit");
+        HBox addBar = new HBox(10, add, new Region(), limit);
+        HBox.setHgrow(addBar.getChildren().get(1), Priority.ALWAYS);
+        addBar.setAlignment(Pos.CENTER_LEFT);
+
+        Runnable updateTotals = () -> {
+            double beforeTax = draft.stream().mapToDouble(SalesCharge::getAmount).sum();
+            double tax = draft.stream().mapToDouble(SalesCharge::getTaxAmount).sum();
+            totals.setText(String.format("Charges ₹ %,.2f    GST ₹ %,.2f    Total ₹ %,.2f", beforeTax, tax, beforeTax + tax));
+            add.setDisable(draft.size() >= 2);
+        };
+        Runnable[] render = new Runnable[1];
+        render[0] = () -> {
+            rows.getChildren().clear();
+            for (int index = 0; index < draft.size(); index++) {
+                SalesCharge charge = draft.get(index);
+                ComboBox<String> type = new ComboBox<>(FXCollections.observableArrayList(availableChargeTypes));
+                if (!charge.getChargeType().isBlank() && !type.getItems().contains(charge.getChargeType())) type.getItems().add(charge.getChargeType());
+                type.setValue(charge.getChargeType().isBlank() ? null : charge.getChargeType());
+                type.setPromptText("Select charge..."); type.setMaxWidth(Double.MAX_VALUE);
+                TextField amount = new TextField(charge.getAmount() <= 0 ? "" : String.format(java.util.Locale.ROOT, "%.2f", charge.getAmount()));
+                amount.setPromptText("Amount");
+                ComboBox<String> tax = new ComboBox<>(FXCollections.observableArrayList("Non-taxable", "Taxable 0%", "Taxable 5%", "Taxable 12%", "Taxable 18%", "Taxable 28%"));
+                tax.setValue(charge.isTaxable() ? "Taxable " + percentText(charge.getGstPercent()) : "Non-taxable");
+                Button remove = new Button("Remove", IconFactory.compactIcon("delete", 13));
+                remove.getStyleClass().addAll("approved-button", "approved-danger-button", "sales-charge-remove");
+                int rowIndex = index;
+                type.valueProperty().addListener((o,a,b)->charge.setChargeType(b));
+                amount.textProperty().addListener((o,a,b)->{charge.setAmount(parseAmount(b));updateTotals.run();});
+                tax.valueProperty().addListener((o,a,b)->{applyTaxTreatment(charge,b);updateTotals.run();});
+                remove.setOnAction(e->{draft.remove(rowIndex);render[0].run();});
+                GridPane row = new GridPane(); row.setHgap(8); row.setVgap(3);
+                row.getStyleClass().add("sales-charge-editor-row");
+                row.add(new Label("Charge " + (index + 1)),0,0);
+                row.add(new Label("Amount"),1,0);
+                row.add(new Label("Tax Treatment"),2,0);
+                row.add(type,0,1); row.add(amount,1,1); row.add(tax,2,1); row.add(remove,3,1);
+                GridPane.setHgrow(type,Priority.ALWAYS);
+                rows.getChildren().add(row);
+            }
+            if (draft.isEmpty()) {
+                Label empty = new Label("No additional charges. Select Add Charge when required.");
+                empty.getStyleClass().add("sales-charge-editor-empty"); rows.getChildren().add(empty);
+            }
+            updateTotals.run();
+        };
+        add.setOnAction(e->{if(draft.size()<2){draft.add(new SalesCharge("",0,true,18));render[0].run();}});
+        render[0].run();
+
+        ScrollPane rowScroller = new ScrollPane(rows);
+        rowScroller.setFitToWidth(true);
+        rowScroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        rowScroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        rowScroller.setPannable(true);
+        rowScroller.setPrefViewportHeight(175);
+        rowScroller.setMinHeight(120);
+        rowScroller.setMaxHeight(210);
+        rowScroller.getStyleClass().add("sales-charge-editor-scroll");
+
+        VBox content = new VBox(12, rowScroller, addBar, new Separator(), totals);
+        content.setPrefWidth(700);
+        content.setMinHeight(260);
+        dialog.getDialogPane().setMinSize(680, 440);
+        dialog.getDialogPane().setPrefSize(740, 480);
+        dialog.setResizable(true);
+        dialog.getDialogPane().setContent(content);
+        ButtonType apply = new ButtonType("Apply Charges", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, apply);
+        Node applyButton = dialog.getDialogPane().lookupButton(apply);
+        applyButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String error = validateCharges(draft);
+            if (error != null) { event.consume(); warn(error); }
+        });
+        dialog.showAndWait().filter(apply::equals).ifPresent(result -> invoiceCharges.setAll(draft.stream().map(SalesCharge::copy).toList()));
+    }
+
+    private void updateChargeManagerSummary() {
+        if (lblChargeManagerSummary == null) return;
+        double amount = invoiceCharges.stream().mapToDouble(SalesCharge::getAmount).sum();
+        lblChargeManagerSummary.setText(invoiceCharges.isEmpty() ? "No additional charges"
+                : String.format("%d charge%s · ₹ %,.2f", invoiceCharges.size(), invoiceCharges.size()==1?"":"s", amount));
+    }
+
+    private String validateCharges(List<SalesCharge> charges) {
+        if (charges == null || charges.isEmpty()) return null;
+        if (charges.size() > 2) return "A maximum of two additional charges is allowed.";
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (SalesCharge charge : charges) {
+            if (charge == null || charge.getChargeType().isBlank()) return "Select a charge type for every charge row.";
+            if (charge.getAmount() <= 0) return "Charge amount must be greater than zero.";
+            if (!names.add(normalized(charge.getChargeType()))) return "The same charge type cannot be selected twice.";
+        }
+        return null;
+    }
+
+    private void applyTaxTreatment(SalesCharge charge, String treatment) {
+        if (treatment == null || treatment.startsWith("Non")) { charge.setTaxable(false); charge.setGstPercent(0); return; }
+        charge.setTaxable(true);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("([0-9.]+)").matcher(treatment);
+        charge.setGstPercent(matcher.find() ? Double.parseDouble(matcher.group(1)) : 0);
+    }
+
+    private String percentText(double percent) { return String.format(java.util.Locale.ROOT, percent % 1 == 0 ? "%.0f%%" : "%.2f%%", percent); }
+    private double parseAmount(String value) { try { return value==null||value.isBlank()?0:Double.parseDouble(value.replace(",","")); } catch(Exception e) { return 0; } }
 
     private double number(TextField field){try{return field==null||field.getText()==null||field.getText().isBlank()?0:Double.parseDouble(field.getText().replace(",",""));}catch(Exception e){return 0;}}
 
@@ -1080,8 +1246,7 @@ public class SalesController {
         if (txtVehicleNumber != null) txtVehicleNumber.setText(sale.getVehicleNumber());
         if (txtContactPerson != null) txtContactPerson.setText(sale.getContactPerson());
         if (txtContactPersonMobile != null) txtContactPersonMobile.setText(sale.getContactPersonMobile());
-        if (cmbChargeType != null) cmbChargeType.setValue(sale.getChargeType().isBlank() ? null : sale.getChargeType());
-        if (txtChargeAmount != null) txtChargeAmount.setText(String.valueOf(sale.getChargeAmount()));
+        invoiceCharges.setAll(sale.getCharges().stream().map(SalesCharge::copy).toList());
         if (txtTransportNote != null) txtTransportNote.setText(sale.getTransportNote());
         if (txtOrderNo != null) txtOrderNo.setText(sale.getOrderNo());
         String customerGstin = sale.getCustomer() == null ? "" : sale.getCustomer().getGstin();
@@ -1185,8 +1350,7 @@ public class SalesController {
         if (txtVehicleNumber != null) txtVehicleNumber.setDisable(value);
         if (txtContactPerson != null) txtContactPerson.setDisable(value);
         if (txtContactPersonMobile != null) txtContactPersonMobile.setDisable(value);
-        if (cmbChargeType != null) cmbChargeType.setDisable(value);
-        if (txtChargeAmount != null) txtChargeAmount.setDisable(value);
+        if (btnManageCharges != null) btnManageCharges.setDisable(value);
         if (txtTransportNote != null) txtTransportNote.setDisable(value);
         if (txtOrderNo != null) txtOrderNo.setDisable(value);
         if (txtBillingGstin != null) txtBillingGstin.setDisable(value);
