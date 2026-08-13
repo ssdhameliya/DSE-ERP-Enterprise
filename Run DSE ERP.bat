@@ -6,7 +6,7 @@ echo.
 echo ========================================
 echo   DO NOT USE THIS SCRIPT TO BUILD THE CUSTOMER INSTALLER
 echo ========================================
-echo   DSE ERP 6.0.5 - DEVELOPMENT / INTELLIJ ONLY
+echo   DSE ERP 7.1.6 - DEVELOPMENT / INTELLIJ ONLY
 echo ========================================
 echo.
 

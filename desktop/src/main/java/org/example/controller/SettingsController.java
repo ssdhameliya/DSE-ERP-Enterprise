@@ -18,6 +18,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.DirectoryChooser;
 import org.example.config.ConfigManager;
@@ -47,6 +48,8 @@ import java.util.List;
  * Company, Payment, Invoice, Notifications and Email.
  */
 public class SettingsController {
+
+    @FXML private StackPane panelHost;
 
     @FXML private Button btnCheckUpdates;
 
@@ -275,6 +278,7 @@ public class SettingsController {
         configureChoiceFields();
         loadSettings();
         showCompany();
+        initializeSinglePanelHost();
         javafx.animation.PauseTransition deferredSettings = new javafx.animation.PauseTransition(javafx.util.Duration.millis(350));
         deferredSettings.setOnFinished(event -> {
             long started=System.nanoTime();
@@ -291,6 +295,18 @@ public class SettingsController {
             previews.play();
         });
         deferredSettings.play();
+    }
+
+    /**
+     * Keeps only the active settings section in the scene graph. All seven
+     * sections remain cached in this controller, but hidden sections no longer
+     * participate in CSS, layout or accessibility passes on every pulse.
+     */
+    private void initializeSinglePanelHost() {
+        if (panelHost == null || panelCompany == null) return;
+        panelHost.getChildren().setAll(panelCompany);
+        panelCompany.setManaged(true);
+        panelCompany.setVisible(true);
     }
 
     private void configureChoiceFields() {
@@ -1012,27 +1028,11 @@ public class SettingsController {
                 );
         }
 
-        VBox[] panels = {
-            panelCompany,
-            panelPayment,
-            panelInvoice,
-            panelNotifications,
-            panelEmail,
-            panelWorkspace,
-            panelUpdates
-        };
-
-        for (VBox panel : panels) {
-
-            if (panel == null) {
-                continue;
-            }
-
-            boolean active =
-                panel == selectedPanel;
-
-            panel.setVisible(active);
-            panel.setManaged(active);
+        if (selectedPanel != null && panelHost != null) {
+            selectedPanel.setVisible(true);
+            selectedPanel.setManaged(true);
+            if (panelHost.getChildren().size() != 1 || panelHost.getChildren().getFirst() != selectedPanel)
+                panelHost.getChildren().setAll(selectedPanel);
         }
     }
 

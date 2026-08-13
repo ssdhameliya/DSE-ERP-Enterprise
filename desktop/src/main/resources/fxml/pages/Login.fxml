@@ -2,14 +2,15 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
 <BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.controller.LoginController" styleClass="auth-page,approved-ui,approved-screen,approved-screen-login,erp-screen-root">
 
     <left>
         <VBox prefWidth="360" minWidth="320" alignment="CENTER" spacing="18" styleClass="auth-brand-panel">
-            <StackPane styleClass="auth-logo-badge"><Label text="◆" styleClass="auth-logo-mark"/></StackPane>
-            <Label text="JavaApp ERP" styleClass="auth-brand-title"/>
+            <StackPane styleClass="auth-logo-badge"><Label fx:id="lblBrandMark" text="◆" styleClass="auth-logo-mark"/><ImageView fx:id="imgBrandLogo" fitWidth="300" fitHeight="100" preserveRatio="true" smooth="true" managed="false" visible="false"/></StackPane>
+            <Label fx:id="lblBrandName" text="DSE ERP" styleClass="auth-brand-title"/>
             <Region prefHeight="2" maxWidth="80" styleClass="auth-brand-line"/>
-            <Label text="Engineering Business Suite" styleClass="auth-brand-subtitle"/>
+            <Label fx:id="lblBrandTagline" text="Business Management Suite" styleClass="auth-brand-subtitle"/>
             <Label text="Precision in Engineering Excellence in Business." wrapText="true" textAlignment="CENTER" styleClass="auth-brand-quote"/>
             <Region VBox.vgrow="ALWAYS"/>
             <Label fx:id="lblVersion" text="Version" styleClass="auth-version"/>
@@ -21,7 +22,7 @@
             <VBox maxWidth="720" spacing="14" alignment="CENTER" styleClass="auth-card">
                 <Label text="Welcome Back" styleClass="auth-eyebrow"/>
                 <Label text="Sign in to your account" styleClass="auth-title"/>
-                <Label text="Role-aware secure access to DSE ERP" styleClass="auth-description"/>
+                <Label fx:id="lblBrandDescription" text="Role-aware secure access to DSE ERP" styleClass="auth-description"/>
 
                 <VBox fx:id="loginPanel" spacing="11" maxWidth="620" alignment="CENTER">
                     <VBox spacing="5" maxWidth="620">
@@ -88,7 +89,7 @@
 
                     <VBox spacing="5" maxWidth="620">
                         <Label text="New password *" styleClass="auth-field-label"/>
-                        <PasswordField fx:id="txtNewPassword" promptText="Minimum 6 characters" prefHeight="44" styleClass="auth-input"/>
+                        <PasswordField fx:id="txtNewPassword" promptText="8+ characters, letter and number" prefHeight="44" styleClass="auth-input"/>
                         <Label fx:id="lblNewPasswordError" managed="false" visible="false" styleClass="field-error"/>
                     </VBox>
 
