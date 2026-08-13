@@ -4,12 +4,15 @@ import org.example.util.OwnedAlert;
 import org.example.util.OwnedTextInputDialog;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.converter.DoubleStringConverter;
+import javafx.util.StringConverter;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.fxml.FXMLLoader;
@@ -17,6 +20,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Region;
 import javafx.geometry.Pos;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -63,9 +67,11 @@ public class SalesController {
     private DatePicker dpInvoiceDate;
     @FXML private DatePicker dpDueDate;
     @FXML private ComboBox<String> cmbSalesPerson,cmbPaymentTerms;
-    @FXML private ComboBox<String> cmbGstType,cmbTransporter,cmbChargeType,cmbDoorDelivery;
+    @FXML private ComboBox<String> cmbGstType,cmbChargeType;
+    @FXML private ComboBox<Lookup> cmbTransporter;
     @FXML private TextField txtOtherCharges,txtTransport,txtReference,txtAttachment;
-    @FXML private TextField txtVehicleNumber,txtContactPerson,txtContactPersonMobile,txtTransportNote,txtOrderNo,txtGstin,txtChargeAmount;
+    @FXML private TextField txtVehicleNumber,txtContactPerson,txtContactPersonMobile,txtTransportNote,txtOrderNo;
+    @FXML private TextField txtBillingGstin,txtDeliveryGstin,txtTransporterGstin,txtChargeAmount;
     @FXML private CheckBox chkSameAsBilling;
     @FXML private TextArea txtInvoiceMessage;
 
@@ -161,6 +167,7 @@ public class SalesController {
     private SalesLine editingLine = null;
 
     private int editingIndex = -1;
+    private final ObservableList<Item> allItems = FXCollections.observableArrayList();
 
     //-------------------------------------------------------
     // Initialize
@@ -170,6 +177,18 @@ public class SalesController {
     public void initialize() {
         List<String> initializationErrors = new ArrayList<>();
         if (btnAddCustomer != null) { btnAddCustomer.setGraphic(IconFactory.compactIcon("customer", 20)); btnAddCustomer.getProperties().put("erp-icon-preserve", true); }
+        if (chkSameAsBilling != null) {
+            // Keep this control as a conventional checkbox + label. A zero-size,
+            // controller-owned graphic prevents the global action decorator from
+            // inserting an additional semantic icon beside the checkbox mark.
+            Region noActionIcon = new Region();
+            noActionIcon.setMinSize(0, 0);
+            noActionIcon.setPrefSize(0, 0);
+            noActionIcon.setMaxSize(0, 0);
+            chkSameAsBilling.setGraphic(noActionIcon);
+            chkSameAsBilling.setGraphicTextGap(0);
+            chkSameAsBilling.getProperties().put("erp-icon-preserve", true);
+        }
         tableLines.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         configureExplicitTableHeaderIcons();
 
@@ -187,7 +206,6 @@ public class SalesController {
         if (cmbPaymentTerms.getItems().contains("15 Days")) cmbPaymentTerms.setValue("15 Days");
         else if (!cmbPaymentTerms.getItems().isEmpty()) cmbPaymentTerms.getSelectionModel().selectFirst();
         if (cmbChargeType != null) safeLoad("Charges", initializationErrors, () -> cmbChargeType.getItems().setAll(lookupService.getValuesByCategoryCode("CHARGES")));
-        if (cmbDoorDelivery != null) { cmbDoorDelivery.getItems().setAll("Yes","No"); cmbDoorDelivery.setValue("No"); }
         dpInvoiceDate.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
         cmbPaymentTerms.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
 
@@ -202,12 +220,20 @@ public class SalesController {
                 }
             });
         }
+        if (txtBillingGstin != null) {
+            txtBillingGstin.textProperty().addListener((o, oldValue, gstin) -> {
+                if (chkSameAsBilling != null && chkSameAsBilling.isSelected()) {
+                    txtDeliveryGstin.setText(gstin == null ? "" : gstin);
+                }
+            });
+        }
 
         // Master-driven values use stable category codes, so renaming the visible
         // category in Master Data does not break Create Sale.
         safeLoad("GST Types", initializationErrors, () -> cmbGstType.getItems().setAll(lookupService.getValuesByCategoryCode("GST_TYPE")));
         if (!cmbGstType.getItems().isEmpty()) cmbGstType.getSelectionModel().selectFirst();
-        safeLoad("Transporters", initializationErrors, () -> cmbTransporter.getItems().setAll(lookupService.getValuesByCategoryCode("TRANSPORTER")));
+        safeLoad("Transporters", initializationErrors, () -> cmbTransporter.getItems().setAll(lookupService.getByCategoryCode("TRANSPORTER")));
+        configureTransporterSelector();
         cmbGstType.valueProperty().addListener((o,a,b) -> updateGstHeaders());
         updateGstHeaders();
 
@@ -240,7 +266,7 @@ public class SalesController {
 
                 txtLineDiscount.setText(String.valueOf(newLine.getDiscountPercent()));
 
-                for (Item item : cmbItem.getItems()) {
+                for (Item item : allItems) {
 
                     if (item.getItemCode()
                         .equals(newLine.getItemCode())) {
@@ -266,9 +292,7 @@ public class SalesController {
         // Load Items
         //-------------------------------------------------------
 
-        safeLoad("Items", initializationErrors, () -> cmbItem.setItems(
-            FXCollections.observableArrayList(itemService.getAll())
-        ));
+        safeLoad("Items", initializationErrors, () -> allItems.setAll(itemService.getAll()));
 
         //-------------------------------------------------------
         // Customer Combo
@@ -329,14 +353,15 @@ public class SalesController {
         cmbCustomer.valueProperty().addListener((observable, oldCustomer, customer) -> {
             if (customer == null) {
                 txtBillingAddress.clear();
-                if (txtGstin != null) txtGstin.clear();
+                if (txtBillingGstin != null) txtBillingGstin.clear();
+                if (txtDeliveryGstin != null) txtDeliveryGstin.clear();
                 if (editingSale == null && txtDeliveryAddress != null) txtDeliveryAddress.clear();
                 return;
             }
             String address = customer.getAddress() == null ? "" : customer.getAddress().trim();
             txtBillingAddress.setText(address);
-            if (txtGstin != null && (editingSale == null || txtGstin.getText() == null || txtGstin.getText().isBlank())) {
-                txtGstin.setText(customer.getGstin() == null ? "" : customer.getGstin());
+            if (txtBillingGstin != null && (editingSale == null || txtBillingGstin.getText() == null || txtBillingGstin.getText().isBlank())) {
+                txtBillingGstin.setText(customer.getGstin() == null ? "" : customer.getGstin());
             }
             if (editingSale == null && chkSameAsBilling != null) chkSameAsBilling.setSelected(true);
             syncDeliveryAddressState();
@@ -346,57 +371,7 @@ public class SalesController {
         // Item Combo
         //-------------------------------------------------------
 
-        cmbItem.setCellFactory(list ->
-            new ListCell<>() {
-
-                @Override
-                protected void updateItem(
-                    Item item,
-                    boolean empty) {
-
-                    super.updateItem(item, empty);
-
-                    setText(
-
-                        empty || item == null
-
-                            ? null
-
-                            : item.getItemCode()
-                              + " - "
-                              + item.getDescription()
-
-                    );
-
-                }
-
-            });
-
-        cmbItem.setButtonCell(
-            new ListCell<>() {
-
-                @Override
-                protected void updateItem(
-                    Item item,
-                    boolean empty) {
-
-                    super.updateItem(item, empty);
-
-                    setText(
-
-                        empty || item == null
-
-                            ? null
-
-                            : item.getItemCode()
-                              + " - "
-                              + item.getDescription()
-
-                    );
-
-                }
-
-            });
+        configureItemSearch();
 
         // Selecting an item always uses current Item Master selling price and GST rate.
         cmbItem.valueProperty().addListener((observable, oldItem, item) -> {
@@ -409,6 +384,51 @@ public class SalesController {
 
         newSale();
 
+    }
+
+    private void configureItemSearch() {
+        FilteredList<Item> filtered = new FilteredList<>(allItems, item -> true);
+        cmbItem.setItems(filtered);
+        cmbItem.setVisibleRowCount(12);
+        StringConverter<Item> converter = new StringConverter<>() {
+            @Override public String toString(Item item) { return item == null ? "" : itemRemark(item); }
+            @Override public Item fromString(String text) {
+                if (text == null) return null;
+                return allItems.stream().filter(i -> itemRemark(i).equalsIgnoreCase(text.trim())).findFirst().orElse(null);
+            }
+        };
+        cmbItem.setConverter(converter);
+        cmbItem.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(Item item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : itemRemark(item));
+            }
+        });
+        cmbItem.getEditor().textProperty().addListener((obs, oldText, text) -> {
+            Item selected = cmbItem.getValue();
+            if (selected != null && itemRemark(selected).equals(text)) return;
+            String query = text == null ? "" : text.trim().toLowerCase(java.util.Locale.ROOT);
+            filtered.setPredicate(item -> query.isEmpty() || itemRemark(item).toLowerCase(java.util.Locale.ROOT).contains(query));
+            if (cmbItem.isFocused() && !filtered.isEmpty()) cmbItem.show();
+        });
+    }
+
+    private String itemRemark(Item item) {
+        if (item == null) return "";
+        String remark = item.getRemarks();
+        return remark == null ? "" : remark.trim();
+    }
+
+    private void configureTransporterSelector() {
+        cmbTransporter.setConverter(new StringConverter<>() {
+            @Override public String toString(Lookup lookup) { return lookup == null ? "" : lookup.getLookupValue(); }
+            @Override public Lookup fromString(String text) { return null; }
+        });
+        cmbTransporter.valueProperty().addListener((o, oldValue, lookup) -> {
+            if (txtTransporterGstin != null) {
+                txtTransporterGstin.setText(lookup == null || lookup.getDescription() == null ? "" : lookup.getDescription().trim());
+            }
+        });
     }
 
     private void updateGstHeaders() {
@@ -749,6 +769,14 @@ public class SalesController {
             warn("Enter delivery address");
             return null;
         }
+        if (chkSameAsBilling != null && !chkSameAsBilling.isSelected()
+            && normalized(txtBillingAddress == null ? "" : txtBillingAddress.getText())
+                .equals(normalized(txtDeliveryAddress == null ? "" : txtDeliveryAddress.getText()))
+            && normalized(txtBillingGstin == null ? "" : txtBillingGstin.getText())
+                .equals(normalized(txtDeliveryGstin == null ? "" : txtDeliveryGstin.getText()))) {
+            warn("Delivery address and GSTIN still match billing details. Select 'Same as Billing Address' or update the delivery details.");
+            return null;
+        }
 
         if (tableLines.getItems().isEmpty()) {
 
@@ -816,11 +844,15 @@ public class SalesController {
         String shipping = txtDeliveryAddress == null ? "" : txtDeliveryAddress.getText();
         sale.setBillingAddress(billing == null ? "" : billing);
         sale.setDeliveryAddress(shipping == null ? "" : shipping);
-        sale.setGstin(txtGstin == null ? "" : txtGstin.getText());
+        String billingGstin = txtBillingGstin == null ? "" : txtBillingGstin.getText();
+        sale.setGstin(billingGstin); // Legacy compatibility: GSTIN remains the billing GSTIN.
+        sale.setBillingGstin(billingGstin);
+        sale.setDeliveryGstin(txtDeliveryGstin == null ? "" : txtDeliveryGstin.getText());
+        sale.setTransporterGstin(txtTransporterGstin == null ? "" : txtTransporterGstin.getText());
         sale.setPaymentTerms(cmbPaymentTerms.getValue());
         sale.setGstType(cmbGstType == null ? "" : cmbGstType.getValue());
-        sale.setTransporter(cmbTransporter == null ? "" : cmbTransporter.getValue());
-        sale.setDoorDelivery(cmbDoorDelivery == null || cmbDoorDelivery.getValue() == null ? "" : cmbDoorDelivery.getValue());
+        sale.setTransporter(cmbTransporter == null || cmbTransporter.getValue() == null ? "" : cmbTransporter.getValue().getLookupValue());
+        sale.setDoorDelivery(editingSale == null ? "" : editingSale.getDoorDelivery());
         sale.setVehicleNumber(txtVehicleNumber == null ? "" : txtVehicleNumber.getText());
         sale.setContactPerson(txtContactPerson == null ? "" : txtContactPerson.getText());
         sale.setContactPersonMobile(txtContactPersonMobile == null ? "" : txtContactPersonMobile.getText());
@@ -858,10 +890,21 @@ public class SalesController {
         if (same) {
             String billing = txtBillingAddress == null ? "" : txtBillingAddress.getText();
             txtDeliveryAddress.setText(billing == null ? "" : billing);
+            String billingGstin = txtBillingGstin == null ? "" : txtBillingGstin.getText();
+            if (txtDeliveryGstin != null) txtDeliveryGstin.setText(billingGstin == null ? "" : billingGstin);
         }
         txtDeliveryAddress.setEditable(!same);
         txtDeliveryAddress.setDisable(false);
         txtDeliveryAddress.setOpacity(same ? 0.88 : 1.0);
+        if (txtDeliveryGstin != null) {
+            txtDeliveryGstin.setEditable(!same);
+            txtDeliveryGstin.setDisable(false);
+            txtDeliveryGstin.setOpacity(same ? 0.88 : 1.0);
+        }
+    }
+
+    private String normalized(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", " ").trim().toUpperCase(java.util.Locale.ROOT);
     }
 
     private void newSale() {
@@ -893,10 +936,11 @@ public class SalesController {
         txtDeliveryAddress.clear();
         if (chkSameAsBilling != null) chkSameAsBilling.setSelected(true);
         if (txtOrderNo != null) txtOrderNo.clear();
-        if (txtGstin != null) txtGstin.clear();
+        if (txtBillingGstin != null) txtBillingGstin.clear();
+        if (txtDeliveryGstin != null) txtDeliveryGstin.clear();
+        if (txtTransporterGstin != null) txtTransporterGstin.clear();
         if (cmbGstType != null && !cmbGstType.getItems().isEmpty()) cmbGstType.getSelectionModel().selectFirst();
         if (cmbTransporter != null) cmbTransporter.setValue(null);
-        if (cmbDoorDelivery != null) cmbDoorDelivery.setValue("No");
         if (txtVehicleNumber != null) txtVehicleNumber.clear();
         if (txtContactPerson != null) txtContactPerson.clear();
         if (txtContactPersonMobile != null) txtContactPersonMobile.clear();
@@ -967,7 +1011,7 @@ public class SalesController {
     private double number(TextField field){try{return field==null||field.getText()==null||field.getText().isBlank()?0:Double.parseDouble(field.getText().replace(",",""));}catch(Exception e){return 0;}}
 
     @FXML private void addMultipleItems(){new OwnedAlert(Alert.AlertType.INFORMATION,"Select an item, enter quantity/rate/tax and click Add Item. Repeat for each required item.").showAndWait();}
-    @FXML private void scanBarcode(){TextInputDialog d=new OwnedTextInputDialog();d.setHeaderText("Scan or enter item code");d.showAndWait().ifPresent(code->cmbItem.getItems().stream().filter(i->i.getItemCode().equalsIgnoreCase(code.trim())).findFirst().ifPresentOrElse(cmbItem::setValue,()->warn("Item code not found")));}
+    @FXML private void scanBarcode(){TextInputDialog d=new OwnedTextInputDialog();d.setHeaderText("Scan or enter item code");d.showAndWait().ifPresent(code->allItems.stream().filter(i->i.getItemCode().equalsIgnoreCase(code.trim())).findFirst().ifPresentOrElse(cmbItem::setValue,()->warn("Item code not found")));}
     @FXML private void attachFile(){javafx.stage.FileChooser c=new javafx.stage.FileChooser();java.io.File f=c.showOpenDialog(tableLines.getScene().getWindow());if(f!=null)txtAttachment.setText(f.getAbsolutePath());}
     @FXML private void preview(){Sales sale=buildSale();if(sale!=null)new OwnedAlert(Alert.AlertType.INFORMATION,"Invoice "+sale.getInvoiceNo()+"\nCustomer: "+sale.getCustomer().getName()+"\nItems: "+sale.getLines().size()+"\nTotal: "+String.format("₹ %,.2f",sale.getTotalAmount())).showAndWait();}
     @FXML private void saveDraft(){Sales sale=buildSale();if(sale==null)return;sale.setRemarks("DRAFT\n"+sale.getRemarks());try{salesService.save(sale);NotificationService.add("Draft sales invoice "+sale.getInvoiceNo()+" saved.");cancel();}catch(Exception e){warn(e.getMessage());}}
@@ -1030,8 +1074,9 @@ public class SalesController {
         cmbPaymentTerms.setValue(sale.getPaymentTerms().isBlank() ? "15 Days" : sale.getPaymentTerms());
         if (cmbGstType != null) cmbGstType.setValue(sale.getGstType().isBlank()
             ? (cmbGstType.getItems().isEmpty() ? null : cmbGstType.getItems().get(0)) : sale.getGstType());
-        if (cmbTransporter != null) cmbTransporter.setValue(sale.getTransporter());
-        if (cmbDoorDelivery != null) cmbDoorDelivery.setValue(sale.getDoorDelivery().isBlank() ? "No" : sale.getDoorDelivery());
+        if (cmbTransporter != null) cmbTransporter.getItems().stream()
+            .filter(value -> value.getLookupValue().equalsIgnoreCase(sale.getTransporter()))
+            .findFirst().ifPresent(value -> cmbTransporter.setValue(value));
         if (txtVehicleNumber != null) txtVehicleNumber.setText(sale.getVehicleNumber());
         if (txtContactPerson != null) txtContactPerson.setText(sale.getContactPerson());
         if (txtContactPersonMobile != null) txtContactPersonMobile.setText(sale.getContactPersonMobile());
@@ -1039,8 +1084,12 @@ public class SalesController {
         if (txtChargeAmount != null) txtChargeAmount.setText(String.valueOf(sale.getChargeAmount()));
         if (txtTransportNote != null) txtTransportNote.setText(sale.getTransportNote());
         if (txtOrderNo != null) txtOrderNo.setText(sale.getOrderNo());
-        if (txtGstin != null) txtGstin.setText(sale.getGstin().isBlank() && sale.getCustomer() != null
-            ? sale.getCustomer().getGstin() : sale.getGstin());
+        String customerGstin = sale.getCustomer() == null ? "" : sale.getCustomer().getGstin();
+        if (txtBillingGstin != null) txtBillingGstin.setText(!sale.getBillingGstin().isBlank()
+            ? sale.getBillingGstin() : (!sale.getGstin().isBlank() ? sale.getGstin() : customerGstin));
+        if (txtDeliveryGstin != null) txtDeliveryGstin.setText(!sale.getDeliveryGstin().isBlank()
+            ? sale.getDeliveryGstin() : (txtBillingGstin == null ? "" : txtBillingGstin.getText()));
+        if (txtTransporterGstin != null) txtTransporterGstin.setText(sale.getTransporterGstin());
         txtReference.setText("");
 
         // Select customer
@@ -1074,7 +1123,10 @@ public class SalesController {
         }
         if (chkSameAsBilling != null) {
             String billing = txtBillingAddress == null ? "" : txtBillingAddress.getText();
-            chkSameAsBilling.setSelected(!sale.getDeliveryAddress().isBlank() && sale.getDeliveryAddress().equals(billing));
+            boolean sameAddress = !sale.getDeliveryAddress().isBlank() && sale.getDeliveryAddress().equals(billing);
+            boolean sameGstin = normalized(txtDeliveryGstin == null ? "" : txtDeliveryGstin.getText())
+                .equals(normalized(txtBillingGstin == null ? "" : txtBillingGstin.getText()));
+            chkSameAsBilling.setSelected(sameAddress && sameGstin);
             syncDeliveryAddressState();
         }
 
@@ -1130,7 +1182,6 @@ public class SalesController {
         txtDeliveryAddress.setDisable(value);
         if (cmbGstType != null) cmbGstType.setDisable(value);
         if (cmbTransporter != null) cmbTransporter.setDisable(value);
-        if (cmbDoorDelivery != null) cmbDoorDelivery.setDisable(value);
         if (txtVehicleNumber != null) txtVehicleNumber.setDisable(value);
         if (txtContactPerson != null) txtContactPerson.setDisable(value);
         if (txtContactPersonMobile != null) txtContactPersonMobile.setDisable(value);
@@ -1138,7 +1189,9 @@ public class SalesController {
         if (txtChargeAmount != null) txtChargeAmount.setDisable(value);
         if (txtTransportNote != null) txtTransportNote.setDisable(value);
         if (txtOrderNo != null) txtOrderNo.setDisable(value);
-        if (txtGstin != null) txtGstin.setDisable(value);
+        if (txtBillingGstin != null) txtBillingGstin.setDisable(value);
+        if (txtDeliveryGstin != null) txtDeliveryGstin.setDisable(value);
+        if (txtTransporterGstin != null) txtTransporterGstin.setDisable(value);
         if (chkSameAsBilling != null) chkSameAsBilling.setDisable(value);
 
         btnAddLine.setDisable(value);
@@ -1219,11 +1272,7 @@ public class SalesController {
             );
 
 
-            line.setItemDescription(
-                item.getItemCode()
-                    +" - "
-                    +item.getDescription()
-            );
+            line.setItemDescription(itemRemark(item));
 
 
             line.setQuantity(qty);

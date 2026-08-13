@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
 import org.example.api.master.MasterApiClient;
 import org.example.api.quotation.QuotationApiClient;
 import org.example.model.Item;
@@ -30,7 +31,8 @@ public final class QuotationEditorController {
     @FXML private TableColumn<LineRow,String> colItem,colCode;
     @FXML private TableColumn<LineRow,Number> colQty,colRate,colGst,colDiscount,colAmount;
     @FXML private TableColumn<LineRow,Void> colAction;
-    @FXML private Button btnBack,btnAdd,btnPreview,btnDraft,btnSaveSend;
+    @FXML private Button btnAdd,btnPreview,btnDraft,btnSaveSend;
+    @FXML private StackPane quotationTitleIcon;
 
     private final QuotationApiClient api=new QuotationApiClient();
     private final MasterApiClient masters=new MasterApiClient();
@@ -38,7 +40,8 @@ public final class QuotationEditorController {
     private boolean dirty;
 
     @FXML private void initialize(){
-        btnBack.setGraphic(IconFactory.compactIcon("return",16));btnAdd.setGraphic(IconFactory.compactIcon("add",16));
+        if(quotationTitleIcon!=null)quotationTitleIcon.getChildren().setAll(IconFactory.icon("quotation",24));
+        btnAdd.setGraphic(IconFactory.compactIcon("add",16));
         btnPreview.setGraphic(IconFactory.compactIcon("view",16));btnDraft.setGraphic(IconFactory.compactIcon("save",16));btnSaveSend.setGraphic(IconFactory.compactIcon("send",16));
         cmbSource.setItems(FXCollections.observableArrayList("Direct","Email","WhatsApp","Website","Referral","Other"));cmbSource.setValue("Direct");
         dpDate.setValue(LocalDate.now());dpValid.setValue(LocalDate.now().plusDays(30));dpFollowUp.setValue(LocalDate.now().plusDays(7));
@@ -51,6 +54,14 @@ public final class QuotationEditorController {
         tableLines.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         colItem.setCellValueFactory(v->v.getValue().description);colCode.setCellValueFactory(v->v.getValue().code);
         colQty.setCellValueFactory(v->v.getValue().quantity);colRate.setCellValueFactory(v->v.getValue().rate);colGst.setCellValueFactory(v->v.getValue().gst);colDiscount.setCellValueFactory(v->v.getValue().discount);colAmount.setCellValueFactory(v->v.getValue().total);
+        IconFactory.applyTableHeaderIcon(colItem,"item");
+        IconFactory.applyTableHeaderIcon(colCode,"document");
+        IconFactory.applyTableHeaderIcon(colQty,"quantity");
+        IconFactory.applyTableHeaderIcon(colRate,"currency");
+        IconFactory.applyTableHeaderIcon(colGst,"tax");
+        IconFactory.applyTableHeaderIcon(colDiscount,"discount");
+        IconFactory.applyTableHeaderIcon(colAmount,"currency");
+        IconFactory.applyTableHeaderIcon(colAction,"actions");
         for(TableColumn<LineRow,Number> column:List.of(colQty,colRate,colGst,colDiscount,colAmount))column.setCellFactory(c->new TableCell<>(){@Override protected void updateItem(Number value,boolean empty){super.updateItem(value,empty);setText(empty||value==null?null:String.format(Locale.ENGLISH,"%,.2f",value.doubleValue()));setAlignment(Pos.CENTER_RIGHT);}});
         colAction.setCellFactory(c->new TableCell<>(){final Button remove=new Button("Remove",IconFactory.compactIcon("delete",14));{remove.getStyleClass().addAll("approved-button","danger-button");remove.setOnAction(e->{LineRow row=getTableRow()==null?null:(LineRow)getTableRow().getItem();if(row!=null)tableLines.getItems().remove(row);});}@Override protected void updateItem(Void value,boolean empty){super.updateItem(value,empty);setGraphic(empty?null:remove);}});
     }
@@ -88,7 +99,6 @@ public final class QuotationEditorController {
             quotationId=saved.id();if(send)api.markSent(saved.id(),cmbSource.getValue());dirty=false;new OwnedAlert(Alert.AlertType.INFORMATION,send?"Quotation saved and marked as sent.":"Quotation draft saved successfully.").showAndWait();backToRegister();
         }catch(Exception e){error(e);}
     }
-    @FXML private void back(){if(dirty){OwnedAlert alert=new OwnedAlert(Alert.AlertType.CONFIRMATION,"You have unsaved quotation changes. Leave this page and discard them?",ButtonType.YES,ButtonType.NO);if(alert.showAndWait().orElse(ButtonType.NO)!=ButtonType.YES)return;}backToRegister();}
     private void backToRegister(){NavigationManager manager=NavigationManager.getInstance();if(manager!=null){manager.invalidate("/fxml/pages/Quotations.fxml");manager.loadPage("/fxml/pages/Quotations.fxml");}}
     private void updateTotals(){double gross=tableLines.getItems().stream().mapToDouble(r->r.quantity.get()*r.rate.get()).sum(),discount=tableLines.getItems().stream().mapToDouble(r->r.discountAmount.get()).sum(),taxable=gross-discount,gst=tableLines.getItems().stream().mapToDouble(r->r.gstAmount.get()).sum();lblSubtotal.setText(money(gross));lblDiscount.setText("- "+money(discount));lblTaxable.setText(money(taxable));lblGst.setText(money(gst));lblGrandTotal.setText(money(taxable+gst));lblLineCount.setText(tableLines.getItems().size()+" line item(s)");}
     private static double positive(String v,String name){double n=Double.parseDouble(v.trim());if(!Double.isFinite(n)||n<=0)throw new IllegalArgumentException(name+" must be greater than zero.");return n;}

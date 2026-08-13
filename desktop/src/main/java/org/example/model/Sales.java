@@ -59,6 +59,9 @@ public class Sales {
     private String transportNote;
     private String orderNo;
     private String gstin;
+    private String billingGstin;
+    private String deliveryGstin;
+    private String transporterGstin;
     private String chargeType;
     private double chargeAmount;
     private String contactPersonMobile;
@@ -235,6 +238,12 @@ public class Sales {
     public void setOrderNo(String orderNo) { this.orderNo = orderNo; }
     public String getGstin() { return gstin == null ? "" : gstin; }
     public void setGstin(String gstin) { this.gstin = gstin; }
+    public String getBillingGstin() { return billingGstin == null ? "" : billingGstin; }
+    public void setBillingGstin(String billingGstin) { this.billingGstin = billingGstin; }
+    public String getDeliveryGstin() { return deliveryGstin == null ? "" : deliveryGstin; }
+    public void setDeliveryGstin(String deliveryGstin) { this.deliveryGstin = deliveryGstin; }
+    public String getTransporterGstin() { return transporterGstin == null ? "" : transporterGstin; }
+    public void setTransporterGstin(String transporterGstin) { this.transporterGstin = transporterGstin; }
     public String getChargeType() { return chargeType == null ? "" : chargeType; }
     public void setChargeType(String chargeType) { this.chargeType = chargeType; }
     public double getChargeAmount() { return chargeAmount; }

@@ -11,6 +11,14 @@ public class SetupService {
     private final PasswordEncoder passwords;
     public SetupService(JpaNativeRepository jdbc, PasswordEncoder passwords){ this.jdbc=jdbc; this.passwords=passwords; }
 
+    @Transactional(readOnly = true)
+    public SetupDtos.SetupStatus status(){
+        Long users=jdbc.queryForObject("SELECT COUNT(*) FROM users",Long.class);
+        Long admins=jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE UPPER(role)='ADMIN' AND active=1",Long.class);
+        long userCount=users==null?0:users, adminCount=admins==null?0:admins;
+        return new SetupDtos.SetupStatus(userCount==0 || adminCount==0,userCount,adminCount);
+    }
+
     @Transactional
     public SetupDtos.BootstrapResponse bootstrap(SetupDtos.BootstrapRequest r){
         if(r==null || blank(r.companyName()) || blank(r.adminUsername()) || r.adminPassword()==null || r.adminPassword().length()<8

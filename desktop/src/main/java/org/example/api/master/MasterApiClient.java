@@ -37,6 +37,7 @@ public final class MasterApiClient {
  public List<Lookup> lookups(String type){return get("/api/master/lookups?type="+enc(type),new TypeReference<List<LookupDto>>(){}).stream().map(this::lookup).toList();}
  public List<String> lookupValues(String type){return get("/api/master/lookups/values?type="+enc(type),ValuesResponse.class).values();}
  public List<String> lookupValuesByCategoryCode(String code){return get("/api/master/lookups/values-by-category-code?code="+enc(code),ValuesResponse.class).values();}
+ public List<Lookup> lookupsByCategoryCode(String code){return get("/api/master/lookups/by-category-code?code="+enc(code),new TypeReference<List<LookupDto>>(){}).stream().map(this::lookup).toList();}
  public void saveLookup(Lookup l){post("/api/master/lookups",lookupDto(l),LookupDto.class);}
  public void updateLookup(Lookup l){put("/api/master/lookups",lookupDto(l),LookupDto.class);}
  public void deleteLookup(int id){delete("/api/master/lookups/"+id);}

@@ -21,9 +21,12 @@ import java.util.List;
  */
 @Component
 public final class SecurityFinancialMigrationRunner implements ApplicationRunner {
-    private static final String MIGRATION = "V5_1_18__security_financial_integrity";
-    private static final String MIGRATION_RESOURCE =
-            "db/migration/V5_1_18__security_financial_integrity.sql";
+    private static final List<Migration> MIGRATIONS = List.of(
+            new Migration("V5_1_18__security_financial_integrity",
+                    "db/migration/V5_1_18__security_financial_integrity.sql"),
+            new Migration("V7_1_3__sale_gstin_details",
+                    "db/migration/V7_1_3__sale_gstin_details.sql")
+    );
     private static final long MIGRATION_LOCK = 51018001L;
     private final JpaNativeRepository database;
     private final TransactionTemplate transaction;
@@ -36,7 +39,10 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
 
     @Override
     public void run(ApplicationArguments arguments) throws IOException {
-        List<String> statements = loadStatements();
+        List<LoadedMigration> migrations = new ArrayList<>(MIGRATIONS.size());
+        for (Migration migration : MIGRATIONS) {
+            migrations.add(new LoadedMigration(migration.key(), loadStatements(migration.resource())));
+        }
         transaction.executeWithoutResult(status -> {
             database.query("SELECT pg_advisory_xact_lock(?)",
                     (row, index) -> row.getObject(1), MIGRATION_LOCK);
@@ -46,18 +52,19 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
                         applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
                     """);
-            Long applied = database.queryForObject(
-                    "SELECT COUNT(*) FROM dse_schema_migration WHERE migration_key=?",
-                    Long.class, MIGRATION);
-            if (applied != null && applied > 0) return;
-
-            statements.forEach(database::execute);
-            database.update("INSERT INTO dse_schema_migration(migration_key) VALUES (?)", MIGRATION);
+            for (LoadedMigration migration : migrations) {
+                Long applied = database.queryForObject(
+                        "SELECT COUNT(*) FROM dse_schema_migration WHERE migration_key=?",
+                        Long.class, migration.key());
+                if (applied != null && applied > 0) continue;
+                migration.statements().forEach(database::execute);
+                database.update("INSERT INTO dse_schema_migration(migration_key) VALUES (?)", migration.key());
+            }
         });
     }
 
-    private static List<String> loadStatements() throws IOException {
-        ClassPathResource resource = new ClassPathResource(MIGRATION_RESOURCE);
+    private static List<String> loadStatements(String resourcePath) throws IOException {
+        ClassPathResource resource = new ClassPathResource(resourcePath);
         String script;
         try (InputStream input = resource.getInputStream()) {
             script = new String(input.readAllBytes(), StandardCharsets.UTF_8);
@@ -105,4 +112,7 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
         if (!statement.isEmpty()) statements.add(statement);
         current.setLength(0);
     }
+
+    private record Migration(String key, String resource) {}
+    private record LoadedMigration(String key, List<String> statements) {}
 }

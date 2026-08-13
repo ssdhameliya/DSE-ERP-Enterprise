@@ -157,6 +157,14 @@ public class MasterDataService {
         return c == null ? List.of() : values(c.getCategoryName());
     }
 
+    @Transactional(readOnly = true)
+    public List<MasterDtos.LookupDto> lookupsByCategoryCode(String code) {
+        MasterCategoryEntity c = categories.findByCategoryCode(code).orElse(null);
+        if (c == null) return List.of();
+        return lookups.findByLookupTypeAndActiveTrueOrderByDisplayOrderAscLookupValueAsc(c.getCategoryName())
+            .stream().map(this::lookupDto).toList();
+    }
+
     @Transactional
     public MasterDtos.LookupDto saveLookup(MasterDtos.LookupDto d) {
         validateLookup(d);
@@ -340,4 +348,3 @@ public class MasterDataService {
         return v == null ? 0 : v;
     }
 }
-

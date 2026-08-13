@@ -27,7 +27,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/runtime/health", "/api/auth/health", "/api/auth/login", "/api/setup/bootstrap",
+                        .requestMatchers("/api/runtime/health", "/api/auth/health", "/api/auth/login", "/api/setup/bootstrap", "/api/setup/status",
                                 "/api/auth/registration-roles", "/api/auth/registration/request", "/api/auth/registration/complete",
                                 "/api/auth/password-reset/request", "/api/auth/password-reset/complete").permitAll()
                         .requestMatchers("/api/admin/**", "/api/auth/register").hasRole("ADMIN")

@@ -6,7 +6,7 @@
 <ScrollPane xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.example.controller.SalesController"
-      fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+      fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
       styleClass="sales-entry-scroll,approved-ui,approved-screen,approved-screen-sale,erp-screen-root">
   <content>
 <VBox
@@ -27,75 +27,92 @@
     </HBox>
 
     <HBox spacing="12" alignment="TOP_LEFT" VBox.vgrow="ALWAYS">
-        <VBox spacing="10" HBox.hgrow="ALWAYS">
-            <VBox spacing="10" styleClass="purchase-card,flow-card,sales-entry-card,sales-entry-customer-card">
+        <VBox spacing="8" HBox.hgrow="ALWAYS">
+            <VBox spacing="6" styleClass="purchase-card,flow-card,sales-entry-card,sales-entry-customer-card">
                 <Label text="Customer &amp; Invoice Details"
                        styleClass="flow-title,sales-entry-section-title,sales-entry-section-customer"/>
-                <GridPane hgap="12" vgap="9">
+                <GridPane hgap="9" vgap="5">
                     <columnConstraints>
-                        <ColumnConstraints percentWidth="34"/>
-                        <ColumnConstraints percentWidth="25"/>
-                        <ColumnConstraints percentWidth="20.5"/>
-                        <ColumnConstraints percentWidth="20.5"/>
+                        <ColumnConstraints percentWidth="24"/>
+                        <ColumnConstraints percentWidth="20"/>
+                        <ColumnConstraints percentWidth="18"/>
+                        <ColumnConstraints percentWidth="18"/>
+                        <ColumnConstraints percentWidth="20"/>
                     </columnConstraints>
 
-                    <VBox spacing="4">
+                    <VBox spacing="4" GridPane.columnSpan="2">
                         <Label text="Customer *" styleClass="sales-entry-field-label,field-label-customer"/>
                         <HBox spacing="7">
                             <ComboBox fx:id="cmbCustomer" promptText="Select customer..."
                                       maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="approved-input"/>
-                            <Button fx:id="btnAddCustomer" text="New Customer" onAction="#addCustomer"
+                            <Button fx:id="btnAddCustomer" text="+ New Customer" onAction="#addCustomer"
                                     styleClass="sales-entry-new-button,approved-button,approved-primary-button"/>
                         </HBox>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.columnIndex="1">
+                    <VBox spacing="4" GridPane.columnIndex="2">
                         <Label text="Invoice No. *" styleClass="sales-entry-field-label,field-label-invoice"/>
                         <TextField fx:id="txtInvoiceNo" editable="false" styleClass="approved-input"/>
                     </VBox>
-                    <VBox spacing="4" GridPane.columnIndex="2">
+                    <VBox spacing="4" GridPane.columnIndex="3">
                         <Label text="Invoice Date *" styleClass="sales-entry-field-label,field-label-date"/>
                         <DatePicker fx:id="dpInvoiceDate" maxWidth="Infinity" styleClass="approved-input"/>
                     </VBox>
-                    <VBox spacing="4" GridPane.columnIndex="3">
-                        <Label text="PO Date" styleClass="sales-entry-field-label,field-label-due"/>
-                        <DatePicker fx:id="dpDueDate" maxWidth="Infinity" styleClass="approved-input"/>
+                    <VBox spacing="4" GridPane.columnIndex="4" alignment="CENTER_LEFT">
+                        <Label text="Delivery Address" styleClass="sales-entry-field-label,field-label-address"/>
+                        <CheckBox fx:id="chkSameAsBilling" text="Same as Billing Address" selected="true"
+                                  styleClass="sales-entry-same-address,sales-entry-action-toggle"/>
                     </VBox>
 
                     <VBox spacing="4" GridPane.rowIndex="1" GridPane.columnSpan="2">
                         <Label text="Billing Address *" styleClass="sales-entry-field-label,field-label-address"/>
                         <TextArea fx:id="txtBillingAddress" promptText="Billing address..."
-                                  prefRowCount="4" prefHeight="88" wrapText="true" maxWidth="Infinity"
+                                  prefRowCount="2" prefHeight="52" wrapText="true" maxWidth="Infinity"
                                   styleClass="approved-input,sales-entry-delivery-area,sales-entry-address-area"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="1" GridPane.columnIndex="2" GridPane.columnSpan="2">
+                    <VBox spacing="4" GridPane.rowIndex="1" GridPane.columnIndex="2" GridPane.columnSpan="3">
                         <Label text="Delivery Address *" styleClass="sales-entry-field-label,field-label-address"/>
                         <TextArea fx:id="txtDeliveryAddress" promptText="Enter delivery address..."
-                                  prefRowCount="4" prefHeight="88" wrapText="true" maxWidth="Infinity"
+                                  prefRowCount="2" prefHeight="52" wrapText="true" maxWidth="Infinity"
                                   styleClass="approved-input,sales-entry-delivery-area,sales-entry-address-area"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="2">
+                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                        <Label text="Billing GSTIN" styleClass="sales-entry-field-label,field-label-tax"/>
+                        <TextField fx:id="txtBillingGstin" promptText="Billing GSTIN..." maxWidth="Infinity"
+                                   styleClass="approved-input,sales-entry-gstin-input"/>
+                    </VBox>
+                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="2" GridPane.columnSpan="3">
+                        <Label text="Delivery GSTIN" styleClass="sales-entry-field-label,field-label-tax"/>
+                        <TextField fx:id="txtDeliveryGstin" promptText="Delivery GSTIN..." maxWidth="Infinity"
+                                   styleClass="approved-input,sales-entry-gstin-input"/>
+                    </VBox>
+
+                    <VBox spacing="4" GridPane.rowIndex="3">
                         <Label text="Payment Terms" styleClass="sales-entry-field-label,field-label-payment"/>
                         <ComboBox fx:id="cmbPaymentTerms" maxWidth="Infinity" promptText="Select payment terms..."
                                   styleClass="approved-input,sales-entry-payment-terms"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="1">
                         <Label text="Charges Type" styleClass="sales-entry-field-label,field-label-payment"/>
                         <ComboBox fx:id="cmbChargeType" maxWidth="Infinity" promptText="Select charges..."
                                   styleClass="approved-input,sales-entry-charge-type"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="2">
+                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="2">
                         <Label text="Charge Amount" styleClass="sales-entry-field-label,field-label-payment"/>
                         <TextField fx:id="txtChargeAmount" text="0" promptText="0.00"
                                    styleClass="approved-input,sales-entry-charge-amount"/>
                     </VBox>
-                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="3">
-                        <Label text="Order No." styleClass="sales-entry-field-label,field-label-invoice"/>
-                        <TextField fx:id="txtOrderNo" promptText="Enter order no. (optional)"
+                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="3">
+                        <Label text="PO Date" styleClass="sales-entry-field-label,field-label-due"/>
+                        <DatePicker fx:id="dpDueDate" maxWidth="Infinity" styleClass="approved-input"/>
+                    </VBox>
+                    <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="4">
+                        <Label text="PO Order No." styleClass="sales-entry-field-label,field-label-invoice"/>
+                        <TextField fx:id="txtOrderNo" promptText="Enter PO order no. (optional)"
                                    styleClass="approved-input,sales-entry-order-field"/>
                     </VBox>
                 </GridPane>
@@ -114,7 +131,7 @@
             <VBox spacing="8" styleClass="purchase-card,flow-card,sales-entry-card,sales-entry-items-card" VBox.vgrow="ALWAYS">
                 <Label text="Invoice Items" styleClass="flow-title,sales-entry-section-title,sales-entry-section-items"/>
                 <HBox spacing="8" alignment="CENTER_LEFT" styleClass="sales-entry-line-toolbar,approved-toolbar">
-                    <ComboBox fx:id="cmbItem" promptText="Search item by name / code..."
+                    <ComboBox fx:id="cmbItem" promptText="Search Item Master remarks..." editable="true"
                               minWidth="230" HBox.hgrow="ALWAYS" styleClass="approved-input"/>
                     <TextField fx:id="txtQuantity" promptText="Qty" prefWidth="92" styleClass="approved-input"/>
                     <TextField fx:id="txtRate" promptText="Rate (₹)" prefWidth="112" styleClass="approved-input"/>
@@ -124,8 +141,6 @@
                             styleClass="sales-entry-add-button,approved-button,approved-primary-button"/>
                     <Button fx:id="btnRemoveLine" text="Remove" onAction="#removeLine"
                             styleClass="sales-entry-remove-button,approved-button,approved-danger-button"/>
-                    <CheckBox fx:id="chkSameAsBilling" text="Same as Billing Address" selected="true"
-                              styleClass="sales-entry-same-address,sales-entry-action-toggle"/>
                 </HBox>
 
                 <TableView fx:id="tableLines" minHeight="190" VBox.vgrow="ALWAYS"
@@ -197,8 +212,8 @@
                                   styleClass="approved-input,sales-entry-tax-input"/>
                     </VBox>
                     <VBox spacing="4" GridPane.columnIndex="1">
-                        <Label text="GSTIN" styleClass="sales-entry-field-label,field-label-tax"/>
-                        <TextField fx:id="txtGstin" promptText="Customer GSTIN..." maxWidth="Infinity"
+                        <Label text="Transporter GSTIN" styleClass="sales-entry-field-label,field-label-tax"/>
+                        <TextField fx:id="txtTransporterGstin" promptText="From transporter master..." maxWidth="Infinity"
                                    styleClass="approved-input,sales-entry-gstin-input"/>
                     </VBox>
 
@@ -208,12 +223,7 @@
                                   styleClass="approved-input"/>
                     </VBox>
 
-                    <VBox spacing="4" GridPane.rowIndex="2">
-                        <Label text="Door Delivery" styleClass="sales-entry-field-label,field-label-delivery"/>
-                        <ComboBox fx:id="cmbDoorDelivery" promptText="Select..." maxWidth="Infinity"
-                                  styleClass="approved-input,sales-entry-door-delivery"/>
-                    </VBox>
-                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                    <VBox spacing="4" GridPane.rowIndex="2" GridPane.columnSpan="2">
                         <Label text="Vehicle Number" styleClass="sales-entry-field-label"/>
                         <TextField fx:id="txtVehicleNumber" promptText="Vehicle number..." styleClass="approved-input"/>
                     </VBox>
@@ -238,12 +248,12 @@
             <VBox spacing="10" styleClass="purchase-card,flow-card,sales-entry-card,sales-entry-actions-card">
                 <Label text="Action Needed"
                        styleClass="flow-title,sales-entry-section-title,sales-entry-section-actions"/>
-                <HBox alignment="CENTER" spacing="10" styleClass="sales-entry-side-actions">
-                    <Button text="Cancel" onAction="#cancel" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                <VBox alignment="CENTER" spacing="5" styleClass="sales-entry-side-actions">
+                    <Button text="Cancel" onAction="#cancel" maxWidth="Infinity" prefHeight="30"
                             styleClass="sales-entry-cancel-button,approved-button,approved-secondary-button"/>
-                    <Button fx:id="btnSaveSale" text="Save" onAction="#saveSale" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                    <Button fx:id="btnSaveSale" text="Save" onAction="#saveSale" maxWidth="Infinity" prefHeight="30"
                             styleClass="sales-entry-save-button,approved-button,approved-primary-button"/>
-                </HBox>
+                </VBox>
             </VBox>
         </VBox>
     </HBox>

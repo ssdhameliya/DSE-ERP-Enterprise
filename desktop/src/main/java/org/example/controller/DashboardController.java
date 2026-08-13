@@ -143,6 +143,7 @@ public class DashboardController {
     @FXML private Button btnNotifications;
     @FXML private Button btnEmailCenter;
     @FXML private Button btnWhatsappCenter;
+    @FXML private Button btnShortcutInfo;
 
     @FXML
     private MenuButton menuUser;
@@ -265,10 +266,13 @@ public class DashboardController {
         contentPane.getScene().getAccelerators().put(
             new KeyCodeCombination(KeyCode.K, KeyCombination.CONTROL_DOWN),
             () -> { txtSearch.requestFocus(); txtSearch.selectAll(); });
-        // ERP keyboard shortcut: F2 opens a new sales invoice from every shell page.
-        contentPane.getScene().getAccelerators().put(
-            new KeyCodeCombination(KeyCode.F2),
-            () -> NavigationManager.getInstance().loadPage("/fxml/pages/Sale.fxml"));
+        installShortcut(KeyCode.F2, "SALES.VIEW", () -> NavigationManager.getInstance().loadPage("/fxml/pages/Sale.fxml"));
+        installShortcut(KeyCode.F3, "QUOTATION.VIEW", this::createQuotationFromShortcut);
+        installShortcut(KeyCode.F4, "INVENTORY.VIEW", this::openItemMaster);
+        installShortcut(KeyCode.F5, "MASTERS.VIEW", this::openMasters);
+        installShortcut(KeyCode.F6, null, this::openBankStatement);
+        installShortcut(KeyCode.F7, null, this::openBankEntry);
+        installShortcut(KeyCode.F8, null, this::openExpenseEntry);
         Node sidebarUser = contentPane.getScene().lookup(".sidebar-user");
         if (sidebarUser != null) {
             sidebarUser.setCursor(Cursor.HAND);
@@ -282,7 +286,60 @@ public class DashboardController {
         if (btnNotifications != null) btnNotifications.setGraphic(IconFactory.icon("notification"));
         if (btnEmailCenter != null) btnEmailCenter.setGraphic(IconFactory.icon("email"));
         if (btnWhatsappCenter != null) btnWhatsappCenter.setGraphic(IconFactory.icon("whatsapp"));
+        if (btnShortcutInfo != null) btnShortcutInfo.setGraphic(IconFactory.icon("info"));
         menuUser.setGraphic(IconFactory.icon("user"));
+    }
+
+    @FXML
+    private void showShortcutInfo() {
+        Dialog<ButtonType> dialog = new OwnedDialog<>();
+        dialog.setTitle("Keyboard Shortcuts");
+        dialog.setHeaderText("Quick navigation from anywhere in DSE ERP");
+        if (btnShortcutInfo != null && btnShortcutInfo.getScene() != null
+                && btnShortcutInfo.getScene().getWindow() != null) {
+            dialog.initOwner(btnShortcutInfo.getScene().getWindow());
+            dialog.initModality(Modality.WINDOW_MODAL);
+        }
+
+        GridPane shortcuts = new GridPane();
+        shortcuts.setHgap(18);
+        shortcuts.setVgap(10);
+        shortcuts.getStyleClass().add("shortcut-info-grid");
+        String[][] entries = {
+            {"F2", "New Sale"},
+            {"F3", "New Quotation"},
+            {"F4", "Item Master"},
+            {"F5", "Masters"},
+            {"F6", "Bank Statement"},
+            {"F7", "Bank Entry"},
+            {"F8", "Expense Entry"}
+        };
+        for (int row = 0; row < entries.length; row++) {
+            Label key = new Label(entries[row][0]);
+            key.getStyleClass().add("shortcut-info-key");
+            Label name = new Label(entries[row][1]);
+            name.getStyleClass().add("shortcut-info-name");
+            shortcuts.add(key, 0, row);
+            shortcuts.add(name, 1, row);
+        }
+        VBox content = new VBox(12,
+            new Label("Press a function key to open the related workspace:"), shortcuts);
+        content.getStyleClass().add("shortcut-info-content");
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
+    }
+
+    private void installShortcut(KeyCode key, String permission, Runnable action) {
+        contentPane.getScene().getAccelerators().put(new KeyCodeCombination(key), () -> {
+            if (permission == null || PermissionService.allowed(permission)) action.run();
+        });
+    }
+
+    private void createQuotationFromShortcut() {
+        QuotationEditorContext.open(null);
+        openPage(btnQuotation, "Create Quotation", "/fxml/pages/QuotationEditor.fxml");
+        if (lblBreadcrumb != null) lblBreadcrumb.setText("ERP  >  Quotations");
     }
 
     /** Applies the shared vector icon vocabulary to shell and navigation buttons. */
