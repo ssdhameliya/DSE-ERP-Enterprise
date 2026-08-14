@@ -22,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Region;
@@ -139,6 +140,19 @@ public class SalesController {
     @FXML
     private TableColumn<SalesLine, Double> colTotal;
 
+    // Entry-toolbar columns are bound to the table's live widths so the
+    // Search/Qty/Rate/Discount/GST editors remain visually aligned with
+    // their corresponding headers under constrained table resizing.
+    @FXML private ColumnConstraints entryItemColumn;
+    @FXML private ColumnConstraints entryQtyColumn;
+    @FXML private ColumnConstraints entryRateColumn;
+    @FXML private ColumnConstraints entryDiscountColumn;
+    @FXML private ColumnConstraints entryDiscountAmountColumn;
+    @FXML private ColumnConstraints entryGstColumn;
+    @FXML private ColumnConstraints entryTaxableColumn;
+    @FXML private ColumnConstraints entryGstAmountColumn;
+    @FXML private ColumnConstraints entryAmountColumn;
+
     @FXML
     private Button btnAddLine;
     @FXML private Button btnRemoveLine, btnSaveDraft;
@@ -170,6 +184,7 @@ public class SalesController {
     //-------------------------------------------------------
 
     private Sales editingSale = null;
+    private boolean loadingSaleForEdit = false;
 
     private SalesLine editingLine = null;
 
@@ -202,6 +217,7 @@ public class SalesController {
         configureExplicitTableHeaderIcons();
 
         setupTable();
+        bindItemEntryColumnsToTable();
         configureEmptyState();
 
         setupAmountFormatting();
@@ -212,8 +228,7 @@ public class SalesController {
         Platform.runLater(this::decorateActions);
         cmbSalesPerson.getItems().setAll("Admin","Ajay Shah","Rahul Mehta");cmbSalesPerson.setValue("Admin");
         safeLoad("Payment Terms", initializationErrors, () -> cmbPaymentTerms.getItems().setAll(lookupService.getValuesByCategoryCode("PAYMENT_TERMS")));
-        if (cmbPaymentTerms.getItems().contains("15 Days")) cmbPaymentTerms.setValue("15 Days");
-        else if (!cmbPaymentTerms.getItems().isEmpty()) cmbPaymentTerms.getSelectionModel().selectFirst();
+        selectDefaultPaymentTerms();
         safeLoad("Charges", initializationErrors, () -> {
             availableChargeTypes.setAll(lookupService.getValuesByCategoryCode("CHARGES"));
             if (cmbChargeType != null) cmbChargeType.getItems().setAll(availableChargeTypes);
@@ -223,8 +238,20 @@ public class SalesController {
             btnManageCharges.getProperties().put("erp-icon-preserve", true);
         }
         updateChargeManagerSummary();
-        dpInvoiceDate.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
-        cmbPaymentTerms.valueProperty().addListener((o,a,b)->syncPoDateFromPaymentTerms());
+
+        // PO Date follows Invoice Date + Payment Terms for new sales and when
+        // either driver is changed by the user. During loadSale() we suppress
+        // these listeners so the historical saved PO Date is preserved exactly.
+        if (dpInvoiceDate != null) {
+            dpInvoiceDate.valueProperty().addListener((o, oldDate, newDate) -> {
+                if (!loadingSaleForEdit) updatePoDateFromPaymentTerms();
+            });
+        }
+        if (cmbPaymentTerms != null) {
+            cmbPaymentTerms.valueProperty().addListener((o, oldTerms, newTerms) -> {
+                if (!loadingSaleForEdit) updatePoDateFromPaymentTerms();
+            });
+        }
 
         // Delivery Address can follow Billing Address or be entered independently.
         if (chkSameAsBilling != null) {
@@ -509,6 +536,25 @@ public class SalesController {
     //-------------------------------------------------------
     // Setup Table
     //-------------------------------------------------------
+
+    private void bindItemEntryColumnsToTable() {
+        bindEntryColumn(entryItemColumn, colItem);
+        bindEntryColumn(entryQtyColumn, colQuantity);
+        bindEntryColumn(entryRateColumn, colRate);
+        bindEntryColumn(entryDiscountColumn, colDiscount);
+        bindEntryColumn(entryDiscountAmountColumn, colDiscountAmount);
+        bindEntryColumn(entryGstColumn, colGst);
+        bindEntryColumn(entryTaxableColumn, colNetAmount);
+        bindEntryColumn(entryGstAmountColumn, colGstAmount);
+        bindEntryColumn(entryAmountColumn, colTotal);
+    }
+
+    private void bindEntryColumn(ColumnConstraints constraint, TableColumn<?, ?> tableColumn) {
+        if (constraint == null || tableColumn == null) return;
+        constraint.minWidthProperty().bind(tableColumn.widthProperty());
+        constraint.prefWidthProperty().bind(tableColumn.widthProperty());
+        constraint.maxWidthProperty().bind(tableColumn.widthProperty());
+    }
 
     private void setupTable() {
 
@@ -831,6 +877,21 @@ public class SalesController {
 
         Sales sale = new Sales();
 
+        // Preserve persisted workflow state during Edit -> Save.  This screen owns
+        // invoice/header details, lines and charges, but it must not silently reset
+        // payment/communication/status fields that are managed elsewhere.
+        if (editingSale != null) {
+            sale.setId(editingSale.getId());
+            sale.setCreatedAt(editingSale.getCreatedAt());
+            sale.setPaidAmount(editingSale.getPaidAmount());
+            sale.setPaymentStatus(editingSale.getPaymentStatus());
+            sale.setEmailSent(editingSale.isEmailSent());
+            sale.setWhatsappSent(editingSale.isWhatsappSent());
+            sale.setInvoiceType(editingSale.getInvoiceType());
+            sale.setSource(editingSale.getSource());
+            sale.setDocumentStatus(editingSale.getDocumentStatus());
+        }
+
         sale.setInvoiceNo(
             txtInvoiceNo.getText()
         );
@@ -885,7 +946,7 @@ public class SalesController {
         sale.setPoDate(dpDueDate == null ? null : dpDueDate.getValue());
         sale.setOrderNo(txtOrderNo == null ? "" : txtOrderNo.getText());
         sale.setSalesperson(cmbSalesPerson.getValue());
-        sale.setNotes("");
+        sale.setNotes(txtInvoiceMessage == null || txtInvoiceMessage.getText() == null ? "" : txtInvoiceMessage.getText());
         String billing = txtBillingAddress == null ? "" : txtBillingAddress.getText();
         String shipping = txtDeliveryAddress == null ? "" : txtDeliveryAddress.getText();
         sale.setBillingAddress(billing == null ? "" : billing);
@@ -894,6 +955,7 @@ public class SalesController {
         sale.setGstin(billingGstin); // Legacy compatibility: GSTIN remains the billing GSTIN.
         sale.setBillingGstin(billingGstin);
         sale.setDeliveryGstin(txtDeliveryGstin == null ? "" : txtDeliveryGstin.getText());
+        sale.setSameAsBilling(chkSameAsBilling != null && chkSameAsBilling.isSelected());
         sale.setTransporterGstin(txtTransporterGstin == null ? "" : txtTransporterGstin.getText());
         sale.setPaymentTerms(cmbPaymentTerms.getValue());
         sale.setGstType(cmbGstType == null ? "" : cmbGstType.getValue());
@@ -904,7 +966,7 @@ public class SalesController {
         sale.setContactPersonMobile(txtContactPersonMobile == null ? "" : txtContactPersonMobile.getText());
         sale.setCharges(invoiceCharges);
         sale.setTransportNote(txtTransportNote == null ? "" : txtTransportNote.getText());
-        sale.setReferenceNo("");
+        sale.setReferenceNo(txtReference == null || txtReference.getText() == null ? "" : txtReference.getText());
 
         return sale;
 
@@ -922,11 +984,29 @@ public class SalesController {
         return matcher.find() ? invoiceDate.plusDays(Integer.parseInt(matcher.group(1))) : invoiceDate;
     }
 
-    private void syncPoDateFromPaymentTerms() {
+    private void updatePoDateFromPaymentTerms() {
         if (dpDueDate == null) return;
-        dpDueDate.setValue(calculatePaymentDueDate(
-            dpInvoiceDate == null ? null : dpInvoiceDate.getValue(),
-            cmbPaymentTerms == null ? null : cmbPaymentTerms.getValue()));
+        LocalDate invoiceDate = dpInvoiceDate == null ? null : dpInvoiceDate.getValue();
+        String terms = cmbPaymentTerms == null ? null : cmbPaymentTerms.getValue();
+        dpDueDate.setValue(calculatePaymentDueDate(invoiceDate, terms));
+    }
+
+    /**
+     * New Sales always begin from a deterministic payment-term state before PO
+     * Date is calculated. This avoids an initialization-order race where the
+     * ComboBox can display its default after the first calculation already ran.
+     */
+    private void selectDefaultPaymentTerms() {
+        if (cmbPaymentTerms == null) return;
+        if (cmbPaymentTerms.getItems().contains("15 Days")) {
+            cmbPaymentTerms.setValue("15 Days");
+        } else if (!cmbPaymentTerms.getItems().isEmpty()) {
+            cmbPaymentTerms.getSelectionModel().selectFirst();
+        }
+    }
+
+    private static boolean isLegacyGeneratedPoOrderNo(String value) {
+        return value != null && value.trim().matches("(?i)^PO/\\d{2}-\\d{2}-\\d{4}/\\d{4}$");
     }
 
     private void syncDeliveryAddressState() {
@@ -960,10 +1040,14 @@ public class SalesController {
             salesService.nextInvoiceNo()
         );
 
-        dpInvoiceDate.setValue(
-            LocalDate.now()
-        );
-        syncPoDateFromPaymentTerms();
+        // Establish both drivers first, then calculate PO Date. The order is
+        // intentional: PO Date must never be calculated against a null/stale
+        // payment term when a fresh Sales screen is opened.
+        loadingSaleForEdit = true;
+        selectDefaultPaymentTerms();
+        dpInvoiceDate.setValue(LocalDate.now());
+        loadingSaleForEdit = false;
+        updatePoDateFromPaymentTerms();
 
         cmbCustomer.setValue(null);
 
@@ -977,6 +1061,8 @@ public class SalesController {
         txtLineDiscount.clear();
 
         txtRemarks.clear();
+        if (txtInvoiceMessage != null) txtInvoiceMessage.clear();
+        if (txtReference != null) txtReference.clear();
         txtBillingAddress.clear();
         txtDeliveryAddress.clear();
         if (chkSameAsBilling != null) chkSameAsBilling.setSelected(true);
@@ -1221,6 +1307,15 @@ public class SalesController {
         );
 
         editingSale = sale;
+        loadingSaleForEdit = true;
+
+        // Capture persisted delivery state before customer selection fires its
+        // listener. During edit, the customer listener must not replace a saved
+        // independent delivery address/GSTIN with billing details.
+        final boolean savedSameAsBilling = sale.isSameAsBilling();
+        final String savedDeliveryAddress = sale.getDeliveryAddress();
+        final String savedDeliveryGstin = sale.getDeliveryGstin();
+        if (chkSameAsBilling != null) chkSameAsBilling.setSelected(false);
 
         txtInvoiceNo.setText(
             sale.getInvoiceNo()
@@ -1236,7 +1331,6 @@ public class SalesController {
         dpDueDate.setValue(sale.getPoDate());
         cmbSalesPerson.setValue(sale.getSalesperson().isBlank()?"Admin":sale.getSalesperson());
         txtInvoiceMessage.setText(sale.getNotes());
-        txtDeliveryAddress.setText(sale.getDeliveryAddress());
         cmbPaymentTerms.setValue(sale.getPaymentTerms().isBlank() ? "15 Days" : sale.getPaymentTerms());
         if (cmbGstType != null) cmbGstType.setValue(sale.getGstType().isBlank()
             ? (cmbGstType.getItems().isEmpty() ? null : cmbGstType.getItems().get(0)) : sale.getGstType());
@@ -1248,14 +1342,18 @@ public class SalesController {
         if (txtContactPersonMobile != null) txtContactPersonMobile.setText(sale.getContactPersonMobile());
         invoiceCharges.setAll(sale.getCharges().stream().map(SalesCharge::copy).toList());
         if (txtTransportNote != null) txtTransportNote.setText(sale.getTransportNote());
-        if (txtOrderNo != null) txtOrderNo.setText(sale.getOrderNo());
+        if (txtOrderNo != null) {
+            String savedCustomerPo = sale.getOrderNo();
+            // Defensive compatibility for databases created by older 7.1.x
+            // builds. The server migration clears these values too, but the UI
+            // must never present the obsolete internal sequence as customer PO.
+            txtOrderNo.setText(isLegacyGeneratedPoOrderNo(savedCustomerPo) ? "" : savedCustomerPo);
+        }
         String customerGstin = sale.getCustomer() == null ? "" : sale.getCustomer().getGstin();
         if (txtBillingGstin != null) txtBillingGstin.setText(!sale.getBillingGstin().isBlank()
             ? sale.getBillingGstin() : (!sale.getGstin().isBlank() ? sale.getGstin() : customerGstin));
-        if (txtDeliveryGstin != null) txtDeliveryGstin.setText(!sale.getDeliveryGstin().isBlank()
-            ? sale.getDeliveryGstin() : (txtBillingGstin == null ? "" : txtBillingGstin.getText()));
         if (txtTransporterGstin != null) txtTransporterGstin.setText(sale.getTransporterGstin());
-        txtReference.setText("");
+        txtReference.setText(sale.getReferenceNo() == null ? "" : sale.getReferenceNo());
 
         // Select customer
 
@@ -1287,11 +1385,13 @@ public class SalesController {
             txtBillingAddress.setText(billing == null ? "" : billing);
         }
         if (chkSameAsBilling != null) {
-            String billing = txtBillingAddress == null ? "" : txtBillingAddress.getText();
-            boolean sameAddress = !sale.getDeliveryAddress().isBlank() && sale.getDeliveryAddress().equals(billing);
-            boolean sameGstin = normalized(txtDeliveryGstin == null ? "" : txtDeliveryGstin.getText())
-                .equals(normalized(txtBillingGstin == null ? "" : txtBillingGstin.getText()));
-            chkSameAsBilling.setSelected(sameAddress && sameGstin);
+            chkSameAsBilling.setSelected(savedSameAsBilling);
+        }
+        if (savedSameAsBilling) {
+            syncDeliveryAddressState();
+        } else {
+            if (txtDeliveryAddress != null) txtDeliveryAddress.setText(savedDeliveryAddress == null ? "" : savedDeliveryAddress);
+            if (txtDeliveryGstin != null) txtDeliveryGstin.setText(savedDeliveryGstin == null ? "" : savedDeliveryGstin);
             syncDeliveryAddressState();
         }
 
@@ -1317,6 +1417,7 @@ public class SalesController {
         }
 
         recalculate();
+        loadingSaleForEdit = false;
 
     }
 

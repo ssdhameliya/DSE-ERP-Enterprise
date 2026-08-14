@@ -7202,3 +7202,77 @@ SECTION TITLES
 .payment-metric-pending { -fx-text-fill: #dc2626; }
 .payment-history-total { -fx-text-fill: #17243a; -fx-font-weight: 900; }
 /* ===== End DSE ERP 7.1.5 sales charges ===== */
+
+/* ===== DSE ERP 7.1.7 profile, branding and notification center ===== */
+.profile-scroll, .profile-scroll > .viewport, .profile-page { -fx-background-color:#f4f7fb; }
+.profile-hero, .profile-card { -fx-background-color:#ffffff; -fx-border-color:#d9e4f0; -fx-border-radius:14px; -fx-background-radius:14px; -fx-padding:16px; }
+.profile-avatar { -fx-background-color:linear-gradient(to bottom right,#2563eb,#7c3aed); -fx-background-radius:36px; }
+.profile-avatar-text { -fx-text-fill:white; -fx-font-size:24px; -fx-font-weight:900; }
+.profile-chip { -fx-background-color:#e8f0ff; -fx-text-fill:#2563eb; -fx-background-radius:999px; -fx-padding:3px 10px; -fx-font-weight:800; }
+.profile-status { -fx-background-color:#dcfce7; -fx-text-fill:#15803d; }
+.field-caption { -fx-text-fill:#64748b; -fx-font-size:11px; -fx-font-weight:700; }
+.notification-center-dialog { -fx-pref-width:940px; }
+.notification-unread-header { -fx-background-color:#edf3ff; -fx-text-fill:#2563eb; -fx-background-radius:999px; -fx-padding:6px 12px; -fx-font-weight:900; }
+.notification-row-date { -fx-text-fill:#64748b; -fx-font-size:11px; }
+.notification-category-chip, .notification-new-badge { -fx-background-radius:999px; -fx-padding:3px 8px; -fx-font-size:10px; -fx-font-weight:800; }
+.notification-category-chip { -fx-background-color:#eaf1ff; -fx-text-fill:#2563eb; }
+.notification-category-sales { -fx-background-color:#ffedd5; -fx-text-fill:#c2410c; }
+.notification-category-purchases { -fx-background-color:#fce7f3; -fx-text-fill:#be185d; }
+.notification-category-security { -fx-background-color:#ede9fe; -fx-text-fill:#6d28d9; }
+.notification-category-inventory { -fx-background-color:#dcfce7; -fx-text-fill:#15803d; }
+.notification-new-badge { -fx-background-color:#dbeafe; -fx-text-fill:#1d4ed8; }
+.splash-brand-logo-box { -fx-min-height:60px; }
+/* ===== End DSE ERP 7.1.7 ===== */
+
+/* 7.1.7 global ComboBox readability contract. */
+.combo-box > .list-cell,
+.combo-box-base > .list-cell,
+.combo-box .list-cell,
+.table-cell .combo-box > .list-cell,
+.table-cell .combo-box .list-cell {
+    -fx-text-fill:#172033;
+    -fx-opacity:1;
+}
+.combo-box-popup .list-view {
+    -fx-background-color:white;
+    -fx-border-color:#b9cbe1;
+}
+.combo-box-popup .list-view .list-cell {
+    -fx-text-fill:#172033;
+    -fx-background-color:white;
+    -fx-opacity:1;
+}
+.combo-box-popup .list-view .list-cell:filled:hover,
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-text-fill:white;
+    -fx-background-color:#2563eb;
+}
+
+/* ===== 7.1.7 approved notification, branding and profile presentation ===== */
+.notification-center-dialog { -fx-pref-width:1120px; }
+.notification-dialog-content { -fx-background-color:#ffffff; -fx-background-radius:22px; -fx-border-color:#8ab4ff; -fx-border-radius:22px; -fx-border-width:2px; }
+.notification-dialog-content .modern-dialog-titlebar { -fx-padding:22px 28px; -fx-background-color:linear-gradient(to right,#f9fbff,#edf4ff); -fx-background-radius:20px 20px 0 0; -fx-border-color:transparent transparent #77a6ff transparent; }
+.notification-dialog-content .modern-dialog-title { -fx-font-size:26px; -fx-text-fill:#111c35; -fx-font-weight:900; }
+.notification-dialog-subtitle { -fx-text-fill:#63708a; -fx-font-size:14px; }
+.notification-filter-bar { -fx-padding:18px 28px; -fx-background-color:#ffffff; -fx-border-color:transparent transparent #d9e4f2 transparent; }
+.notification-search { -fx-pref-height:44px; -fx-background-radius:10px; -fx-border-radius:10px; }
+.notification-filter-button { -fx-min-width:44px; -fx-min-height:44px; }
+.notification-unread-header { -fx-text-alignment:center; -fx-font-size:15px; }
+.notification-center-dialog .notification-list { -fx-background-color:#fbfdff; -fx-border-color:transparent; }
+.notification-center-dialog .notification-list .list-cell { -fx-background-color:#ffffff; -fx-border-color:transparent transparent #dce6f2 transparent; -fx-padding:14px 26px; }
+.notification-center-dialog .notification-list .list-cell:unread { -fx-background-color:#f5f9ff; -fx-border-color:transparent transparent #dce6f2 #2f73ff; -fx-border-width:0 0 1px 4px; }
+.notification-timeline-icon { -fx-min-width:52px; -fx-min-height:52px; -fx-max-width:52px; -fx-max-height:52px; -fx-background-color:#e9f1ff; -fx-background-radius:26px; }
+.notification-icon-sale { -fx-background-color:#fff0df; }
+.notification-icon-purchase { -fx-background-color:#ffe9f1; }
+.notification-icon-security { -fx-background-color:#eee9ff; }
+.notification-icon-settings, .notification-icon-refresh { -fx-background-color:#e3faee; }
+.notification-row-title { -fx-text-fill:#132039; -fx-font-size:15px; -fx-font-weight:900; }
+.notification-row-message { -fx-text-fill:#5d6b82; -fx-font-size:13px; }
+.notification-row-reference { -fx-text-fill:#718096; -fx-font-size:10px; }
+.notification-dialog-actions { -fx-padding:18px 28px; -fx-background-color:#fbfdff; -fx-background-radius:0 0 20px 20px; }
+.auth-company-logo-box, .auth-login-logo-box { -fx-background-color:rgba(255,255,255,.96); -fx-background-radius:14px; -fx-padding:7px; -fx-effect:dropshadow(gaussian,rgba(0,0,0,.18),18,.12,0,5); }
+.auth-login-logo-box { -fx-effect:none; -fx-border-color:#e3eaf3; -fx-border-radius:12px; }
+.profile-hero { -fx-effect:dropshadow(gaussian,rgba(35,58,91,.10),18,.10,0,5); }
+.profile-card { -fx-effect:dropshadow(gaussian,rgba(35,58,91,.07),14,.08,0,3); }
+.bank-match-id { -fx-background-color:#f5f8ff; -fx-border-color:#d7e4f5; -fx-border-radius:12px; -fx-background-radius:12px; -fx-padding:10px 18px; -fx-text-fill:#273957; -fx-font-weight:800; }
+/* ===== End 7.1.7 presentation ===== */

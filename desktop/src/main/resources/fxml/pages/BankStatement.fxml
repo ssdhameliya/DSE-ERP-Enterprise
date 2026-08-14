@@ -69,7 +69,7 @@
         <VBox VBox.vgrow="ALWAYS" styleClass="bank-recon-table-panel">
           <TableView fx:id="table" VBox.vgrow="ALWAYS" styleClass="approved-table,bank-recon-table">
             <columns>
-              <TableColumn fx:id="colSelect" text="Select" prefWidth="66" sortable="false"/>
+              <TableColumn fx:id="colSelect" text="" prefWidth="54" sortable="false"/>
               <TableColumn fx:id="colDate" text="Date" prefWidth="105"/>
               <TableColumn fx:id="colValueDate" text="Value Date" prefWidth="105"/>
               <TableColumn fx:id="colReference" text="Reference / Cheque No." prefWidth="170"/>

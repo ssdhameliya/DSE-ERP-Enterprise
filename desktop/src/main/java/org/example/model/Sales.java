@@ -62,6 +62,7 @@ public class Sales {
     private String gstin;
     private String billingGstin;
     private String deliveryGstin;
+    private boolean sameAsBilling = true;
     private String transporterGstin;
     private String chargeType;
     private double chargeAmount;
@@ -244,6 +245,8 @@ public class Sales {
     public void setBillingGstin(String billingGstin) { this.billingGstin = billingGstin; }
     public String getDeliveryGstin() { return deliveryGstin == null ? "" : deliveryGstin; }
     public void setDeliveryGstin(String deliveryGstin) { this.deliveryGstin = deliveryGstin; }
+    public boolean isSameAsBilling() { return sameAsBilling; }
+    public void setSameAsBilling(boolean sameAsBilling) { this.sameAsBilling = sameAsBilling; }
     public String getTransporterGstin() { return transporterGstin == null ? "" : transporterGstin; }
     public void setTransporterGstin(String transporterGstin) { this.transporterGstin = transporterGstin; }
     public String getChargeType() { return chargeType == null ? "" : chargeType; }

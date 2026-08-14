@@ -743,8 +743,8 @@ public class DashboardController {
         notificationList.getItems().setAll(allNotifications);
         notificationList.setPlaceholder(new Label("You are all caught up. New sales, payments, returns and reminders will appear here."));
         notificationList.getStyleClass().add("notification-list");
-        notificationList.setPrefWidth(620);
-        notificationList.setPrefHeight(380);
+        notificationList.setPrefWidth(1040);
+        notificationList.setPrefHeight(540);
         notificationList.setMinHeight(260);
         notificationList.setMaxHeight(520);
 
@@ -760,15 +760,32 @@ public class DashboardController {
                     Label message = new Label(item.message());
                     message.setWrapText(true);
                     message.getStyleClass().add("notification-row-message");
-                    String timestamp = DateTimeFormatter.ofPattern("dd MMM yyyy  hh:mm a")
-                        .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(item.createdAt()));
-                    Label time = new Label(timestamp);
+                    Instant created = Instant.ofEpochMilli(item.createdAt());
+                    Label time = new Label(DateTimeFormatter.ofPattern("hh:mm a").withZone(ZoneId.systemDefault()).format(created));
                     time.getStyleClass().add("notification-row-time");
-                    VBox text = new VBox(3, title, message, time);
+                    Label date = new Label(DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneId.systemDefault()).format(created));
+                    date.getStyleClass().add("notification-row-date");
+                    Label category = new Label(displayNotificationCategory(item.category()));
+                    category.getStyleClass().addAll("notification-category-chip", "notification-category-" + safeNotificationCategory(item.category()).toLowerCase(Locale.ROOT));
+                    VBox stamps = new VBox(3, time, date);
+                    stamps.setAlignment(Pos.CENTER_RIGHT);
+                    Label fresh = new Label("New");
+                    fresh.getStyleClass().add("notification-new-badge");
+                    fresh.setVisible(!item.read()); fresh.setManaged(!item.read());
+                    Label reference = new Label(item.referenceNo() == null || item.referenceNo().isBlank()
+                            ? "" : "Reference: " + item.referenceNo());
+                    reference.getStyleClass().add("notification-row-reference");
+                    reference.setVisible(!reference.getText().isBlank());
+                    reference.setManaged(reference.isVisible());
+                    HBox metadata = new HBox(8, category, reference);
+                    metadata.setAlignment(Pos.CENTER_LEFT);
+                    VBox text = new VBox(4, title, message, metadata);
                     HBox.setHgrow(text, Priority.ALWAYS);
-                    String semantic = "ERROR".equalsIgnoreCase(item.severity()) ? "error"
-                        : "WARN".equalsIgnoreCase(item.severity()) ? "warning" : "notification";
-                    HBox row = new HBox(12, IconFactory.icon(semantic, 26), text);
+                    String semantic = notificationSemantic(item);
+                    VBox right = new VBox(5, stamps, fresh); right.setAlignment(Pos.CENTER_RIGHT);
+                    StackPane icon = new StackPane(IconFactory.icon(semantic, 28));
+                    icon.getStyleClass().addAll("notification-timeline-icon", "notification-icon-" + semantic);
+                    HBox row = new HBox(16, icon, text, right);
                     row.setAlignment(Pos.CENTER_LEFT);
                     row.getStyleClass().add("notification-row-content");
                     setGraphic(row);
@@ -792,8 +809,8 @@ public class DashboardController {
         notificationSearch.setPrefWidth(330);
         notificationSearch.getStyleClass().add("notification-search");
         ComboBox<String> viewFilter = new ComboBox<>();
-        viewFilter.getItems().setAll("All", "Unread", "Action Needed");
-        viewFilter.setValue("All");
+        viewFilter.getItems().setAll("All Notifications", "Unread", "Action Needed", "Sales", "Purchases", "Quotations", "Payments", "Inventory", "Security", "System");
+        viewFilter.setValue("All Notifications");
         viewFilter.setPrefWidth(150);
         Runnable applyNotificationFilter = () -> {
             String query = notificationSearch.getText() == null ? "" : notificationSearch.getText().trim().toLowerCase(Locale.ROOT);
@@ -802,23 +819,30 @@ public class DashboardController {
                 if ("Unread".equals(mode) && item.read()) return false;
                 String severity = item.severity() == null ? "INFO" : item.severity().toUpperCase(Locale.ROOT);
                 if ("Action Needed".equals(mode) && !List.of("WARN", "ERROR", "CRITICAL", "FATAL").contains(severity)) return false;
+                if (!List.of("All Notifications", "Unread", "Action Needed").contains(mode)
+                    && !safeNotificationCategory(item.category()).equalsIgnoreCase(mode)) return false;
                 String haystack = (String.valueOf(item.title()) + " " + String.valueOf(item.message()) + " " + String.valueOf(item.referenceNo())).toLowerCase(Locale.ROOT);
                 return query.isBlank() || haystack.contains(query);
             }).toList());
         };
         notificationSearch.textProperty().addListener((o,a,b)->applyNotificationFilter.run());
         viewFilter.valueProperty().addListener((o,a,b)->applyNotificationFilter.run());
-        Label filterLabel = new Label("View");
+        Label filterLabel = new Label("View:");
         filterLabel.getStyleClass().add("notification-filter-label");
         Region filterSpacer = new Region();
         HBox.setHgrow(filterSpacer, Priority.ALWAYS);
-        HBox filters = new HBox(10, notificationSearch, filterSpacer, filterLabel, viewFilter);
+        Button filterButton = new Button();
+        filterButton.setGraphic(IconFactory.compactIcon("filter", 18));
+        filterButton.getStyleClass().addAll("approved-button", "approved-secondary-button", "notification-filter-button");
+        filterButton.setOnAction(event -> applyNotificationFilter.run());
+        HBox filters = new HBox(10, notificationSearch, filterSpacer, filterLabel, viewFilter, filterButton);
         filters.setAlignment(Pos.CENTER_LEFT);
         filters.getStyleClass().add("notification-filter-bar");
 
         Label title = new Label("Notifications");
         title.getStyleClass().add("modern-dialog-title");
         Label subtitle = new Label("Recent application activity");
+        subtitle.setText("Stay updated with the latest activities and alerts");
         subtitle.getStyleClass().add("notification-dialog-subtitle");
         VBox heading = new VBox(2, title, subtitle);
         Region spacer = new Region();
@@ -826,7 +850,9 @@ public class DashboardController {
         Button closeTop = new Button("×");
         closeTop.getStyleClass().add("modern-dialog-close");
         closeTop.setOnAction(event -> closeDialog.run());
-        HBox titleBar = new HBox(10, IconFactory.icon("notification", 28), heading, spacer, closeTop);
+        Label unreadHeader = new Label(NotificationService.unreadCount() + "\nUnread");
+        unreadHeader.getStyleClass().add("notification-unread-header");
+        HBox titleBar = new HBox(10, IconFactory.icon("notification", 34), heading, spacer, unreadHeader, closeTop);
         titleBar.setAlignment(Pos.CENTER_LEFT);
         titleBar.getStyleClass().add("modern-dialog-titlebar");
 
@@ -839,6 +865,7 @@ public class DashboardController {
             allNotifications.addAll(NotificationService.findRecent(100));
             applyNotificationFilter.run();
             refreshNotificationBadge();
+            unreadHeader.setText("0\nUnread");
         });
         Button clear = new Button("Clear history");
         clear.setGraphic(IconFactory.compactIcon("delete", 16));
@@ -877,6 +904,26 @@ public class DashboardController {
         });
         dialog.showAndWait();
         refreshNotificationBadge();
+    }
+
+    private static String safeNotificationCategory(String category) {
+        return category == null || category.isBlank() || "GENERAL".equalsIgnoreCase(category) ? "System" : category;
+    }
+
+    private static String displayNotificationCategory(String category) {
+        String value = safeNotificationCategory(category).replace('_', ' ').toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
+    private static String notificationSemantic(NotificationService.NotificationItem item) {
+        String severity = item.severity() == null ? "INFO" : item.severity().toUpperCase(Locale.ROOT);
+        if (List.of("ERROR", "CRITICAL", "FATAL").contains(severity)) return "error";
+        if ("WARN".equals(severity)) return "warning";
+        return switch (safeNotificationCategory(item.category()).toUpperCase(Locale.ROOT)) {
+            case "SALES" -> "sale"; case "PURCHASES" -> "purchase"; case "QUOTATIONS" -> "quotation";
+            case "PAYMENTS" -> "payment"; case "INVENTORY" -> "inventory"; case "SECURITY" -> "security";
+            case "BACKUP" -> "backup"; case "UPDATE" -> "refresh"; default -> "notification";
+        };
     }
 
     /** Refreshes the red unread counter beside the header notification button. */
@@ -945,14 +992,17 @@ public class DashboardController {
 
         PasswordField newPassword = new PasswordField();
         PasswordField confirmPassword = new PasswordField();
+        PasswordField currentPassword = new PasswordField();
+        currentPassword.setPromptText("Current password");
         newPassword.setPromptText("New password");
         confirmPassword.setPromptText("Confirm new password");
 
         GridPane form = new GridPane();
         form.setHgap(10);
         form.setVgap(10);
-        form.addRow(0, new Label("New password:"), newPassword);
-        form.addRow(1, new Label("Confirm password:"), confirmPassword);
+        form.addRow(0, new Label("Current password:"), currentPassword);
+        form.addRow(1, new Label("New password:"), newPassword);
+        form.addRow(2, new Label("Confirm password:"), confirmPassword);
 
         dialog.getDialogPane().setContent(form);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -967,7 +1017,7 @@ public class DashboardController {
                 return;
             }
 
-            new UserService().changePassword(SessionService.current().getId(), password);
+            new UserService().changePassword(SessionService.current().getId(), currentPassword.getText(), password);
             NotificationService.add("Your account password was changed.");
             new OwnedAlert(Alert.AlertType.INFORMATION, "Password changed successfully.").showAndWait();
         });

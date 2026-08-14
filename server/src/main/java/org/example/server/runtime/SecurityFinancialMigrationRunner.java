@@ -27,7 +27,17 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
             new Migration("V7_1_3__sale_gstin_details",
                     "db/migration/V7_1_3__sale_gstin_details.sql"),
             new Migration("V7_1_5__multiple_sales_charges",
-                    "db/migration/V7_1_5__multiple_sales_charges.sql")
+                    "db/migration/V7_1_5__multiple_sales_charges.sql"),
+            new Migration("V7_1_6__delivery_flag_and_notification_category",
+                    "db/migration/V7_1_6__delivery_flag_and_notification_category.sql"),
+            new Migration("V7_1_7__release_schema_repair",
+                    "db/migration/V7_1_7__release_schema_repair.sql"),
+            new Migration("V7_1_8__remove_po_date_format_master",
+                    "db/migration/V7_1_8__remove_po_date_format_master.sql"),
+            new Migration("V7_1_8_1__remove_legacy_auto_po_order",
+                    "db/migration/V7_1_8_1__remove_legacy_auto_po_order.sql"),
+            new Migration("V7_1_8_2__enforce_customer_po_reference",
+                    "db/migration/V7_1_8_2__enforce_customer_po_reference.sql")
     );
     private static final long MIGRATION_LOCK = 51018001L;
     private final JpaNativeRepository database;
@@ -62,7 +72,32 @@ public final class SecurityFinancialMigrationRunner implements ApplicationRunner
                 migration.statements().forEach(database::execute);
                 database.update("INSERT INTO dse_schema_migration(migration_key) VALUES (?)", migration.key());
             }
+            verifyRequiredSchema();
         });
+    }
+
+    /**
+     * Refuses to advertise a healthy backend when a release-required column is
+     * missing. This converts a later generic HTTP 500 into a precise startup
+     * failure and protects every screen that depends on the upgraded schema.
+     */
+    private void verifyRequiredSchema() {
+        requireColumn("sales_header", "same_as_billing");
+        requireColumn("notifications", "category");
+    }
+
+    private void requireColumn(String table, String column) {
+        Long count = database.queryForObject("""
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = ?
+                  AND column_name = ?
+                """, Long.class, table, column);
+        if (count == null || count == 0) {
+            throw new IllegalStateException(
+                    "Required database column is missing after migration: " + table + "." + column);
+        }
     }
 
     private static List<String> loadStatements(String resourcePath) throws IOException {

@@ -15,6 +15,9 @@ if ($Version -notmatch '^\d+\.\d+\.\d+([.-][0-9A-Za-z.-]+)?$') {
 
 Write-Host "Building DSE ERP $Version for Windows..." -ForegroundColor Cyan
 mvn -B -ntp clean verify
+if ($LASTEXITCODE -ne 0) {
+    throw "Maven clean verification failed; refusing to package stale build output."
+}
 
 $Jar = Join-Path $Root "desktop/target/DSE_Final.jar"
 $ServerJar = Join-Path $Root "server/target/dse-erp-server.jar"

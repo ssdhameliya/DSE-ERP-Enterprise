@@ -81,6 +81,10 @@ public class SettingsController {
     @FXML
     private DatePicker dpFinancialYearStart;
 
+    @FXML private TextField txtApplicationName;
+    @FXML private TextField txtApplicationTagline;
+    @FXML private TextField txtApplicationStartingText;
+
     /* =========================================================
        PAYMENT FIELDS
        ========================================================= */
@@ -401,6 +405,10 @@ public class SettingsController {
         txtCompanyPan.setText(
             ConfigManager.get("company.pan", "")
         );
+
+        txtApplicationName.setText(ConfigManager.get("application.displayName", "DSE ERP"));
+        txtApplicationTagline.setText(ConfigManager.get("application.tagline", "Business Management Suite"));
+        txtApplicationStartingText.setText(ConfigManager.get("application.startingText", "Starting DSE ERP..."));
 
         txtCompanyAddress.setText(
             ConfigManager.get("company.address", "")
@@ -1255,6 +1263,10 @@ public class SettingsController {
                 .getValue()
                 .toString()
         );
+
+        ConfigManager.set("application.displayName", txtApplicationName.getText().trim());
+        ConfigManager.set("application.tagline", txtApplicationTagline.getText().trim());
+        ConfigManager.set("application.startingText", txtApplicationStartingText.getText().trim());
     }
 
     private void savePaymentDetails() {

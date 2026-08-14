@@ -3,11 +3,14 @@ package org.example.controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import org.example.model.AppUser;
 import org.example.service.NotificationService;
 import org.example.service.OtpService;
 import org.example.service.SessionService;
 import org.example.service.UserService;
+import org.example.service.BrandingService;
 import org.example.theme.ThemeManager;
 import org.example.util.ButtonAction;
 import org.example.util.ClockService;
@@ -17,6 +20,7 @@ import org.example.util.UiTaskExecutor;
 import org.example.util.PerformanceMonitor;
 import org.example.util.PerformanceBudgets;
 import org.example.update.BuildInfo;
+import org.example.config.ConfigManager;
 
 import java.util.Locale;
 import java.util.prefs.Preferences;
@@ -42,6 +46,10 @@ public class LoginController {
     @FXML private ToggleButton btnTheme;
     @FXML private Label lblClock, lblMessage, lblUsernameError, lblPasswordError, lblRoleError, lblOtpError, lblVersion;
     @FXML private Label lblResetIdentityError, lblResetOtpError, lblNewPasswordError, lblConfirmPasswordError;
+    @FXML private Label lblBrandMark, lblBrandName, lblBrandTagline, lblBrandDescription;
+    @FXML private Label lblFooterCompany, lblFooterPhone, lblFooterEmail, lblFooterWebsite;
+    @FXML private ImageView imgBrandLogo, imgLoginLogo;
+    @FXML private VBox brandPanel;
     @FXML private Button btnLogin, btnRegister, btnEmailSettings, btnForgotPassword;
     @FXML private Button btnSendResetOtp, btnResetPassword, btnBackToLogin;
     @FXML private VBox loginPanel, resetPanel, otpPanel;
@@ -52,6 +60,7 @@ public class LoginController {
 
     @FXML public void initialize() {
         if (lblVersion != null) lblVersion.setText("Version " + BuildInfo.version());
+        applyBranding();
         ClockService.start(lblClock);
 
         cmbRole.getItems().setAll("Admin", "Manager", "Sale");
@@ -114,6 +123,42 @@ public class LoginController {
         chkRemember.selectedProperty().addListener((obs, oldValue, selected) -> {
             if (!selected) clearRememberedLogin();
         });
+        javafx.application.Platform.runLater(this::installResponsiveBranding);
+    }
+
+    private void applyBranding() {
+        if (lblBrandName != null) lblBrandName.setText(BrandingService.applicationName());
+        if (lblBrandTagline != null) lblBrandTagline.setText(BrandingService.tagline());
+        if (lblBrandDescription != null) lblBrandDescription.setText(BrandingService.loginDescription());
+        Image logo = BrandingService.logo();
+        if (lblFooterCompany != null) lblFooterCompany.setText(BrandingService.companyName());
+        if (lblFooterPhone != null) lblFooterPhone.setText("Phone: " + configured("company.phone"));
+        if (lblFooterEmail != null) lblFooterEmail.setText("Email: " + configured("company.email"));
+        if (lblFooterWebsite != null) lblFooterWebsite.setText("Website: " + configured("company.website"));
+        if (logo != null && !logo.isError()) {
+            showLogo(imgBrandLogo, logo);
+            showLogo(imgLoginLogo, logo);
+        }
+    }
+
+    private void installResponsiveBranding() {
+        if (brandPanel == null || brandPanel.getScene() == null) return;
+        Runnable resize = () -> brandPanel.setPrefWidth(
+                Math.max(360, Math.min(690, brandPanel.getScene().getWidth() * .46)));
+        brandPanel.getScene().widthProperty().addListener((o, a, b) -> resize.run());
+        resize.run();
+    }
+
+    private static void showLogo(ImageView view, Image logo) {
+        if (view == null) return;
+        view.setImage(logo);
+        view.setManaged(true);
+        view.setVisible(true);
+    }
+
+    private static String configured(String key) {
+        String result = ConfigManager.get(key, "").trim();
+        return result.isBlank() ? "—" : result;
     }
 
     @FXML private void toggleTheme() {

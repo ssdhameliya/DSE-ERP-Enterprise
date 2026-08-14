@@ -20,6 +20,6 @@ public class UserService {
     public AuthApiClient.ChallengeResponse requestPasswordReset(String identity) { return authApi.requestPasswordReset(identity); }
     public void completePasswordReset(String challengeId, String otp, String password) { authApi.completePasswordReset(challengeId, otp, password); }
     public List<AuthApiClient.RoleOption> registrationRoles() { return authApi.registrationRoles(); }
-    public void changePassword(int id, String password) { authApi.changePassword(id, password); }
+    public void changePassword(int id, String currentPassword, String password) { authApi.changePassword(id, currentPassword, password); }
     public void logout() { authApi.logout(); }
 }

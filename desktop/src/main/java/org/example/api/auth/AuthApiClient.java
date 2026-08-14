@@ -55,8 +55,8 @@ public final class AuthApiClient {
         post("/api/auth/login-complete", new UserIdRequest(userId), OperationResponse.class);
     }
 
-    public void changePassword(int userId, String password) {
-        OperationResponse response = post("/api/auth/password", new ChangePasswordRequest(userId, password),
+    public void changePassword(int userId, String currentPassword, String password) {
+        OperationResponse response = post("/api/auth/password", new ChangePasswordRequest(userId, currentPassword, password),
                 OperationResponse.class);
         if (response == null || !response.success()) {
             throw new IllegalStateException(response == null ? "Password update failed" : response.message());
@@ -229,7 +229,7 @@ public final class AuthApiClient {
 
     public record LoginRequest(String identity, String password) {}
     public record UserIdRequest(int userId) {}
-    public record ChangePasswordRequest(int userId, String password) {}
+    public record ChangePasswordRequest(int userId, String currentPassword, String password) {}
     public record RegisterRequest(String username, String password, String fullName, String email, String role) {}
     public record RegistrationOtpRequest(String username, String fullName, String email, String role) {}
     public record RegistrationCompleteRequest(String challengeId, String otp, String username, String password,

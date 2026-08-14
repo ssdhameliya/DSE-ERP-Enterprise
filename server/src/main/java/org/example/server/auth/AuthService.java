@@ -181,7 +181,11 @@ public class AuthService {
         String error = passwordError(request.password());
         if (error != null) return new AuthDtos.OperationResponse(false, error);
         UserEntity user = users.findById(current.id()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!passwordMatches(request.currentPassword(), user.getPassword())) {
+            return new AuthDtos.OperationResponse(false, "Current password is incorrect");
+        }
         user.setPassword(passwords.encode(request.password()));
+        tokens.revokeUser(user.getId());
         return new AuthDtos.OperationResponse(true, "Password updated");
     }
 

@@ -37,6 +37,7 @@ public class SalesHeaderEntity {
  private String gstin;
  @Column(name="billing_gstin") private String billingGstin;
  @Column(name="delivery_gstin") private String deliveryGstin;
+ @Column(name="same_as_billing",nullable=false) private Boolean sameAsBilling = Boolean.TRUE;
  @Column(name="transporter_gstin") private String transporterGstin;
  @Column(name="charge_type") private String chargeType;
  @Column(name="charge_amount") private Double chargeAmount;
@@ -76,6 +77,7 @@ public class SalesHeaderEntity {
  public String getGstin(){return gstin;} public void setGstin(String v){gstin=v;}
  public String getBillingGstin(){return billingGstin;} public void setBillingGstin(String v){billingGstin=v;}
  public String getDeliveryGstin(){return deliveryGstin;} public void setDeliveryGstin(String v){deliveryGstin=v;}
+ public Boolean getSameAsBilling(){return sameAsBilling;} public void setSameAsBilling(Boolean v){sameAsBilling=v;}
  public String getTransporterGstin(){return transporterGstin;} public void setTransporterGstin(String v){transporterGstin=v;}
  public String getChargeType(){return chargeType;} public void setChargeType(String v){chargeType=v;}
  public Double getChargeAmount(){return chargeAmount;} public void setChargeAmount(Double v){chargeAmount=v;}

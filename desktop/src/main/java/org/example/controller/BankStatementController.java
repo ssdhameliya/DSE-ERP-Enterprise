@@ -85,7 +85,9 @@ public class BankStatementController {
         headerSelection.setOnAction(e->{chkSelectAll.setSelected(headerSelection.isSelected());selectAllVisible();});
         chkSelectAll.selectedProperty().addListener((o,a,b)->{if(!headerSelection.isIndeterminate())headerSelection.setSelected(b);});
         chkSelectAll.indeterminateProperty().addListener((o,a,b)->headerSelection.setIndeterminate(b));
-        colSelect.setText("");colSelect.setGraphic(headerSelection);
+        colSelect.setText(null);
+        colSelect.setGraphic(headerSelection);
+        colSelect.setStyle("-fx-alignment: CENTER;");
         colSelect.getProperties().put("erp-header-preserve",true);
         colDate.setCellValueFactory(v->v.getValue().date); colValueDate.setCellValueFactory(v->v.getValue().valueDate);
         colReference.setCellValueFactory(v->v.getValue().reference); colDescription.setCellValueFactory(v->v.getValue().description);
@@ -314,7 +316,11 @@ public class BankStatementController {
         rows.forEach(r->{r.selected.addListener((o,a,b)->refreshStatus.run());r.allocation.addListener((o,a,b)->refreshStatus.run());});
         refreshStatus.run();
         VBox transactionCard=new VBox(4,new Label("BANK TRANSACTION"),bank,amount);transactionCard.getStyleClass().add("bank-dialog-section");
-        VBox content=new VBox(12,dialogHero("link","Review and allocate the complete bank transaction","Match invoices to allocate the bank amount. The total allocation must equal the bank amount."),transactionCard,help,candidatesTable,allocationStatus);
+        Label matchId=new Label("Match ID\nBNK-"+safe(bankRow.dto.transactionDate()).replace("-","")+"-"+bankRow.dto.id());
+        matchId.getStyleClass().add("bank-match-id");
+        HBox hero=dialogHero("link","Review and allocate the complete bank transaction","Match invoices to allocate the bank amount. The total allocation must equal the bank amount.");
+        Region heroSpace=new Region();HBox.setHgrow(heroSpace,Priority.ALWAYS);hero.getChildren().addAll(heroSpace,matchId);
+        VBox content=new VBox(12,hero,transactionCard,help,candidatesTable,allocationStatus);
         content.setPadding(new Insets(8));content.setPrefWidth(1120);
         Dialog<ButtonType> dialog=new OwnedDialog<>();dialog.setTitle("Match Transaction");dialog.setHeaderText(null);dialog.getDialogPane().getStyleClass().addAll("bank-workspace-dialog","bank-match-dialog");dialog.getDialogPane().setContent(content);
         ButtonType refreshType=new ButtonType("Refresh Suggestions",ButtonBar.ButtonData.OTHER);ButtonType confirm=new ButtonType("Confirm Match",ButtonBar.ButtonData.OK_DONE);dialog.getDialogPane().getButtonTypes().addAll(refreshType,ButtonType.CANCEL,confirm);

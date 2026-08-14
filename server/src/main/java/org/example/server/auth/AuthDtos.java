@@ -4,7 +4,7 @@ public final class AuthDtos {
     private AuthDtos() {}
     public record LoginRequest(String identity, String password) {}
     public record UserIdRequest(int userId) {}
-    public record ChangePasswordRequest(int userId, String password) {}
+    public record ChangePasswordRequest(int userId, String currentPassword, String password) {}
     public record RegisterRequest(String username, String password, String fullName, String email, String role) {}
     public record RegistrationOtpRequest(String username, String fullName, String email, String role) {}
     public record RegistrationCompleteRequest(String challengeId, String otp, String username, String password,
