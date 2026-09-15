@@ -1302,10 +1302,14 @@ private record AssetPreviewRequest(
             String revision = BuildInfo.buildRevision();
             lblCurrentBuild.setText("Build " + (revision.isBlank() ? BuildInfo.version() : revision));
         }
-        String latest = org.example.update.UpdateState.latestVersion();
-        if (lblLatestVersion != null) lblLatestVersion.setText(latest.isBlank() ? "Not checked yet" : latest);
+        if (lblLatestVersion != null) lblLatestVersion.setText(org.example.update.UpdateState.latestVersionDisplay());
         if (lblUpdateStatus != null) lblUpdateStatus.setText(org.example.update.UpdateState.statusText());
-        if (lblLastChecked != null) lblLastChecked.setText(formatUpdateTimestamp(ConfigManager.get("update.lastChecked", "")));
+        if (lblLastChecked != null) {
+            String stamp = org.example.update.UpdateState.lastRefreshFailed()
+                    ? org.example.update.UpdateState.lastCheckAttempt()
+                    : ConfigManager.get("update.lastChecked", "");
+            lblLastChecked.setText(formatUpdateTimestamp(stamp));
+        }
     }
 
     @FXML
