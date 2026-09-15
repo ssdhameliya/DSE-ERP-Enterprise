@@ -333,8 +333,6 @@ public class SettingsController implements ScreenLifecycle {
 
     @FXML private HBox navUpdates;
     @FXML private VBox panelUpdates;
-    @FXML private TextField txtGitHubOwner;
-    @FXML private TextField txtGitHubRepository;
     @FXML private ComboBox<String> cmbUpdateChannel;
     @FXML private CheckBox chkUpdateAtStartup;
     @FXML private CheckBox chkDownloadInBackground;
@@ -598,8 +596,6 @@ public class SettingsController implements ScreenLifecycle {
             case SHORTCUTS -> initializeShortcutSettings();
             case UPDATES -> {
                 cmbUpdateChannel.setItems(FXCollections.observableArrayList("STABLE", "BETA"));
-                txtGitHubOwner.setText(ConfigManager.get("update.github.owner", UpdateService.DEFAULT_GITHUB_OWNER));
-                txtGitHubRepository.setText(ConfigManager.get("update.github.repository", UpdateService.DEFAULT_GITHUB_REPOSITORY));
                 selectComboValue(cmbUpdateChannel, ConfigManager.getEffectiveUpdateChannel());
                 boolean managedUpdateChannel = ConfigManager.isUpdateChannelManagedByEnvironment();
                 cmbUpdateChannel.setDisable(managedUpdateChannel);
@@ -2309,9 +2305,6 @@ private record AssetPreviewRequest(
     }
 
     private void saveUpdateSettings() {
-        if (txtGitHubOwner == null) return;
-        putSetting("update.github.owner", txtGitHubOwner.getText().trim());
-        putSetting("update.github.repository", txtGitHubRepository.getText().trim());
         putSetting("update.channel", ConfigManager.isUpdateChannelManagedByEnvironment()
                 ? ConfigManager.getEffectiveUpdateChannel()
                 : (cmbUpdateChannel.getValue() == null ? "STABLE" : cmbUpdateChannel.getValue()));
