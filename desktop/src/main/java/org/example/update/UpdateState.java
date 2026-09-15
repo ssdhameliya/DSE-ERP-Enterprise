@@ -36,7 +36,7 @@ public final class UpdateState {
     }
 
     private static String rootMessage(Throwable t) {
-        if (t == null) return "Unable to refresh GitHub Releases";
+        if (t == null) return "Unable to refresh the company update service";
         while (t.getCause() != null) t = t.getCause();
         return t.getMessage() == null || t.getMessage().isBlank() ? t.getClass().getSimpleName() : t.getMessage();
     }
