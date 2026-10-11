@@ -1,0 +1,83 @@
+name: Deploy Web Showcase & Portals
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Select deployment target environment'
+        required: true
+        default: 'uat'
+        type: choice
+        options:
+          - 'uat'
+          - 'prod'
+          - 'both'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dse-web-deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-uat:
+    name: Deploy to UAT Testing Environment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.target == 'uat' || github.event.inputs.target == 'both'
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Authentication
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DSE_UAT_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DSE_UAT_SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload Web Assets to UAT
+        run: |
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/public/index.html ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }}:/tmp/web_uat_index.html
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }} 'sudo cp /tmp/web_uat_index.html /srv/dse-erp/web/public/index.html && sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public && sudo chmod 644 /srv/dse-erp/web/public/index.html'
+
+      - name: Verify Live UAT Endpoint
+        run: |
+          sleep 2
+          curl -fsSL https://web-uat.jasviindustries.in | grep -q "Jasvi Industries"
+          echo "UAT Showcase is verified and LIVE at https://web-uat.jasviindustries.in"
+
+  deploy-prod:
+    name: Deploy to Production Environment
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target == 'prod' || github.event.inputs.target == 'both'
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Authentication
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DSE_PROD_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DSE_PROD_SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload Web Assets to PROD
+        run: |
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/public/index.html ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_index.html
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }} 'sudo cp /tmp/web_prod_index.html /srv/dse-erp/web/public/index.html && sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public && sudo chmod 644 /srv/dse-erp/web/public/index.html'
+
+      - name: Verify Live PROD Endpoints
+        run: |
+          sleep 2
+          curl -fsSL https://jasviindustries.in | grep -q "Jasvi Industries"
+          curl -fsSL https://www.jasviindustries.in | grep -q "Jasvi Industries"
+          echo "PROD Showcase is verified and LIVE at https://jasviindustries.in and https://www.jasviindustries.in"
