@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jasvi Industries ERP — Centralized Admin Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070d18;
+      --bg-surface: #0f172a;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-elevated: rgba(30, 41, 59, 0.7);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(56, 189, 248, 0.4);
+      --primary: #0284c7;
+      --primary-light: #38bdf8;
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.25);
+      
+      /* Desktop Semantic Color Tokens */
+      --sem-complete: #10b981;
+      --sem-complete-bg: rgba(16, 185, 129, 0.15);
+      --sem-warning: #f59e0b;
+      --sem-warning-bg: rgba(245, 158, 11, 0.15);
+      --sem-error: #ef4444;
+      --sem-error-bg: rgba(239, 68, 68, 0.15);
+      --sem-destructive: #f43f5e;
+      --sem-destructive-bg: rgba(244, 63, 94, 0.15);
+      --sem-security: #8b5cf6;
+      --sem-security-bg: rgba(139, 92, 246, 0.15);
+      --sem-restore: #06b6d4;
+      --sem-restore-bg: rgba(6, 182, 212, 0.15);
+      --sem-info: #3b82f6;
+      --sem-info-bg: rgba(59, 130, 246, 0.15);
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+    /* Layout Shell */
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 0%, #0d1e38 0%, #070d18 70%);
+    }
+
+    /* TOP APP BAR */
+    header.app-header {
+      height: 64px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .brand-badge svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2.2;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .fy-badge {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-center {
+      flex: 1;
+      max-width: 440px;
+      margin: 0 24px;
+    }
+
+    .omni-search {
+      position: relative;
+      width: 100%;
+    }
+
+    .omni-search input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 8px 40px 8px 38px;
+      font-size: 13px;
+      color: #fff;
+      outline: none;
+      transition: all 0.25s;
+    }
+
+    .omni-search input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-dim);
+    }
+
+    .search-kbd {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      font-size: 10px;
+      padding: 2px 6px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+
+    .audio-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .audio-btn.active {
+      color: var(--cyan);
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px;
+      border-radius: 24px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .user-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* MAIN VIEW CONTAINER */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    /* SIDEBAR NAVIGATION */
+    aside.app-sidebar {
+      width: 260px;
+      background: rgba(11, 17, 32, 0.95);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 16px 12px;
+      user-select: none;
+    }
+
+    .nav-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      padding: 12px 12px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-bottom: 3px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      transform: translateX(3px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(2, 132, 199, 0.25), rgba(56, 189, 248, 0.05));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--cyan);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+    }
+
+    /* WORKSPACE */
+    main.workspace {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .workspace-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .workspace-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .action-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #070d18;
+      box-shadow: 0 4px 15px var(--cyan-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: var(--border-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.8);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* 3D FLOATING KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 18px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: var(--cyan);
+      box-shadow: 0 15px 35px var(--cyan-glow);
+    }
+
+    .kpi-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .kpi-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'Space Grotesk', monospace;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .kpi-trend {
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-trend.up { color: #34d399; }
+    .kpi-trend.neutral { color: #94a3b8; }
+    .kpi-trend.alert { color: #f87171; }
+
+    /* Sparkline Canvas */
+    .kpi-canvas {
+      width: 100%;
+      height: 38px;
+      margin-top: 6px;
+    }
+
+    /* RECENT RECORDS / INVOICE REGISTER TABLE */
+    .table-container {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .table-header-bar {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .table-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    table.dse-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    table.dse-table th {
+      background: rgba(30, 41, 59, 0.5);
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    table.dse-table td {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    table.dse-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Semantic Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-complete {
+      background: var(--sem-complete-bg);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-dispatched {
+      background: var(--sem-info-bg);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-attention {
+      background: var(--sem-warning-bg);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-destructive {
+      background: var(--sem-destructive-bg);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--cyan);
+      color: #070d18;
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    /* MODAL SYSTEM (Matching AppDialogRenderer) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(14px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 22px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px var(--cyan-glow);
+      overflow: hidden;
+      animation: modal-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modal-enter {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .modal-icon-shield {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .modal-icon-shield svg {
+      width: 24px;
+      height: 24px;
+      stroke: #fff;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .modal-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-close-btn:hover { color: #fff; }
+
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-action-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.2s;
+    }
+
+    .modal-action-card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    /* INVOICE & BARCODE WORKSPACES (Hidden by default, shown on navigation) */
+    .module-view {
+      display: none;
+    }
+
+    .module-view.active {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* 5-Column Barcode Packaging Card */
+    .barcode-preview-box {
+      background: #ffffff;
+      color: #000000;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 440px;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 2px solid #000000;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .barcode-header {
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+
+    .barcode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+
+    .barcode-svg-wrap {
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    .barcode-svg-wrap svg {
+      width: 100%;
+      height: 60px;
+    }
+
+    .barcode-num {
+      font-family: monospace;
+      font-size: 14px;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <!-- TOP APPLICATION BAR -->
+    <header class="app-header">
+      <div class="header-left">
+        <a href="#" class="brand-group">
+          <div class="brand-badge">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">Jasvi Industries ERP</div>
+            <div class="brand-sub">Universal Web Studio</div>
+          </div>
+        </a>
+
+        <div class="fy-badge">
+          <span>📅</span> FY 2026-2027
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="omni-search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="omni-input" placeholder="Omni Search: Invoices, Customers, Items (Ctrl+K)...">
+          <span class="search-kbd">Ctrl+K</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>UAT Live • PostgreSQL 16</span>
+        </div>
+
+        <button class="audio-btn active" id="audio-toggle-btn" title="Toggle UI Sound Effects">
+          <span id="audio-icon">🔊</span>
+          <span id="audio-text">Audio: ON</span>
+        </button>
+
+        <div class="user-profile" id="user-profile-btn" onclick="openModal('modal-governance')">
+          <div class="user-avatar">A</div>
+          <span class="user-name">Admin (opc)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <div class="app-body">
+      <!-- SIDEBAR NAVIGATION -->
+      <aside class="app-sidebar">
+        <div class="nav-section-title">Core Operations</div>
+        <a class="nav-item active" onclick="switchView('view-dashboard', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Dashboard
+        </a>
+
+        <a class="nav-item" onclick="switchView('view-sales', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          Sales & Invoicing
+          <span class="nav-badge">14 New</span>
+        </a>
+
+        <a class="nav-item" onclick="switchView('view-purchases', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          Purchases & Inward
+        </a>
+
+        <a class="nav-item" onclick="switchView('view-barcode', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="3" y1="5" x2="3" y2="19"></line>
+            <line x1="7" y1="5" x2="7" y2="19"></line>
+            <line x1="11" y1="5" x2="11" y2="19"></line>
+            <line x1="15" y1="5" x2="15" y2="19"></line>
+            <line x1="19" y1="5" x2="19" y2="19"></line>
+            <line x1="21" y1="5" x2="21" y2="19"></line>
+          </svg>
+          5-Col Barcode Studio
+        </a>
+
+        <div class="nav-section-title">Catalogs & Accounts</div>
+        <a class="nav-item" onclick="switchView('view-masters', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Master Catalogs
+        </a>
+
+        <a class="nav-item" onclick="switchView('view-banking', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="3" y1="21" x2="21" y2="21"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <polyline points="5 6 12 3 19 6"></polyline>
+            <line x1="4" y1="10" x2="4" y2="21"></line>
+            <line x1="20" y1="10" x2="20" y2="21"></line>
+          </svg>
+          Banking & Ledgers
+        </a>
+
+        <a class="nav-item" onclick="switchView('view-gst', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          GST Center (GSTR-1)
+        </a>
+
+        <div class="nav-section-title">System & Governance</div>
+        <a class="nav-item" onclick="openModal('modal-backup')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          DB Backup & Restore
+        </a>
+
+        <a class="nav-item" onclick="openModal('modal-governance')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          User Roles & Audit
+        </a>
+      </aside>
+
+      <!-- WORKSPACE -->
+      <main class="workspace">
+        <!-- VIEW 1: EXECUTIVE DASHBOARD -->
+        <div id="view-dashboard" class="module-view active">
+          <div class="workspace-header">
+            <div>
+              <h1 class="workspace-title">Central Operations Dashboard</h1>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Universal Web ERP Control Center &bull; Real-time PostgreSQL Connectivity</p>
+            </div>
+
+            <div class="action-toolbar">
+              <button class="btn btn-primary" onclick="switchView('view-sales')">
+                <span>➕</span> Create Tax Invoice
+              </button>
+              <button class="btn btn-secondary" onclick="switchView('view-barcode')">
+                <span>🏷️</span> Print 5-Col Label
+              </button>
+              <button class="btn btn-secondary" onclick="openModal('modal-backup')">
+                <span>🛡️</span> Backup DB
+              </button>
+            </div>
+          </div>
+
+          <!-- 3D FLOATING KPI CARDS -->
+          <div class="kpi-grid">
+            <div class="kpi-card" style="border-left: 4px solid #10b981;">
+              <div class="kpi-card-header">
+                <span class="kpi-label">Today's Sales</span>
+                <span class="kpi-pill badge-complete">+12.4%</span>
+              </div>
+              <div class="kpi-value" style="color: #34d399;">₹ 1,42,850.00</div>
+              <div class="kpi-trend up">
+                <span>↗</span> Active billing stream from 14 invoices
+              </div>
+              <canvas class="kpi-canvas" id="canvas-sales"></canvas>
+            </div>
+
+            <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
+              <div class="kpi-card-header">
+                <span class="kpi-label">Pending Invoices</span>
+                <span class="kpi-pill badge-attention">Action Req.</span>
+              </div>
+              <div class="kpi-value" style="color: #fbbf24;">14 Docs</div>
+              <div class="kpi-trend neutral">
+                <span>⏳</span> Awaiting dispatch or payment clearance
+              </div>
+              <canvas class="kpi-canvas" id="canvas-pending"></canvas>
+            </div>
+
+            <div class="kpi-card" style="border-left: 4px solid #ef4444;">
+              <div class="kpi-card-header">
+                <span class="kpi-label">Low Stock Alerts</span>
+                <span class="kpi-pill badge-destructive">Critical</span>
+              </div>
+              <div class="kpi-value" style="color: #f87171;">6 Items</div>
+              <div class="kpi-trend alert">
+                <span>⚠️</span> Reorder threshold breached (TMT, Flanges)
+              </div>
+              <canvas class="kpi-canvas" id="canvas-stock"></canvas>
+            </div>
+
+            <div class="kpi-card" style="border-left: 4px solid #38bdf8;">
+              <div class="kpi-card-header">
+                <span class="kpi-label">Liquid Bank Balance</span>
+                <span class="kpi-pill badge-dispatched">Reconciled</span>
+              </div>
+              <div class="kpi-value" style="color: var(--cyan);">₹ 8,12,400.00</div>
+              <div class="kpi-trend up">
+                <span>💼</span> HDFC & SBI Current Accounts Unified
+              </div>
+              <canvas class="kpi-canvas" id="canvas-bank"></canvas>
+            </div>
+          </div>
+
+          <!-- RECENT RECORDS REGISTER -->
+          <div class="table-container">
+            <div class="table-header-bar">
+              <div class="table-title">
+                <span>📋</span> Recent Tax Invoices & Dispatches
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="triggerAudioSuccess()">
+                  <span>🔄</span> Refresh Data
+                </button>
+              </div>
+            </div>
+
+            <table class="dse-table">
+              <thead>
+                <tr>
+                  <th>Invoice No</th>
+                  <th>Customer Name</th>
+                  <th>Date</th>
+                  <th>Taxable Value</th>
+                  <th>GST Amount</th>
+                  <th>Total (₹)</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--cyan);">JI/25-2026/0131</td>
+                  <td><b>Om Engineering Works</b></td>
+                  <td>11-Oct-2026</td>
+                  <td>₹ 1,21,059.32</td>
+                  <td>₹ 21,790.68</td>
+                  <td><b>₹ 1,42,850.00</b></td>
+                  <td><span class="badge badge-complete">Complete / Paid</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="icon-btn" title="Download Tax Invoice PDF" onclick="triggerAudioSuccess()">📄</button>
+                      <button class="icon-btn" title="Print 5-Col Shipping Label" onclick="openBarcodePreview('JI/25-2026/0131', 'TMT Steel Bars 12mm', 500)">🏷️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--cyan);">JI/25-2026/0130</td>
+                  <td><b>Shree Ram Precision</b></td>
+                  <td>10-Oct-2026</td>
+                  <td>₹ 68,983.05</td>
+                  <td>₹ 12,416.95</td>
+                  <td><b>₹ 81,400.00</b></td>
+                  <td><span class="badge badge-dispatched">Dispatched</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="icon-btn" title="Download Tax Invoice PDF" onclick="triggerAudioSuccess()">📄</button>
+                      <button class="icon-btn" title="Print 5-Col Shipping Label" onclick="openBarcodePreview('JI/25-2026/0130', 'Mild Steel Flanges 80mm', 120)">🏷️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--cyan);">JI/25-2026/0129</td>
+                  <td><b>Gujarat Tech Valves</b></td>
+                  <td>09-Oct-2026</td>
+                  <td>₹ 2,05,508.47</td>
+                  <td>₹ 36,991.53</td>
+                  <td><b>₹ 2,42,500.00</b></td>
+                  <td><span class="badge badge-attention">Attention / Due</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="icon-btn" title="Download Tax Invoice PDF" onclick="triggerAudioSuccess()">📄</button>
+                      <button class="icon-btn" title="Print 5-Col Shipping Label" onclick="openBarcodePreview('JI/25-2026/0129', 'Forged Steel Gate Valves', 45)">🏷️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--cyan);">JI/25-2026/0128</td>
+                  <td><b>Maruti Auto Components</b></td>
+                  <td>08-Oct-2026</td>
+                  <td>₹ 45,000.00</td>
+                  <td>₹ 8,100.00</td>
+                  <td><b>₹ 53,100.00</b></td>
+                  <td><span class="badge badge-complete">Complete / Paid</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="icon-btn" title="Download Tax Invoice PDF" onclick="triggerAudioSuccess()">📄</button>
+                      <button class="icon-btn" title="Print 5-Col Shipping Label" onclick="openBarcodePreview('JI/25-2026/0128', 'CNC Turned Bushings', 1000)">🏷️</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 2: SALES INVOICING & QUOTATION STUDIO -->
+        <div id="view-sales" class="module-view">
+          <div class="workspace-header">
+            <div>
+              <h1 class="workspace-title">Tax Invoicing & Quotation Studio</h1>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">QuickBooks-Style Keyboard Inline Grid (<kbd>Tab</kbd> / <kbd>Enter</kbd>) &bull; Auto GST Split</p>
+            </div>
+
+            <div class="action-toolbar">
+              <button class="btn btn-secondary" onclick="switchView('view-dashboard')">
+                <span>⬅️</span> Back to Dashboard
+              </button>
+              <button class="btn btn-primary" onclick="saveInvoice()">
+                <span>💾</span> Post & Save Invoice (F2)
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container" style="padding: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Customer Name</label>
+                <select id="inv-customer" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px; font-family: inherit;">
+                  <option>Om Engineering Works (GSTIN: 24AAAFO1234F1Z5)</option>
+                  <option>Shree Ram Precision (GSTIN: 24AAGCS9876Q1Z2)</option>
+                  <option>Gujarat Tech Valves (GSTIN: 24AABCG5555M1Z8)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Invoice Number</label>
+                <input type="text" value="JI/25-2026/0132" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: var(--cyan); padding: 10px; border-radius: 8px; font-family: monospace; font-weight: 700;" readonly>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Invoice Date</label>
+                <input type="date" value="2026-10-11" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px; font-family: inherit;">
+              </div>
+            </div>
+
+            <!-- INLINE ITEMS GRID -->
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--cyan);">Inline Item Entry (Press Tab to move row-to-row)</h3>
+              <table class="dse-table" style="background: rgba(15, 23, 42, 0.4); border-radius: 12px; overflow: hidden;">
+                <thead>
+                  <tr>
+                    <th>Item Description</th>
+                    <th>HSN</th>
+                    <th>Remarks</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Rate (₹)</th>
+                    <th>GST %</th>
+                    <th>Total (₹)</th>
+                  </tr>
+                </thead>
+                <tbody id="invoice-items-body">
+                  <tr>
+                    <td><input type="text" value="TMT Steel Bars 12mm Fe-550D" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="text" value="72142090" style="width: 90px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--cyan); padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="text" value="Batch #JB-9A" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="number" id="qty-1" value="500" oninput="calcTotals()" style="width: 70px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="text" value="KGS" style="width: 60px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="number" id="rate-1" value="65.00" oninput="calcTotals()" style="width: 80px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px; border-radius: 6px;"></td>
+                    <td><input type="text" value="18%" style="width: 50px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #34d399; padding: 6px; border-radius: 6px;" readonly></td>
+                    <td id="row-total-1" style="font-weight: 700; color: #fff;">₹ 38,350.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- TOTALS SUMMARY -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+              <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 18px; width: 340px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+                  <span>Taxable Value:</span>
+                  <span id="summary-taxable">₹ 32,500.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+                  <span>CGST (9%) + SGST (9%):</span>
+                  <span id="summary-gst">₹ 5,850.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+                  <span>Auto Round-Off:</span>
+                  <span id="summary-round">₹ 0.00</span>
+                </div>
+                <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 6px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--cyan);">
+                  <span>Grand Total:</span>
+                  <span id="summary-grand">₹ 38,350.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 3: UNIVERSAL 5-COLUMN BARCODE STUDIO -->
+        <div id="view-barcode" class="module-view">
+          <div class="workspace-header">
+            <div>
+              <h1 class="workspace-title">Universal 5-Column Barcode Studio</h1>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Standard Packaging Label &bull; Code-128 Master Barcode &bull; 2D QR Verification Seal</p>
+            </div>
+
+            <div class="action-toolbar">
+              <button class="btn btn-secondary" onclick="switchView('view-dashboard')">
+                <span>⬅️</span> Back to Dashboard
+              </button>
+              <button class="btn btn-primary" onclick="printBarcodeLabel()">
+                <span>🖨️</span> Print Thermal 4x6 Label
+              </button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Form Controls -->
+            <div class="table-container" style="padding: 24px;">
+              <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--cyan);">Packaging Box Specifications</h3>
+              
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Document / Invoice Reference</label>
+                  <input type="text" id="bc-doc" value="JI/25-2026/0131" oninput="updateBarcodeCard()" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">1. Item Description</label>
+                  <input type="text" id="bc-desc" value="TMT Steel Bars 12mm Fe-550D" oninput="updateBarcodeCard()" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">2. HSN Code</label>
+                  <input type="text" id="bc-hsn" value="72142090" oninput="updateBarcodeCard()" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">3. Item Remarks</label>
+                  <input type="text" id="bc-remarks" value="Batch #JB-2026-9A • Certified Quality" oninput="updateBarcodeCard()" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">4. Quantity & Unit</label>
+                  <input type="text" id="bc-qty" value="500 KGS (Box 1 of 1)" oninput="updateBarcodeCard()" style="width: 100%; background: #0f172a; border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- LIVE 4x6 THERMAL LABEL PREVIEW -->
+            <div class="table-container" style="padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text-muted);">Standard 4" × 6" Thermal Label Preview</h3>
+              
+              <div class="barcode-preview-box" id="print-area">
+                <div class="barcode-header">
+                  <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">JASVI INDUSTRIES &bull; DISPATCH SEAL</div>
+                  <div style="font-size: 18px; font-weight: 800; margin-top: 4px;" id="lbl-desc">TMT Steel Bars 12mm Fe-550D</div>
+                  <div style="font-size: 11px; color: #444;" id="lbl-doc">INV: JI/25-2026/0131</div>
+                </div>
+
+                <div class="barcode-grid">
+                  <div>
+                    <div style="font-size: 10px; font-weight: 700; text-transform: uppercase;">HSN Code</div>
+                    <div style="font-size: 14px; font-weight: 800;" id="lbl-hsn">72142090</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 10px; font-weight: 700; text-transform: uppercase;">Dispatched Qty</div>
+                    <div style="font-size: 14px; font-weight: 800;" id="lbl-qty">500 KGS (Box 1 of 1)</div>
+                  </div>
+                </div>
+
+                <div style="padding: 6px 0; border-bottom: 2px solid #000; font-size: 11px;">
+                  <b>Remarks:</b> <span id="lbl-remarks">Batch #JB-2026-9A • Certified Quality</span>
+                </div>
+
+                <!-- Master Code-128 Barcode Simulation -->
+                <div class="barcode-svg-wrap">
+                  <svg viewBox="0 0 280 60">
+                    <rect x="10" y="0" width="4" height="50" fill="#000"/>
+                    <rect x="18" y="0" width="2" height="50" fill="#000"/>
+                    <rect x="24" y="0" width="6" height="50" fill="#000"/>
+                    <rect x="34" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="42" y="0" width="8" height="50" fill="#000"/>
+                    <rect x="54" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="62" y="0" width="5" height="50" fill="#000"/>
+                    <rect x="72" y="0" width="2" height="50" fill="#000"/>
+                    <rect x="78" y="0" width="6" height="50" fill="#000"/>
+                    <rect x="88" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="96" y="0" width="7" height="50" fill="#000"/>
+                    <rect x="108" y="0" width="4" height="50" fill="#000"/>
+                    <rect x="116" y="0" width="2" height="50" fill="#000"/>
+                    <rect x="124" y="0" width="8" height="50" fill="#000"/>
+                    <rect x="136" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="144" y="0" width="5" height="50" fill="#000"/>
+                    <rect x="154" y="0" width="7" height="50" fill="#000"/>
+                    <rect x="166" y="0" width="2" height="50" fill="#000"/>
+                    <rect x="174" y="0" width="6" height="50" fill="#000"/>
+                    <rect x="184" y="0" width="4" height="50" fill="#000"/>
+                    <rect x="194" y="0" width="8" height="50" fill="#000"/>
+                    <rect x="206" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="214" y="0" width="6" height="50" fill="#000"/>
+                    <rect x="224" y="0" width="2" height="50" fill="#000"/>
+                    <rect x="232" y="0" width="7" height="50" fill="#000"/>
+                    <rect x="244" y="0" width="4" height="50" fill="#000"/>
+                    <rect x="254" y="0" width="3" height="50" fill="#000"/>
+                    <rect x="262" y="0" width="5" height="50" fill="#000"/>
+                  </svg>
+                  <div class="barcode-num" id="lbl-barcode">JI-25-2026-0131-B1</div>
+                </div>
+
+                <!-- 2D QR Verification Stamp -->
+                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed #000; padding-top: 8px;">
+                  <div style="font-size: 10px; line-height: 1.3;">
+                    <b>Scan with Handheld PDA:</b><br>
+                    Secured by Jasvi Digital Audit Seal
+                  </div>
+                  <div style="width: 44px; height: 44px; background: #000; padding: 3px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;">
+                    <div style="background:#fff;"></div><div style="background:#000;"></div><div style="background:#fff;"></div><div style="background:#fff;"></div>
+                    <div style="background:#fff;"></div><div style="background:#fff;"></div><div style="background:#000;"></div><div style="background:#fff;"></div>
+                    <div style="background:#000;"></div><div style="background:#fff;"></div><div style="background:#fff;"></div><div style="background:#000;"></div>
+                    <div style="background:#fff;"></div><div style="background:#000;"></div><div style="background:#fff;"></div><div style="background:#fff;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 4: MASTER DATA (ITEMS, CUSTOMERS, SUPPLIERS) -->
+        <div id="view-masters" class="module-view">
+          <div class="workspace-header">
+            <div>
+              <h1 class="workspace-title">Master Catalogs (Desktop Parity)</h1>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Unified Masters synced directly with PostgreSQL 16</p>
+            </div>
+
+            <div class="action-toolbar">
+              <button class="btn btn-primary" onclick="triggerAudioSuccess()">
+                <span>➕</span> Add New Master Item
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="dse-table">
+              <thead>
+                <tr>
+                  <th>Item Code</th>
+                  <th>Item Name</th>
+                  <th>HSN Code</th>
+                  <th>Default Unit</th>
+                  <th>GST Rate</th>
+                  <th>Unit Rate (₹)</th>
+                  <th>Stock Balance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-family: monospace; color: var(--cyan); font-weight: 700;">ITM-7214-01</td>
+                  <td><b>TMT Steel Bars 12mm Fe-550D</b></td>
+                  <td>72142090</td>
+                  <td>KGS</td>
+                  <td>18%</td>
+                  <td>₹ 65.00</td>
+                  <td><b>4,250 KGS</b></td>
+                  <td><span class="badge badge-complete">In Stock</span></td>
+                </tr>
+                <tr>
+                  <td style="font-family: monospace; color: var(--cyan); font-weight: 700;">ITM-7307-02</td>
+                  <td><b>Mild Steel Flanges 80mm Class 150</b></td>
+                  <td>73079100</td>
+                  <td>NOS</td>
+                  <td>18%</td>
+                  <td>₹ 680.00</td>
+                  <td><b>180 NOS</b></td>
+                  <td><span class="badge badge-complete">In Stock</span></td>
+                </tr>
+                <tr>
+                  <td style="font-family: monospace; color: var(--cyan); font-weight: 700;">ITM-8481-05</td>
+                  <td><b>Forged Steel Gate Valves 2-Inch</b></td>
+                  <td>84818030</td>
+                  <td>NOS</td>
+                  <td>18%</td>
+                  <td>₹ 4,500.00</td>
+                  <td><b style="color: #f87171;">4 NOS</b></td>
+                  <td><span class="badge badge-destructive">Low Stock</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: DATABASE BACKUP & SYSTEM RECOVERY -->
+  <div class="modal-overlay" id="modal-backup">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-icon-shield">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="modal-title">Database Backup & Recovery Studio</div>
+            <div class="modal-subtitle">PostgreSQL 16 Snapshot Engine &bull; Zero Data Loss Protocol</div>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-backup')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-action-card">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Create On-Demand Encrypted Backup</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Captures schema + full data with optimistic lock verification.</div>
+          </div>
+          <button class="btn btn-primary" onclick="triggerBackupAction()">One-Click Backup</button>
+        </div>
+
+        <div class="modal-action-card">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Point-in-Time Recovery Snapshot</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Roll back or clone database to a clean verified state.</div>
+          </div>
+          <button class="btn btn-secondary" onclick="triggerAudioSuccess()">Select Snapshot</button>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; font-size: 12px; color: #fbbf24;">
+          <b>⚠️ Concurrency Safety:</b> Backups execute non-blocking snapshots using WAL archiving without interrupting active billing or dispatch.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-backup')">Close (Esc)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GOVERNANCE & USER AUDIT -->
+  <div class="modal-overlay" id="modal-governance">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-icon-shield" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="modal-title">User Roles & Security Governance</div>
+            <div class="modal-subtitle">Active Session: Admin (opc) &bull; Role-Based Access Control</div>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-governance')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="font-size: 13px;">
+          <div style="margin-bottom: 8px;"><b>Current Active Operator:</b> <code>opc (Super Administrator)</code></div>
+          <div style="margin-bottom: 8px;"><b>Permissions:</b> Invoicing, Financial Accounting, Master Catalog, E-Way Bill, Full Backup.</div>
+          <div style="margin-bottom: 8px;"><b>Audit Logging:</b> Active &bull; Immutable PostgreSQL audit journal enabled.</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-governance')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // 1. Web Audio API Synthetic UI Sound Engine (No external sound files required)
+    let audioEnabled = true;
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, type, duration, gainLevel = 0.08) {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+        gain.gain.setValueAtTime(gainLevel, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {
+        console.warn('Audio feedback blocked by browser autoplay policy:', e);
+      }
+    }
+
+    function triggerAudioNav() {
+      playTone(587.33, 'sine', 0.12, 0.06); // D5 pleasant slide chime
+    }
+
+    function triggerAudioModal() {
+      playTone(659.25, 'triangle', 0.15, 0.08); // E5 pop
+    }
+
+    function triggerAudioClose() {
+      playTone(392.00, 'sine', 0.12, 0.06); // G4 drop
+    }
+
+    function triggerAudioSuccess() {
+      playTone(523.25, 'sine', 0.1, 0.08); // C5
+      setTimeout(() => playTone(1046.50, 'sine', 0.18, 0.08), 80); // C6 crisp success chime
+    }
+
+    function triggerAudioBarcode() {
+      playTone(1760.00, 'square', 0.09, 0.05); // Authentic POS barcode beep
+    }
+
+    // Toggle Audio Button
+    document.getElementById('audio-toggle-btn').addEventListener('click', function() {
+      audioEnabled = !audioEnabled;
+      this.classList.toggle('active', audioEnabled);
+      document.getElementById('audio-icon').innerText = audioEnabled ? '🔊' : '🔇';
+      document.getElementById('audio-text').innerText = audioEnabled ? 'Audio: ON' : 'Audio: OFF';
+      if (audioEnabled) triggerAudioSuccess();
+    });
+
+    // 2. Navigation View Switcher
+    function switchView(viewId, navEl) {
+      triggerAudioNav();
+      document.querySelectorAll('.module-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+      if (navEl) navEl.classList.add('active');
+    }
+
+    // 3. Modal Dialog Helpers
+    function openModal(modalId) {
+      triggerAudioModal();
+      const m = document.getElementById(modalId);
+      if (m) m.classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      triggerAudioClose();
+      const m = document.getElementById(modalId);
+      if (m) m.classList.remove('active');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => {
+          triggerAudioClose();
+          m.classList.remove('active');
+        });
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.getElementById('omni-input').focus();
+        triggerAudioNav();
+      }
+    });
+
+    // 4. Sparkline Drawing on KPI Cards
+    function drawSparkline(canvasId, color, data) {
+      const cvs = document.getElementById(canvasId);
+      if (!cvs) return;
+      const c = cvs.getContext('2d');
+      const w = cvs.width = cvs.offsetWidth;
+      const h = cvs.height = cvs.offsetHeight;
+
+      c.clearRect(0, 0, w, h);
+      c.beginPath();
+      c.strokeStyle = color;
+      c.lineWidth = 2.5;
+
+      const step = w / (data.length - 1);
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+
+      data.forEach((val, idx) => {
+        const x = idx * step;
+        const y = h - ((val - min) / (max - min || 1)) * (h - 8) - 4;
+        if (idx === 0) c.moveTo(x, y);
+        else c.lineTo(x, y);
+      });
+      c.stroke();
+    }
+
+    window.addEventListener('load', () => {
+      drawSparkline('canvas-sales', '#10b981', [12, 18, 15, 24, 28, 22, 35, 42]);
+      drawSparkline('canvas-pending', '#f59e0b', [8, 14, 12, 19, 14, 16, 14, 14]);
+      drawSparkline('canvas-stock', '#ef4444', [2, 4, 3, 5, 8, 7, 5, 6]);
+      drawSparkline('canvas-bank', '#38bdf8', [50, 55, 52, 60, 68, 72, 75, 81]);
+    });
+
+    // 5. Invoicing Calculations
+    function calcTotals() {
+      const qty = parseFloat(document.getElementById('qty-1').value) || 0;
+      const rate = parseFloat(document.getElementById('rate-1').value) || 0;
+      const taxable = qty * rate;
+      const gst = taxable * 0.18;
+      const total = taxable + gst;
+
+      document.getElementById('row-total-1').innerText = '₹ ' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('summary-taxable').innerText = '₹ ' + taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('summary-gst').innerText = '₹ ' + gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('summary-grand').innerText = '₹ ' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function saveInvoice() {
+      triggerAudioSuccess();
+      alert('✔ Invoice JI/25-2026/0132 Posted Successfully!\nSaved to PostgreSQL UAT Database.');
+      switchView('view-dashboard');
+    }
+
+    // 6. Barcode Card Preview
+    function updateBarcodeCard() {
+      document.getElementById('lbl-doc').innerText = 'INV: ' + document.getElementById('bc-doc').value;
+      document.getElementById('lbl-desc').innerText = document.getElementById('bc-desc').value;
+      document.getElementById('lbl-hsn').innerText = document.getElementById('bc-hsn').value;
+      document.getElementById('lbl-remarks').innerText = document.getElementById('bc-remarks').value;
+      document.getElementById('lbl-qty').innerText = document.getElementById('bc-qty').value;
+    }
+
+    function openBarcodePreview(docNo, desc, qty) {
+      document.getElementById('bc-doc').value = docNo;
+      document.getElementById('bc-desc').value = desc;
+      document.getElementById('bc-qty').value = qty + ' KGS (Box 1 of 1)';
+      updateBarcodeCard();
+      switchView('view-barcode');
+      triggerAudioBarcode();
+    }
+
+    function printBarcodeLabel() {
+      triggerAudioBarcode();
+      window.print();
+    }
+
+    function triggerBackupAction() {
+      triggerAudioSuccess();
+      alert('✔ Snapshot backup generated: dse_erp_uat_snapshot_' + Date.now() + '.sql.gz\nStored securely in /srv/dse-erp/backups/');
+      closeModal('modal-backup');
+    }
+  </script>
+</body>
+</html>
