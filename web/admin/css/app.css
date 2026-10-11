@@ -147,8 +147,8 @@
 
     /* CONTENT STAGE */
     main.app-stage { flex: 1; overflow-y: auto; padding: 24px 32px; position: relative; }
-    .module-view { display: none; animation: fadeIn 0.22s ease forwards; }
-    .module-view.active { display: block; }
+    .module-view { display: none !important; animation: fadeIn 0.22s ease forwards; }
+    .module-view.active { display: block !important; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
     /* VIEW HEADERS */

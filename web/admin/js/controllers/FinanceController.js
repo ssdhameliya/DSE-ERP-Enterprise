@@ -8,7 +8,7 @@ window.FinanceController = {
     const ledgerTbody = document.getElementById('ledger-table-tbody');
     try {
       const res = await window.OperationsService.getVouchers(0, 20);
-      const list = res.content || [];
+      const list = res.rows || res.content || (Array.isArray(res) ? res : []);
       if (bankTbody) {
         if (list.length === 0) {
           bankTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No transactions recorded.</td></tr>`;

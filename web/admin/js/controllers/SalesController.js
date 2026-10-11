@@ -10,27 +10,35 @@ window.SalesController = {
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
     try {
-      const res = await window.OperationsService.getSales(0, 15);
-      const list = res.content || [];
+      const res = await window.OperationsService.getSales(0, 50);
+      const list = res.rows || res.content || (Array.isArray(res) ? res : []);
       this.salesCache = list;
       if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim);">No sales records found.</td></tr>`;
         return;
       }
-      tbody.innerHTML = list.map(s => `
-        <tr>
-          <td style="font-weight: 700; color: var(--cyan);">${s.invoiceNo || s.number}</td>
-          <td>${window.FormatUtil.formatDate(s.invoiceDate || s.date)}</td>
-          <td style="font-weight: 600;">${s.customerName || s.partyName || '-'}</td>
-          <td>${window.FormatUtil.formatRupees(s.taxableAmount || 0)}</td>
-          <td>${window.FormatUtil.formatRupees(s.gstAmount || 0)}</td>
-          <td style="font-weight: 700;">${window.FormatUtil.formatRupees(s.totalAmount || s.total || 0)}</td>
-          <td><span class="badge ${s.documentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${s.documentStatus || 'POSTED'}</span></td>
-          <td>
-            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.BarcodeStudioController.quickGenerate('${s.invoiceNo || s.number}')">Barcode</button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = list.map(s => {
+        const invNo = s.invoiceNo || s.number || '-';
+        const custName = (s.customer && s.customer.name) || s.customerName || s.partyName || '-';
+        const taxable = s.subtotal != null ? s.subtotal : (s.taxableAmount || 0);
+        const grandTotal = s.totalAmount != null ? s.totalAmount : (s.total || 0);
+        const isPaid = s.documentStatus === 'PAID' || s.paymentStatus === 'PAID';
+        const statusText = s.documentStatus || s.paymentStatus || 'POSTED';
+        return `
+          <tr>
+            <td style="font-weight: 700; color: var(--cyan);">${invNo}</td>
+            <td>${window.FormatUtil.formatDate(s.invoiceDate || s.date)}</td>
+            <td style="font-weight: 600;">${custName}</td>
+            <td>${window.FormatUtil.formatRupees(taxable)}</td>
+            <td>${window.FormatUtil.formatRupees(s.gstAmount || 0)}</td>
+            <td style="font-weight: 700;">${window.FormatUtil.formatRupees(grandTotal)}</td>
+            <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${statusText}</span></td>
+            <td>
+              <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.BarcodeStudioController.quickGenerate('${invNo}')">Barcode</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #f87171;">${e.message}</td></tr>`;
     }
@@ -40,26 +48,35 @@ window.SalesController = {
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
     const q = (query || '').toLowerCase();
-    const filtered = this.salesCache.filter(s =>
-      (s.invoiceNo && s.invoiceNo.toLowerCase().includes(q)) ||
-      (s.customerName && s.customerName.toLowerCase().includes(q))
-    );
+    const filtered = this.salesCache.filter(s => {
+      const invNo = (s.invoiceNo || s.number || '').toLowerCase();
+      const custName = ((s.customer && s.customer.name) || s.customerName || s.partyName || '').toLowerCase();
+      return invNo.includes(q) || custName.includes(q);
+    });
     if (filtered.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim);">No matching invoices.</td></tr>`;
       return;
     }
-    tbody.innerHTML = filtered.map(s => `
-      <tr>
-        <td style="font-weight: 700; color: var(--cyan);">${s.invoiceNo}</td>
-        <td>${window.FormatUtil.formatDate(s.invoiceDate)}</td>
-        <td style="font-weight: 600;">${s.customerName}</td>
-        <td>${window.FormatUtil.formatRupees(s.taxableAmount || 0)}</td>
-        <td>${window.FormatUtil.formatRupees(s.gstAmount || 0)}</td>
-        <td style="font-weight: 700;">${window.FormatUtil.formatRupees(s.totalAmount || 0)}</td>
-        <td><span class="badge ${s.documentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${s.documentStatus}</span></td>
-        <td><button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.7rem;">Barcode</button></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = filtered.map(s => {
+      const invNo = s.invoiceNo || s.number || '-';
+      const custName = (s.customer && s.customer.name) || s.customerName || s.partyName || '-';
+      const taxable = s.subtotal != null ? s.subtotal : (s.taxableAmount || 0);
+      const grandTotal = s.totalAmount != null ? s.totalAmount : (s.total || 0);
+      const isPaid = s.documentStatus === 'PAID' || s.paymentStatus === 'PAID';
+      const statusText = s.documentStatus || s.paymentStatus || 'POSTED';
+      return `
+        <tr>
+          <td style="font-weight: 700; color: var(--cyan);">${invNo}</td>
+          <td>${window.FormatUtil.formatDate(s.invoiceDate || s.date)}</td>
+          <td style="font-weight: 600;">${custName}</td>
+          <td>${window.FormatUtil.formatRupees(taxable)}</td>
+          <td>${window.FormatUtil.formatRupees(s.gstAmount || 0)}</td>
+          <td style="font-weight: 700;">${window.FormatUtil.formatRupees(grandTotal)}</td>
+          <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${statusText}</span></td>
+          <td><button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.BarcodeStudioController.quickGenerate('${invNo}')">Barcode</button></td>
+        </tr>
+      `;
+    }).join('');
   },
 
   async loadQuotations() {

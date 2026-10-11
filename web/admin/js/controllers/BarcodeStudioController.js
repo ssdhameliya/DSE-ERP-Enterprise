@@ -23,7 +23,7 @@ window.BarcodeStudioController = {
   },
 
   quickGenerate(code) {
-    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-barcode-studio');
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-barcode');
     const input = document.getElementById('barcode-text-input');
     if (input) input.value = code;
     this.generateBarcode();

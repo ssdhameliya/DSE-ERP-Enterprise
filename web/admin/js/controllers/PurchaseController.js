@@ -9,24 +9,31 @@ window.PurchaseController = {
     const tbody = document.getElementById('purchases-table-tbody');
     if (!tbody) return;
     try {
-      const res = await window.OperationsService.getPurchases(0, 15);
-      const list = res.content || [];
+      const res = await window.OperationsService.getPurchases(0, 50);
+      const list = res.rows || res.content || (Array.isArray(res) ? res : []);
       this.purchasesCache = list;
       if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No purchase bills recorded.</td></tr>`;
         return;
       }
-      tbody.innerHTML = list.map(p => `
-        <tr>
-          <td style="font-weight: 700; color: var(--cyan);">${p.invoiceNo || p.billNo}</td>
-          <td>${window.FormatUtil.formatDate(p.invoiceDate || p.date)}</td>
-          <td style="font-weight: 600;">${p.supplierName || p.partyName || '-'}</td>
-          <td>${window.FormatUtil.formatRupees(p.taxableAmount || 0)}</td>
-          <td>${window.FormatUtil.formatRupees(p.gstAmount || 0)}</td>
-          <td style="font-weight: 700;">${window.FormatUtil.formatRupees(p.totalAmount || p.total || 0)}</td>
-          <td><span class="badge badge-paid">${p.documentStatus || 'ACCEPTED'}</span></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = list.map(p => {
+        const invNo = p.invoiceNo || p.billNo || '-';
+        const suppName = (p.supplier && p.supplier.name) || p.supplierName || p.partyName || '-';
+        const taxable = p.subtotal != null ? p.subtotal : (p.taxableAmount || 0);
+        const grandTotal = p.totalAmount != null ? p.totalAmount : (p.total || 0);
+        const statusText = p.documentStatus || p.paymentStatus || 'ACCEPTED';
+        return `
+          <tr>
+            <td style="font-weight: 700; color: var(--cyan);">${invNo}</td>
+            <td>${window.FormatUtil.formatDate(p.invoiceDate || p.date)}</td>
+            <td style="font-weight: 600;">${suppName}</td>
+            <td>${window.FormatUtil.formatRupees(taxable)}</td>
+            <td>${window.FormatUtil.formatRupees(p.gstAmount || 0)}</td>
+            <td style="font-weight: 700;">${window.FormatUtil.formatRupees(grandTotal)}</td>
+            <td><span class="badge badge-paid">${statusText}</span></td>
+          </tr>
+        `;
+      }).join('');
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">${e.message}</td></tr>`;
     }

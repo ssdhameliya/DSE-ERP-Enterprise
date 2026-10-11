@@ -12,21 +12,38 @@ window.NavigationRouter = (function() {
 
     selectNav(viewId) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('active'));
+
+      // Strictly hide all views and remove active class
+      document.querySelectorAll('.module-view, .view-section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
+      });
+
+      // Clear all active navigation highlights
+      document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {
+        btn.classList.remove('active');
+      });
 
       const targetView = document.getElementById(viewId);
-      if (targetView) targetView.classList.add('active');
+      if (targetView) {
+        targetView.classList.add('active');
+        targetView.style.display = 'block';
+      }
 
-      const targetNav = document.getElementById(`nav-${viewId.replace('view-', '')}`);
+      const navKey = viewId.replace('view-', '');
+      const targetNav = document.getElementById(`nav-${navKey}`) ||
+                        document.getElementById(`nav-${navKey.replace('-register', '')}`);
       if (targetNav) targetNav.classList.add('active');
 
       currentViewId = viewId;
 
-      // Update URL hash / history for deep linking
-      if (window.history && window.history.pushState) {
-        const routeName = viewId.replace('view-', '');
-        window.history.pushState({ viewId }, '', `#${routeName}`);
+      // Update URL hash without polluting history if already set
+      if (window.location.hash !== `#${navKey}`) {
+        if (window.history && window.history.pushState) {
+          window.history.pushState({ viewId }, '', `#${navKey}`);
+        } else {
+          window.location.hash = `#${navKey}`;
+        }
       }
 
       // Dispatch controller onMount lifecycle
@@ -52,6 +69,9 @@ window.NavigationRouter = (function() {
           break;
         case 'view-item-master':
           if (window.ItemMasterController) window.ItemMasterController.loadItems();
+          break;
+        case 'view-inventory':
+          if (window.ItemMasterController) window.ItemMasterController.loadInventory();
           break;
         case 'view-masters':
           if (window.ItemMasterController) window.ItemMasterController.loadCategories();
@@ -82,15 +102,19 @@ window.NavigationRouter = (function() {
         case 'view-general-ledger':
           if (window.FinanceController) window.FinanceController.loadFinance();
           break;
+        case 'view-users':
         case 'view-user-access':
           if (window.UserAccessController) window.UserAccessController.loadUsers();
           break;
+        case 'view-audit':
         case 'view-global-audit':
           if (window.UserAccessController) window.UserAccessController.loadAudit();
           break;
+        case 'view-barcode':
         case 'view-barcode-studio':
           if (window.BarcodeStudioController) window.BarcodeStudioController.init();
           break;
+        case 'view-backup':
         case 'view-backup-restore':
           if (window.SettingsController) window.SettingsController.loadBackups();
           break;
@@ -98,6 +122,17 @@ window.NavigationRouter = (function() {
     },
 
     init() {
+      // Determine initial view from hash or fallback to dashboard
+      let initialView = 'view-dashboard';
+      if (window.location.hash) {
+        const clean = window.location.hash.replace('#', '');
+        const cand = 'view-' + clean;
+        if (document.getElementById(cand)) {
+          initialView = cand;
+        }
+      }
+      this.selectNav(initialView);
+
       // Handle browser back/forward buttons
       window.addEventListener('popstate', (e) => {
         if (e.state && e.state.viewId) {
@@ -109,12 +144,14 @@ window.NavigationRouter = (function() {
         }
       });
 
-      // Initial hash routing
-      if (window.location.hash) {
-        const viewId = 'view-' + window.location.hash.replace('#', '');
-        const target = document.getElementById(viewId);
-        if (target) this.selectNav(viewId);
-      }
+      // Handle direct hash navigation
+      window.addEventListener('hashchange', () => {
+        const hashClean = window.location.hash.replace('#', '');
+        const targetView = 'view-' + hashClean;
+        if (document.getElementById(targetView) && targetView !== currentViewId) {
+          this.selectNav(targetView);
+        }
+      });
     }
   };
 })();

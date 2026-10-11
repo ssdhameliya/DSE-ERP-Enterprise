@@ -153,6 +153,7 @@ window.App = (function() {
       // Initialize initial controller data
       await window.DashboardController.refresh();
       await window.ItemMasterController.loadItems();
+      await window.ItemMasterController.loadInventory();
       await window.PartyController.loadCustomers();
       await window.PartyController.loadSuppliers();
 
@@ -223,9 +224,64 @@ window.triggerImmediateBackup = () => window.SettingsController.triggerImmediate
 window.generateBarcode = () => window.BarcodeStudioController.generateBarcode();
 window.printBarcode = () => window.BarcodeStudioController.printBarcode();
 window.refreshDashboardData = () => window.DashboardController.refresh();
+window.loadSalesData = () => window.SalesController.loadSales();
+window.loadPurchasesData = () => window.PurchaseController.loadPurchases();
+window.loadItemsData = () => { window.ItemMasterController.loadItems(); window.ItemMasterController.loadInventory(); };
+window.loadCustomersData = () => window.PartyController.loadCustomers();
+window.loadSuppliersData = () => window.PartyController.loadSuppliers();
+window.loadUsersData = () => window.UserAccessController.loadUsers();
+window.loadAuditTrail = () => window.UserAccessController.loadAudit();
 window.filterSalesTable = (q) => window.SalesController.filterSales(q);
 window.filterItemsTable = (q) => window.ItemMasterController.filterItems(q);
-window.filterCustomersTable = (q) => window.PartyController.loadCustomers();
+window.filterCustomersTable = (q) => {
+  const tbody = document.getElementById('customers-table-tbody');
+  if (!tbody || !window.PartyController.customersCache) return;
+  const qClean = (q || '').toLowerCase();
+  const filtered = window.PartyController.customersCache.filter(c =>
+    (c.partyCode || c.code || '').toLowerCase().includes(qClean) ||
+    (c.name || c.partyName || '').toLowerCase().includes(qClean)
+  );
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No matching customers.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(c => `
+    <tr>
+      <td style="font-weight:700; color:var(--cyan);">${c.partyCode || c.code || '-'}</td>
+      <td style="font-weight:600;">${c.name || c.partyName || '-'}</td>
+      <td>${c.gstin || '-'}</td>
+      <td>${c.phone || '-'}</td>
+      <td>${c.address || c.city || 'Gujarat'}</td>
+      <td>${window.FormatUtil.formatRupees(c.openingBalance || c.creditLimit || 50000)}</td>
+      <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Profile</button></td>
+    </tr>
+  `).join('');
+};
+window.filterSuppliersTable = (q) => {
+  const tbody = document.getElementById('suppliers-table-tbody');
+  if (!tbody || !window.PartyController.suppliersCache) return;
+  const qClean = (q || '').toLowerCase();
+  const filtered = window.PartyController.suppliersCache.filter(s =>
+    (s.partyCode || s.code || '').toLowerCase().includes(qClean) ||
+    (s.name || s.partyName || '').toLowerCase().includes(qClean)
+  );
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim);">No matching suppliers.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(s => `
+    <tr>
+      <td style="font-weight:700; color:var(--cyan);">${s.partyCode || s.code || '-'}</td>
+      <td style="font-weight:600;">${s.name || s.partyName || '-'}</td>
+      <td>${s.gstin || '-'}</td>
+      <td>${s.phone || '-'}</td>
+      <td>${s.bankName || s.bankDetails || 'State Bank of India'}</td>
+      <td>${s.accountNo || 'XXXX1234'}</td>
+      <td>${s.ifsc || 'SBIN0001234'}</td>
+      <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Ledger</button></td>
+    </tr>
+  `).join('');
+};
 window.handleInvoiceSave = (e) => window.SalesController.handleInvoiceSave(e);
 window.handlePurchaseSave = (e) => window.PurchaseController.handlePurchaseSave(e);
 window.handleItemSave = (e) => window.ItemMasterController.handleItemSave(e);

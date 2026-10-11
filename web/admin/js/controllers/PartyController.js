@@ -16,17 +16,25 @@ window.PartyController = {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No customers found.</td></tr>`;
         return;
       }
-      tbody.innerHTML = this.customersCache.map(c => `
-        <tr>
-          <td style="font-weight:700; color:var(--cyan);">${c.code}</td>
-          <td style="font-weight:600;">${c.name || c.partyName}</td>
-          <td>${c.gstin || '-'}</td>
-          <td>${c.phone || '-'}</td>
-          <td>${c.city || 'Gujarat'}</td>
-          <td>${window.FormatUtil.formatRupees(c.creditLimit || 50000)}</td>
-          <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Profile</button></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = this.customersCache.map(c => {
+        const code = c.partyCode || c.code || '-';
+        const name = c.name || c.partyName || '-';
+        const gstin = c.gstin || '-';
+        const phone = c.phone || '-';
+        const city = c.address || c.city || 'Gujarat';
+        const limit = c.openingBalance != null && c.openingBalance > 0 ? c.openingBalance : (c.creditLimit || 50000);
+        return `
+          <tr>
+            <td style="font-weight:700; color:var(--cyan);">${code}</td>
+            <td style="font-weight:600;">${name}</td>
+            <td>${gstin}</td>
+            <td>${phone}</td>
+            <td>${city}</td>
+            <td>${window.FormatUtil.formatRupees(limit)}</td>
+            <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Profile</button></td>
+          </tr>
+        `;
+      }).join('');
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">${e.message}</td></tr>`;
     }
@@ -39,21 +47,32 @@ window.PartyController = {
       const list = await window.MasterService.getParties('SUPPLIER');
       this.suppliersCache = list || [];
       if (this.suppliersCache.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim);">No suppliers found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim);">No suppliers found.</td></tr>`;
         return;
       }
-      tbody.innerHTML = this.suppliersCache.map(s => `
-        <tr>
-          <td style="font-weight:700; color:var(--cyan);">${s.code}</td>
-          <td style="font-weight:600;">${s.name || s.partyName}</td>
-          <td>${s.gstin || '-'}</td>
-          <td>${s.phone || '-'}</td>
-          <td>${s.city || 'Mumbai'}</td>
-          <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Ledger</button></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = this.suppliersCache.map(s => {
+        const code = s.partyCode || s.code || '-';
+        const name = s.name || s.partyName || '-';
+        const gstin = s.gstin || '-';
+        const phone = s.phone || '-';
+        const bankName = s.bankName || s.bankDetails || 'State Bank of India';
+        const acNo = s.accountNo || 'XXXX1234';
+        const ifsc = s.ifsc || 'SBIN0001234';
+        return `
+          <tr>
+            <td style="font-weight:700; color:var(--cyan);">${code}</td>
+            <td style="font-weight:600;">${name}</td>
+            <td>${gstin}</td>
+            <td>${phone}</td>
+            <td>${bankName}</td>
+            <td>${acNo}</td>
+            <td>${ifsc}</td>
+            <td><button class="btn btn-secondary" style="padding:2px 8px; font-size:0.7rem;">Ledger</button></td>
+          </tr>
+        `;
+      }).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171;">${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #f87171;">${e.message}</td></tr>`;
     }
   },
 
@@ -67,19 +86,25 @@ window.PartyController = {
 
   async handleCustomerSave(e) {
     e.preventDefault();
+    const code = document.getElementById('cust-code').value.trim();
+    const name = document.getElementById('cust-name').value.trim();
+    const gstin = document.getElementById('cust-gstin').value.trim();
+    const phone = document.getElementById('cust-phone').value.trim();
+    const address = document.getElementById('cust-address').value.trim();
     const payload = {
-      code: document.getElementById('cust-code').value.trim(),
-      name: document.getElementById('cust-name').value.trim(),
-      gstin: document.getElementById('cust-gstin').value.trim(),
-      phone: document.getElementById('cust-phone').value.trim(),
-      address: document.getElementById('cust-address').value.trim(),
+      partyCode: code,
+      code: code,
+      name: name,
+      gstin: gstin,
+      phone: phone,
+      address: address,
       partyType: 'CUSTOMER',
       active: true
     };
     try {
       await window.MasterService.createParty(payload);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast(`Customer ${payload.name} created!`, 'success');
+      window.AppDialogService.showToast(`Customer ${name} created!`, 'success');
       window.AppDialogService.closeModal('modal-new-customer');
       this.loadCustomers();
     } catch (err) {
@@ -89,19 +114,26 @@ window.PartyController = {
 
   async handleSupplierSave(e) {
     e.preventDefault();
+    const code = document.getElementById('sup-code').value.trim();
+    const name = document.getElementById('sup-name').value.trim();
+    const gstin = document.getElementById('sup-gstin').value.trim();
+    const phone = document.getElementById('sup-phone').value.trim();
+    const bank = document.getElementById('sup-bank').value.trim();
     const payload = {
-      code: document.getElementById('sup-code').value.trim(),
-      name: document.getElementById('sup-name').value.trim(),
-      gstin: document.getElementById('sup-gstin').value.trim(),
-      phone: document.getElementById('sup-phone').value.trim(),
-      bankDetails: document.getElementById('sup-bank').value.trim(),
+      partyCode: code,
+      code: code,
+      name: name,
+      gstin: gstin,
+      phone: phone,
+      bankDetails: bank,
+      address: bank,
       partyType: 'SUPPLIER',
       active: true
     };
     try {
       await window.MasterService.createParty(payload);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast(`Supplier ${payload.name} registered!`, 'success');
+      window.AppDialogService.showToast(`Supplier ${name} registered!`, 'success');
       window.AppDialogService.closeModal('modal-new-supplier');
       this.loadSuppliers();
     } catch (err) {
