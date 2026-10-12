@@ -155,6 +155,11 @@ window.NavigationRouter = (function() {
 
     toggleNavGroup(groupId) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+      const sb = document.querySelector('aside.app-sidebar');
+      if (sb && sb.classList.contains('collapsed')) {
+        sb.classList.remove('collapsed');
+      }
+
       const groupEl = document.getElementById(groupId);
       if (!groupEl) return;
       const isOpen = groupEl.classList.contains('open') || groupEl.classList.contains('expanded');

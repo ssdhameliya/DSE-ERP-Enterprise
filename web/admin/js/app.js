@@ -54,6 +54,8 @@ window.App = (function() {
   }
 
   function setupAuthForms() {
+    populateLoginRoles();
+
     // Login form submit
     const loginForm = document.getElementById('form-login');
     if (loginForm) {
@@ -61,6 +63,8 @@ window.App = (function() {
         e.preventDefault();
         const identity = document.getElementById('login-identity').value.trim();
         const password = document.getElementById('login-password').value;
+        const selectedRole = (document.getElementById('login-role') || {}).value || 'ADMIN';
+        const rememberCheck = document.getElementById('login-remember');
         const alertEl = document.getElementById('auth-alert');
         const submitBtn = document.getElementById('btn-login-submit');
 
@@ -69,12 +73,25 @@ window.App = (function() {
         alertEl.style.display = 'none';
 
         try {
-          const res = await window.AuthService.login(identity, password);
+          const res = await window.AuthService.login(identity, password, selectedRole);
+          if (res.roleMismatch) {
+            alertEl.className = 'auth-alert error';
+            alertEl.innerText = res.message;
+            alertEl.style.display = 'block';
+            return;
+          }
           if (res.mfaRequired) {
             document.getElementById('form-login').style.display = 'none';
             document.getElementById('form-mfa').style.display = 'block';
             document.getElementById('mfa-otp').focus();
           } else if (res.success) {
+            if (rememberCheck && rememberCheck.checked) {
+              localStorage.setItem('dse_saved_identity', identity);
+              localStorage.setItem('dse_saved_role', selectedRole);
+            } else {
+              localStorage.removeItem('dse_saved_identity');
+              localStorage.removeItem('dse_saved_role');
+            }
             applyUserToHeader(res.user);
             if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
             window.AppDialogService.closeAllModals();
@@ -94,6 +111,27 @@ window.App = (function() {
           submitBtn.innerText = 'Authenticate & Launch Studio';
         }
       });
+    }
+
+    async function populateLoginRoles() {
+      const roleSelect = document.getElementById('login-role');
+      if (!roleSelect) return;
+      try {
+        const roles = await window.AuthService.getLoginRoles();
+        if (Array.isArray(roles) && roles.length > 0) {
+          roleSelect.innerHTML = roles.map(r => `<option value="${r.code}">${r.displayName || r.code}</option>`).join('');
+        }
+        const savedRole = localStorage.getItem('dse_saved_role') || 'ADMIN';
+        roleSelect.value = savedRole;
+      } catch (e) {
+        console.warn('Could not load login roles:', e);
+      }
+
+      const savedIdentity = localStorage.getItem('dse_saved_identity');
+      const identityInput = document.getElementById('login-identity');
+      if (savedIdentity && identityInput) {
+        identityInput.value = savedIdentity;
+      }
     }
 
     // MFA form submit
@@ -279,6 +317,16 @@ window.App = (function() {
         document.getElementById('forgot-step-2').style.display = 'none';
         document.getElementById('forgot-identity').focus();
       }
+
+      // Initialize registration on tab open
+      if (tab === 'register') {
+        window.refreshRegistrationCaptcha();
+        window.loadRegistrationRoles();
+        const otpGroup = document.getElementById('reg-email-otp-group');
+        const submitBtn = document.getElementById('btn-reg-submit');
+        if (otpGroup) otpGroup.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'block';
+      }
     },
 
     cancelMfa() {
@@ -295,8 +343,243 @@ window.App = (function() {
   };
 })();
 
-// Helper functions for Phase 1 Authentication & Dropdowns
+// Helper functions for Authentication, Registration & MFA
 let currentForgotChallengeId = null;
+let currentRegistrationCaptchaId = null;
+let currentRegistrationChallengeId = null;
+let currentRegistrationId = null;
+let currentRegistrationPending = null;
+
+window.refreshRegistrationCaptcha = async function() {
+  const qEl = document.getElementById('reg-captcha-question');
+  const aEl = document.getElementById('reg-captcha-answer');
+  if (qEl) qEl.innerText = 'Fetching challenge...';
+  if (aEl) aEl.value = '';
+  try {
+    const res = await window.AuthService.getRegistrationCaptcha();
+    if (res && res.challengeId) {
+      currentRegistrationCaptchaId = res.challengeId;
+      if (qEl) qEl.innerText = res.question || 'What is 5 + 7?';
+    }
+  } catch (err) {
+    if (qEl) qEl.innerText = 'What is 10 + 5?';
+    console.warn('Captcha API error:', err);
+  }
+};
+
+window.loadRegistrationRoles = async function() {
+  const roleEl = document.getElementById('reg-role');
+  if (!roleEl) return;
+  try {
+    const roles = await window.AuthService.getRegistrationRoles();
+    if (Array.isArray(roles) && roles.length > 0) {
+      roleEl.innerHTML = roles.map(r => `<option value="${r.code}">${r.displayName || r.code}</option>`).join('');
+    }
+  } catch (err) {
+    console.warn('Registration roles error:', err);
+  }
+};
+
+window.handleRegisterSubmit = async function(e) {
+  if (e) e.preventDefault();
+  const name = ((document.getElementById('reg-name') || {}).value || '').trim();
+  const username = ((document.getElementById('reg-username') || {}).value || '').trim();
+  const email = ((document.getElementById('reg-email') || {}).value || '').trim();
+  const role = (document.getElementById('reg-role') || {}).value;
+  const password = (document.getElementById('reg-password') || {}).value;
+  const confirm = (document.getElementById('reg-confirm') || {}).value;
+  const captchaAnswer = ((document.getElementById('reg-captcha-answer') || {}).value || '').trim();
+  const alertEl = document.getElementById('auth-alert');
+  const btn = document.getElementById('btn-reg-submit');
+
+  if (!name || !username || !email || !password || !confirm) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Please complete all required fields.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (password !== confirm) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Passwords do not match. Please re-enter.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (!captchaAnswer) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Security CAPTCHA calculation answer is required.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Sending email OTP...';
+  alertEl.style.display = 'none';
+
+  try {
+    currentRegistrationPending = { username, fullName: name, email, role, password };
+    const payload = {
+      username,
+      fullName: name,
+      email,
+      role,
+      mfaEnabled: true,
+      captchaChallengeId: currentRegistrationCaptchaId,
+      captchaAnswer
+    };
+    const res = await window.AuthService.requestRegistrationOtp(payload);
+    if (res.success || res.challengeId) {
+      currentRegistrationChallengeId = res.challengeId;
+      document.getElementById('reg-email-otp-group').style.display = 'block';
+      document.getElementById('btn-reg-submit').style.display = 'none';
+      document.getElementById('reg-email-otp').focus();
+      alertEl.className = 'auth-alert success';
+      alertEl.innerText = res.message ? `${res.message}. Enter the OTP below.` : 'Verification code sent to your registered email! Enter the 6-digit OTP below.';
+      alertEl.style.display = 'block';
+    } else {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = res.message || 'Unable to request registration OTP.';
+      alertEl.style.display = 'block';
+      window.refreshRegistrationCaptcha();
+    }
+  } catch (err) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = err.message || 'Error processing registration.';
+    alertEl.style.display = 'block';
+    window.refreshRegistrationCaptcha();
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Send Email Verification Code';
+  }
+};
+
+window.handleVerifyRegistrationEmail = async function() {
+  const otp = ((document.getElementById('reg-email-otp') || {}).value || '').trim();
+  const alertEl = document.getElementById('auth-alert');
+  const btn = document.getElementById('btn-reg-verify-otp');
+
+  if (!otp || !otp.match(/^\d{6}$/)) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Please enter the valid 6-digit email OTP.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (!currentRegistrationPending || !currentRegistrationChallengeId) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Please complete CAPTCHA and send email OTP first.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Verifying email...';
+
+  try {
+    const payload = {
+      challengeId: currentRegistrationChallengeId,
+      otp,
+      username: currentRegistrationPending.username,
+      password: currentRegistrationPending.password,
+      fullName: currentRegistrationPending.fullName,
+      email: currentRegistrationPending.email,
+      role: currentRegistrationPending.role,
+      mfaEnabled: true
+    };
+    const res = await window.AuthService.verifyRegistrationEmail(payload);
+    if (res && (res.registrationId || res.manualSecret)) {
+      currentRegistrationId = res.registrationId;
+
+      // Populate Authenticator Setup Modal
+      const secretEl = document.getElementById('auth-setup-secret');
+      const qrImgEl = document.getElementById('auth-setup-qr-img');
+      const errEl = document.getElementById('auth-setup-error');
+
+      if (secretEl) secretEl.value = res.manualSecret || '';
+      if (qrImgEl && res.provisioningUri) {
+        qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
+      }
+      if (errEl) errEl.style.display = 'none';
+
+      window.AppDialogService.openModal('modal-authenticator-setup');
+      setTimeout(() => {
+        const totpIn = document.getElementById('auth-setup-totp');
+        if (totpIn) { totpIn.value = ''; totpIn.focus(); }
+      }, 100);
+    } else {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = res.message || 'Email OTP verification failed.';
+      alertEl.style.display = 'block';
+    }
+  } catch (err) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = err.message || 'Error verifying email OTP.';
+    alertEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Verify Email & Configure Authenticator';
+  }
+};
+
+window.copyAuthenticatorSecret = function() {
+  const secretEl = document.getElementById('auth-setup-secret');
+  if (secretEl && secretEl.value) {
+    navigator.clipboard.writeText(secretEl.value);
+    window.AppDialogService.showToast('Authenticator secret key copied to clipboard', 'info');
+  }
+};
+
+window.completeRegistrationAuthenticator = async function() {
+  const totp = ((document.getElementById('auth-setup-totp') || {}).value || '').trim();
+  const errEl = document.getElementById('auth-setup-error');
+  const btn = document.getElementById('btn-auth-setup-complete');
+
+  if (!totp || !totp.match(/^\d{6}$/)) {
+    if (errEl) {
+      errEl.innerText = 'Enter the current 6-digit authenticator code.';
+      errEl.style.display = 'block';
+    }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Verifying Authenticator...';
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const res = await window.AuthService.completeRegistrationMfa({
+      registrationId: currentRegistrationId,
+      otp: totp
+    });
+
+    if (res.success || !res.message || res.message.toLowerCase().includes('pending') || res.message.toLowerCase().includes('success')) {
+      window.AppDialogService.closeModal('modal-authenticator-setup');
+      window.App.showAuthTab('login');
+      const alertEl = document.getElementById('auth-alert');
+      if (alertEl) {
+        alertEl.className = 'auth-alert success';
+        alertEl.innerText = '✓ Registration submitted successfully. Your account is pending Administrator approval before sign-in.';
+        alertEl.style.display = 'block';
+      }
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.AppDialogService.showToast('Registration pending Admin approval', 'info');
+    } else {
+      if (errEl) {
+        errEl.innerText = res.message || 'Authenticator verification failed.';
+        errEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    if (errEl) {
+      errEl.innerText = err.message || 'Authenticator verification error.';
+      errEl.style.display = 'block';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Verify & Submit for Approval';
+  }
+};
 
 window.requestPasswordResetOtp = async function() {
   const identity = document.getElementById('forgot-identity').value.trim();

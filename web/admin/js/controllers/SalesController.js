@@ -11,6 +11,10 @@ window.SalesController = {
   quotationsCache: [],
   customersCache: [],
   itemsCache: [],
+  transportersCache: [],
+  invoiceCharges: [],
+  draftCharges: [],
+  availableChargeTypes: ['Freight', 'Handling', 'Insurance', 'Packaging', 'Loading & Unloading', 'Other'],
   currentDrawerSale: null,
   selectedInvoiceNo: null,
   workspaceItems: [],
@@ -375,13 +379,58 @@ window.SalesController = {
       if (invNoEl) invNoEl.value = nextNo;
       if (invDateEl) invDateEl.value = (existingSale && existingSale.invoiceDate) || new Date().toISOString().split('T')[0];
 
-      // 2. Load Customers Dropdown
-      const customers = await window.MasterService.getParties('CUSTOMER');
-      this.customersCache = customers || [];
-      const selCust = document.getElementById('ws-customer');
-      if (selCust) {
-        selCust.innerHTML = `<option value="">Select customer...</option>` +
-          customers.map(c => `<option value="${c.id}" data-address="${c.address || ''}" data-gstin="${c.gstin || ''}" data-terms="${c.paymentTerms || '15 Days'}">${c.name || c.partyName}</option>`).join('');
+      // 2. Fetch Master Bootstrap (SalesEntryBootstrap: paymentTerms, chargeTypes, gstTypes, transporters, customers)
+      let bootstrap = null;
+      try {
+        bootstrap = await window.MasterService.getSalesEntryBootstrap();
+      } catch (err) {
+        console.warn('Sales bootstrap fetch error, using fallback:', err);
+      }
+
+      if (bootstrap) {
+        if (bootstrap.chargeTypes && bootstrap.chargeTypes.length > 0) {
+          this.availableChargeTypes = bootstrap.chargeTypes;
+        }
+        this.transportersCache = bootstrap.transporters || [];
+        this.customersCache = bootstrap.customers || [];
+
+        // Transporters dropdown
+        const selTrans = document.getElementById('ws-transporter');
+        if (selTrans) {
+          selTrans.innerHTML = '<option value="">Select transporter...</option>' +
+            this.transportersCache.map(t => `<option value="${t.lookupValue}" data-gstin="${t.description || ''}">${t.lookupValue}</option>`).join('');
+          if (existingSale && existingSale.transporter) {
+            selTrans.value = existingSale.transporter;
+            const gstinEl = document.getElementById('ws-trans-gstin');
+            if (gstinEl) gstinEl.value = existingSale.transporterGstin || '';
+          }
+        }
+
+        // Customers dropdown
+        const selCust = document.getElementById('ws-customer');
+        if (selCust) {
+          selCust.innerHTML = `<option value="">Select customer...</option>` +
+            this.customersCache.map(c => `<option value="${c.id}" data-address="${c.address || ''}" data-gstin="${c.gstin || ''}" data-terms="15 Days">${c.name || c.partyCode}</option>`).join('');
+          if (existingSale && (existingSale.customerId || (existingSale.customer && existingSale.customer.id))) {
+            selCust.value = existingSale.customerId || existingSale.customer.id;
+          }
+        }
+
+        // Payment terms dropdown
+        const selTerms = document.getElementById('ws-payment-terms');
+        if (selTerms && bootstrap.paymentTerms && bootstrap.paymentTerms.length > 0) {
+          selTerms.innerHTML = bootstrap.paymentTerms.map(t => `<option value="${t}" ${t === '15 Days' ? 'selected' : ''}>${t}</option>`).join('');
+          if (existingSale && existingSale.paymentTerms) selTerms.value = existingSale.paymentTerms;
+        }
+      } else {
+        // Fallback to separate endpoints
+        const customers = await window.MasterService.getParties('CUSTOMER');
+        this.customersCache = customers || [];
+        const selCust = document.getElementById('ws-customer');
+        if (selCust) {
+          selCust.innerHTML = `<option value="">Select customer...</option>` +
+            customers.map(c => `<option value="${c.id}" data-address="${c.address || ''}" data-gstin="${c.gstin || ''}" data-terms="${c.paymentTerms || '15 Days'}">${c.name || c.partyName}</option>`).join('');
+        }
       }
 
       // 3. Load Items Master for Fast Entry Strip
@@ -393,14 +442,26 @@ window.SalesController = {
           items.map(i => `<option value="${i.itemCode || i.code}" data-desc="${i.description || i.name}" data-category="${i.category || 'Hardware'}" data-hsn="${i.hsn || '73063000'}" data-unit="${i.unit || 'PCS'}" data-rate="${i.sellingPrice || 100}" data-tax="${i.gst || 18}">${i.itemCode || i.code} - ${i.description || i.name}</option>`).join('');
       }
 
-      // 4. Prepopulate or Clear Items
+      // 4. Initialize Charges
+      this.invoiceCharges = [];
+      if (existingSale && existingSale.charges && Array.isArray(existingSale.charges)) {
+        this.invoiceCharges = existingSale.charges.map(c => ({
+          chargeType: c.chargeType || 'Freight',
+          amount: parseFloat(c.amount) || 0,
+          taxable: typeof c.taxable === 'boolean' ? c.taxable : true,
+          gstPercent: parseFloat(c.gstPercent) || 18
+        }));
+      }
+      this.updateChargeSummaryBadge();
+
+      // 5. Prepopulate or Clear Items
       this.workspaceItems = [];
       if (existingSale && existingSale.lines) {
         existingSale.lines.forEach(l => {
           this.workspaceItems.push({
             code: l.itemCode || 'SKU',
             description: l.itemDescription || l.description || '',
-            category: l.category || 'General',
+            category: l.itemCategory || l.category || 'General',
             hsn: l.itemHsn || l.hsn || '73063000',
             unit: l.itemUnit || l.unit || 'PCS',
             qty: l.quantity || 1,
@@ -420,6 +481,190 @@ window.SalesController = {
     } catch (e) {
       console.warn('initSaleWorkspace error:', e);
     }
+  },
+
+  onTransporterChange(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const gstinEl = document.getElementById('ws-trans-gstin');
+    if (gstinEl) {
+      gstinEl.value = (opt && opt.dataset.gstin) ? opt.dataset.gstin.trim() : '';
+    }
+  },
+
+  // DocumentChargeDialog modal methods matching desktop DocumentChargeDialog.java
+  openChargesDialog() {
+    this.draftCharges = (this.invoiceCharges || []).map(c => ({ ...c }));
+    if (this.draftCharges.length === 0) {
+      this.draftCharges.push({
+        chargeType: this.availableChargeTypes[0] || 'Freight',
+        amount: 0,
+        taxable: true,
+        gstPercent: 18
+      });
+    }
+    this.renderChargesDialogRows();
+    window.AppDialogService.openModal('modal-manage-charges');
+  },
+
+  closeChargesDialog() {
+    window.AppDialogService.closeModal('modal-manage-charges');
+  },
+
+  renderChargesDialogRows() {
+    const container = document.getElementById('charges-dialog-rows');
+    if (!container) return;
+
+    if (this.draftCharges.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 24px; color: var(--text-dim); font-size: 0.82rem;">
+          No additional charges. Select <strong>+ Add Charge</strong> when required.
+        </div>
+      `;
+      this.updateChargesDialogTotals();
+      return;
+    }
+
+    container.innerHTML = this.draftCharges.map((charge, idx) => {
+      const typeOptions = this.availableChargeTypes.map(t =>
+        `<option value="${t}" ${t === charge.chargeType ? 'selected' : ''}>${t}</option>`
+      ).join('');
+
+      return `
+        <div class="charge-dialog-row">
+          <div>
+            <label>Charge Type *</label>
+            <select class="form-select" onchange="window.SalesController.onChargeRowTypeChange(${idx}, this.value)" style="height: 34px; font-size: 0.8rem;">
+              ${typeOptions}
+            </select>
+          </div>
+          <div>
+            <label>Amount (₹) *</label>
+            <input type="number" step="0.01" min="0" class="form-input" value="${charge.amount || ''}" placeholder="0.00" oninput="window.SalesController.onChargeRowAmountChange(${idx}, this.value)" style="height: 34px; font-size: 0.8rem;">
+          </div>
+          <div>
+            <label>Tax Treatment</label>
+            <select class="form-select" onchange="window.SalesController.onChargeRowTaxChange(${idx}, this.value)" style="height: 34px; font-size: 0.8rem;">
+              <option value="Non-taxable" ${!charge.taxable ? 'selected' : ''}>Non-taxable</option>
+              <option value="Taxable 0%" ${charge.taxable && charge.gstPercent === 0 ? 'selected' : ''}>Taxable 0%</option>
+              <option value="Taxable 5%" ${charge.taxable && charge.gstPercent === 5 ? 'selected' : ''}>Taxable 5%</option>
+              <option value="Taxable 12%" ${charge.taxable && charge.gstPercent === 12 ? 'selected' : ''}>Taxable 12%</option>
+              <option value="Taxable 18%" ${charge.taxable && (charge.gstPercent === 18 || !charge.gstPercent) ? 'selected' : ''}>Taxable 18%</option>
+              <option value="Taxable 28%" ${charge.taxable && charge.gstPercent === 28 ? 'selected' : ''}>Taxable 28%</option>
+            </select>
+          </div>
+          <div style="padding-top: 18px;">
+            <button type="button" class="btn btn-danger" onclick="window.SalesController.removeChargeRow(${idx})" title="Remove Charge" style="padding: 4px 8px; font-size: 0.72rem;">&times; Remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.updateChargesDialogTotals();
+  },
+
+  onChargeRowTypeChange(idx, val) {
+    if (this.draftCharges[idx]) {
+      this.draftCharges[idx].chargeType = val;
+    }
+  },
+
+  onChargeRowAmountChange(idx, val) {
+    if (this.draftCharges[idx]) {
+      this.draftCharges[idx].amount = parseFloat(val) || 0;
+      this.updateChargesDialogTotals();
+    }
+  },
+
+  onChargeRowTaxChange(idx, val) {
+    if (this.draftCharges[idx]) {
+      if (val === 'Non-taxable') {
+        this.draftCharges[idx].taxable = false;
+        this.draftCharges[idx].gstPercent = 0;
+      } else {
+        this.draftCharges[idx].taxable = true;
+        const match = val.match(/([0-9.]+)/);
+        this.draftCharges[idx].gstPercent = match ? parseFloat(match[1]) : 18;
+      }
+      this.updateChargesDialogTotals();
+    }
+  },
+
+  addChargeRow() {
+    this.draftCharges.push({
+      chargeType: this.availableChargeTypes[0] || 'Freight',
+      amount: 0,
+      taxable: true,
+      gstPercent: 18
+    });
+    this.renderChargesDialogRows();
+  },
+
+  removeChargeRow(idx) {
+    this.draftCharges.splice(idx, 1);
+    this.renderChargesDialogRows();
+  },
+
+  updateChargesDialogTotals() {
+    let totAmt = 0, totTax = 0;
+    (this.draftCharges || []).forEach(c => {
+      const amt = Math.max(0, parseFloat(c.amount) || 0);
+      totAmt += amt;
+      if (c.taxable) {
+        totTax += Math.round((amt * ((c.gstPercent || 0) / 100)) * 100) / 100;
+      }
+    });
+
+    const totEl = document.getElementById('charges-dialog-totals');
+    if (totEl) {
+      totEl.innerHTML = `Charges ${window.FormatUtil.formatRupees(totAmt)} &nbsp;&bull;&nbsp; GST ${window.FormatUtil.formatRupees(totTax)} &nbsp;&bull;&nbsp; Total ${window.FormatUtil.formatRupees(totAmt + totTax)}`;
+    }
+  },
+
+  applyCharges() {
+    if (this.draftCharges.length > 0) {
+      const types = new Set();
+      for (const c of this.draftCharges) {
+        if (!c.chargeType || !c.chargeType.trim()) {
+          window.AppDialogService.showToast('Select a charge type for every charge row.', 'error');
+          return;
+        }
+        if (c.amount <= 0) {
+          window.AppDialogService.showToast('Charge amount must be greater than zero.', 'error');
+          return;
+        }
+        const norm = c.chargeType.trim().toUpperCase();
+        if (types.has(norm)) {
+          window.AppDialogService.showToast('The same charge type cannot be selected twice.', 'error');
+          return;
+        }
+        types.add(norm);
+      }
+    }
+
+    this.invoiceCharges = this.draftCharges.map(c => ({ ...c }));
+    this.closeChargesDialog();
+    this.updateChargeSummaryBadge();
+    this.calcWorkspaceTotals();
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+    window.AppDialogService.showToast(`Applied ${this.invoiceCharges.length} additional charges`, 'success');
+  },
+
+  updateChargeSummaryBadge() {
+    const pill = document.getElementById('ws-charges-summary-display');
+    const input = document.getElementById('ws-charges-input');
+    const tot = (this.invoiceCharges || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+    const count = (this.invoiceCharges || []).length;
+
+    if (pill) {
+      if (count === 0) {
+        pill.innerText = 'No additional charges';
+        pill.classList.remove('has-charges');
+      } else {
+        pill.innerText = `${count} charge${count === 1 ? '' : 's'} · ${window.FormatUtil.formatRupees(tot)}`;
+        pill.classList.add('has-charges');
+      }
+    }
+    if (input) input.value = tot.toFixed(2);
   },
 
   onWorkspaceCustomerChange(selectEl) {
@@ -443,7 +688,7 @@ window.SalesController = {
     if (dGst) dGst.value = gstin;
     if (pTerms) pTerms.value = terms;
 
-    // Detect state
+    // Detect state matching desktop SalesController
     if (gstType) {
       if (gstin && !gstin.startsWith('24')) {
         gstType.value = 'INTER_STATE_IGST';
@@ -568,17 +813,52 @@ window.SalesController = {
   },
 
   calcWorkspaceTotals() {
-    let subtotal = 0, discountTot = 0, taxableTot = 0, gstTot = 0;
+    let grossItems = 0, discountTot = 0, itemTaxable = 0, lineTax = 0;
 
     this.workspaceItems.forEach(item => {
-      subtotal += item.qty * item.rate;
-      discountTot += item.discAmt;
-      taxableTot += item.taxable;
-      gstTot += item.gstAmt;
+      const qty = parseFloat(item.qty) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      const discPct = parseFloat(item.discPct) || 0;
+      const gstPct = parseFloat(item.gstPct) || 18;
+
+      const gross = Math.round((qty * rate) * 100) / 100;
+      const disc = Math.round((gross * (discPct / 100)) * 100) / 100;
+      const taxable = Math.max(0, Math.round((gross - disc) * 100) / 100);
+      const tax = Math.round((taxable * (gstPct / 100)) * 100) / 100;
+
+      grossItems += gross;
+      discountTot += disc;
+      itemTaxable += taxable;
+      lineTax += tax;
     });
 
-    const charges = parseFloat((document.getElementById('ws-charges-input') || {}).value) || 0;
-    const grandTotal = taxableTot + gstTot + charges;
+    // Additional charges calculation matching desktop DocumentCalculationEngine
+    let chargeAmount = 0, taxableCharges = 0, chargeTax = 0;
+    (this.invoiceCharges || []).forEach(c => {
+      const amt = Math.max(0, parseFloat(c.amount) || 0);
+      chargeAmount += amt;
+      if (c.taxable) {
+        taxableCharges += amt;
+        const cTax = Math.round((amt * ((c.gstPercent || 0) / 100)) * 100) / 100;
+        chargeTax += cTax;
+      }
+    });
+
+    const totalTaxable = Math.round((itemTaxable + taxableCharges) * 100) / 100;
+    const totalTax = Math.round((lineTax + chargeTax) * 100) / 100;
+
+    const gstTypeEl = document.getElementById('ws-gst-type');
+    const isIgst = gstTypeEl && gstTypeEl.value === 'INTER_STATE_IGST';
+
+    let cgst = 0, sgst = 0, igst = 0;
+    if (isIgst) {
+      igst = totalTax;
+    } else {
+      cgst = Math.round((totalTax / 2) * 100) / 100;
+      sgst = Math.round((totalTax - cgst) * 100) / 100;
+    }
+
+    const grandTotal = Math.round((itemTaxable + lineTax + chargeAmount + chargeTax) * 100) / 100;
 
     // Items table summary strip
     const elCnt = document.getElementById('ws-tot-items-count');
@@ -589,8 +869,8 @@ window.SalesController = {
 
     if (elCnt) elCnt.innerText = this.workspaceItems.length;
     if (elDisc) elDisc.innerText = window.FormatUtil.formatRupees(discountTot);
-    if (elGst) elGst.innerText = window.FormatUtil.formatRupees(gstTot);
-    if (elChg) elChg.innerText = window.FormatUtil.formatRupees(charges);
+    if (elGst) elGst.innerText = window.FormatUtil.formatRupees(totalTax);
+    if (elChg) elChg.innerText = window.FormatUtil.formatRupees(chargeAmount);
     if (elNet) elNet.innerText = window.FormatUtil.formatRupees(grandTotal);
 
     // Right card summary
@@ -601,11 +881,11 @@ window.SalesController = {
     const sGst = document.getElementById('ws-sum-gst');
     const sGrand = document.getElementById('ws-sum-grand');
 
-    if (sSub) sSub.innerText = window.FormatUtil.formatRupees(subtotal);
+    if (sSub) sSub.innerText = window.FormatUtil.formatRupees(grossItems);
     if (sDisc) sDisc.innerText = window.FormatUtil.formatRupees(discountTot);
-    if (sTax) sTax.innerText = window.FormatUtil.formatRupees(taxableTot);
-    if (sChg) sChg.innerText = window.FormatUtil.formatRupees(charges);
-    if (sGst) sGst.innerText = window.FormatUtil.formatRupees(gstTot);
+    if (sTax) sTax.innerText = window.FormatUtil.formatRupees(totalTaxable);
+    if (sChg) sChg.innerText = window.FormatUtil.formatRupees(chargeAmount);
+    if (sGst) sGst.innerText = window.FormatUtil.formatRupees(totalTax);
     if (sGrand) sGrand.innerText = window.FormatUtil.formatRupees(grandTotal);
   },
 
@@ -628,53 +908,97 @@ window.SalesController = {
     const billingAddress = (document.getElementById('ws-billing-address') || {}).value;
     const deliveryAddress = (document.getElementById('ws-delivery-address') || {}).value;
     const billingGstin = (document.getElementById('ws-billing-gstin') || {}).value;
+    const deliveryGstin = (document.getElementById('ws-delivery-gstin') || {}).value;
     const paymentTerms = (document.getElementById('ws-payment-terms') || {}).value;
-    const charges = parseFloat((document.getElementById('ws-charges-input') || {}).value) || 0;
     const gstType = (document.getElementById('ws-gst-type') || {}).value || 'INTRA_STATE_CGST_SGST';
     const transporter = (document.getElementById('ws-transporter') || {}).value;
+    const transporterGstin = (document.getElementById('ws-trans-gstin') || {}).value;
     const vehicleNumber = (document.getElementById('ws-vehicle-no') || {}).value;
+    const contactPerson = (document.getElementById('ws-contact-person') || {}).value;
+    const contactPersonMobile = (document.getElementById('ws-contact-mobile') || {}).value;
+    const poDate = (document.getElementById('ws-po-date') || {}).value;
+    const poNo = (document.getElementById('ws-po-no') || {}).value;
     const notes = (document.getElementById('ws-invoice-notes') || {}).value;
 
-    let subtotal = 0, discountTot = 0, taxableTot = 0, gstTot = 0;
+    let grossItems = 0, discountTot = 0, itemTaxable = 0, lineTax = 0;
     const lines = this.workspaceItems.map(item => {
-      subtotal += item.qty * item.rate;
-      discountTot += item.discAmt;
-      taxableTot += item.taxable;
-      gstTot += item.gstAmt;
+      const qty = parseFloat(item.qty) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      const discPct = parseFloat(item.discPct) || 0;
+      const gstPct = parseFloat(item.gstPct) || 18;
+
+      const gross = Math.round((qty * rate) * 100) / 100;
+      const disc = Math.round((gross * (discPct / 100)) * 100) / 100;
+      const taxable = Math.max(0, Math.round((gross - disc) * 100) / 100);
+      const tax = Math.round((taxable * (gstPct / 100)) * 100) / 100;
+
+      grossItems += gross;
+      discountTot += disc;
+      itemTaxable += taxable;
+      lineTax += tax;
+
       return {
         itemCode: item.code,
         itemDescription: item.description,
+        itemCategory: item.category,
         itemHsn: item.hsn,
         itemUnit: item.unit,
-        quantity: item.qty,
-        rate: item.rate,
-        discountPercent: item.discPct,
-        discountAmount: item.discAmt,
-        taxRate: item.gstPct,
-        taxableAmount: item.taxable,
-        gstAmount: item.gstAmt,
-        totalAmount: item.amount
+        quantity: qty,
+        rate,
+        discountPercent: discPct,
+        discountAmount: disc,
+        gstPercent: gstPct,
+        totalAmount: taxable + tax
       };
     });
 
-    const grandTotal = taxableTot + gstTot + charges;
+    let chargeAmount = 0, taxableCharges = 0, chargeTax = 0;
+    const chargesPayload = (this.invoiceCharges || []).map(c => {
+      const amt = Math.max(0, parseFloat(c.amount) || 0);
+      chargeAmount += amt;
+      if (c.taxable) {
+        taxableCharges += amt;
+        chargeTax += Math.round((amt * ((c.gstPercent || 0) / 100)) * 100) / 100;
+      }
+      return {
+        chargeType: c.chargeType,
+        amount: amt,
+        taxable: !!c.taxable,
+        gstPercent: parseFloat(c.gstPercent) || 0
+      };
+    });
+
+    const totalTaxable = Math.round((itemTaxable + taxableCharges) * 100) / 100;
+    const totalTax = Math.round((lineTax + chargeTax) * 100) / 100;
+    const grandTotal = Math.round((itemTaxable + lineTax + chargeAmount + chargeTax) * 100) / 100;
 
     const payload = {
       invoiceNo,
       invoiceDate,
       customerId: custSel.value,
+      customer: {
+        id: parseInt(custSel.value) || 1,
+        name: custSel.options[custSel.selectedIndex] ? custSel.options[custSel.selectedIndex].text : ''
+      },
       billingAddress,
       deliveryAddress,
       billingGstin,
+      deliveryGstin,
       paymentTerms,
-      chargeAmount: charges,
-      subtotal: taxableTot,
+      chargeAmount,
+      charges: chargesPayload,
+      subtotal: totalTaxable,
       discountAmount: discountTot,
-      gstAmount: gstTot,
+      gstAmount: totalTax,
       totalAmount: grandTotal,
       gstType,
       transporter,
+      transporterGstin,
       vehicleNumber,
+      contactPerson,
+      contactPersonMobile,
+      orderNo: poNo,
+      poDate,
       notes,
       documentStatus: 'APPROVED',
       paymentStatus: 'PAID',

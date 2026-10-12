@@ -32,5 +32,14 @@ window.MasterService = {
   },
   async deleteParty(id) {
     return await window.ApiService.delete(`/api/master/parties/${id}`);
+  },
+  async getSalesEntryBootstrap() {
+    return await window.ApiService.get('/api/master/sales-entry-bootstrap');
+  },
+  async getLookups(categoryCode) {
+    return await window.ApiService.get(`/api/master/lookups/by-category-code?code=${encodeURIComponent(categoryCode)}`);
+  },
+  async getLookupValues(categoryCode) {
+    return await window.ApiService.get(`/api/master/lookups/values-by-category-code?code=${encodeURIComponent(categoryCode)}`);
   }
 };
