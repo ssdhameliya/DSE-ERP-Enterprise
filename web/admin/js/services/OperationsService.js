@@ -102,5 +102,22 @@ window.OperationsService = {
   },
   async getStockHistory(itemCode) {
     return await window.ApiService.get(`/api/operations/stock/history?itemCode=${encodeURIComponent(itemCode)}`);
+  },
+
+  // Support & Activity Timeline
+  async getActivityTimeline(type, id) {
+    return await window.ApiService.get(`/api/support/activity?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+  },
+  async recordDocumentPayment(paymentPayload) {
+    return await window.ApiService.post('/api/support/payments', paymentPayload);
+  },
+  async recordCommunication(commPayload) {
+    return await window.ApiService.post('/api/support/communications', commPayload);
+  },
+  async markSaleEmailSent(id) {
+    return await window.ApiService.post(`/api/operations/sales/email-sent/${id}`, {});
+  },
+  async markDocumentWhatsapp(type, id, rowVersion = 0) {
+    return await window.ApiService.post(`/api/support/documents/${encodeURIComponent(type)}/${encodeURIComponent(id)}/whatsapp?rowVersion=${rowVersion}`, {});
   }
 };
