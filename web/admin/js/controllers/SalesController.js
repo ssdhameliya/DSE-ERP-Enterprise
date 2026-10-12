@@ -109,6 +109,7 @@ window.SalesController = {
   // 2. RENDER 14-COLUMN SALES TABLE
   // =========================================================================
   renderSalesTable(list) {
+    this.currentRenderedSales = list || [];
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
 
@@ -295,13 +296,54 @@ window.SalesController = {
     const payStatus = (document.getElementById('sr-filter-pay-status') || {}).value;
     const retStatus = (document.getElementById('sr-filter-ret-status') || {}).value;
 
-    const filtered = this.salesCache.filter(s => {
+    const today = new Date().toISOString().split('T')[0];
+
+    const filtered = (this.salesCache || []).filter(s => {
       if (custId && (s.customer?.id != custId && s.customerId != custId)) return false;
-      if (fromDate && (s.invoiceDate || s.date) < fromDate) return false;
-      if (toDate && (s.invoiceDate || s.date) > toDate) return false;
-      if (docStatus && s.documentStatus !== docStatus) return false;
-      if (payStatus && s.paymentStatus !== payStatus) return false;
-      if (retStatus && (s.returnStatus || 'N/A') !== retStatus) return false;
+      const invDate = s.invoiceDate || s.date || '';
+      if (fromDate && invDate < fromDate) return false;
+      if (toDate && invDate > toDate) return false;
+
+      // Document status matching
+      if (docStatus && docStatus !== 'All' && docStatus !== '') {
+        const d = (s.documentStatus || 'APPROVED').toUpperCase();
+        if (d !== docStatus.toUpperCase()) return false;
+      }
+
+      // Payment status matching (Desktop SalesListController parity)
+      if (payStatus && payStatus !== 'All' && payStatus !== '') {
+        const total = parseFloat(s.totalAmount != null ? s.totalAmount : (s.total || 0));
+        const paid = parseFloat(s.paidAmount != null ? s.paidAmount : (s.paid || 0));
+        const balance = s.balanceAmount != null ? parseFloat(s.balanceAmount) : Math.max(0, total - paid);
+        const status = (s.paymentStatus || (balance <= 0.005 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'PENDING')).toUpperCase();
+        const dueDate = s.dueDate || '';
+        const isOverdue = balance > 0.005 && dueDate && dueDate < today;
+
+        if (payStatus === 'RECEIVABLES') {
+          if (balance <= 0.005) return false;
+        } else if (payStatus === 'OVERDUE') {
+          if (!isOverdue) return false;
+        } else if (payStatus === 'PAID') {
+          if (balance > 0.005 && status !== 'PAID') return false;
+        } else if (payStatus === 'PARTIAL') {
+          if (status !== 'PARTIAL' && (paid <= 0 || balance <= 0.005)) return false;
+        } else if (payStatus === 'PENDING') {
+          if (status !== 'PENDING' && paid > 0) return false;
+        } else if (status !== payStatus.toUpperCase()) {
+          return false;
+        }
+      }
+
+      // Return status matching
+      if (retStatus && retStatus !== 'All' && retStatus !== '') {
+        const r = (s.returnStatus || 'N/A').toUpperCase();
+        if (retStatus === 'N/A') {
+          if (r !== 'N/A' && r !== '' && r !== 'NONE') return false;
+        } else {
+          if (r !== retStatus.toUpperCase()) return false;
+        }
+      }
+
       return true;
     });
 
@@ -372,6 +414,7 @@ window.SalesController = {
   // =========================================================================
   async openSaleEditorTab(existingSale, isViewMode = false) {
     if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    this.isNavigatingToEditor = true;
     this.viewMode = isViewMode;
     this.editingSale = existingSale || null;
 
@@ -567,10 +610,24 @@ window.SalesController = {
       this.installKeyboardShortcuts();
 
       // Read-only state toggling if in View mode
+      const isReadOnly = !!isViewMode;
+      const pageTitle = document.getElementById('ws-page-title');
+      const pageSub = document.getElementById('ws-page-subtitle');
+      if (pageTitle) pageTitle.innerText = isReadOnly ? `View Sale Invoice • ${nextNo} (Read Only)` : 'Create Sale Invoice';
+      if (pageSub) pageSub.innerText = isReadOnly ? 'Viewing historical customer tax invoice in read-only mode' : 'Create a new sale invoice for your customer';
+
       const saveBtn = document.getElementById('ws-btn-save-sale');
       const addLineBtn = document.getElementById('ws-btn-add-line');
-      if (saveBtn) saveBtn.style.display = isViewMode ? 'none' : 'inline-block';
-      if (addLineBtn) addLineBtn.disabled = isViewMode;
+      if (saveBtn) saveBtn.style.display = isReadOnly ? 'none' : 'inline-block';
+      if (addLineBtn) addLineBtn.disabled = isReadOnly;
+
+      ['ws-customer', 'ws-inv-date', 'ws-billing-address', 'ws-delivery-address', 'ws-billing-gstin', 'ws-delivery-gstin', 'ws-same-address', 'ws-payment-terms', 'ws-po-date', 'ws-po-no', 'ws-gst-type', 'ws-transporter', 'ws-vehicle-no', 'ws-contact-person', 'ws-contact-mobile', 'ws-fast-item-select', 'ws-fast-qty', 'ws-fast-rate', 'ws-fast-disc', 'ws-fast-tax'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = isReadOnly;
+          else el.readOnly = isReadOnly;
+        }
+      });
 
     } catch (e) {
       console.warn('initSaleWorkspace error:', e);
@@ -760,91 +817,105 @@ window.SalesController = {
   },
 
   addFastItemRow() {
-    const sel = document.getElementById('ws-fast-item-select');
-    if (!sel || !sel.value) {
-      window.AppDialogService.showToast('Select item from catalog first [F2]', 'warning');
-      return;
+    try {
+      const sel = document.getElementById('ws-fast-item-select');
+      if (!sel || !sel.value) {
+        window.AppDialogService.showToast('Select item from catalog first [F2]', 'warning');
+        return;
+      }
+
+      const opt = sel.options[sel.selectedIndex];
+      const itemCode = opt.value;
+      const item = this.selectedWorkspaceItem || {
+        itemCode,
+        description: opt.dataset.desc || itemCode,
+        openingStock: parseFloat(opt.dataset.stock) || 0
+      };
+
+      const qty = parseFloat((document.getElementById('ws-fast-qty') || {}).value) || 0;
+      const rate = parseFloat((document.getElementById('ws-fast-rate') || {}).value) || 0;
+      const discPct = parseFloat((document.getElementById('ws-fast-disc') || {}).value) || 0;
+      const gstPct = parseFloat((document.getElementById('ws-fast-tax') || {}).value) || 18;
+
+      if (qty <= 0) {
+        window.AppDialogService.showToast('Quantity must be greater than zero', 'error');
+        return;
+      }
+      if (rate < 0) {
+        window.AppDialogService.showToast('Rate cannot be negative', 'error');
+        return;
+      }
+      if (discPct < 0 || discPct > 100) {
+        window.AppDialogService.showToast('Discount percent must be between 0 and 100', 'error');
+        return;
+      }
+
+      // Stock Check (Desktop Parity with SalesController.java)
+      const stockVal = parseFloat(item.openingStock != null ? item.openingStock : opt.dataset.stock);
+      const freeToPromise = isNaN(stockVal) ? 999999 : Math.max(0, stockVal);
+      const alreadyOnInvoice = (this.workspaceItems || [])
+        .filter((_, idx) => idx !== this.editingItemIndex && _.code === itemCode)
+        .reduce((sum, line) => sum + (parseFloat(line.qty) || 0), 0);
+
+      if (qty + alreadyOnInvoice > freeToPromise + 0.0001 && freeToPromise > 0) {
+        const itemDesc = item.description || opt.dataset.desc || itemCode;
+        window.AppDialogService.showToast(
+          `Only ${this.qtyText(freeToPromise)} units of ${itemDesc} are currently available (On hand ${this.qtyText(freeToPromise)})`,
+          'error'
+        );
+        return;
+      }
+
+      const gross = qty * rate;
+      const discAmt = gross * (discPct / 100);
+      const taxable = gross - discAmt;
+      const gstAmt = taxable * (gstPct / 100);
+      const amount = taxable + gstAmt;
+
+      const rowData = {
+        code: itemCode,
+        description: opt.dataset.desc || item.description || itemCode,
+        category: opt.dataset.category || item.category || 'General',
+        hsn: opt.dataset.hsn || item.hsn || '73063000',
+        unit: opt.dataset.unit || item.unit || 'PCS',
+        qty,
+        rate,
+        discPct,
+        discAmt,
+        gstPct,
+        taxable,
+        gstAmt,
+        amount
+      };
+
+      if (!Array.isArray(this.workspaceItems)) {
+        this.workspaceItems = [];
+      }
+
+      if (this.editingItemIndex >= 0 && this.editingItemIndex < this.workspaceItems.length) {
+        // Update existing line
+        this.workspaceItems[this.editingItemIndex] = rowData;
+        window.AppDialogService.showToast(`Updated line ${itemCode}`, 'info');
+      } else {
+        // Add fresh line
+        this.workspaceItems.push(rowData);
+        window.AppDialogService.showToast(`Added line ${itemCode} to invoice`, 'success');
+      }
+
+      if (window.AudioSynthesizer && typeof window.AudioSynthesizer.playKey === 'function') {
+        try { window.AudioSynthesizer.playKey(); } catch (_) {}
+      }
+
+      this.cancelRowEdit();
+      this.renderWorkspaceItemsTable();
+      this.calcWorkspaceTotals();
+
+      // Focus back to Item search
+      if (sel) sel.focus();
+    } catch (err) {
+      console.error('addFastItemRow error:', err);
+      window.AppDialogService.showToast('Failed to add item: ' + err.message, 'error');
     }
-
-    const opt = sel.options[sel.selectedIndex];
-    const itemCode = opt.value;
-    const item = this.selectedWorkspaceItem || {
-      itemCode,
-      description: opt.dataset.desc || itemCode,
-      openingStock: parseFloat(opt.dataset.stock) || 0
-    };
-
-    const qty = parseFloat((document.getElementById('ws-fast-qty') || {}).value) || 0;
-    const rate = parseFloat((document.getElementById('ws-fast-rate') || {}).value) || 0;
-    const discPct = parseFloat((document.getElementById('ws-fast-disc') || {}).value) || 0;
-    const gstPct = parseFloat((document.getElementById('ws-fast-tax') || {}).value) || 18;
-
-    if (qty <= 0) {
-      window.AppDialogService.showToast('Quantity must be greater than zero', 'error');
-      return;
-    }
-    if (rate < 0) {
-      window.AppDialogService.showToast('Rate cannot be negative', 'error');
-      return;
-    }
-    if (discPct < 0 || discPct > 100) {
-      window.AppDialogService.showToast('Discount percent must be between 0 and 100', 'error');
-      return;
-    }
-
-    // Strict Over-Sell Stock Check (Feature 3 Parity with Desktop SalesController.java line 2151)
-    const alreadyOnInvoice = this.workspaceItems
-      .filter((_, idx) => idx !== this.editingItemIndex && _.code === itemCode)
-      .reduce((sum, line) => sum + (parseFloat(line.qty) || 0), 0);
-    const freeToPromise = Math.max(0, item.openingStock || 0);
-
-    if (qty + alreadyOnInvoice > freeToPromise + 0.0001) {
-      const itemDesc = item.description || opt.dataset.desc || itemCode;
-      window.AppDialogService.showToast(
-        `Only ${this.qtyText(freeToPromise)} units of ${itemDesc} are currently available (On hand ${this.qtyText(item.openingStock || 0)})`,
-        'error'
-      );
-      return;
-    }
-
-    const gross = qty * rate;
-    const discAmt = gross * (discPct / 100);
-    const taxable = gross - discAmt;
-    const gstAmt = taxable * (gstPct / 100);
-    const amount = taxable + gstAmt;
-
-    const rowData = {
-      code: itemCode,
-      description: opt.dataset.desc || itemCode,
-      category: opt.dataset.category || 'General',
-      hsn: opt.dataset.hsn || '73063000',
-      unit: opt.dataset.unit || 'PCS',
-      qty,
-      rate,
-      discPct,
-      discAmt,
-      gstPct,
-      taxable,
-      gstAmt,
-      amount
-    };
-
-    if (this.editingItemIndex >= 0) {
-      // Update existing line
-      this.workspaceItems[this.editingItemIndex] = rowData;
-      window.AppDialogService.showToast(`Updated line ${itemCode}`, 'info');
-    } else {
-      // Add fresh line
-      this.workspaceItems.push(rowData);
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playKey();
-    }
-
-    this.cancelRowEdit();
-    this.renderWorkspaceItemsTable();
-    this.calcWorkspaceTotals();
-
-    // Focus back to Item search
-    sel.focus();
   },
 
   // Row Click-to-Edit & Deletion (Feature 6)
@@ -1531,21 +1602,16 @@ window.SalesController = {
   // =========================================================================
   // 11. RECORD PAYMENT (REAL MODAL OUTPUT)
   // =========================================================================
-  openRecordPaymentModal(invoiceNo) {
-    const sale = this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
+  async openRecordPaymentModal(invoiceNo) {
+    const sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invoiceNo);
     if (!sale) {
       window.AppDialogService.showToast('Sales invoice not found', 'error');
       return;
     }
 
-    const total = sale.totalAmount != null ? sale.totalAmount : (sale.total || 0);
-    const paid = sale.paidAmount != null ? sale.paidAmount : (sale.paymentStatus === 'PAID' ? total : 0);
+    const total = parseFloat(sale.totalAmount != null ? sale.totalAmount : (sale.total || 0));
+    const paid = parseFloat(sale.paidAmount != null ? sale.paidAmount : (sale.paymentStatus === 'PAID' ? total : 0));
     const balance = Math.max(0, total - paid);
-
-    if (balance <= 0.005) {
-      window.AppDialogService.showToast(`Invoice ${invoiceNo} is already fully paid.`, 'info');
-      return;
-    }
 
     const titleEl = document.getElementById('mrp-title');
     const totEl = document.getElementById('mrp-total');
@@ -1557,6 +1623,8 @@ window.SalesController = {
     const inpAmt = document.getElementById('mrp-amount');
     const inpFrom = document.getElementById('mrp-received-from');
     const inpNotes = document.getElementById('mrp-notes');
+    const settledNotice = document.getElementById('mrp-settled-notice');
+    const newEntryFields = document.getElementById('mrp-new-entry-fields');
 
     if (titleEl) titleEl.innerText = `Record Payment Receipt • ${invoiceNo}`;
     if (totEl) totEl.innerText = window.FormatUtil.formatRupees(total);
@@ -1566,13 +1634,107 @@ window.SalesController = {
     if (inpInvNo) inpInvNo.value = invoiceNo;
     if (inpDate) inpDate.value = new Date().toISOString().split('T')[0];
     if (inpAmt) {
-      inpAmt.value = balance.toFixed(2);
+      inpAmt.value = balance > 0 ? balance.toFixed(2) : '0.00';
       inpAmt.max = balance.toFixed(2);
     }
     if (inpFrom) inpFrom.value = (sale.customer && sale.customer.name) || sale.customerName || '';
     if (inpNotes) inpNotes.value = `Payment receipt against invoice ${invoiceNo}`;
 
+    // Desktop Parity: If fully settled, show settled notice banner and collapse new entry form
+    if (balance <= 0.005) {
+      if (settledNotice) settledNotice.style.display = 'block';
+      if (newEntryFields) newEntryFields.style.display = 'none';
+    } else {
+      if (settledNotice) settledNotice.style.display = 'none';
+      if (newEntryFields) newEntryFields.style.display = 'block';
+    }
+
+    // Open modal dialog (NEVER block based on balance)
     window.AppDialogService.openModal('modal-record-payment');
+
+    // Load receipts history matching desktop RecordPaymentController
+    await this.loadPaymentHistoryForModal(sale);
+  },
+
+  async loadPaymentHistoryForModal(sale) {
+    const tbody = document.getElementById('mrp-history-tbody');
+    const countEl = document.getElementById('mrp-history-count');
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 12px;">Loading payment history...</td></tr>`;
+
+    let payments = [];
+    try {
+      payments = await window.OperationsService.getDocumentPayments('SALE', sale.id);
+    } catch (e) {
+      console.warn('API getDocumentPayments failed, falling back:', e);
+    }
+
+    if (!Array.isArray(payments) || payments.length === 0) {
+      const paidAmt = parseFloat(sale.paidAmount || sale.paid || 0);
+      if (paidAmt > 0) {
+        payments = [{
+          id: 0,
+          date: sale.invoiceDate || sale.date || new Date().toISOString().split('T')[0],
+          reference: 'INITIAL-RECEIPT',
+          receivedFrom: (sale.customer && sale.customer.name) || sale.customerName || 'Customer',
+          mode: 'Bank Transfer',
+          amount: paidAmt,
+          notes: 'Recorded transaction'
+        }];
+      } else {
+        payments = [];
+      }
+    }
+
+    if (countEl) countEl.innerText = `${payments.length} receipt${payments.length === 1 ? '' : 's'}`;
+
+    if (payments.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 16px;">No payment receipts recorded yet for this invoice</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = payments.map((p, idx) => `
+      <tr>
+        <td style="font-weight: 600;">${p.date || '-'}</td>
+        <td style="font-family: monospace;">${p.reference || '-'}</td>
+        <td>${p.receivedFrom || p.from || '-'}</td>
+        <td><span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">${p.mode || 'Bank'}</span></td>
+        <td style="text-align: right; font-weight: 700; color: #34d399;">${window.FormatUtil.formatRupees(p.amount || 0)}</td>
+        <td style="color: var(--text-muted);">${p.notes || '-'}</td>
+        <td style="text-align: center;">
+          <button type="button" class="btn btn-danger" style="padding: 2px 7px; font-size: 0.7rem;" onclick="window.SalesController.reversePaymentReceipt(${p.id || 0}, '${sale.invoiceNo || sale.number}', ${p.amount || 0})" title="Delete / Reverse receipt">&#128465;</button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  async reversePaymentReceipt(paymentId, invoiceNo, amount) {
+    if (!confirm(`Are you sure you want to reverse / delete payment receipt of ${window.FormatUtil.formatRupees(amount)}?\n\nThis will re-open the invoice balance.`)) {
+      return;
+    }
+
+    try {
+      if (paymentId > 0) {
+        await window.OperationsService.deleteDocumentPayment(paymentId);
+      }
+      
+      const sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invoiceNo);
+      if (sale) {
+        const curPaid = parseFloat(sale.paidAmount || 0);
+        sale.paidAmount = Math.max(0, curPaid - amount);
+        const total = parseFloat(sale.totalAmount || 0);
+        sale.balanceAmount = Math.max(0, total - sale.paidAmount);
+        sale.paymentStatus = sale.paidAmount <= 0.005 ? 'PENDING' : sale.balanceAmount <= 0.005 ? 'PAID' : 'PARTIAL';
+      }
+
+      window.AppDialogService.showToast('Payment receipt deleted and invoice balance re-calculated', 'success');
+      this.renderSalesTable(this.salesCache);
+      this.calcRegisterKpis();
+      if (sale) this.openRecordPaymentModal(invoiceNo);
+    } catch (err) {
+      window.AppDialogService.showToast('Failed to delete payment receipt: ' + err.message, 'error');
+    }
   },
 
   async submitRecordPayment(event) {
@@ -1619,6 +1781,13 @@ window.SalesController = {
       await window.OperationsService.recordDocumentPayment(payload);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
       window.AppDialogService.showToast(`Receipt of ${window.FormatUtil.formatRupees(amount)} recorded successfully!`, 'success');
+
+      if (sale) {
+        sale.paidAmount = currentPaid + amount;
+        sale.balanceAmount = Math.max(0, total - sale.paidAmount);
+        sale.paymentStatus = sale.balanceAmount <= 0.005 ? 'PAID' : 'PARTIAL';
+      }
+
       window.AppDialogService.closeModal('modal-record-payment');
       await this.loadSales();
       if (window.DashboardController) window.DashboardController.refresh();
@@ -1771,31 +1940,60 @@ window.SalesController = {
     const recipient = (document.getElementById('mei-recipient') || {}).value;
     const subject = (document.getElementById('mei-subject') || {}).value;
     const body = (document.getElementById('mei-body') || {}).value;
+    const sendBtn = document.getElementById('mei-send-btn');
 
     if (!recipient) {
       window.AppDialogService.showToast('Please enter recipient email address', 'error');
       return;
     }
 
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.innerText = 'Connecting SMTP & Transmitting...';
+    }
+
     try {
+      // Call real backend email gateway: POST /api/authority/email
+      const emailPayload = {
+        recipient,
+        subject,
+        body,
+        attachmentName: `Tax_Invoice_${invNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
+        attachmentBase64: null
+      };
+
+      const result = await window.OperationsService.sendAuthorityEmail(emailPayload);
+
       if (saleId > 0) {
-        await window.OperationsService.markSaleEmailSent(saleId);
-        await window.OperationsService.recordCommunication({
-          entityType: 'SALE',
-          entityId: saleId,
-          channel: 'EMAIL',
-          recipient,
-          subject,
-          status: 'SENT'
-        });
+        try {
+          await window.OperationsService.markSaleEmailSent(saleId);
+          await window.OperationsService.recordCommunication({
+            entityType: 'SALE',
+            entityId: saleId,
+            channel: 'EMAIL',
+            recipient,
+            subject,
+            status: 'SENT'
+          });
+        } catch (_) {}
+
+        // Update local status in table
+        const s = (this.salesCache || []).find(item => item.id === saleId || (item.invoiceNo || item.number) === invNo);
+        if (s) s.emailSent = true;
+        this.renderSalesTable(this.salesCache);
       }
 
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast(`Tax invoice ${invNo} dispatched via email to ${recipient}!`, 'success');
       window.AppDialogService.closeModal('modal-email-invoice');
-      await this.loadSales();
+      window.AppDialogService.showToast(result?.message || `Tax invoice ${invNo} emailed successfully to ${recipient}!`, 'success');
     } catch (err) {
-      window.AppDialogService.showToast('Failed to dispatch email: ' + err.message, 'error');
+      console.error('Email gateway error:', err);
+      window.AppDialogService.showToast(`Failed to send email to ${recipient}: ${err.message}`, 'error');
+    } finally {
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerText = '✈ Send Tax Invoice';
+      }
     }
   },
 
@@ -1895,6 +2093,163 @@ window.SalesController = {
     } catch (err) {
       window.AppDialogService.showToast('Failed to export Excel: ' + err.message, 'error');
     }
+  },
+
+  // Desktop Parity writeSalesExcel (13 Columns + Footer - SalesListController.java line 859)
+  exportSalesRegisterExcel() {
+    const list = this.currentRenderedSales || this.salesCache || [];
+    if (list.length === 0) {
+      window.AppDialogService.showToast('No sales records to export', 'warning');
+      return;
+    }
+
+    // Exact 13 Columns matching desktop writeSalesExcel:
+    // Invoice No, Date, Customer, Mobile, GSTIN, Amount, Paid, Pending, Due Date, Document Status, Payment Status, Email, WhatsApp
+    const headers = ["Invoice No", "Date", "Customer", "Mobile", "GSTIN", "Amount", "Paid", "Pending", "Due Date", "Document Status", "Payment Status", "Email", "WhatsApp"];
+    
+    let csv = headers.map(h => `"${h}"`).join(',') + '\n';
+    let totalAmt = 0, totalPaid = 0, totalPending = 0;
+
+    list.forEach(x => {
+      const party = x.customer || {};
+      const amount = parseFloat(x.totalAmount != null ? x.totalAmount : (x.total || 0));
+      const paid = parseFloat(x.paidAmount != null ? x.paidAmount : (x.paid || 0));
+      const pending = parseFloat(x.balanceAmount != null ? x.balanceAmount : Math.max(0, amount - paid));
+      totalAmt += amount;
+      totalPaid += paid;
+      totalPending += pending;
+
+      const row = [
+        `"${x.invoiceNo || x.number || ''}"`,
+        `"${x.invoiceDate || x.date || ''}"`,
+        `"${(party.name || x.customerName || '').replace(/"/g, '""')}"`,
+        `"${(party.phone || x.customerPhone || '').replace(/"/g, '""')}"`,
+        `"${(party.gstin || x.billingGstin || '').replace(/"/g, '""')}"`,
+        amount.toFixed(2),
+        paid.toFixed(2),
+        pending.toFixed(2),
+        `"${x.dueDate || '-'}"`,
+        `"${x.documentStatus || 'APPROVED'}"`,
+        `"${x.paymentStatus || (pending <= 0.005 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'PENDING')}"`,
+        `"${x.emailSent ? 'Sent' : 'Not Sent'}"`,
+        `"${x.whatsappSent ? 'Sent' : 'Not Sent'}"`
+      ];
+      csv += row.join(',') + '\n';
+    });
+
+    // Summary Totals Footer Row
+    csv += `\n"TOTALS (${list.length} INVOICES)","","","","",${totalAmt.toFixed(2)},${totalPaid.toFixed(2)},${totalPending.toFixed(2)},"","","","",""\n`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `Sales_Register_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.AppDialogService.showToast(`Exported ${list.length} sales register records matching desktop spreadsheet format`, 'success');
+  },
+
+  exportSalesRegisterPdf() {
+    this.printSalesRegister();
+  },
+
+  printSalesRegister() {
+    const list = this.currentRenderedSales || this.salesCache || [];
+    if (list.length === 0) {
+      window.AppDialogService.showToast('No sales records to print', 'warning');
+      return;
+    }
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+
+    const todayStr = new Date().toLocaleDateString('en-IN');
+    let totalAmt = 0, totalPaid = 0, totalPending = 0;
+    list.forEach(x => {
+      totalAmt += parseFloat(x.totalAmount || x.total || 0);
+      totalPaid += parseFloat(x.paidAmount || x.paid || 0);
+      totalPending += parseFloat(x.balanceAmount != null ? x.balanceAmount : ((x.totalAmount || 0) - (x.paidAmount || 0)));
+    });
+
+    const rowsHtml = list.map((x, idx) => {
+      const party = x.customer || {};
+      const amt = parseFloat(x.totalAmount || x.total || 0);
+      const paid = parseFloat(x.paidAmount || x.paid || 0);
+      const bal = parseFloat(x.balanceAmount != null ? x.balanceAmount : (amt - paid));
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="font-weight: 700;">${x.invoiceNo || x.number}</td>
+          <td>${x.invoiceDate || x.date}</td>
+          <td>${party.name || x.customerName || '-'}</td>
+          <td>${party.gstin || x.billingGstin || '-'}</td>
+          <td style="text-align: right;">₹ ${amt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; color: green;">₹ ${paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; color: ${bal > 0 ? '#b91c1c' : '#15803d'};">₹ ${bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td>${x.documentStatus || 'APPROVED'}</td>
+          <td>${x.paymentStatus || (bal <= 0.005 ? 'PAID' : 'PENDING')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Sales Register - Jasvi Industries</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; }
+          h2 { margin: 0 0 4px 0; }
+          p { margin: 0 0 16px 0; color: #555; font-size: 13px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+          th { background: #f1f5f9; font-weight: 700; }
+          .totals-row { background: #f8fafc; font-weight: 700; }
+        </style>
+      </head>
+      <body>
+        <h2>JASVI INDUSTRIES — SALES REGISTER</h2>
+        <p>Statement generated on ${todayStr} • ${list.length} records</p>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Invoice No</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>GSTIN</th>
+              <th style="text-align: right;">Total Amount</th>
+              <th style="text-align: right;">Paid</th>
+              <th style="text-align: right;">Pending</th>
+              <th>Doc Status</th>
+              <th>Pay Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+            <tr class="totals-row">
+              <td colspan="5" style="text-align: right;">TOTALS:</td>
+              <td style="text-align: right;">₹ ${totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="text-align: right;">₹ ${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="text-align: right;">₹ ${totalPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => {
+      printWin.print();
+    }, 400);
   },
 
   // =========================================================================

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.8">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.9">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -798,7 +798,10 @@
                 <label class="form-label" style="font-size: 0.72rem;">&#128196; Document Status</label>
                 <select id="sr-filter-doc-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
                   <option value="">All</option>
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="PENDING APPROVAL">PENDING APPROVAL</option>
                   <option value="APPROVED">APPROVED</option>
+                  <option value="REJECTED">REJECTED</option>
                   <option value="CANCELLED">CANCELLED</option>
                 </select>
               </div>
@@ -806,8 +809,11 @@
                 <label class="form-label" style="font-size: 0.72rem;">&#128179; Payment Status</label>
                 <select id="sr-filter-pay-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
                   <option value="">All</option>
-                  <option value="PAID">PAID</option>
+                  <option value="RECEIVABLES">RECEIVABLES</option>
                   <option value="PENDING">PENDING</option>
+                  <option value="PARTIAL">PARTIAL</option>
+                  <option value="PAID">PAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
                 </select>
               </div>
               <div>
@@ -815,7 +821,9 @@
                 <select id="sr-filter-ret-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
                   <option value="">All</option>
                   <option value="N/A">N/A</option>
-                  <option value="FULLY_RETURNED">FULLY RETURNED</option>
+                  <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+                  <option value="PARTIALLY RETURNED">PARTIALLY RETURNED</option>
+                  <option value="FULLY RETURNED">FULLY RETURNED</option>
                 </select>
               </div>
             </div>
@@ -868,9 +876,9 @@
             <!-- Bottom Table Toolbar & Financial Totals Strip (Image 2) -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); flex-wrap: wrap; gap: 12px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="showToast('Exporting Excel...', 'info')">&#128202; Export Excel</button>
-                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="showToast('Exporting PDF...', 'info')">&#128196; Export PDF</button>
-                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.print()">&#128438; Print</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.SalesController.exportSalesRegisterExcel()">&#128202; Export Excel</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.SalesController.exportSalesRegisterPdf()">&#128196; Export PDF</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.SalesController.printSalesRegister()">&#128438; Print</button>
                 <span id="sr-entries-counter" style="font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 4px;">Showing 1 to 25 entries</span>
               </div>
               <div style="display: flex; align-items: center; gap: 16px;">
@@ -901,8 +909,8 @@
                 &#128722;
               </div>
               <div>
-                <h1 style="font-size: 1.35rem; font-weight: 800; font-family: 'Space Grotesk';">Create Sale Invoice</h1>
-                <p style="font-size: 0.78rem; color: var(--text-muted);">Create a new sale invoice for your customer</p>
+                <h1 id="ws-page-title" style="font-size: 1.35rem; font-weight: 800; font-family: 'Space Grotesk';">Create Sale Invoice</h1>
+                <p id="ws-page-subtitle" style="font-size: 0.78rem; color: var(--text-muted);">Create a new sale invoice for your customer</p>
               </div>
             </div>
             <div class="view-actions" style="display: flex; gap: 10px;">
@@ -2894,7 +2902,7 @@
   </div>
 
   <!-- MODAL: ADDITIONAL CHARGES (DESKTOP DocumentChargeDialog PARITY) -->
-  <div class="modal-overlay" id="modal-manage-charges" style="display: none;">
+  <div class="modal-overlay" id="modal-manage-charges">
     <div class="modal-card" style="width: 760px; max-width: 95vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); padding: 0; overflow: hidden; backdrop-filter: blur(16px);">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.9);">
         <div>
@@ -2928,7 +2936,7 @@
   </div>
 
   <!-- MODAL: AUTHENTICATOR SETUP (DESKTOP RegistrationController PARITY) -->
-  <div class="modal-overlay" id="modal-authenticator-setup" style="display: none;">
+  <div class="modal-overlay" id="modal-authenticator-setup">
     <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
@@ -3015,9 +3023,9 @@
     </div>
   </div>
 
-  <!-- MODAL: RECORD PAYMENT (ACTION: PAYMENT) -->
+  <!-- MODAL: RECORD PAYMENT (ACTION: PAYMENT - DESKTOP RecordPaymentController PARITY) -->
   <div class="modal-overlay" id="modal-record-payment">
-    <div class="modal-card" style="max-width: 540px;">
+    <div class="modal-card" style="max-width: 720px; width: 95vw;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.2rem;">💳</span>
@@ -3028,69 +3036,108 @@
         </div>
         <button class="modal-close" onclick="closeModal('modal-record-payment')">&times;</button>
       </div>
-      <div class="modal-body">
-        <form id="form-record-payment" onsubmit="window.SalesController.submitRecordPayment(event)">
-          <!-- Balance Summary Banner -->
-          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; gap: 8px;">
-            <div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Invoice Total</div>
-              <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);" id="mrp-total">₹ 0.00</div>
-            </div>
-            <div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Already Paid</div>
-              <div style="font-size: 0.95rem; font-weight: 700; color: #34d399;" id="mrp-paid">₹ 0.00</div>
-            </div>
-            <div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Balance Due</div>
-              <div style="font-size: 0.95rem; font-weight: 800; color: #f87171;" id="mrp-balance">₹ 0.00</div>
-            </div>
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        <!-- Balance Summary Banner -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; gap: 8px;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Invoice Total</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);" id="mrp-total">₹ 0.00</div>
           </div>
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Already Paid</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #34d399;" id="mrp-paid">₹ 0.00</div>
+          </div>
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Balance Due</div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: #f87171;" id="mrp-balance">₹ 0.00</div>
+          </div>
+        </div>
 
+        <!-- Fully Settled Notice (Shown when balance is 0.00) -->
+        <div id="mrp-settled-notice" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; text-align: center;">
+          <div style="color: #4ade80; font-weight: 700; font-size: 0.88rem;">✔ Invoice is Fully Paid &amp; Settled</div>
+          <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">All amounts have been received. View payment receipts history below or reverse an entry to re-open balance.</div>
+        </div>
+
+        <!-- New Receipt Form (Active when balance > 0) -->
+        <form id="form-record-payment" onsubmit="window.SalesController.submitRecordPayment(event)">
           <input type="hidden" id="mrp-sale-id">
           <input type="hidden" id="mrp-inv-no">
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
-            <div class="form-group">
-              <label class="form-label">Receipt Date *</label>
-              <input type="date" id="mrp-date" class="form-input" required>
+          <div id="mrp-new-entry-fields">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--cyan); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">+ Record New Receipt</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label">Receipt Date *</label>
+                <input type="date" id="mrp-date" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment Mode *</label>
+                <select id="mrp-mode" class="form-select" required>
+                  <option value="Bank">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Payment Mode *</label>
-              <select id="mrp-mode" class="form-select" required>
-                <option value="Bank">Bank Transfer (NEFT/RTGS)</option>
-                <option value="Cash">Cash</option>
-                <option value="UPI">UPI</option>
-                <option value="Cheque">Cheque</option>
-              </select>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label">Amount (₹) *</label>
+                <input type="number" step="0.01" min="0.01" id="mrp-amount" class="form-input" required style="font-weight: 700; font-size: 1rem; color: var(--cyan);">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reference / UTR / Cheque #</label>
+                <input type="text" id="mrp-reference" class="form-input" placeholder="e.g. UTR-982341 / CHQ-102">
+              </div>
             </div>
-          </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
-            <div class="form-group">
-              <label class="form-label">Amount (₹) *</label>
-              <input type="number" step="0.01" min="0.01" id="mrp-amount" class="form-input" required style="font-weight: 700; font-size: 1rem; color: var(--cyan);">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label class="form-label">Received From / Deposited By</label>
+              <input type="text" id="mrp-received-from" class="form-input" placeholder="Party or Depositor Name">
             </div>
-            <div class="form-group">
-              <label class="form-label">Reference / UTR / Cheque #</label>
-              <input type="text" id="mrp-reference" class="form-input" placeholder="e.g. UTR-982341 / CHQ-102">
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label">Notes / Narration</label>
+              <input type="text" id="mrp-notes" class="form-input" placeholder="Payment remarks or bank narration">
             </div>
-          </div>
 
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Received From / Deposited By</label>
-            <input type="text" id="mrp-received-from" class="form-input" placeholder="Party or Depositor Name">
-          </div>
-
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label">Notes / Narration</label>
-            <input type="text" id="mrp-notes" class="form-input" placeholder="Payment remarks or bank narration">
-          </div>
-
-          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-record-payment')">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="mrp-submit-btn">✔ Record Receipt</button>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 18px;">
+              <button type="submit" class="btn btn-primary" id="mrp-submit-btn">✔ Record Receipt</button>
+            </div>
           </div>
         </form>
+
+        <!-- Payment History Table Section (Desktop Parity) -->
+        <div id="mrp-history-section" style="border-top: 1px dashed var(--border-subtle); padding-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">📜 Payment Receipts History</div>
+            <span id="mrp-history-count" style="font-size: 0.74rem; color: var(--cyan); font-weight: 600;">0 receipts</span>
+          </div>
+          <div style="max-height: 200px; overflow-y: auto;">
+            <table class="data-table" style="font-size: 0.74rem;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Reference</th>
+                  <th>Received From</th>
+                  <th>Mode</th>
+                  <th style="text-align: right;">Amount (₹)</th>
+                  <th>Notes</th>
+                  <th style="text-align: center; width: 60px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="mrp-history-tbody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 16px;">Loading receipts history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 14px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; margin-top: 14px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-record-payment')">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3199,34 +3246,34 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
     <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.8"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.8"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.8"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.8"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.8"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.9"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.9"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.9"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.9"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.9"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.8"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.8"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.8"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.8"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.8"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.9"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.9"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.9"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.9"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.9"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.8"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.8"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.9"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.8"></script>
-  <script src="js/app.js?v=10.0.25.8"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.9"></script>
+  <script src="js/app.js?v=10.0.25.9"></script>
 </body>
 </html>

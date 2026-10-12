@@ -207,7 +207,11 @@ window.NavigationRouter = (function() {
           break;
         case 'view-sale-create':
           if (window.SalesController && window.SalesController.initSaleWorkspace) {
-            window.SalesController.initSaleWorkspace();
+            if (window.SalesController.isNavigatingToEditor) {
+              window.SalesController.isNavigatingToEditor = false;
+            } else {
+              window.SalesController.initSaleWorkspace(null, false);
+            }
           }
           break;
         case 'view-purchase-register':

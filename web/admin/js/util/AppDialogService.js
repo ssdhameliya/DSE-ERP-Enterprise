@@ -22,6 +22,7 @@ window.AppDialogService = {
     const modal = document.getElementById(modalId);
     if (!modal) return;
     if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    modal.style.display = 'flex';
     modal.classList.add('active');
     const firstInput = modal.querySelector('input:not([type=hidden]):not([readonly]), select');
     if (firstInput) setTimeout(() => firstInput.focus(), 80);
@@ -31,11 +32,15 @@ window.AppDialogService = {
     const modal = document.getElementById(modalId);
     if (!modal) return;
     if (window.AudioSynthesizer) window.AudioSynthesizer.playClose();
+    modal.style.display = 'none';
     modal.classList.remove('active');
   },
 
   closeAllModals() {
-    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.style.display = 'none';
+      m.classList.remove('active');
+    });
     const auth = document.getElementById('auth-overlay');
     if (auth) auth.style.display = 'none';
   }

@@ -119,5 +119,14 @@ window.OperationsService = {
   },
   async markDocumentWhatsapp(type, id, rowVersion = 0) {
     return await window.ApiService.post(`/api/support/documents/${encodeURIComponent(type)}/${encodeURIComponent(id)}/whatsapp?rowVersion=${rowVersion}`, {});
+  },
+  async sendAuthorityEmail(emailPayload) {
+    return await window.ApiService.post('/api/authority/email', emailPayload);
+  },
+  async getDocumentPayments(type, id) {
+    return await window.ApiService.get(`/api/support/payments?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+  },
+  async deleteDocumentPayment(paymentId) {
+    return await window.ApiService.delete(`/api/support/payments/${paymentId}`);
   }
 };
