@@ -7,7 +7,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.5">
+    <script>
+      window.toggleNavGroup = function(groupId) {
+        if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
+          window.NavigationRouter.toggleNavGroup(groupId);
+        }
+      };
+      window.selectNav = function(viewId) {
+        if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+          window.NavigationRouter.selectNav(viewId);
+        }
+      };
+      window.toggleUserProfileDropdown = function(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('profile-dropdown-menu');
+        if (!menu) return;
+        const isShown = menu.style.display === 'block';
+        menu.style.display = isShown ? 'none' : 'block';
+      };
+      window.hideProfileDropdown = function() {
+        const menu = document.getElementById('profile-dropdown-menu');
+        if (menu) menu.style.display = 'none';
+      };
+    </script>
 </head>
 <body>
 
@@ -205,7 +228,7 @@
             <span style="font-size: 0.65rem; color: var(--text-dim); margin-left: 2px;">▼</span>
           </div>
 
-          <div class="profile-dropdown-menu" id="profile-dropdown-menu">
+          <div class="profile-dropdown-menu" id="profile-dropdown-menu" style="display: none;">
             <div class="profile-menu-header">
               <div class="profile-menu-header-name" id="menu-user-name">Shailesh Dhameliya</div>
               <div class="profile-menu-header-role" id="menu-user-role">Administrator</div>
@@ -1894,32 +1917,32 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
     <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js"></script>
-  <script src="js/util/AudioSynthesizer.js"></script>
-  <script src="js/util/AppDialogService.js"></script>
-  <script src="js/util/BarcodeGenerator.js"></script>
-  <script src="js/util/ShortcutManager.js"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.5"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.5"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.5"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.5"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.5"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js"></script>
-  <script src="js/services/AuthService.js"></script>
-  <script src="js/services/MasterService.js"></script>
-  <script src="js/services/OperationsService.js"></script>
-  <script src="js/services/ReportService.js"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.5"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.5"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.5"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.5"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.5"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js"></script>
-  <script src="js/controllers/SalesController.js"></script>
-  <script src="js/controllers/PurchaseController.js"></script>
-  <script src="js/controllers/ItemMasterController.js"></script>
-  <script src="js/controllers/PartyController.js"></script>
-  <script src="js/controllers/FinanceController.js"></script>
-  <script src="js/controllers/BarcodeStudioController.js"></script>
-  <script src="js/controllers/UserAccessController.js"></script>
-  <script src="js/controllers/SettingsController.js"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.5"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.5"></script>
+  <script src="js/app.js?v=10.0.25.5"></script>
 </body>
 </html>

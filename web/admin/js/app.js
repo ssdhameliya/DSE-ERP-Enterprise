@@ -200,16 +200,22 @@ window.App = (function() {
         const wrap = document.querySelector('.user-profile-wrap');
         const menu = document.getElementById('profile-dropdown-menu');
         if (wrap && menu && !wrap.contains(e.target)) {
+          menu.style.display = 'none';
           menu.classList.remove('show');
         }
       });
 
-      // Initialize initial controller data
-      await window.DashboardController.refresh();
-      await window.ItemMasterController.loadItems();
-      await window.ItemMasterController.loadInventory();
-      await window.PartyController.loadCustomers();
-      await window.PartyController.loadSuppliers();
+      // Authentication check on startup
+      if (!window.AuthService.isAuthenticated()) {
+        this.showAuthOverlay();
+      } else {
+        // Initialize initial controller data with real backend
+        await window.DashboardController.refresh();
+        await window.ItemMasterController.loadItems();
+        await window.ItemMasterController.loadInventory();
+        await window.PartyController.loadCustomers();
+        await window.PartyController.loadSuppliers();
+      }
 
       // Bind omni-search input
       const omni = document.getElementById('omni-input');
@@ -379,12 +385,23 @@ window.handleChangePasswordSubmit = async function(e) {
 window.toggleUserProfileDropdown = function(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('profile-dropdown-menu');
-  if (menu) menu.classList.toggle('show');
+  if (!menu) return;
+  const isShown = menu.style.display === 'block' || menu.classList.contains('show');
+  if (isShown) {
+    menu.style.display = 'none';
+    menu.classList.remove('show');
+  } else {
+    menu.style.display = 'block';
+    menu.classList.add('show');
+  }
 };
 
 window.hideProfileDropdown = function() {
   const menu = document.getElementById('profile-dropdown-menu');
-  if (menu) menu.classList.remove('show');
+  if (menu) {
+    menu.style.display = 'none';
+    menu.classList.remove('show');
+  }
 };
 
 window.openMyProfileModal = function() {

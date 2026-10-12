@@ -104,6 +104,10 @@ window.NavigationRouter = (function() {
         const parentGroup = targetNav.closest('.nav-group');
         if (parentGroup) {
           parentGroup.classList.add('open', 'expanded');
+          const children = parentGroup.querySelector('.nav-children');
+          if (children) children.style.display = 'block';
+          const chev = parentGroup.querySelector('.nav-chevron');
+          if (chev) { chev.style.transform = 'rotate(90deg)'; chev.innerHTML = '&#9660;'; }
         }
       }
 
@@ -151,9 +155,31 @@ window.NavigationRouter = (function() {
     toggleNavGroup(groupId) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const groupEl = document.getElementById(groupId);
-      if (groupEl) {
-        groupEl.classList.toggle('open');
-        groupEl.classList.toggle('expanded');
+      if (!groupEl) return;
+      const isOpen = groupEl.classList.contains('open') || groupEl.classList.contains('expanded');
+
+      // 1. Collapse all other groups (matching Desktop collapseAllSubmenus)
+      document.querySelectorAll('.nav-group').forEach(other => {
+        if (other !== groupEl) {
+          other.classList.remove('open', 'expanded');
+          const ch = other.querySelector('.nav-children');
+          if (ch) ch.style.display = 'none';
+          const chev = other.querySelector('.nav-chevron');
+          if (chev) { chev.style.transform = 'rotate(0deg)'; chev.innerHTML = '&#9654;'; }
+        }
+      });
+
+      // 2. Toggle targeted group
+      const children = groupEl.querySelector('.nav-children');
+      const chevron = groupEl.querySelector('.nav-chevron');
+      if (isOpen) {
+        groupEl.classList.remove('open', 'expanded');
+        if (children) children.style.display = 'none';
+        if (chevron) { chevron.style.transform = 'rotate(0deg)'; chevron.innerHTML = '&#9654;'; }
+      } else {
+        groupEl.classList.add('open', 'expanded');
+        if (children) children.style.display = 'block';
+        if (chevron) { chevron.style.transform = 'rotate(90deg)'; chevron.innerHTML = '&#9660;'; }
       }
     },
 

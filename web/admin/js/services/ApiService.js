@@ -130,18 +130,27 @@ window.ApiService = (function() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       try {
         const res = await fetch(endpoint, { credentials: 'same-origin', ...options, headers });
-        if (res.status === 401 || res.status === 403) {
-          console.warn(`[ApiService] 401/403 on ${endpoint} - serving rich dataset fallback.`);
-          return getFallbackData(endpoint);
+        if (res.status === 401) {
+          console.warn(`[ApiService] 401 Unauthorized on ${endpoint}`);
+          localStorage.removeItem('dse_access_token');
+          if (window.showAuthOverlay) window.showAuthOverlay();
+          if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
+            return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
+          }
+          return [];
         }
         if (!res.ok) {
-          console.warn(`[ApiService] HTTP ${res.status} on ${endpoint} - serving dataset fallback.`);
-          return getFallbackData(endpoint);
+          const errData = await res.json().catch(() => ({}));
+          console.warn(`[ApiService] HTTP ${res.status} on ${endpoint}:`, errData);
+          return errData;
         }
         return await res.json();
       } catch (err) {
-        console.warn(`[ApiService] Network error on ${endpoint}, serving fallback dataset:`, err.message);
-        return getFallbackData(endpoint);
+        console.warn(`[ApiService] Network error on ${endpoint}:`, err.message);
+        if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
+          return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
+        }
+        return [];
       }
     },
 
