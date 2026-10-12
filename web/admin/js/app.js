@@ -515,6 +515,30 @@ window.handleExpenseSave = (e) => window.FinanceController.handleExpenseSave(e);
 window.handleUserSave = (e) => window.UserAccessController.handleUserSave(e);
 window.handlePasswordChange = (e) => window.SettingsController.handlePasswordChange(e);
 
+// Phase 2, 3 & 4 Extended Facades
+window.addInvoiceItemRow = () => window.SalesController.addInvoiceItemRow();
+window.addPurchaseItemRow = () => window.PurchaseController.addPurchaseItemRow();
+window.filterPurchasesTable = (q) => window.PurchaseController.filterPurchases(q);
+window.openInvoiceDrawer = (invNo) => window.SalesController.openInvoiceDrawer(invNo);
+window.closeInvoiceDrawer = () => window.SalesController.closeInvoiceDrawer();
+window.openPurchaseDrawer = (billNo) => window.PurchaseController.openPurchaseDrawer(billNo);
+window.closePurchaseDrawer = () => window.PurchaseController.closePurchaseDrawer();
+window.printTaxInvoice = (invNo) => window.SalesController.printTaxInvoice(invNo);
+
+window.openStockAdjustmentModal = (code) => window.ItemMasterController.openStockAdjustmentModal(code);
+window.handleStockAdjustmentSave = (e) => window.ItemMasterController.handleStockAdjustmentSave(e);
+
+window.loadFinanceData = () => window.FinanceController.loadFinance();
+window.loadFinancialStatements = () => window.FinanceController.loadFinancialStatements();
+window.loadAgingData = () => window.FinanceController.loadAgingData();
+
+window.loadGstData = () => window.GstController.loadGstData();
+window.exportGstr1Json = () => window.GstController.exportGstr1Json();
+window.loadEWayBills = () => window.EWayBillController.loadEWayBills();
+window.openGenerateEWayModal = (invNo) => window.EWayBillController.openGenerateEWayModal(invNo);
+window.handleGenerateEWayBill = (e) => window.EWayBillController.handleGenerateEWayBill(e);
+window.printBarcodeStickers = () => window.BarcodeStudioController.printBarcode();
+
 // Bootstrap on window load
 window.addEventListener('load', () => {
   window.App.init();

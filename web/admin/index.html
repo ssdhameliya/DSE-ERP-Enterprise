@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.5">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.6">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -1333,54 +1333,136 @@
 
   <!-- MODAL: CREATE SALES INVOICE -->
   <div class="modal-overlay" id="modal-new-invoice">
-    <div class="modal-card" style="max-width: 800px;">
+    <div class="modal-card modal-lg" style="max-width: 980px;">
       <div class="modal-header">
         <h3>+ Create Sales Tax Invoice</h3>
         <button class="modal-close" onclick="closeModal('modal-new-invoice')">&times;</button>
       </div>
       <div class="modal-body">
         <form id="form-create-invoice" onsubmit="handleInvoiceSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div class="form-group">
               <label class="form-label">Invoice Number</label>
-              <input type="text" id="inv-no" class="form-input" value="AUTO-GENERATED" readonly>
+              <input type="text" id="inv-no" class="form-input" value="AUTO-GENERATED" readonly style="font-weight: 700; color: var(--cyan);">
             </div>
             <div class="form-group">
               <label class="form-label">Invoice Date</label>
               <input type="date" id="inv-date" class="form-input" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Select Customer</label>
-              <select id="inv-customer" class="form-select" required>
+              <label class="form-label">Due Date</label>
+              <input type="date" id="inv-due-date" class="form-input">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label">Select Customer / Client</label>
+              <select id="inv-customer" class="form-select" onchange="window.SalesController.onCustomerSelectChange(this)" required>
                 <option value="">-- Choose Customer --</option>
               </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Customer GSTIN</label>
+              <input type="text" id="inv-gstin" class="form-input" placeholder="e.g. 24AAAAA0000A1Z5" maxlength="15">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tax Regime</label>
+              <select id="inv-gst-type" class="form-select" onchange="window.SalesController.calcInvoiceTotals()">
+                <option value="INTRA_STATE_CGST_SGST">Intra-State (CGST 50% + SGST 50%)</option>
+                <option value="INTER_STATE_IGST">Inter-State (IGST 100%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label">Billing Address</label>
+              <input type="text" id="inv-billing-address" class="form-input" placeholder="Street, City, State">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Delivery / Shipping Address</label>
+              <input type="text" id="inv-delivery-address" class="form-input" placeholder="Consignee Delivery Location">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <div class="form-group">
+              <label class="form-label">Transporter</label>
+              <input type="text" id="inv-transporter" class="form-input" placeholder="e.g. V-Trans / Self">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vehicle Number</label>
+              <input type="text" id="inv-vehicle-no" class="form-input" placeholder="GJ-05-BX-1029">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Mode</label>
+              <select id="inv-payment-mode" class="form-select">
+                <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="UPI">UPI</option>
+                <option value="CASH">Cash</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Terms</label>
+              <input type="text" id="inv-payment-terms" class="form-input" value="15 Days">
             </div>
           </div>
 
           <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; font-size: 0.82rem;">Invoice Line Items</span>
-              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addInvoiceItemRow()">+ Add Item</button>
+              <span style="font-weight: 600; font-size: 0.85rem;">Invoice Line Items &bull; Dynamic Grid</span>
+              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addInvoiceItemRow()">+ Add Line Item</button>
             </div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Product / Item</th><th>Qty</th><th>Unit Rate (&#8377;)</th><th>Tax (%)</th><th>Line Total (&#8377;)</th><th></th></tr>
-              </thead>
-              <tbody id="inv-items-tbody"></tbody>
-            </table>
+            <div style="overflow-x: auto;">
+              <table class="data-table" id="inv-items-table" style="min-width: 780px;">
+                <thead>
+                  <tr>
+                    <th>Product / Material</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Rate (&#8377;)</th>
+                    <th>Disc (%)</th>
+                    <th>GST (%)</th>
+                    <th style="text-align: right;">Total (&#8377;)</th>
+                    <th style="width: 40px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="inv-items-tbody"></tbody>
+              </table>
+            </div>
           </div>
 
-          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);">CGST + SGST or IGST computed automatically.</div>
-            <div style="text-align: right;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Grand Total Amount:</div>
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--cyan); font-family: 'Space Grotesk';" id="inv-calc-grand">&#8377; 0.00</div>
+          <!-- Bottom Totals & Charges Calculation Box -->
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+                <div class="form-group">
+                  <label class="form-label">Freight / Cartage (&#8377;)</label>
+                  <input type="number" step="0.01" id="inv-freight-charges" class="form-input" value="0.00" oninput="window.SalesController.calcInvoiceTotals()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Round Off (&#8377;)</label>
+                  <input type="number" step="0.01" id="inv-round-off" class="form-input" value="0.00" oninput="window.SalesController.calcInvoiceTotals()">
+                </div>
+              </div>
+              <div id="inv-tax-breakdown-text" style="font-size: 0.76rem; color: var(--cyan); margin-top: 6px;">CGST: ₹ 0.00 | SGST: ₹ 0.00</div>
+            </div>
+            <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">
+                Taxable: <span id="inv-calc-sub" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span> |
+                GST: <span id="inv-calc-tax" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Grand Total Payable:</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';" id="inv-calc-grand">&#8377; 0.00</div>
             </div>
           </div>
 
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
+          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent;">
             <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-invoice')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save &amp; Post Invoice</button>
+            <button type="submit" class="btn btn-primary" style="padding: 0 24px; height: 40px;">&#10004; Save &amp; Post Sales Invoice</button>
           </div>
         </form>
       </div>
@@ -1505,57 +1587,317 @@
 
   <!-- MODAL: CREATE PURCHASE BILL -->
   <div class="modal-overlay" id="modal-new-purchase">
-    <div class="modal-card" style="max-width: 820px;">
+    <div class="modal-card modal-lg" style="max-width: 960px;">
       <div class="modal-header">
         <h3>+ Create Purchase Bill / Inward Goods Memo</h3>
         <button class="modal-close" onclick="closeModal('modal-new-purchase')">&times;</button>
       </div>
       <div class="modal-body">
         <form id="form-create-purchase" onsubmit="handlePurchaseSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div class="form-group">
               <label class="form-label">Vendor Bill No</label>
-              <input type="text" id="pur-bill-no" class="form-input" placeholder="e.g. BILL-9821" required>
+              <input type="text" id="pur-bill-no" class="form-input" placeholder="e.g. BILL-9821" required style="font-weight: 700; color: var(--cyan);">
             </div>
             <div class="form-group">
               <label class="form-label">Bill Date</label>
               <input type="date" id="pur-bill-date" class="form-input" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Select Supplier</label>
-              <select id="pur-supplier" class="form-select" required>
+              <label class="form-label">Select Supplier / Vendor</label>
+              <select id="pur-supplier" class="form-select" onchange="window.PurchaseController.onSupplierSelectChange(this)" required>
                 <option value="">-- Choose Supplier --</option>
               </select>
             </div>
           </div>
 
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label">Supplier GSTIN</label>
+              <input type="text" id="pur-gstin" class="form-input" placeholder="24AAAAA0000A1Z5" maxlength="15">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Supplier Address</label>
+              <input type="text" id="pur-supplier-address" class="form-input" placeholder="Vendor Factory / Office Address">
+            </div>
+          </div>
+
           <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; font-size: 0.82rem;">Inward Item Lines</span>
-              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addPurchaseItemRow()">+ Add Item</button>
+              <span style="font-weight: 600; font-size: 0.85rem;">Inward Item Lines &bull; Materials Grid</span>
+              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addPurchaseItemRow()">+ Add Material Row</button>
             </div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Item / Description</th><th>Qty</th><th>Unit Cost (&#8377;)</th><th>Tax (%)</th><th>Total (&#8377;)</th><th></th></tr>
-              </thead>
-              <tbody id="pur-items-tbody"></tbody>
-            </table>
+            <div style="overflow-x: auto;">
+              <table class="data-table" id="pur-items-table" style="min-width: 780px;">
+                <thead>
+                  <tr>
+                    <th>Material / SKU</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Cost Rate (&#8377;)</th>
+                    <th>GST (%)</th>
+                    <th style="text-align: right;">Total (&#8377;)</th>
+                    <th style="width: 40px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="pur-items-tbody"></tbody>
+              </table>
+            </div>
           </div>
 
-          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);">GST Input Tax Credit (ITC) calculated automatically.</div>
-            <div style="text-align: right;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Grand Total Amount:</div>
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--cyan); font-family: 'Space Grotesk';" id="pur-calc-grand">&#8377; 0.00</div>
+          <!-- Bottom Summary Box -->
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div>
+              <div class="form-group" style="max-width: 220px;">
+                <label class="form-label">Inward Freight / Cartage (&#8377;)</label>
+                <input type="number" step="0.01" id="pur-freight-charges" class="form-input" value="0.00" oninput="window.PurchaseController.calcPurchaseTotals()">
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 8px;">GST Input Tax Credit (ITC) calculated and recorded for GSTR-2B.</div>
+            </div>
+            <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">
+                Taxable: <span id="pur-calc-sub" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span> |
+                ITC: <span id="pur-calc-tax" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Total Inward Bill:</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';" id="pur-calc-grand">&#8377; 0.00</div>
             </div>
           </div>
 
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
+          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent;">
             <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-purchase')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save &amp; Record Inward Bill</button>
+            <button type="submit" class="btn btn-primary" style="padding: 0 24px; height: 40px;">&#10004; Save &amp; Record Inward Bill</button>
           </div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: STOCK ADJUSTMENT -->
+  <div class="modal-overlay" id="modal-stock-adjustment">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>⚖️ Physical Inventory Audit Adjustment</h3>
+        <button class="modal-close" onclick="closeModal('modal-stock-adjustment')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleStockAdjustmentSave(event)">
+          <div class="form-group">
+            <label class="form-label">Item SKU / Code</label>
+            <input type="text" id="adj-item-code" class="form-input" readonly style="font-weight: 700; color: var(--cyan);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material &amp; Current Stock</label>
+            <div id="adj-item-name" style="padding: 10px 14px; background: rgba(0,0,0,0.25); border-radius: 6px; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--border-subtle);">-</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+            <div class="form-group">
+              <label class="form-label">Adjustment Direction</label>
+              <select id="adj-type" class="form-select" required>
+                <option value="IN">Stock IN (+) Physical Surplus</option>
+                <option value="OUT">Stock OUT (-) Physical Shortage</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Adjustment Quantity</label>
+              <input type="number" step="any" min="0.01" id="adj-qty" class="form-input" placeholder="e.g. 10" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="form-label">Audit Verification Reason</label>
+            <input type="text" id="adj-reason" class="form-input" value="Physical Audit Verification" required>
+          </div>
+          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 20px; background: transparent;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-adjustment')">Cancel</button>
+            <button type="submit" class="btn btn-primary">&#10004; Commit Stock Adjustment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GENERATE E-WAY BILL -->
+  <div class="modal-overlay" id="modal-generate-eway-bill">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>🚚 NIC GST E-Way Bill Generation Gateway</h3>
+        <button class="modal-close" onclick="closeModal('modal-generate-eway-bill')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleGenerateEWayBill(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label">Document / Invoice No</label>
+              <input type="text" id="eway-modal-inv-no" class="form-input" readonly style="font-weight: 700; color: var(--cyan);">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Consignment Value (&#8377;)</label>
+              <input type="text" id="eway-modal-amount" class="form-input" readonly style="font-weight: 700;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">Consignee Client / Party</label>
+            <input type="text" id="eway-modal-party" class="form-input" readonly>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label">Dispatch Vehicle Number</label>
+              <input type="text" id="eway-modal-vehicle" class="form-input" placeholder="GJ-05-BX-1029" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Approx Distance (KM)</label>
+              <input type="number" id="eway-modal-distance" class="form-input" value="180" required>
+            </div>
+          </div>
+          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-generate-eway-bill')">Cancel</button>
+            <button type="submit" class="btn btn-primary">&#10004; Generate NIC Portal E-Way Bill</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PRINTABLE A4 TAX INVOICE -->
+  <div class="modal-overlay" id="printable-invoice-modal">
+    <div class="modal-card modal-xl" style="max-width: 960px; max-height: 92vh; overflow-y: auto;">
+      <div class="modal-header" style="position: sticky; top: 0; background: var(--bg-surface); z-index: 10;">
+        <h3>📄 A4 Tax Invoice Print Studio</h3>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="window.print()" style="padding: 4px 16px;">🖨️ Print / Save as PDF</button>
+          <button class="modal-close" onclick="closeModal('printable-invoice-modal')">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 24px; background: #525659;">
+        <div id="printable-invoice-content" style="background: #ffffff; color: #111111; padding: 32px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); min-height: 800px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+          <!-- Loaded dynamically by SalesController.printTaxInvoice() -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDE DRAWER OVERLAY -->
+  <div class="side-drawer-overlay" id="side-drawer-overlay" onclick="closeInvoiceDrawer(); closePurchaseDrawer();"></div>
+
+  <!-- SIDE INSPECTION DRAWER: SALES INVOICE -->
+  <div class="side-drawer" id="drawer-invoice-details">
+    <div class="drawer-header">
+      <div>
+        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sales Tax Invoice</div>
+        <h3 id="drawer-inv-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="drawer-inv-status" class="badge badge-paid">APPROVED</span>
+        <button class="modal-close" onclick="closeInvoiceDrawer()">&times;</button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-grid">
+          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-inv-date">-</div></div>
+          <div><div class="drawer-grid-label">Transporter</div><div class="drawer-grid-val" id="drawer-transporter">-</div></div>
+          <div><div class="drawer-grid-label">Vehicle #</div><div class="drawer-grid-val" id="drawer-vehicle">-</div></div>
+          <div><div class="drawer-grid-label">Payment Terms</div><div class="drawer-grid-val">15 Days</div></div>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Customer Profile</div>
+        <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;" id="drawer-cust-name">-</div>
+        <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 2px;">GSTIN: <span id="drawer-cust-gstin" style="font-family: monospace;">-</span></div>
+        <div style="font-size: 0.8rem; color: var(--text-dim);" id="drawer-cust-address">-</div>
+        <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Phone: <span id="drawer-cust-phone">-</span></div>
+      </div>
+
+      <div class="drawer-section">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Line Items Consignment</div>
+        <table class="data-table" style="font-size: 0.78rem;">
+          <thead>
+            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th style="text-align: right;">Total</th></tr>
+          </thead>
+          <tbody id="drawer-items-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Taxable Subtotal:</span>
+          <span id="drawer-taxable-amt" style="font-weight: 600;">₹ 0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">GST Tax Amount:</span>
+          <span id="drawer-gst-amt" style="font-weight: 600;">₹ 0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Freight &amp; Charges:</span>
+          <span id="drawer-charges-amt" style="font-weight: 600;">₹ 0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
+          <span style="color: var(--cyan);">Grand Total:</span>
+          <span id="drawer-grand-total" style="color: var(--cyan); font-family: 'Space Grotesk';">₹ 0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
+      <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">📄 Print Tax Invoice</button>
+    </div>
+  </div>
+
+  <!-- SIDE INSPECTION DRAWER: PURCHASE BILL -->
+  <div class="side-drawer" id="drawer-purchase-details">
+    <div class="drawer-header">
+      <div>
+        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Purchase Inward Bill</div>
+        <h3 id="drawer-pur-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="drawer-pur-status" class="badge badge-paid">ACCEPTED</span>
+        <button class="modal-close" onclick="closePurchaseDrawer()">&times;</button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-grid">
+          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-pur-date">-</div></div>
+          <div><div class="drawer-grid-label">Supplier GSTIN</div><div class="drawer-grid-val" id="drawer-pur-supp-gstin" style="font-family: monospace;">-</div></div>
+          <div><div class="drawer-grid-label">Contact</div><div class="drawer-grid-val" id="drawer-pur-supp-phone">-</div></div>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Supplier Profile</div>
+        <div style="font-size: 0.95rem; font-weight: 700;" id="drawer-pur-supp-name">-</div>
+      </div>
+
+      <div class="drawer-section">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Inward Item Lines</div>
+        <table class="data-table" style="font-size: 0.78rem;">
+          <thead>
+            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Cost Rate</th><th style="text-align: right;">Total</th></tr>
+          </thead>
+          <tbody id="drawer-pur-items-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Taxable Inward:</span>
+          <span id="drawer-pur-taxable" style="font-weight: 600;">₹ 0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Input Tax Credit (ITC):</span>
+          <span id="drawer-pur-gst" style="font-weight: 600;">₹ 0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
+          <span style="color: var(--cyan);">Total Bill Payable:</span>
+          <span id="drawer-pur-total" style="color: var(--cyan); font-family: 'Space Grotesk';">₹ 0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
     </div>
   </div>
 
@@ -1917,32 +2259,34 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
     <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.5"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.5"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.5"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.5"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.5"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.6"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.6"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.6"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.6"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.6"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.5"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.5"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.5"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.5"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.5"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.6"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.6"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.6"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.6"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.6"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.5"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.5"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.6"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.5"></script>
-  <script src="js/app.js?v=10.0.25.5"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.6"></script>
+  <script src="js/app.js?v=10.0.25.6"></script>
 </body>
 </html>

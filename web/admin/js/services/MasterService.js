@@ -9,6 +9,12 @@ window.MasterService = {
   async createItem(itemData) {
     return await window.ApiService.post('/api/master/items', itemData);
   },
+  async updateItem(itemData) {
+    return await window.ApiService.put('/api/master/items', itemData);
+  },
+  async deleteItem(itemCode) {
+    return await window.ApiService.delete(`/api/master/items/${encodeURIComponent(itemCode)}`);
+  },
   async getCategories() {
     return await window.ApiService.get('/api/master/categories');
   },
@@ -20,5 +26,11 @@ window.MasterService = {
   },
   async createParty(partyData) {
     return await window.ApiService.post('/api/master/parties', partyData);
+  },
+  async updateParty(partyData) {
+    return await window.ApiService.put('/api/master/parties', partyData);
+  },
+  async deleteParty(id) {
+    return await window.ApiService.delete(`/api/master/parties/${id}`);
   }
 };

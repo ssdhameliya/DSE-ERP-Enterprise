@@ -237,6 +237,18 @@ window.NavigationRouter = (function() {
         case 'view-general-ledger':
           if (window.FinanceController) window.FinanceController.loadFinance();
           break;
+        case 'view-financial-statements':
+          if (window.FinanceController) window.FinanceController.loadFinancialStatements();
+          break;
+        case 'view-aging-analysis':
+          if (window.FinanceController) window.FinanceController.loadAgingData();
+          break;
+        case 'view-gst-compliance':
+          if (window.GstController) window.GstController.loadGstData();
+          break;
+        case 'view-eway-bill':
+          if (window.EWayBillController) window.EWayBillController.loadEWayBills();
+          break;
         case 'view-users':
         case 'view-user-access':
           if (window.UserAccessController) window.UserAccessController.loadUsers();
