@@ -10,7 +10,8 @@ window.NavigationRouter = (function() {
 
   const viewMetadata = {
     'view-dashboard': { title: 'Dashboard', breadcrumb: 'Executive Command Center', icon: '📊' },
-    'view-sales-register': { title: 'Sales Register', breadcrumb: 'Sales & Distribution', icon: '💼' },
+    'view-sales-register': { title: 'Sales Register', breadcrumb: 'Sales & Distribution', icon: '🛒' },
+    'view-sale-create': { title: 'Sale Invoice', breadcrumb: 'Sales & Distribution', icon: '🛒' },
     'view-sales-returns': { title: 'Sales Returns', breadcrumb: 'Customer Goods Inward', icon: '↩️' },
     'view-credit-notes': { title: 'Credit Notes', breadcrumb: 'Accounts & Adjustments', icon: '💳' },
     'view-quotations': { title: 'Quotations', breadcrumb: 'Proforma & Quotation Pipeline', icon: '📝' },
@@ -198,6 +199,11 @@ window.NavigationRouter = (function() {
           break;
         case 'view-sales-register':
           if (window.SalesController) window.SalesController.loadSales();
+          break;
+        case 'view-sale-create':
+          if (window.SalesController && window.SalesController.initSaleWorkspace) {
+            window.SalesController.initSaleWorkspace();
+          }
           break;
         case 'view-purchase-register':
           if (window.PurchaseController) window.PurchaseController.loadPurchases();

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.6">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.7">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -177,9 +177,9 @@
           <span class="clock-display" id="clock-display">12:00:00 PM</span>
         </div>
 
-        <!-- Desktop Quick Action: + New Sale -->
-        <button class="header-btn-new-sale" onclick="window.SalesController.openNewInvoiceModal()" title="Quick Create Sales Invoice (Alt+N)">
-          <span>+</span> New Sale
+        <!-- Desktop Quick Action: + New Sale F9 -->
+        <button class="btn-purple" onclick="window.SalesController.openSaleEditorTab()" style="height: 32px; font-size: 0.78rem; padding: 0 14px; font-weight: 700; border-radius: 6px;" title="Quick Create Sales Invoice (F9)">
+          <span>+</span> New Sale F9
         </button>
 
         <!-- Theme Toggle (Dark / Light) -->
@@ -296,7 +296,7 @@
           </div>
           <div class="nav-children">
             <div class="nav-child-item" id="nav-sales-register" onclick="selectNav('view-sales-register')">Sales Register</div>
-            <div class="nav-child-item" onclick="openNewInvoiceModal()">+ Create Sale</div>
+            <div class="nav-child-item" id="nav-sale-create" onclick="window.SalesController.openSaleEditorTab()">+ Create Sale</div>
             <div class="nav-child-item" id="nav-sales-returns" onclick="selectNav('view-sales-returns')">Sales Return</div>
             <div class="nav-child-item" id="nav-credit-notes" onclick="selectNav('view-credit-notes')">Credit Notes</div>
             <div class="nav-child-item" id="nav-quotations" onclick="selectNav('view-quotations')">Quotations</div>
@@ -462,97 +462,699 @@
       <!-- MAIN CONTENT STAGE -->
       <main class="app-stage">
         
-        <!-- VIEW: DASHBOARD -->
+        <!-- VIEW 1: DASHBOARD (EXACT DESKTOP PARITY - IMAGE 1) -->
         <div id="view-dashboard" class="module-view active">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128202;</span> Executive Command Center</h1>
-              <p>Live metrics streaming from PostgreSQL database</p>
-            </div>
-            <div class="view-actions">
-              <button class="btn btn-secondary" onclick="refreshDashboardData()">&#8635; Refresh Live</button>
-              <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ New Sales Invoice</button>
-            </div>
-          </div>
-
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="kpi-label"><span>Total Sales (Live)</span><span style="color: var(--sem-complete);">&#9650; Active</span></div>
-              <div class="kpi-value" id="kpi-sales-amount">&#8377; 0.00</div>
-              <div class="kpi-footer"><span id="kpi-sales-count">0</span> invoices generated</div>
-              <canvas id="canvas-sales" class="kpi-sparkline"></canvas>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><span>Total Purchases (Live)</span><span style="color: var(--cyan);">&#9650; Inward</span></div>
-              <div class="kpi-value" id="kpi-purchase-amount">&#8377; 0.00</div>
-              <div class="kpi-footer"><span id="kpi-purchase-count">0</span> inward bills posted</div>
-              <canvas id="canvas-purchase" class="kpi-sparkline"></canvas>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><span>Active Items &amp; Stock</span><span style="color: var(--sem-warning);">Catalog</span></div>
-              <div class="kpi-value" id="kpi-items-count">0</div>
-              <div class="kpi-footer">Live SKUs configured</div>
-              <canvas id="canvas-stock" class="kpi-sparkline"></canvas>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><span>Database Status</span><span id="kpi-db-status" style="color: var(--sem-complete);">&#9679; CONNECTED</span></div>
-              <div class="kpi-value" id="kpi-db-size">OK</div>
-              <div class="kpi-footer">Spring Boot 8081 Active</div>
-              <canvas id="canvas-bank" class="kpi-sparkline"></canvas>
-            </div>
-          </div>
-
-          <div class="data-panel">
-            <div class="panel-header">
-              <div class="panel-title">&#128196; Recent Invoices Posted</div>
-              <div class="panel-tools">
-                <button class="btn btn-secondary" onclick="selectNav('view-sales-register')">View Register &rarr;</button>
+          <!-- Page Header Banner -->
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128202;
+              </div>
+              <div>
+                <h1 style="font-size: 1.4rem; font-weight: 800; font-family: 'Space Grotesk';">Dashboard</h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Overview of your business at a glance</p>
               </div>
             </div>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Invoice No</th>
-                  <th>Date</th>
-                  <th>Customer</th>
-                  <th>Taxable</th>
-                  <th>GST Amount</th>
-                  <th>Grand Total</th>
-                  <th>Payment Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="dash-recent-sales-tbody">
-                <tr><td colspan="8" style="text-align: center; color: var(--text-dim);">Loading live sales data...</td></tr>
-              </tbody>
-            </table>
+            <div class="view-actions" style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="showToast('Period: This Month', 'info')">&#128197; This Month &#9662;</button>
+              <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="refreshDashboardData()">&#8635; Refresh</button>
+            </div>
+          </div>
+
+          <!-- Top 6 KPI Cards (Image 1) -->
+          <div class="dash-kpi-row-6">
+            <!-- 1. Active Sales -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#128196; Active Sales</span>
+                <span class="dash-kpi-badge green">+3.4%</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-sales-amount">&#8377; 0.00</div>
+              <div class="dash-kpi-sub"><span id="dash-kpi-sales-count">0</span> active sales invoices</div>
+            </div>
+            <!-- 2. Active Purchases -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#128230; Active Purchases</span>
+                <span class="dash-kpi-badge grey">Active</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-pur-amount">&#8377; 0.00</div>
+              <div class="dash-kpi-sub"><span id="dash-kpi-pur-count">0</span> active purchase invoices</div>
+            </div>
+            <!-- 3. Receivables -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#128179; Receivables</span>
+                <span class="dash-kpi-badge amber">Pending</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-receivables">&#8377; 0.00</div>
+              <div class="dash-kpi-sub"><span id="dash-kpi-receivables-count">0</span> open sales invoices</div>
+            </div>
+            <!-- 4. Payables -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#128184; Payables</span>
+                <span class="dash-kpi-badge red">Payable</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-payables">&#8377; 0.00</div>
+              <div class="dash-kpi-sub"><span id="dash-kpi-payables-count">0</span> open purchase invoices</div>
+            </div>
+            <!-- 5. Cash Position -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#128176; Cash Position</span>
+                <span class="dash-kpi-badge green">Net Cash</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-cash-position">&#8377; 0.00</div>
+              <div class="dash-kpi-sub">Received less paid and expenses</div>
+            </div>
+            <!-- 6. Low Stock -->
+            <div class="dash-kpi-card">
+              <div class="dash-kpi-header">
+                <span class="dash-kpi-title">&#9888; Low Stock</span>
+                <span class="dash-kpi-badge amber">Alert</span>
+              </div>
+              <div class="dash-kpi-val" id="dash-kpi-low-stock">0</div>
+              <div class="dash-kpi-sub">Stock levels healthy</div>
+            </div>
+          </div>
+
+          <!-- 4 Directory Cards with View All -> (Image 1) -->
+          <div class="dash-dir-row-4">
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128101;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-cust-count">0</div>
+                  <div class="dash-dir-label">Customer directory</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-customers')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#127991;&#65039;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-item-count">0</div>
+                  <div class="dash-dir-label">Inventory catalog</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-item-master')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128722;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-sales-count">0</div>
+                  <div class="dash-dir-label">Sales register</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-sales-register')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128230;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-pur-count">0</div>
+                  <div class="dash-dir-label">Purchase register</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-purchase-register')">View All &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Middle Row: Quick Actions (8 Purple Buttons) + Reminders (Image 1) -->
+          <div class="dash-middle-grid">
+            <div class="quick-actions-panel">
+              <div class="panel-header-title">
+                <span>&#9776; Quick Actions</span>
+              </div>
+              <div class="quick-actions-grid">
+                <button class="btn-quick-action" onclick="window.SalesController.openSaleEditorTab()">
+                  <span>&#128722;</span> <span>New Sale F9</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewPurchaseModal()">
+                  <span>&#128230;</span> <span>Create Purchase</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewCustomerModal()">
+                  <span>&#128101;</span> <span>New Customer</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewQuotationModal()">
+                  <span>&#128221;</span> <span>New Quotation F3</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewItemModal()">
+                  <span>&#127991;&#65039;</span> <span>Add Item Master</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewSupplierModal()">
+                  <span>&#127981;</span> <span>New Supplier</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewBankEntryModal()">
+                  <span>&#127974;</span> <span>Bank Entry F7</span>
+                </button>
+                <button class="btn-quick-action" onclick="openNewExpenseEntryModal()">
+                  <span>&#128184;</span> <span>Expense Entry F8</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Card: Reminders Center (Image 1) -->
+            <div class="reminders-panel">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); font-family: 'Space Grotesk';">&#9200; Reminders</div>
+                  <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;" onclick="selectNav('view-reminders')">View All</span>
+                </div>
+                <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); font-family: 'Space Grotesk';" id="dash-reminders-count">0</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">No overdue reminders</div>
+                <div style="font-size: 0.74rem; color: var(--text-dim); line-height: 1.4;">Open Reminder Center to review, complete or snooze business follow-ups.</div>
+              </div>
+              <button class="btn-quick-action" style="width: 100%; margin-top: 14px;" onclick="selectNav('view-reminders')">
+                <span>&#128276;</span> <span>Open Reminder Center</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom 3 Panels: Top Customers, Receivables Ageing, Recent Activities (Image 1) -->
+          <div class="dash-bottom-grid-3">
+            <!-- 1. Top Customers -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#128101; Top Customers</span>
+                <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;" onclick="selectNav('view-customers')">View All</span>
+              </div>
+              <div id="dash-top-customers-list" style="margin-top: 10px;">
+                <div class="dash-list-row"><span style="font-weight:600;">Shailesh Dhameliya</span><span style="font-weight:700;">&#8377; 78,780.00</span></div>
+                <div class="dash-list-row"><span style="font-weight:600;">Example Customer</span><span style="font-weight:700;">&#8377; 43,625.40</span></div>
+              </div>
+            </div>
+
+            <!-- 2. Receivables Ageing -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#128193; Receivables Ageing</span>
+                <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;" onclick="selectNav('view-aging-analysis')">View Register</span>
+              </div>
+              <div style="margin-top: 10px;">
+                <div class="dash-list-row"><span style="color:var(--text-muted);">Overdue (&gt; 30 Days)</span><span style="font-weight:700; color:#f87171;" id="dash-ageing-overdue">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">21 - 30 Days</span><span style="font-weight:700;" id="dash-ageing-21-30">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">11 - 20 Days</span><span style="font-weight:700;" id="dash-ageing-11-20">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">1 - 10 Days</span><span style="font-weight:700;" id="dash-ageing-1-10">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">Not Due</span><span style="font-weight:700; color:#34d399;" id="dash-ageing-not-due">&#8377; 0.00</span></div>
+              </div>
+            </div>
+
+            <!-- 3. Recent Activities -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#8635; Recent Activities</span>
+                <span class="dash-kpi-badge green">Live</span>
+              </div>
+              <div id="dash-recent-activities-list" style="margin-top: 10px; font-size: 0.78rem;">
+                <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                  <span style="font-weight:600;">test completed - GST / Tax Report (10 rows).</span>
+                  <span style="color:var(--text-dim); font-size: 0.7rem;">12/10/2026, 10:12 PM</span>
+                </div>
+                <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                  <span style="font-weight:600;">Payment received for JI/25-2026/0095</span>
+                  <span style="color:var(--text-dim); font-size: 0.7rem;">10/10/2026, 09:57 PM</span>
+                </div>
+                <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                  <span style="font-weight:600;">Payment received for JI/25-2026/0097</span>
+                  <span style="color:var(--text-dim); font-size: 0.7rem;">10/10/2026, 09:57 PM</span>
+                </div>
+                <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                  <span style="font-weight:600;">Payment received for JI/25-2026/0103</span>
+                  <span style="color:var(--text-dim); font-size: 0.7rem;">10/10/2026, 09:57 PM</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- VIEW: SALES REGISTER -->
+        <!-- VIEW 2: SALES REGISTER (EXACT DESKTOP PARITY - IMAGES 2 & 3) -->
         <div id="view-sales-register" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128196;</span> Sales Register</h1>
-              <p>Complete historical invoice journal with search and tax computation</p>
+          <!-- Page Header Banner (Image 2) -->
+          <div class="view-header" style="margin-bottom: 12px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128722;
+              </div>
+              <div>
+                <h1 style="font-size: 1.35rem; font-weight: 800; font-family: 'Space Grotesk';">Sales Register</h1>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Manage all sales invoices, collections and customer communication</p>
+              </div>
             </div>
-            <div class="view-actions">
-              <input type="text" class="filter-input" placeholder="Search invoices..." oninput="filterSalesTable(this.value)">
-              <button class="btn btn-secondary" onclick="loadSalesData()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Create Sale</button>
+            <div class="view-actions" style="display: flex; gap: 12px; align-items: center;">
+              <div style="position: relative; width: 340px;">
+                <input type="text" id="sr-search-input" class="omni-search" placeholder="Search invoice, customer, mobile or GSTIN..." oninput="window.SalesController.filterSales(this.value)" style="padding-left: 32px;">
+                <span style="position: absolute; left: 10px; top: 10px; color: var(--text-dim);">&#128269;</span>
+              </div>
+              <button class="btn-purple" onclick="window.SalesController.openSaleEditorTab()">
+                <span>+</span> New Sale F9
+              </button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Invoice #</th><th>Date</th><th>Customer</th><th>Taxable (&#8377;)</th><th>GST (&#8377;)</th><th>Grand Total (&#8377;)</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="sales-table-tbody">
-                <tr><td colspan="8" style="text-align: center; color: var(--text-dim);">Loading sales data...</td></tr>
-              </tbody>
-            </table>
+
+          <!-- 6-Card Summary Strip (Image 2) -->
+          <div class="dash-kpi-row-6" style="margin-bottom: 12px;">
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#128196; Active Sales</span><span class="dash-kpi-badge green">+3.4%</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-active-sales" style="font-size: 1.15rem;">&#8377; 0.00</div>
+              <div class="dash-kpi-sub" id="sr-kpi-active-sub">0 active &bull; 0 records</div>
+            </div>
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#128722; Today's Sales</span><span class="dash-kpi-badge grey">Today</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-today-sales" style="font-size: 1.15rem;">&#8377; 0.00</div>
+              <div class="dash-kpi-sub">0 invoices</div>
+            </div>
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#128179; Pending Receivables</span><span class="dash-kpi-badge amber">Pending</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-pending-sales" style="font-size: 1.15rem;">&#8377; 0.00</div>
+              <div class="dash-kpi-sub">0 invoices</div>
+            </div>
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#9888; Overdue Receivables</span><span class="dash-kpi-badge red">Alert</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-overdue-sales" style="font-size: 1.15rem;">&#8377; 0.00</div>
+              <div class="dash-kpi-sub">0 invoices</div>
+            </div>
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#9201; Due in 7 Days</span><span class="dash-kpi-badge grey">Upcoming</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-due-7-sales" style="font-size: 1.15rem;">&#8377; 0.00</div>
+              <div class="dash-kpi-sub">0 invoices</div>
+            </div>
+            <div class="dash-kpi-card" style="padding: 10px 14px;">
+              <div class="dash-kpi-header"><span class="dash-kpi-title">&#9993; Email Sent %</span><span class="dash-kpi-badge green">Live</span></div>
+              <div class="dash-kpi-val" id="sr-kpi-email-pct" style="font-size: 1.15rem;">100%</div>
+              <div class="dash-kpi-sub" id="sr-kpi-email-sub">All invoices delivered</div>
+            </div>
+          </div>
+
+          <!-- 2-Row Filter Toolbar (Image 2) -->
+          <div class="sales-filter-box">
+            <div class="sales-filter-row-1">
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128101; Customer</label>
+                <select id="sr-filter-customer" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All customers</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; From Date</label>
+                <input type="date" id="sr-filter-from-date" class="form-input" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; To Date</label>
+                <input type="date" id="sr-filter-to-date" class="form-input" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128196; Document Status</label>
+                <select id="sr-filter-doc-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128179; Payment Status</label>
+                <select id="sr-filter-pay-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="PAID">PAID</option>
+                  <option value="PENDING">PENDING</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#8634; Return Status</label>
+                <select id="sr-filter-ret-status" class="form-select" onchange="window.SalesController.applyFilters()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="N/A">N/A</option>
+                  <option value="FULLY_RETURNED">FULLY RETURNED</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sales-filter-row-2">
+              <div class="date-preset-chips">
+                <button class="btn-preset-chip active" onclick="window.SalesController.setPresetDate('ALL', this)">&#128197; All Date</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('TODAY', this)">&#128197; Today</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('YESTERDAY', this)">&#128197; Yesterday</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('7DAYS', this)">&#128197; 7 Days</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('30DAYS', this)">&#128197; 30 Days</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('THIS_FY', this)">&#128197; This FY</button>
+                <button class="btn-preset-chip" onclick="window.SalesController.setPresetDate('THIS_QUARTER', this)">&#128197; This Quarter</button>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;" onclick="window.SalesController.resetFilters()">&#8635; Reset</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;" onclick="window.SalesController.loadSales()">&#8635; Refresh</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 14-Column Sales Register Table (Images 2 & 3) -->
+          <div class="data-panel" style="padding: 0; overflow: hidden;">
+            <div class="sales-table-scroll">
+              <table class="sales-desktop-table">
+                <thead>
+                  <tr>
+                    <th>Invoice No.</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Mobile</th>
+                    <th>GSTIN</th>
+                    <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Pending</th>
+                    <th>Payment Due</th>
+                    <th>Document Status</th>
+                    <th>Payment Status</th>
+                    <th>Return Status</th>
+                    <th>Email</th>
+                    <th style="text-align: center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-table-tbody">
+                  <tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading live invoices from PostgreSQL...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bottom Table Toolbar & Financial Totals Strip (Image 2) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="showToast('Exporting Excel...', 'info')">&#128202; Export Excel</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="showToast('Exporting PDF...', 'info')">&#128196; Export PDF</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.print()">&#128438; Print</button>
+                <span id="sr-entries-counter" style="font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 4px;">Showing 1 to 25 entries</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted);">
+                  <span>Rows per page</span>
+                  <select class="form-select" style="height: 28px; font-size: 0.75rem; padding: 2px 6px;">
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                <!-- Financial Summary Badge (Image 2) -->
+                <div style="display: flex; align-items: center; gap: 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-subtle); padding: 6px 14px; border-radius: 6px; font-size: 0.78rem;">
+                  <div>Total Amount: <span id="sr-sum-total" style="font-weight: 700; color: var(--cyan);">&#8377; 0.00</span></div>
+                  <div>Total Paid: <span id="sr-sum-paid" style="font-weight: 700; color: #34d399;">&#8377; 0.00</span></div>
+                  <div>Total Pending: <span id="sr-sum-pending" style="font-weight: 700; color: #f87171;">&#8377; 0.00</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 3: CREATE SALE INVOICE WORKSPACE TAB (EXACT DESKTOP PARITY - IMAGE 4) -->
+        <div id="view-sale-create" class="module-view">
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #c084fc;">
+                &#128722;
+              </div>
+              <div>
+                <h1 style="font-size: 1.35rem; font-weight: 800; font-family: 'Space Grotesk';">Create Sale Invoice</h1>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Create a new sale invoice for your customer</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.selectNav('view-sales-register')">&#10006; Cancel</button>
+              <button class="btn-purple" onclick="window.SalesController.handleSaleWorkspaceSave(event)">&#128190; Save</button>
+            </div>
+          </div>
+
+          <!-- 2-Column Grid (Image 4) -->
+          <div class="sale-workspace-container">
+            <!-- Left 70%: Details + Items Grid -->
+            <div>
+              <!-- Card 1: Customer & Invoice Details -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128101; Customer &amp; Invoice Details</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Customer *</label>
+                    <div style="display: flex; gap: 6px;">
+                      <select id="ws-customer" class="form-select" onchange="window.SalesController.onWorkspaceCustomerChange(this)" style="height: 36px; font-size: 0.8rem;" required>
+                        <option value="">Select customer...</option>
+                      </select>
+                      <button type="button" class="btn btn-secondary" style="padding: 0 10px; font-size: 0.72rem; white-space: nowrap;" onclick="openNewCustomerModal()">+ New Customer</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Invoice No. *</label>
+                    <input type="text" id="ws-inv-no" class="form-input" value="JI/25-2026/0130" readonly style="height: 36px; font-weight: 700; color: var(--cyan);">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Invoice Date *</label>
+                    <input type="date" id="ws-inv-date" class="form-input" style="height: 36px; font-size: 0.8rem;" required>
+                  </div>
+                  <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted); cursor: pointer; padding-bottom: 8px;">
+                      <input type="checkbox" id="ws-same-address" checked onchange="window.SalesController.toggleSameAddress(this.checked)">
+                      Same as Billing Address
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Billing Address *</label>
+                    <input type="text" id="ws-billing-address" class="form-input" placeholder="Billing address..." style="height: 36px;">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Delivery Address *</label>
+                    <input type="text" id="ws-delivery-address" class="form-input" placeholder="Enter delivery address..." style="height: 36px;">
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Billing GSTIN</label>
+                    <input type="text" id="ws-billing-gstin" class="form-input" placeholder="Billing GSTIN..." maxlength="15" style="height: 36px;">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Delivery GSTIN</label>
+                    <input type="text" id="ws-delivery-gstin" class="form-input" placeholder="Delivery GSTIN..." maxlength="15" style="height: 36px;">
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Payment Terms</label>
+                    <select id="ws-payment-terms" class="form-select" style="height: 36px; font-size: 0.8rem;">
+                      <option value="15 Days" selected>15 Days</option>
+                      <option value="30 Days">30 Days</option>
+                      <option value="Immediate">Immediate / Advance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">Additional Charges</label>
+                    <div style="display: flex; gap: 6px;">
+                      <input type="number" step="0.01" id="ws-charges-input" class="form-input" value="0.00" oninput="window.SalesController.calcWorkspaceTotals()" style="height: 36px;">
+                      <button type="button" class="btn btn-secondary" style="padding: 0 10px; font-size: 0.72rem;" onclick="showToast('Charges Manager Active', 'info')">&#9881; Manage</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">PO Date</label>
+                    <input type="date" id="ws-po-date" class="form-input" style="height: 36px; font-size: 0.8rem;">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.74rem;">PO No.</label>
+                    <input type="text" id="ws-po-no" class="form-input" placeholder="Enter PO order no. (optional)" style="height: 36px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Invoice Items (Image 4) -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <div style="display: flex; align-items: center; gap: 14px;">
+                    <span>&#128230; Invoice Items</span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: normal;">
+                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">F2</kbd> Item Search &bull;
+                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">Enter / Tab</kbd> Next Field &bull;
+                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">Ctrl+S</kbd> Save Invoice
+                    </span>
+                  </div>
+                  <span style="font-size: 0.74rem; color: #fbbf24; font-weight: 600;">&#9889; High Speed Entry Mode</span>
+                </div>
+
+                <!-- High Speed Item Search Strip (Image 4) -->
+                <div class="item-entry-strip">
+                  <select id="ws-fast-item-select" class="form-select" onchange="window.SalesController.onFastItemSelect(this)" style="height: 34px; font-size: 0.78rem;">
+                    <option value="">Search Item Master... [F2 / Enter]</option>
+                  </select>
+                  <input type="number" id="ws-fast-qty" class="form-input" value="1" min="1" step="any" placeholder="Qty [Tab]" style="height: 34px; font-size: 0.78rem;">
+                  <input type="number" id="ws-fast-rate" step="0.01" class="form-input" value="100.00" placeholder="Rate (₹) [Tab]" style="height: 34px; font-size: 0.78rem;">
+                  <input type="number" id="ws-fast-disc" step="0.1" class="form-input" value="0" placeholder="Disc % [Tab]" style="height: 34px; font-size: 0.78rem;">
+                  <select id="ws-fast-tax" class="form-select" style="height: 34px; font-size: 0.78rem;">
+                    <option value="18" selected>18%</option>
+                    <option value="12">12%</option>
+                    <option value="5">5%</option>
+                    <option value="28">28%</option>
+                    <option value="0">0%</option>
+                  </select>
+                  <button type="button" class="btn" style="background: #fbbf24; color: #000; font-weight: 700; height: 34px; padding: 0 12px; font-size: 0.76rem;" onclick="window.SalesController.addFastItemRow()">+ Add Item</button>
+                  <button type="button" class="btn btn-danger" style="height: 34px; padding: 0 10px; font-size: 0.76rem;" onclick="window.SalesController.removeLastWorkspaceRow()">&#128465; Remove</button>
+                </div>
+
+                <!-- 13-Column Dynamic Items Table (Image 4) -->
+                <div style="overflow-x: auto; max-height: 280px; min-height: 160px;">
+                  <table class="data-table" style="font-size: 0.76rem; min-width: 900px;">
+                    <thead>
+                      <tr>
+                        <th>Item Code</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>HSN/SAC</th>
+                        <th>Unit</th>
+                        <th>Qty</th>
+                        <th>Rate (&#8377;)</th>
+                        <th>Discount %</th>
+                        <th>Discount (&#8377;)</th>
+                        <th>GST %</th>
+                        <th>Taxable (&#8377;)</th>
+                        <th>GST Amount (&#8377;)</th>
+                        <th style="text-align: right;">Amount (&#8377;)</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="ws-items-tbody">
+                      <tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">No records to display. Use the fast entry bar above to add items.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Items Table Footer Strip (Image 4) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 10px; font-size: 0.8rem;">
+                  <div>Total Items: &#128230; <span id="ws-tot-items-count" style="font-weight: 700; color: var(--cyan);">0</span></div>
+                  <div style="display: flex; gap: 14px; font-size: 0.78rem;">
+                    <div>Discount: <span id="ws-tot-disc" style="font-weight: 600;">&#8377; 0.00</span></div>
+                    <div>GST: <span id="ws-tot-gst" style="font-weight: 600;">&#8377; 0.00</span></div>
+                    <div>Charges: <span id="ws-tot-charges" style="font-weight: 600;">&#8377; 0.00</span></div>
+                    <div>Net: <span id="ws-tot-net" style="font-weight: 700; color: var(--cyan);">&#8377; 0.00</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right 30%: Summary + Transport + Notes (Image 4) -->
+            <div>
+              <!-- Card 1: Invoice Summary -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128202; Invoice Summary</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Sub Total</span><span id="ws-sum-subtotal" style="font-weight: 600;">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Total Discount</span><span id="ws-sum-discount" style="font-weight: 600; color: #fbbf24;">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Taxable Amount</span><span id="ws-sum-taxable" style="font-weight: 600;">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Additional Charges</span><span id="ws-sum-charges" style="font-weight: 600;">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Total GST</span><span id="ws-sum-gst" style="font-weight: 600;">&#8377; 0.00</span></div>
+                  <div style="height: 1px; background: var(--border-subtle); margin: 6px 0;"></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 0.95rem; font-weight: 700;">Total Amount</span>
+                    <span id="ws-sum-grand" style="font-size: 1.5rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Tax & Transport Details -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128666; Tax &amp; Transport Details</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <div>
+                    <label class="form-label" style="font-size: 0.72rem;">GST Type *</label>
+                    <select id="ws-gst-type" class="form-select" onchange="window.SalesController.calcWorkspaceTotals()" style="height: 34px; font-size: 0.78rem;">
+                      <option value="INTRA_STATE_CGST_SGST">GST (Intra-State CGST+SGST)</option>
+                      <option value="INTER_STATE_IGST">IGST (Inter-State)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.72rem;">Transporter GSTIN</label>
+                    <input type="text" id="ws-trans-gstin" class="form-input" placeholder="From transporter master..." style="height: 34px; font-size: 0.78rem;">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.72rem;">Transporter</label>
+                    <input type="text" id="ws-transporter" class="form-input" placeholder="Select transporter..." style="height: 34px; font-size: 0.78rem;">
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 0.72rem;">Vehicle Number</label>
+                    <input type="text" id="ws-vehicle-no" class="form-input" placeholder="Vehicle number..." style="height: 34px; font-size: 0.78rem;">
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label class="form-label" style="font-size: 0.72rem;">Contact Person</label>
+                      <input type="text" id="ws-contact-person" class="form-input" placeholder="Contact person..." style="height: 34px; font-size: 0.78rem;">
+                    </div>
+                    <div>
+                      <label class="form-label" style="font-size: 0.72rem;">Contact Mobile</label>
+                      <input type="text" id="ws-contact-mobile" class="form-input" placeholder="Mobile number..." style="height: 34px; font-size: 0.78rem;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3: Notes & Attachment -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128203; Notes &amp; Attachment</span>
+                </div>
+                <textarea id="ws-invoice-notes" class="form-input" placeholder="Optional invoice note..." style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-dim);">
+                  <span>Attached Document: None</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="btn btn-secondary" style="padding: 2px 6px; font-size: 0.7rem;">&#128206;</button>
+                    <button type="button" class="btn btn-secondary" style="padding: 2px 6px; font-size: 0.7rem;">&#128065;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FLOATING ACTIONS CONTEXT MENU (IMAGE 3) -->
+        <div id="sales-row-actions-menu" class="actions-dropdown-menu">
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('VIEW')">
+            <span class="actions-menu-icon">&#128065;</span> <span>View Sale</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('AUDIT')">
+            <span class="actions-menu-icon">&#128220;</span> <span>Audit Trail</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EDIT')">
+            <span class="actions-menu-icon">&#9999;</span> <span>Edit Sale</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('DUPLICATE')">
+            <span class="actions-menu-icon">&#128203;</span> <span>Duplicate Sale</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PRINT')">
+            <span class="actions-menu-icon">&#128438;</span> <span>View / Print Tax Invoice</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EXCEL')">
+            <span class="actions-menu-icon">&#128202;</span> <span>View / Download Excel</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EMAIL')">
+            <span class="actions-menu-icon">&#9993;</span> <span>Send Email</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('WHATSAPP')">
+            <span class="actions-menu-icon">&#128172;</span> <span>Send WhatsApp</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PAYMENT')">
+            <span class="actions-menu-icon">&#128179;</span> <span>View / Record Payments</span>
+          </div>
+          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('RETURN')">
+            <span class="actions-menu-icon">&#8634;</span> <span>Create Sales Return</span>
+          </div>
+          <div class="actions-menu-divider"></div>
+          <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('CANCEL')">
+            <span class="actions-menu-icon">&#10006;</span> <span>Cancel Sale</span>
+          </div>
+          <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('DELETE')">
+            <span class="actions-menu-icon">&#128465;</span> <span>Delete Sale</span>
           </div>
         </div>
 
@@ -1327,6 +1929,19 @@
 
       </main>
     </div>
+
+    <!-- PERSISTENT DESKTOP FOOTER BAR (IMAGES 1-4) -->
+    <footer class="app-footer-bar">
+      <div class="footer-left">
+        <span style="display:flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; border-radius:50%; background:#34d399; display:inline-block;"></span> Secure Local Reliable</span>
+        <span>🏢 Jashvi Engineers</span>
+        <span>📞 9099939193</span>
+        <span>✉️ ssdhameliya@gmail.com</span>
+      </div>
+      <div class="footer-right">
+        <span id="footer-live-clock">📅 Monday, 12/10/2026 | 11:04:43 PM | IST</span>
+      </div>
+    </footer>
   </div>
 
   <!-- MODALS -->
@@ -2259,34 +2874,34 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
     <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.6"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.6"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.6"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.6"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.6"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.7"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.7"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.7"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.7"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.7"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.6"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.6"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.6"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.6"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.6"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.7"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.7"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.7"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.7"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.7"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.6"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.6"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.7"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.7"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.6"></script>
-  <script src="js/app.js?v=10.0.25.6"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.7"></script>
+  <script src="js/app.js?v=10.0.25.7"></script>
 </body>
 </html>

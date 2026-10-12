@@ -4,11 +4,25 @@
  */
 window.App = (function() {
   function startClock() {
-    setInterval(() => {
+    function tick() {
       const now = new Date();
       const el = document.getElementById('clock-display');
-      if (el) el.innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
-    }, 1000);
+      if (el) {
+        el.innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+      }
+      const footerClock = document.getElementById('footer-live-clock');
+      if (footerClock) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const day = days[now.getDay()];
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        footerClock.innerText = `📅 ${day}, ${d}/${m}/${y} | ${timeStr} | IST`;
+      }
+    }
+    tick();
+    setInterval(tick, 1000);
   }
 
   function setupEnvironment() {
