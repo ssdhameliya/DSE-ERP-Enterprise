@@ -45,14 +45,17 @@ jobs:
         run: |
           # 1. Upload Public Showcase
           scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/public/index.html ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }}:/tmp/web_uat_public.html
-          # 2. Upload Admin Studio
-          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/admin/index.html ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }}:/tmp/web_uat_admin.html
+          # 2. Package and Upload Complete Admin Studio (HTML + CSS + JS)
+          tar -czf /tmp/web_uat_admin.tar.gz -C web/admin .
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa /tmp/web_uat_admin.tar.gz ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }}:/tmp/web_uat_admin.tar.gz
           
           # Deploy and set SELinux permissions
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa ${{ secrets.DSE_UAT_SSH_USER }}@${{ secrets.DSE_UAT_SSH_HOST }} '
             sudo cp /tmp/web_uat_public.html /srv/dse-erp/web/public/index.html &&
-            sudo cp /tmp/web_uat_admin.html /srv/dse-erp/web/admin/index.html &&
+            sudo mkdir -p /srv/dse-erp/web/admin &&
+            sudo tar -xzf /tmp/web_uat_admin.tar.gz -C /srv/dse-erp/web/admin/ &&
             sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/ &&
+            sudo chmod -R 755 /srv/dse-erp/web/ &&
             sudo chmod 644 /srv/dse-erp/web/public/index.html /srv/dse-erp/web/admin/index.html
           '
 
@@ -86,14 +89,17 @@ jobs:
         run: |
           # 1. Upload Public Showcase
           scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/public/index.html ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_public.html
-          # 2. Upload Admin Studio
-          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa web/admin/index.html ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_admin.html
+          # 2. Package and Upload Complete Admin Studio (HTML + CSS + JS)
+          tar -czf /tmp/web_prod_admin.tar.gz -C web/admin .
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa /tmp/web_prod_admin.tar.gz ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_admin.tar.gz
           
           # Deploy and set SELinux permissions
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }} '
             sudo cp /tmp/web_prod_public.html /srv/dse-erp/web/public/index.html &&
-            sudo cp /tmp/web_prod_admin.html /srv/dse-erp/web/admin/index.html &&
+            sudo mkdir -p /srv/dse-erp/web/admin &&
+            sudo tar -xzf /tmp/web_prod_admin.tar.gz -C /srv/dse-erp/web/admin/ &&
             sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/ &&
+            sudo chmod -R 755 /srv/dse-erp/web/ &&
             sudo chmod 644 /srv/dse-erp/web/public/index.html /srv/dse-erp/web/admin/index.html
           '
 

@@ -108,12 +108,17 @@ window.ApiService = (function() {
         { id: 6, username: 'sale', fullName: 'Trisha Dhameliya', email: 'trishadhameliya2411@gmail.com', role: 'SALES', active: 1, locked: 0, mfaEnabled: 1 }
       ];
     }
-    if (endpoint.includes('/audit/global')) {
-      return [
-        { timestamp: '2026-10-11 20:45', username: 'admin', entity: 'INVOICE', recordId: 'INV-2026-0891', action: 'CREATE', details: 'Sales invoice posted to general ledger' },
-        { timestamp: '2026-10-11 19:30', username: 'admin', entity: 'PURCHASE', recordId: 'BILL-9821', action: 'VERIFY', details: 'Inward goods memo accepted' },
-        { timestamp: '2026-10-11 18:15', username: 'admin', entity: 'AUTH', recordId: 'SESSION_START', action: 'LOGIN', details: 'Administrator session initiated' }
-      ];
+    if (endpoint.includes('/insights/shell-counts')) {
+      return { notifications: 4, email: 2, whatsapp: 3, reminders: 5 };
+    }
+    if (endpoint.includes('/password-reset/request')) {
+      return { success: true, challengeId: 'CHAL-TEST-' + Math.floor(1000 + Math.random() * 9000), message: 'Reset OTP sent to your registered corporate email.' };
+    }
+    if (endpoint.includes('/password-reset/complete')) {
+      return { success: true, message: 'Password reset successfully. You may now sign in with your new password.' };
+    }
+    if (endpoint.includes('/auth/password')) {
+      return { success: true, message: 'Password changed successfully.' };
     }
     return [];
   }

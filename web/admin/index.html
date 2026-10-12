@@ -12,21 +12,23 @@
 <body>
 
   <!-- AUTHENTICATION OVERLAY -->
+  <!-- AUTHENTICATION OVERLAY WITH 3 TABS -->
   <div id="auth-overlay">
     <div class="auth-box">
       <button class="modal-close" onclick="hideAuthOverlay()" style="position: absolute; right: 18px; top: 16px; font-size: 1.5rem; color: var(--text-muted); background: none; border: none; cursor: pointer; line-height: 1;" title="Close and Return to Workspace">&times;</button>
       <div class="auth-logo-badge">J</div>
       <h2 style="font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700;">JASVI INDUSTRIES ERP</h2>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">Centralized Desktop-Parity Studio &bull; <span id="auth-env-label">Connecting...</span></p>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px;">Centralized Desktop-Parity Studio &bull; <span id="auth-env-label">Connecting...</span></p>
 
       <div class="auth-tabs">
         <div class="auth-tab active" id="tab-login-btn" onclick="showAuthTab('login')">Sign In</div>
-        <div class="auth-tab" id="tab-register-btn" onclick="showAuthTab('register')">Register New Account</div>
+        <div class="auth-tab" id="tab-register-btn" onclick="showAuthTab('register')">Register</div>
+        <div class="auth-tab" id="tab-forgot-btn" onclick="showAuthTab('forgot')">Forgot Password</div>
       </div>
 
       <div id="auth-alert" class="auth-alert"></div>
 
-      <!-- SIGN IN FORM -->
+      <!-- 1. SIGN IN FORM -->
       <form id="form-login" onsubmit="handleLoginSubmit(event)">
         <div class="form-group">
           <label class="form-label">Username / Corporate Email</label>
@@ -36,12 +38,18 @@
           <label class="form-label">Password</label>
           <input type="password" id="login-password" class="form-input" placeholder="Enter password" required autocomplete="current-password">
         </div>
-        <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 0.76rem;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" id="login-remember" checked> Remember session
+          </label>
+          <a href="javascript:void(0)" onclick="showAuthTab('forgot')" style="color: var(--cyan); text-decoration: none;">Forgot password?</a>
+        </div>
+        <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;">
           <span>Authenticate &amp; Launch Studio</span>
         </button>
       </form>
 
-      <!-- MFA OTP FORM -->
+      <!-- 2. MFA OTP FORM -->
       <form id="form-mfa" onsubmit="handleMfaSubmit(event)" style="display: none;">
         <div class="form-group">
           <label class="form-label">6-Digit Authenticator TOTP Code</label>
@@ -51,7 +59,7 @@
         <button type="button" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="cancelMfa()">Cancel</button>
       </form>
 
-      <!-- REGISTER FORM -->
+      <!-- 3. REGISTER FORM -->
       <form id="form-register" onsubmit="handleRegisterSubmit(event)" style="display: none;">
         <div class="form-group">
           <label class="form-label">Full Legal Name</label>
@@ -78,8 +86,39 @@
           <label class="form-label">Initial Password (8+ characters with digit)</label>
           <input type="password" id="reg-password" class="form-input" required minlength="8">
         </div>
-        <button type="submit" class="btn btn-success" style="width: 100%; justify-content: center; height: 42px;">Submit Registration</button>
+        <button type="submit" id="btn-reg-submit" class="btn btn-success" style="width: 100%; justify-content: center; height: 42px;">Submit Registration</button>
       </form>
+
+      <!-- 4. FORGOT PASSWORD 2-STEP FORM -->
+      <form id="form-forgot" onsubmit="handleForgotPasswordSubmit(event)" style="display: none;">
+        <div id="forgot-step-1">
+          <div class="form-group">
+            <label class="form-label">Enter Username or Registered Email</label>
+            <input type="text" id="forgot-identity" class="form-input" placeholder="e.g. admin or name@jasviindustries.in" required>
+          </div>
+          <button type="button" id="btn-forgot-request-otp" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;" onclick="requestPasswordResetOtp()">
+            <span>Send Reset OTP Code</span>
+          </button>
+        </div>
+        <div id="forgot-step-2" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">6-Digit Verification OTP</label>
+            <input type="text" id="forgot-otp" class="form-input" placeholder="Enter OTP code" maxlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password (8+ chars)</label>
+            <input type="password" id="forgot-new-pwd" class="form-input" placeholder="New strong password" minlength="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="forgot-confirm-pwd" class="form-input" placeholder="Re-type new password" minlength="8">
+          </div>
+          <button type="submit" id="btn-forgot-complete" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;">
+            <span>Update Password &amp; Login</span>
+          </button>
+        </div>
+      </form>
+
       <div style="text-align: center; margin-top: 16px;">
         <a href="javascript:void(0)" onclick="hideAuthOverlay()" style="color: var(--cyan); font-size: 0.82rem; text-decoration: none; font-weight: 600;">&larr; Return to Studio Workspace</a>
       </div>
@@ -88,14 +127,19 @@
 
   <!-- MAIN APP CONTAINER -->
   <div id="app-container">
-    <!-- APP HEADER -->
+    <!-- APP HEADER: DESKTOP PARITY -->
     <header class="app-header">
       <div class="header-left">
+        <button class="header-badge-btn" onclick="window.NavigationRouter.toggleSidebar()" title="Toggle Sidebar (Ctrl+B)">☰</button>
         <div class="brand-group" onclick="selectNav('view-dashboard')">
           <div class="brand-logo-icon">J</div>
           <div class="brand-title">JASVI <span>INDUSTRIES</span></div>
         </div>
         <span id="env-badge" class="env-tag uat">UAT STAGING</span>
+        <div style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
+          <div id="header-page-title" style="font-size: 0.95rem; font-weight: 700; font-family: 'Space Grotesk'; color: var(--text-main);">Dashboard</div>
+          <div id="header-breadcrumb" style="font-size: 0.72rem; color: var(--text-muted);">Executive Command Center</div>
+        </div>
       </div>
 
       <div class="header-center">
@@ -104,26 +148,113 @@
       </div>
 
       <div class="header-right">
-        <div class="clock-display" id="clock-display">12:00:00 PM</div>
-        <button class="audio-toggle" onclick="openShortcutsHelpModal()" title="Keyboard Shortcuts Help (?)" style="background: rgba(255,255,255,0.06); margin-right: 6px;">
-          <span>&#9000;</span>
-          <span>Hotkeys</span>
+        <!-- Live Clock Card with Pulsing Dot -->
+        <div class="clock-card" id="shell-clock-card">
+          <span class="clock-live-dot" title="Live Server Heartbeat Active"></span>
+          <span class="clock-display" id="clock-display">12:00:00 PM</span>
+        </div>
+
+        <!-- Desktop Quick Action: + New Sale -->
+        <button class="header-btn-new-sale" onclick="window.SalesController.openNewInvoiceModal()" title="Quick Create Sales Invoice (Alt+N)">
+          <span>+</span> New Sale
         </button>
+
+        <!-- Theme Toggle (Dark / Light) -->
+        <button class="theme-toggle-switch" onclick="window.App.toggleTheme()" id="btn-theme-toggle" title="Toggle Dark / Light Theme">
+          <span id="theme-icon">🌙</span> <span id="theme-text">Dark</span>
+        </button>
+
+        <!-- Notification & Activity Badges matching desktop Dashboard.fxml -->
+        <div class="header-badge-wrap" onclick="selectNav('view-reminders')" title="Reminder Center">
+          <button class="header-badge-btn">⏰</button>
+          <span class="header-badge-counter cyan" id="badge-reminders">0</span>
+        </div>
+
+        <div class="header-badge-wrap" onclick="openNotificationsModal()" title="Notification Center">
+          <button class="header-badge-btn">🔔</button>
+          <span class="header-badge-counter" id="badge-notifications">0</span>
+        </div>
+
+        <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="Email Center">
+          <button class="header-badge-btn">✉️</button>
+          <span class="header-badge-counter" id="badge-email">0</span>
+        </div>
+
+        <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="WhatsApp Activity">
+          <button class="header-badge-btn">💬</button>
+          <span class="header-badge-counter cyan" id="badge-whatsapp">0</span>
+        </div>
+
+        <!-- Hotkeys Help Button -->
+        <button class="header-badge-btn" onclick="openShortcutsHelpModal()" title="Keyboard Shortcuts Help (?)">⌨️</button>
+
+        <!-- Synthesizer Audio Toggle -->
         <button class="audio-toggle active" id="audio-toggle-btn" title="Toggle Synthesizer Audio">
           <span id="audio-icon">&#128266;</span>
           <span id="audio-text">Audio: ON</span>
         </button>
-        <div class="user-pill">
-          <div class="user-avatar" id="header-user-avatar">S</div>
-          <div class="user-info-text">
-            <span id="header-user-name" style="font-weight: 600;">Shailesh Dhameliya</span>
-            <span class="user-role-badge" id="header-user-role">ADMINISTRATOR</span>
+
+        <!-- User Profile Pill & Dropdown Menu matching desktop menuUser -->
+        <div class="user-profile-wrap">
+          <div class="user-pill" onclick="toggleUserProfileDropdown(event)" id="user-profile-pill">
+            <div class="user-avatar" id="header-user-avatar">S</div>
+            <div class="user-info-text">
+              <span id="header-user-name" style="font-weight: 600;">Shailesh Dhameliya</span>
+              <span class="user-role-badge" id="header-user-role">ADMINISTRATOR</span>
+            </div>
+            <span style="font-size: 0.65rem; color: var(--text-dim); margin-left: 2px;">▼</span>
           </div>
-          <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 6px;" onclick="showAuthOverlay()">Auth / Switch</button>
-          <button class="btn-logout" onclick="performLogout()">Logout</button>
+
+          <div class="profile-dropdown-menu" id="profile-dropdown-menu">
+            <div class="profile-menu-header">
+              <div class="profile-menu-header-name" id="menu-user-name">Shailesh Dhameliya</div>
+              <div class="profile-menu-header-role" id="menu-user-role">Administrator</div>
+            </div>
+            <div class="profile-menu-item" onclick="openMyProfileModal()">
+              <span class="item-icon">👤</span> <span>My Profile</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-settings'); hideProfileDropdown();">
+              <span class="item-icon">⚙️</span> <span>Settings</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-backup'); hideProfileDropdown();">
+              <span class="item-icon">💾</span> <span>Backup &amp; Restore</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-reminders'); hideProfileDropdown();">
+              <span class="item-icon">⏰</span> <span>Reminder Center</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-users'); hideProfileDropdown();">
+              <span class="item-icon">👥</span> <span>User Access &amp; RBAC</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-import'); hideProfileDropdown();">
+              <span class="item-icon">📥</span> <span>Data Import</span>
+            </div>
+            <div class="profile-menu-item" onclick="selectNav('view-pdf-studio'); hideProfileDropdown();">
+              <span class="item-icon">📄</span> <span>Document Studio</span>
+            </div>
+            <div class="profile-menu-divider"></div>
+            <div class="profile-menu-item" onclick="openChangePasswordModal(); hideProfileDropdown();">
+              <span class="item-icon">🔑</span> <span>Change Password</span>
+            </div>
+            <div class="profile-menu-divider"></div>
+            <div class="profile-menu-item logout" onclick="performLogout()">
+              <span class="item-icon">🚪</span> <span>Sign Out</span>
+            </div>
+          </div>
         </div>
       </div>
     </header>
+
+    <!-- MULTI-DOCUMENT WORKSPACE TAB BAR -->
+    <div class="workspace-tab-bar">
+      <div class="workspace-tabs-container" id="workspace-tabs-container"></div>
+      <div class="workspace-tab-hints">
+        <span class="workspace-tab-hint"><kbd>Ctrl+Tab</kbd> Switch</span>
+        <span>&bull;</span>
+        <span class="workspace-tab-hint"><kbd>Alt+W</kbd> Close</span>
+        <span>&bull;</span>
+        <span class="workspace-tab-hint"><kbd>Ctrl+K</kbd> Search</span>
+      </div>
+    </div>
 
     <!-- APP MAIN BODY -->
     <div class="app-main">
@@ -1622,6 +1753,112 @@
             <button type="submit" class="btn btn-primary">&#10004; Save Master Entry</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHANGE PASSWORD -->
+  <div class="modal-overlay" id="modal-change-password">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>🔑 Change Account Password</h3>
+        <button class="modal-close" onclick="closeModal('modal-change-password')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-change-password" onsubmit="handleChangePasswordSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input type="password" id="chg-current-pwd" class="form-input" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password (8+ chars)</label>
+            <input type="password" id="chg-new-pwd" class="form-input" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="chg-confirm-pwd" class="form-input" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-change-password')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MY PROFILE -->
+  <div class="modal-overlay" id="modal-my-profile">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>👤 User Profile &amp; Identity</h3>
+        <button class="modal-close" onclick="closeModal('modal-my-profile')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-subtle);">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #fff;" id="profile-avatar-large">S</div>
+          <div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;" id="profile-full-name">Shailesh Dhameliya</h4>
+            <div style="font-size: 0.8rem; color: var(--cyan); font-weight: 600;" id="profile-role-badge">ADMINISTRATOR</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.82rem;">
+          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Username</div>
+            <div style="font-weight: 600; margin-top: 2px;" id="profile-username">admin</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Email</div>
+            <div style="font-weight: 600; margin-top: 2px;" id="profile-email">admin@jasviindustries.in</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Department</div>
+            <div style="font-weight: 600; margin-top: 2px;">Executive Management</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Session Status</div>
+            <div style="font-weight: 600; margin-top: 2px; color: var(--sem-complete);">Active &bull; JWT Verified</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 20px; background: transparent;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-my-profile')">Close</button>
+          <button type="button" class="btn btn-primary" onclick="closeModal('modal-my-profile'); openChangePasswordModal();">Change Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOTIFICATIONS CENTER -->
+  <div class="modal-overlay" id="modal-notifications-center">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>🔔 System Alerts &amp; Activity Notifications</h3>
+        <button class="modal-close" onclick="closeModal('modal-notifications-center')">&times;</button>
+      </div>
+      <div class="modal-body" id="notifications-list-container">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--cyan); padding: 12px 16px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+              <span>INVOICE CREATED</span><span>10 mins ago</span>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 600;">Sales Invoice INV-2026-0891 posted to General Ledger</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-complete); padding: 12px 16px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+              <span>PURCHASE MEMO</span><span>1 hour ago</span>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 600;">Inward Goods Receipt Memo BILL-9821 accepted from Tata Steel</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-warning); padding: 12px 16px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+              <span>PAYMENT DUE</span><span>Today</span>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 600;">Outstanding balance due from Maruti Precision Fasteners (₹ 97,232.00)</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-notifications-center')">Close</button>
       </div>
     </div>
   </div>

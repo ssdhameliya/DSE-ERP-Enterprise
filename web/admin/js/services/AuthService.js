@@ -56,6 +56,28 @@ window.AuthService = (function() {
       return await window.ApiService.post('/api/auth/register', userData);
     },
 
+    async requestPasswordReset(identity) {
+      return await window.ApiService.post('/api/auth/password-reset/request', { identity });
+    },
+
+    async completePasswordReset(challengeId, otp, password) {
+      return await window.ApiService.post('/api/auth/password-reset/complete', {
+        challengeId,
+        otp,
+        totp: '',
+        password
+      });
+    },
+
+    async changePassword(currentPassword, password) {
+      const user = this.getCurrentUser();
+      return await window.ApiService.post('/api/auth/password', {
+        userId: user ? user.id : 1,
+        currentPassword,
+        password
+      });
+    },
+
     async logout() {
       try {
         await window.ApiService.post('/api/auth/logout', {});

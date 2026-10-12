@@ -137,6 +137,37 @@ window.App = (function() {
     }
   }
 
+  async function pollShellCounts() {
+    try {
+      const counts = await window.ApiService.get('/api/insights/shell-counts');
+      if (counts) {
+        const remEl = document.getElementById('badge-reminders');
+        const notifEl = document.getElementById('badge-notifications');
+        const mailEl = document.getElementById('badge-email');
+        const waEl = document.getElementById('badge-whatsapp');
+
+        if (remEl) {
+          remEl.innerText = counts.reminders || 0;
+          remEl.classList.toggle('zero', (counts.reminders || 0) === 0);
+        }
+        if (notifEl) {
+          notifEl.innerText = counts.notifications || 0;
+          notifEl.classList.toggle('zero', (counts.notifications || 0) === 0);
+        }
+        if (mailEl) {
+          mailEl.innerText = counts.email || 0;
+          mailEl.classList.toggle('zero', (counts.email || 0) === 0);
+        }
+        if (waEl) {
+          waEl.innerText = counts.whatsapp || 0;
+          waEl.classList.toggle('zero', (counts.whatsapp || 0) === 0);
+        }
+      }
+    } catch (e) {
+      console.warn('[App] Shell counts poll error:', e.message);
+    }
+  }
+
   return {
     async init() {
       startClock();
@@ -150,6 +181,29 @@ window.App = (function() {
       const user = window.AuthService.getCurrentUser();
       applyUserToHeader(user);
 
+      // Check saved theme
+      const savedTheme = localStorage.getItem('dse_theme');
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (icon) icon.innerText = '☀️';
+        if (text) text.innerText = 'Light';
+      }
+
+      // Initial shell counts poll and background timer
+      await pollShellCounts();
+      setInterval(pollShellCounts, 30000);
+
+      // Global click handler to close profile dropdown
+      document.addEventListener('click', (e) => {
+        const wrap = document.querySelector('.user-profile-wrap');
+        const menu = document.getElementById('profile-dropdown-menu');
+        if (wrap && menu && !wrap.contains(e.target)) {
+          menu.classList.remove('show');
+        }
+      });
+
       // Initialize initial controller data
       await window.DashboardController.refresh();
       await window.ItemMasterController.loadItems();
@@ -162,6 +216,17 @@ window.App = (function() {
       if (omni) {
         omni.addEventListener('input', (e) => handleOmniSearch(e.target.value));
       }
+    },
+
+    toggleTheme() {
+      const isLight = document.body.classList.toggle('light-theme');
+      localStorage.setItem('dse_theme', isLight ? 'light' : 'dark');
+      const icon = document.getElementById('theme-icon');
+      const text = document.getElementById('theme-text');
+      if (icon) icon.innerText = isLight ? '☀️' : '🌙';
+      if (text) text.innerText = isLight ? 'Light' : 'Dark';
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+      window.AppDialogService.showToast(`Switched to ${isLight ? 'Light' : 'Dark'} theme`, 'info');
     },
 
     showAuthOverlay() {
@@ -180,10 +245,20 @@ window.App = (function() {
     showAuthTab(tab) {
       document.getElementById('tab-login-btn').classList.toggle('active', tab === 'login');
       document.getElementById('tab-register-btn').classList.toggle('active', tab === 'register');
+      document.getElementById('tab-forgot-btn').classList.toggle('active', tab === 'forgot');
+
       document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
       document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+      document.getElementById('form-forgot').style.display = tab === 'forgot' ? 'block' : 'none';
       document.getElementById('form-mfa').style.display = 'none';
       document.getElementById('auth-alert').style.display = 'none';
+
+      // Reset forgot password sub-steps
+      if (tab === 'forgot') {
+        document.getElementById('forgot-step-1').style.display = 'block';
+        document.getElementById('forgot-step-2').style.display = 'none';
+        document.getElementById('forgot-identity').focus();
+      }
     },
 
     cancelMfa() {
@@ -199,6 +274,137 @@ window.App = (function() {
     }
   };
 })();
+
+// Helper functions for Phase 1 Authentication & Dropdowns
+let currentForgotChallengeId = null;
+
+window.requestPasswordResetOtp = async function() {
+  const identity = document.getElementById('forgot-identity').value.trim();
+  const alertEl = document.getElementById('auth-alert');
+  const btn = document.getElementById('btn-forgot-request-otp');
+  if (!identity) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Please enter your username or registered email.';
+    alertEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.innerText = 'Sending OTP...';
+  alertEl.style.display = 'none';
+  try {
+    const res = await window.AuthService.requestPasswordReset(identity);
+    if (res.success) {
+      currentForgotChallengeId = res.challengeId;
+      document.getElementById('forgot-step-1').style.display = 'none';
+      document.getElementById('forgot-step-2').style.display = 'block';
+      document.getElementById('forgot-otp').focus();
+      window.AppDialogService.showToast('Verification OTP sent to your registered email.', 'info');
+    } else {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = res.message || 'Unable to request password reset.';
+      alertEl.style.display = 'block';
+    }
+  } catch (err) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = err.message || 'Error communicating with authentication server.';
+    alertEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Send Reset OTP Code';
+  }
+};
+
+window.handleForgotPasswordSubmit = async function(e) {
+  e.preventDefault();
+  const otp = document.getElementById('forgot-otp').value.trim();
+  const pwd = document.getElementById('forgot-new-pwd').value;
+  const confirmPwd = document.getElementById('forgot-confirm-pwd').value;
+  const alertEl = document.getElementById('auth-alert');
+  const btn = document.getElementById('btn-forgot-complete');
+
+  if (pwd !== confirmPwd) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Passwords do not match. Please re-enter.';
+    alertEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.innerText = 'Updating password...';
+  try {
+    const res = await window.AuthService.completePasswordReset(currentForgotChallengeId, otp, pwd);
+    if (res.success) {
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.AppDialogService.showToast('Password updated! You can now sign in.', 'success');
+      window.App.showAuthTab('login');
+      document.getElementById('login-password').value = pwd;
+    } else {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = res.message || 'Invalid or expired OTP code.';
+      alertEl.style.display = 'block';
+    }
+  } catch (err) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = err.message || 'Password reset failed.';
+    alertEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Update Password & Login';
+  }
+};
+
+window.handleChangePasswordSubmit = async function(e) {
+  e.preventDefault();
+  const cur = document.getElementById('chg-current-pwd').value;
+  const nw = document.getElementById('chg-new-pwd').value;
+  const cnf = document.getElementById('chg-confirm-pwd').value;
+  if (nw !== cnf) {
+    window.AppDialogService.showToast('New passwords do not match.', 'error');
+    return;
+  }
+  try {
+    const res = await window.AuthService.changePassword(cur, nw);
+    if (res.success) {
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.AppDialogService.showToast('Password updated successfully!', 'success');
+      window.AppDialogService.closeModal('modal-change-password');
+      document.getElementById('form-change-password').reset();
+    } else {
+      window.AppDialogService.showToast(res.message || 'Current password incorrect.', 'error');
+    }
+  } catch (err) {
+    window.AppDialogService.showToast(err.message || 'Error updating password.', 'error');
+  }
+};
+
+window.toggleUserProfileDropdown = function(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('profile-dropdown-menu');
+  if (menu) menu.classList.toggle('show');
+};
+
+window.hideProfileDropdown = function() {
+  const menu = document.getElementById('profile-dropdown-menu');
+  if (menu) menu.classList.remove('show');
+};
+
+window.openMyProfileModal = function() {
+  hideProfileDropdown();
+  const u = window.AuthService.getCurrentUser() || { username: 'admin', fullName: 'Shailesh Dhameliya', role: 'ADMIN' };
+  document.getElementById('profile-full-name').innerText = u.fullName || u.username;
+  document.getElementById('profile-role-badge').innerText = (u.role || 'USER').toUpperCase();
+  document.getElementById('profile-username').innerText = u.username || 'admin';
+  document.getElementById('profile-email').innerText = u.email || `${u.username}@jasviindustries.in`;
+  document.getElementById('profile-avatar-large').innerText = (u.fullName || u.username || 'U')[0].toUpperCase();
+  window.AppDialogService.openModal('modal-my-profile');
+};
+
+window.openChangePasswordModal = function() {
+  window.AppDialogService.openModal('modal-change-password');
+};
+
+window.openNotificationsModal = function() {
+  window.AppDialogService.openModal('modal-notifications-center');
+};
 
 // Global MVC Controller Facades (100% Backward Compatibility with Desktop UI Event Bindings)
 window.selectNav = (id) => window.NavigationRouter.selectNav(id);

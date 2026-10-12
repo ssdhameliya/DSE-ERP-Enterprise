@@ -1,16 +1,81 @@
 /**
  * Jasvi Industries ERP - NavigationRouter
- * View manager, route dispatcher, and accordion controller matching desktop SceneManager & ScreenLifecycle
+ * View manager, route dispatcher, and multi-document workspace tab controller matching desktop NavigationManager
  */
 window.NavigationRouter = (function() {
   let currentViewId = 'view-dashboard';
+  const openTabs = [
+    { id: 'view-dashboard', title: 'Dashboard', icon: '📊', closable: false }
+  ];
+
+  const viewMetadata = {
+    'view-dashboard': { title: 'Dashboard', breadcrumb: 'Executive Command Center', icon: '📊' },
+    'view-sales-register': { title: 'Sales Register', breadcrumb: 'Sales & Distribution', icon: '💼' },
+    'view-sales-returns': { title: 'Sales Returns', breadcrumb: 'Customer Goods Inward', icon: '↩️' },
+    'view-credit-notes': { title: 'Credit Notes', breadcrumb: 'Accounts & Adjustments', icon: '💳' },
+    'view-quotations': { title: 'Quotations', breadcrumb: 'Proforma & Quotation Pipeline', icon: '📝' },
+    'view-purchase-register': { title: 'Purchase Register', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
+    'view-purchase-returns': { title: 'Purchase Returns', breadcrumb: 'Supplier Returns & Memos', icon: '🔄' },
+    'view-debit-notes': { title: 'Debit Notes', breadcrumb: 'Supplier Debit Notes', icon: '🧾' },
+    'view-item-master': { title: 'Item Master', breadcrumb: 'Materials & SKU Catalog', icon: '🏷️' },
+    'view-masters': { title: 'Masters (Lookups)', breadcrumb: 'Categories & Unit Definitions', icon: '📚' },
+    'view-bank-entry': { title: 'Bank Entry', breadcrumb: 'Receipt & Payment Vouchers', icon: '🏦' },
+    'view-expense-entry': { title: 'Expense Entry', breadcrumb: 'Factory & Operating Expenses', icon: '💸' },
+    'view-bank-statement': { title: 'Bank Statement', breadcrumb: 'CSV/OFX Reconciliation', icon: '📑' },
+    'view-purchase-recon': { title: 'Purchase Recon', breadcrumb: 'GSTR-2B Inward Match Engine', icon: '🔍' },
+    'view-recon-supplier': { title: 'Recon Supplier', breadcrumb: 'Supplier Balance Reconciliation', icon: '🤝' },
+    'view-general-ledger': { title: 'General Ledger', breadcrumb: 'Double-Entry Financial Accounts', icon: '💰' },
+    'view-financial-statements': { title: 'Financial Statements', breadcrumb: 'Balance Sheet & Profit/Loss', icon: '📈' },
+    'view-aging-analysis': { title: 'Aging Analysis', breadcrumb: 'Debtor / Creditor Overdue Aging', icon: '⏳' },
+    'view-gst-compliance': { title: 'GST Compliance', breadcrumb: 'GSTR-1, 3B & E-Way Generation', icon: '⚖️' },
+    'view-eway-bill': { title: 'E-Way Bill & E-Invoice', breadcrumb: 'Government Portal Gateway', icon: '🚚' },
+    'view-automation': { title: 'Automation Center', breadcrumb: 'Rules, Webhooks & Triggers', icon: '⚡' },
+    'view-import': { title: 'Data Import', breadcrumb: 'Bulk Excel & CSV Ingestion', icon: '📥' },
+    'view-inventory': { title: 'Inventory Ledger', breadcrumb: 'Real-time Warehouse Stock & Valuation', icon: '🏭' },
+    'view-barcode': { title: 'Barcode Studio', breadcrumb: 'Thermal Label & Security Seal Studio', icon: '📏' },
+    'view-barcode-studio': { title: 'Barcode Studio', breadcrumb: 'Thermal Label & Security Seal Studio', icon: '📏' },
+    'view-customers': { title: 'CRM / Customers', breadcrumb: 'Client Profiles & Credit Limits', icon: '👥' },
+    'view-suppliers': { title: 'HRM / Suppliers', breadcrumb: 'Vendor Profiles & Payment Registers', icon: '🏢' },
+    'view-reports': { title: 'Reports & BI', breadcrumb: 'Executive Analytics & Drilldown', icon: '📊' },
+    'view-reminders': { title: 'Reminder Center', breadcrumb: 'Payment Follow-ups & Tasks', icon: '⏰' },
+    'view-user-access': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
+    'view-users': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
+    'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
+    'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' },
+    'view-pdf-studio': { title: 'PDF Studio', breadcrumb: 'Visual Document Template Designer', icon: '📄' },
+    'view-excel-studio': { title: 'Excel Studio', breadcrumb: 'Custom Spreadsheet Exporter', icon: '📊' },
+    'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
+    'view-backup': { title: 'Backup & Restore', breadcrumb: 'Database Snapshots & Disaster Recovery', icon: '💾' }
+  };
+
+  function updateHeader(meta) {
+    const titleEl = document.getElementById('header-page-title');
+    const breadcrumbEl = document.getElementById('header-breadcrumb');
+    if (titleEl && meta) titleEl.innerText = meta.title;
+    if (breadcrumbEl && meta) breadcrumbEl.innerText = meta.breadcrumb;
+  }
+
+  function renderTabs() {
+    const container = document.getElementById('workspace-tabs-container');
+    if (!container) return;
+    container.innerHTML = openTabs.map(tab => {
+      const isActive = tab.id === currentViewId;
+      return `
+        <div class="workspace-tab ${isActive ? 'active' : ''}" onclick="window.NavigationRouter.selectNav('${tab.id}', false)">
+          <span>${tab.icon || '📄'}</span>
+          <span>${tab.title}</span>
+          ${tab.closable ? `<span class="workspace-tab-close" onclick="window.NavigationRouter.closeTab('${tab.id}', event)" title="Close Tab">&times;</span>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
 
   return {
     getCurrentView() {
       return currentViewId;
     },
 
-    selectNav(viewId) {
+    selectNav(viewId, triggerAddTab = true) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
       // Strictly hide all views and remove active class
@@ -33,11 +98,31 @@ window.NavigationRouter = (function() {
       const navKey = viewId.replace('view-', '');
       const targetNav = document.getElementById(`nav-${navKey}`) ||
                         document.getElementById(`nav-${navKey.replace('-register', '')}`);
-      if (targetNav) targetNav.classList.add('active');
+      if (targetNav) {
+        targetNav.classList.add('active');
+        // If child of a group, expand parent group automatically
+        const parentGroup = targetNav.closest('.nav-group');
+        if (parentGroup) {
+          parentGroup.classList.add('open', 'expanded');
+        }
+      }
 
       currentViewId = viewId;
 
-      // Update URL hash without polluting history if already set
+      // Update Header Title & Breadcrumb matching Desktop
+      const meta = viewMetadata[viewId] || { title: navKey.toUpperCase(), breadcrumb: 'Workspace Module', icon: '📄' };
+      updateHeader(meta);
+
+      // Manage Workspace Tabs
+      if (triggerAddTab) {
+        const existing = openTabs.find(t => t.id === viewId);
+        if (!existing) {
+          openTabs.push({ id: viewId, title: meta.title, icon: meta.icon, closable: viewId !== 'view-dashboard' });
+        }
+      }
+      renderTabs();
+
+      // Update URL hash without polluting history
       if (window.location.hash !== `#${navKey}`) {
         if (window.history && window.history.pushState) {
           window.history.pushState({ viewId }, '', `#${navKey}`);
@@ -50,10 +135,34 @@ window.NavigationRouter = (function() {
       this.dispatchLifecycle(viewId);
     },
 
+    closeTab(viewId, e) {
+      if (e) e.stopPropagation();
+      const idx = openTabs.findIndex(t => t.id === viewId);
+      if (idx === -1) return;
+      openTabs.splice(idx, 1);
+      if (currentViewId === viewId) {
+        const next = openTabs[Math.max(0, idx - 1)] || openTabs[0];
+        this.selectNav(next.id, false);
+      } else {
+        renderTabs();
+      }
+    },
+
     toggleNavGroup(groupId) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const groupEl = document.getElementById(groupId);
-      if (groupEl) groupEl.classList.toggle('expanded');
+      if (groupEl) {
+        groupEl.classList.toggle('open');
+        groupEl.classList.toggle('expanded');
+      }
+    },
+
+    toggleSidebar() {
+      const sb = document.querySelector('aside.app-sidebar');
+      if (sb) {
+        sb.classList.toggle('collapsed');
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+      }
     },
 
     dispatchLifecycle(viewId) {
@@ -122,7 +231,6 @@ window.NavigationRouter = (function() {
     },
 
     init() {
-      // Determine initial view from hash or fallback to dashboard
       let initialView = 'view-dashboard';
       if (window.location.hash) {
         const clean = window.location.hash.replace('#', '');
@@ -136,11 +244,11 @@ window.NavigationRouter = (function() {
       // Handle browser back/forward buttons
       window.addEventListener('popstate', (e) => {
         if (e.state && e.state.viewId) {
-          this.selectNav(e.state.viewId);
+          this.selectNav(e.state.viewId, false);
         } else if (window.location.hash) {
           const viewId = 'view-' + window.location.hash.replace('#', '');
           const target = document.getElementById(viewId);
-          if (target) this.selectNav(viewId);
+          if (target) this.selectNav(viewId, false);
         }
       });
 
@@ -149,7 +257,7 @@ window.NavigationRouter = (function() {
         const hashClean = window.location.hash.replace('#', '');
         const targetView = 'view-' + hashClean;
         if (document.getElementById(targetView) && targetView !== currentViewId) {
-          this.selectNav(targetView);
+          this.selectNav(targetView, false);
         }
       });
     }
