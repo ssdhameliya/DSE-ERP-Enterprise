@@ -99,10 +99,20 @@ jobs:
 
       - name: Verify Live UAT Endpoints
         run: |
-          sleep 4
           curl -fsSL https://web-uat.jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://erp-uat.jasviindustries.in | grep -q "Jasvi Industries ERP"
-          curl -fsSL https://erp-uat.jasviindustries.in/api/runtime/health | grep -q '"ready":true'
+          READY=0
+          for i in {1..20}; do
+            if curl -fsSL https://erp-uat.jasviindustries.in/api/runtime/health 2>/dev/null | grep -q '"ready":true'; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "UAT backend runtime did not report ready within 40s"
+            exit 1
+          fi
           echo "UAT Showcase, Admin Studio, and Backend Runtime verified and LIVE!"
 
   deploy-prod:
@@ -183,9 +193,19 @@ jobs:
 
       - name: Verify Live PROD Endpoints
         run: |
-          sleep 4
           curl -fsSL https://jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://www.jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://erp.jasviindustries.in | grep -q "Jasvi Industries ERP"
-          curl -fsSL https://erp.jasviindustries.in/api/runtime/health | grep -q '"ready":true'
+          READY=0
+          for i in {1..20}; do
+            if curl -fsSL https://erp.jasviindustries.in/api/runtime/health 2>/dev/null | grep -q '"ready":true'; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "PROD backend runtime did not report ready within 40s"
+            exit 1
+          fi
           echo "PROD Showcase, Admin Studio, and Backend Runtime verified and LIVE!"
