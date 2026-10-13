@@ -482,10 +482,13 @@ window.handleLoginSubmit = async function(e) {
   }
 };
 
+let currentMfaRecoveryChallengeId = null;
+
 window.handleMfaSubmit = async function(e) {
   if (e) e.preventDefault();
   const otp = ((document.getElementById('mfa-otp') || {}).value || '').trim();
   const alertEl = document.getElementById('auth-alert');
+  const btn = document.getElementById('btn-mfa-submit');
 
   if (!otp || !otp.match(/^\d{6}$/)) {
     if (alertEl) {
@@ -494,6 +497,11 @@ window.handleMfaSubmit = async function(e) {
       alertEl.style.display = 'block';
     }
     return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Verifying MFA Code...';
   }
 
   try {
@@ -511,12 +519,135 @@ window.handleMfaSubmit = async function(e) {
         alertEl.innerText = res.message || 'Invalid authenticator code. Please check your authenticator app.';
         alertEl.style.display = 'block';
       }
+      if (res.message && res.message.toLowerCase().includes('decrypt')) {
+        const recoveryPrompt = document.getElementById('btn-mfa-recovery-prompt');
+        if (recoveryPrompt) recoveryPrompt.style.display = 'inline-block';
+      }
     }
   } catch (err) {
     if (alertEl) {
       alertEl.className = 'auth-alert error';
-      alertEl.innerText = err.message || 'MFA verification failed.';
+      if (err.message && err.message.toLowerCase().includes('decrypt')) {
+        alertEl.innerText = 'Authenticator secret is unreadable on the server. Please reset your authenticator using the Email Recovery option below.';
+        const recoveryGroup = document.getElementById('mfa-recovery-options');
+        if (recoveryGroup) recoveryGroup.style.display = 'block';
+      } else {
+        alertEl.innerText = err.message || 'MFA verification failed.';
+      }
       alertEl.style.display = 'block';
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Verify MFA Code';
+    }
+  }
+};
+
+window.requestMfaRecovery = async function() {
+  const alertEl = document.getElementById('auth-alert');
+  const promptBtn = document.getElementById('btn-mfa-recovery-prompt');
+  const recoveryGroup = document.getElementById('mfa-recovery-group');
+  const destText = document.getElementById('mfa-recovery-dest-text');
+
+  if (promptBtn) {
+    promptBtn.disabled = true;
+    promptBtn.innerText = 'Sending email recovery code...';
+  }
+  if (alertEl) alertEl.style.display = 'none';
+
+  try {
+    const res = await window.AuthService.requestLoginMfaRecovery();
+    if (res.success || res.challengeId) {
+      currentMfaRecoveryChallengeId = res.challengeId;
+      if (recoveryGroup) recoveryGroup.style.display = 'block';
+      if (destText && res.maskedDestination) {
+        destText.innerText = `A 6-digit recovery code was sent to ${res.maskedDestination}. Enter the code below to reset your authenticator.`;
+      }
+      const otpIn = document.getElementById('mfa-recovery-otp');
+      if (otpIn) {
+        otpIn.value = '';
+        otpIn.focus();
+      }
+      window.AppDialogService.showToast('Recovery verification code sent to your registered email.', 'info');
+    } else {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Unable to start authenticator recovery.';
+        alertEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Recovery request failed: ' + (err.message || 'Unknown error');
+      alertEl.style.display = 'block';
+    }
+  } finally {
+    if (promptBtn) {
+      promptBtn.disabled = false;
+      promptBtn.innerText = '✉ Having Trouble? Reset Authenticator via Email';
+    }
+  }
+};
+
+window.completeMfaRecovery = async function() {
+  const otp = ((document.getElementById('mfa-recovery-otp') || {}).value || '').trim();
+  const alertEl = document.getElementById('auth-alert');
+  const verifyBtn = document.getElementById('btn-mfa-recovery-verify');
+
+  if (!otp || !otp.match(/^\d{6}$/)) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Enter the 6-digit email recovery code received.';
+      alertEl.style.display = 'block';
+    }
+    const otpIn = document.getElementById('mfa-recovery-otp');
+    if (otpIn) otpIn.focus();
+    return;
+  }
+
+  if (verifyBtn) {
+    verifyBtn.disabled = true;
+    verifyBtn.innerText = 'Verifying email & resetting authenticator...';
+  }
+  if (alertEl) alertEl.style.display = 'none';
+
+  try {
+    const res = await window.AuthService.completeLoginMfaRecovery(currentMfaRecoveryChallengeId, otp);
+    if (res.success || res.manualSecret) {
+      window.currentMfaEnrollmentMode = 'login';
+      const secretEl = document.getElementById('auth-setup-secret');
+      const qrImgEl = document.getElementById('auth-setup-qr-img');
+      const errEl = document.getElementById('auth-setup-error');
+      if (secretEl) secretEl.value = res.manualSecret || '';
+      if (qrImgEl && res.provisioningUri) {
+        qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
+      }
+      if (errEl) errEl.style.display = 'none';
+      window.AppDialogService.openModal('modal-authenticator-setup');
+      window.AppDialogService.showToast('Email verified! Scan the new QR code in your authenticator app.', 'success');
+      setTimeout(() => {
+        const totpIn = document.getElementById('auth-setup-totp');
+        if (totpIn) { totpIn.value = ''; totpIn.focus(); }
+      }, 100);
+    } else {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Recovery email verification failed.';
+        alertEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Recovery verification error: ' + (err.message || 'Unknown error');
+      alertEl.style.display = 'block';
+    }
+  } finally {
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.innerText = '✓ Verify Email & Reconfigure Authenticator';
     }
   }
 };
@@ -719,6 +850,27 @@ window.completeRegistrationAuthenticator = async function() {
   if (errEl) errEl.style.display = 'none';
 
   try {
+    if (window.currentMfaEnrollmentMode === 'login') {
+      const res = await window.AuthService.completeMfa(totp);
+      if (res.success && res.user) {
+        window.AppDialogService.closeModal('modal-authenticator-setup');
+        window.currentMfaEnrollmentMode = null;
+        applyUserToHeader(res.user);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.App.hideAuthOverlay();
+        window.AppDialogService.closeAllModals();
+        window.AppDialogService.showToast(`MFA Verified! Welcome, ${res.user.fullName || res.user.username}!`, 'success');
+        if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+        return;
+      } else {
+        if (errEl) {
+          errEl.innerText = res.message || 'Authenticator verification failed.';
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+    }
+
     const res = await window.AuthService.completeRegistrationMfa({
       registrationId: currentRegistrationId,
       otp: totp
@@ -748,7 +900,7 @@ window.completeRegistrationAuthenticator = async function() {
     }
   } finally {
     btn.disabled = false;
-    btn.innerText = 'Verify & Submit for Approval';
+    btn.innerText = window.currentMfaEnrollmentMode === 'login' ? 'Verify MFA Code' : 'Verify & Submit for Approval';
   }
 };
 

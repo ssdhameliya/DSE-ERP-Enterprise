@@ -96,6 +96,14 @@ window.AuthService = (function() {
       return { success: false, message: res.message || 'Invalid credentials' };
     },
 
+    getPendingMfaChallenge() {
+      return pendingMfaChallenge;
+    },
+
+    getPendingUser() {
+      return pendingUser;
+    },
+
     async completeMfa(otp) {
       if (!pendingMfaChallenge) throw new Error('No pending MFA challenge found.');
       const res = await window.ApiService.post('/api/auth/login/mfa/complete', { challengeId: pendingMfaChallenge, otp });
@@ -112,6 +120,29 @@ window.AuthService = (function() {
     cancelMfa() {
       pendingMfaChallenge = null;
       pendingUser = null;
+    },
+
+    async requestLoginMfaRecovery() {
+      if (!pendingMfaChallenge) throw new Error('No active login MFA challenge found.');
+      return await window.ApiService.post('/api/auth/login/mfa/recovery/request', {
+        challengeId: pendingMfaChallenge
+      });
+    },
+
+    async completeLoginMfaRecovery(recoveryChallengeId, otp) {
+      if (!pendingMfaChallenge) throw new Error('No active login MFA challenge found.');
+      return await window.ApiService.post('/api/auth/login/mfa/recovery/complete', {
+        loginChallengeId: pendingMfaChallenge,
+        recoveryChallengeId,
+        otp
+      });
+    },
+
+    async getLoginMfaEnrollment() {
+      if (!pendingMfaChallenge) throw new Error('No active login MFA challenge found.');
+      return await window.ApiService.post('/api/auth/login/mfa/enrollment', {
+        challengeId: pendingMfaChallenge
+      });
     },
 
     async requestRegistrationOtp(payload) {

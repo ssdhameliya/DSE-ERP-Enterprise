@@ -132,12 +132,20 @@ window.ApiService = (function() {
         const res = await fetch(endpoint, { credentials: 'same-origin', ...options, headers });
         if (res.status === 401) {
           console.warn(`[ApiService] 401 Unauthorized on ${endpoint}`);
-          localStorage.removeItem('dse_access_token');
-          if (window.showAuthOverlay) window.showAuthOverlay();
-          if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
-            return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
+          const errData = await res.json().catch(() => ({}));
+          const errorMsg = errData.message || errData.error || 'Authentication required';
+          if (!endpoint.includes('/api/auth/')) {
+            localStorage.removeItem('dse_access_token');
+            if (window.showAuthOverlay) window.showAuthOverlay();
+            if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
+              return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
+            }
+            return [];
           }
-          return [];
+          const error = new Error(errorMsg);
+          error.status = 401;
+          error.data = errData;
+          throw error;
         }
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
