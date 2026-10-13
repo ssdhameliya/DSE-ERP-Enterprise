@@ -645,7 +645,7 @@ window.handleRegisterSubmit = async function(e) {
   const name = ((document.getElementById('reg-name') || {}).value || '').trim();
   const username = ((document.getElementById('reg-username') || {}).value || '').trim();
   const email = ((document.getElementById('reg-email') || {}).value || '').trim();
-  const role = (document.getElementById('reg-role') || {}).value;
+  const role = ((document.getElementById('reg-role') || {}).value || 'Sales').trim();
   const password = (document.getElementById('reg-password') || {}).value;
   const confirm = (document.getElementById('reg-confirm') || {}).value;
   const captchaAnswer = ((document.getElementById('reg-captcha-answer') || {}).value || '').trim();
@@ -670,6 +670,14 @@ window.handleRegisterSubmit = async function(e) {
     alertEl.className = 'auth-alert error';
     alertEl.innerText = 'Security CAPTCHA calculation answer is required.';
     alertEl.style.display = 'block';
+    return;
+  }
+
+  if (!currentRegistrationCaptchaId) {
+    alertEl.className = 'auth-alert error';
+    alertEl.innerText = 'Security CAPTCHA challenge is loading. Please wait or refresh the challenge.';
+    alertEl.style.display = 'block';
+    window.refreshRegistrationCaptcha();
     return;
   }
 
