@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.15">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.16">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -43,6 +43,53 @@
         if (window.FinanceController && window.FinanceController.handleExpenseSave) {
           window.FinanceController.handleExpenseSave(e);
         }
+      };
+      window.showAuthTab = function(tab) {
+        if (window.App && window.App.showAuthTab) {
+          window.App.showAuthTab(tab);
+          return;
+        }
+        const formLogin = document.getElementById('form-login');
+        const formRegister = document.getElementById('form-register');
+        const formForgot = document.getElementById('form-forgot');
+        const formMfa = document.getElementById('form-mfa');
+        const alertEl = document.getElementById('auth-alert');
+        const cardTitle = document.getElementById('auth-card-title');
+        const cardSub = document.getElementById('auth-card-subtitle');
+
+        if (formLogin) formLogin.style.display = tab === 'login' ? 'block' : 'none';
+        if (formRegister) formRegister.style.display = tab === 'register' ? 'block' : 'none';
+        if (formForgot) formForgot.style.display = tab === 'forgot' ? 'block' : 'none';
+        if (formMfa) formMfa.style.display = tab === 'mfa' ? 'block' : 'none';
+        if (alertEl) alertEl.style.display = 'none';
+
+        if (tab === 'login') {
+          if (cardTitle) cardTitle.innerText = 'Sign in to your account';
+          if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+        } else if (tab === 'register') {
+          if (cardTitle) cardTitle.innerText = 'Create New Account';
+          if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
+          if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
+          if (window.loadRegistrationRoles) window.loadRegistrationRoles();
+        } else if (tab === 'forgot') {
+          if (cardTitle) cardTitle.innerText = 'Reset your password';
+          if (cardSub) cardSub.innerText = 'Admin keeps the existing email-OTP recovery flow. Non-Admin users must also enter their current authenticator code.';
+        }
+      };
+      window.hideAuthOverlay = function() {
+        const auth = document.getElementById('auth-overlay');
+        if (auth) auth.style.display = 'none';
+      };
+      window.showAuthOverlay = function() {
+        const auth = document.getElementById('auth-overlay');
+        if (auth) {
+          auth.style.display = 'flex';
+          window.showAuthTab('login');
+        }
+      };
+      window.cancelMfa = function() {
+        if (window.AuthService && window.AuthService.cancelMfa) window.AuthService.cancelMfa();
+        window.showAuthTab('login');
       };
     </script>
 </head>
@@ -8290,47 +8337,47 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.15"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.15"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.15"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.15"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.15"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.16"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.16"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.16"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.16"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.16"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.15"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.15"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.15"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.15"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.15"></script>
-  <script src="js/services/ReconService.js?v=10.0.25.15"></script>
-  <script src="js/services/AccountingService.js?v=10.0.25.15"></script>
-  <script src="js/services/ImportService.js?v=10.0.25.15"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.16"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.16"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.16"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.16"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.16"></script>
+  <script src="js/services/ReconService.js?v=10.0.25.16"></script>
+  <script src="js/services/AccountingService.js?v=10.0.25.16"></script>
+  <script src="js/services/ImportService.js?v=10.0.25.16"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.15"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.15"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.16"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.16"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.15"></script>
-  <script src="js/app.js?v=10.0.25.15"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.16"></script>
+  <script src="js/app.js?v=10.0.25.16"></script>
 </body>
 </html>

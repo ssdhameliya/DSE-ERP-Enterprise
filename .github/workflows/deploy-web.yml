@@ -54,8 +54,8 @@ jobs:
             sudo cp /tmp/web_uat_public.html /srv/dse-erp/web/public/index.html &&
             sudo mkdir -p /srv/dse-erp/web/admin &&
             sudo tar -xzf /tmp/web_uat_admin.tar.gz -C /srv/dse-erp/web/admin/ &&
-            sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/ &&
-            sudo chmod -R 755 /srv/dse-erp/web/ &&
+            sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
+            sudo chmod -R 755 /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
             sudo chmod 644 /srv/dse-erp/web/public/index.html /srv/dse-erp/web/admin/index.html
           '
 
@@ -71,6 +71,7 @@ jobs:
     needs: deploy-uat
     runs-on: ubuntu-latest
     if: |
+      github.ref == 'refs/heads/main' ||
       startsWith(github.ref, 'refs/tags/') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'uat-then-prod')
     timeout-minutes: 10
@@ -98,8 +99,8 @@ jobs:
             sudo cp /tmp/web_prod_public.html /srv/dse-erp/web/public/index.html &&
             sudo mkdir -p /srv/dse-erp/web/admin &&
             sudo tar -xzf /tmp/web_prod_admin.tar.gz -C /srv/dse-erp/web/admin/ &&
-            sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/ &&
-            sudo chmod -R 755 /srv/dse-erp/web/ &&
+            sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
+            sudo chmod -R 755 /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
             sudo chmod 644 /srv/dse-erp/web/public/index.html /srv/dse-erp/web/admin/index.html
           '
 
