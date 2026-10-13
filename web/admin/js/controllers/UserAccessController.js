@@ -12,8 +12,45 @@ window.UserAccessController = (function() {
   let currentAuditPage = 0;
   let activeTab = 'tab-users';
   let editingUserId = null;
+  let selectedTargetUserId = null;
 
   return {
+    editSelectedUser() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      if (selectedTargetUserId) this.openEditUserModal(selectedTargetUserId);
+    },
+
+    resetSelectedUserPassword() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      const u = cachedUsers.find(x => x.id === selectedTargetUserId);
+      if (u) this.openPasswordModal(u.id, u.username);
+    },
+
+    toggleSelectedUserLock() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      const u = cachedUsers.find(x => x.id === selectedTargetUserId);
+      if (u) {
+        const isLocked = u.locked || !u.active;
+        this.toggleLockUser(u.id, !isLocked);
+      }
+    },
+
+    toggleSelectedUserMfa() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      if (selectedTargetUserId) this.toggleMfaUser(selectedTargetUserId);
+    },
+
+    deleteSelectedUser() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      const u = cachedUsers.find(x => x.id === selectedTargetUserId);
+      if (u) this.deleteUser(u.id, u.username);
+    },
+
     getActiveTab() {
       return activeTab;
     },
@@ -71,39 +108,123 @@ window.UserAccessController = (function() {
           return;
         }
 
-        tbody.innerHTML = cachedUsers.map(u => {
-          const isLocked = u.locked || !u.active;
-          const statusBadge = isLocked
-            ? `<span class="badge badge-overdue">LOCKED</span>`
-            : `<span class="badge badge-paid">ACTIVE</span>`;
-          const mfaBadge = u.mfaEnabled
-            ? `<span class="badge badge-paid">&#128274; ENABLED</span>`
-            : `<span class="badge badge-pending">OPTIONAL</span>`;
-          const roleBadge = `<span class="badge badge-role" style="background: rgba(14,165,233,0.15); color: var(--cyan); border: 1px solid rgba(14,165,233,0.3); font-weight:700;">${u.role || 'USER'}</span>`;
-
-          return `
-            <tr>
-              <td style="color: var(--text-dim); font-size: 0.75rem;">#${u.id || '-'}</td>
-              <td style="font-weight: 700; color: #fff;">${u.fullName || u.username}</td>
-              <td style="color: var(--cyan); font-family: monospace;">${u.username || '-'}</td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">${u.email || '-'}</td>
-              <td>${roleBadge}</td>
-              <td style="font-size: 0.8rem;">${u.department || 'GENERAL'}</td>
-              <td style="font-size: 0.8rem;">${u.branch || 'HEADQUARTERS'}</td>
-              <td>${statusBadge}</td>
-              <td>${mfaBadge}</td>
-              <td style="font-size: 0.75rem; color: var(--text-dim);">${u.lastLogin ? window.FormatUtil.formatDateTime(u.lastLogin) : 'Never'}</td>
-              <td style="text-align: right; white-space: nowrap;">
-                <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.UserAccessController.openEditUserModal(${u.id})" title="Edit User">Edit</button>
-                <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.UserAccessController.openPasswordModal(${u.id}, '${u.username}')" title="Reset Password">Password</button>
-                <button class="btn ${isLocked ? 'btn-primary' : 'btn-secondary'}" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.UserAccessController.toggleLockUser(${u.id}, ${!isLocked})" title="${isLocked ? 'Unlock Account' : 'Lock Account'}">${isLocked ? 'Unlock' : 'Lock'}</button>
-                <button class="btn btn-secondary" style="padding: 3px 6px; font-size: 0.72rem; color: #f87171;" onclick="window.UserAccessController.deleteUser(${u.id}, '${u.username}')" title="Delete User">&times;</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        this.renderUsersTable(cachedUsers);
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #f87171; padding: 24px;">Failed to load users: ${err.message}</td></tr>`;
+      }
+    },
+
+    filterUsers(q) {
+      const query = (q || '').trim().toLowerCase();
+      const filtered = cachedUsers.filter(u => {
+        if (!query) return true;
+        const name = (u.fullName || '').toLowerCase();
+        const uname = (u.username || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        const role = (u.role || '').toLowerCase();
+        const dept = (u.department || '').toLowerCase();
+        return name.includes(query) || uname.includes(query) || email.includes(query) || role.includes(query) || dept.includes(query);
+      });
+      this.renderUsersTable(filtered);
+    },
+
+    renderUsersTable(usersList) {
+      const tbody = document.getElementById('users-table-tbody');
+      const counterEl = document.getElementById('users-entries-counter');
+      if (counterEl) counterEl.innerText = `Showing 1 to ${usersList.length} of ${cachedUsers.length} users`;
+      if (!tbody) return;
+
+      if (!usersList || usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--text-dim);">No user accounts match current criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = usersList.map(u => {
+        const isLocked = u.locked || !u.active;
+        const statusBadge = isLocked
+          ? `<span class="badge badge-overdue">LOCKED</span>`
+          : `<span class="badge badge-paid">ACTIVE</span>`;
+        const mfaBadge = u.mfaEnabled
+          ? `<span class="badge badge-paid">&#128274; ENABLED</span>`
+          : `<span class="badge badge-pending">OPTIONAL</span>`;
+        const roleBadge = `<span class="badge badge-role" style="background: rgba(14,165,233,0.15); color: var(--cyan); border: 1px solid rgba(14,165,233,0.3); font-weight:700;">${u.role || 'USER'}</span>`;
+
+        return `
+          <tr style="cursor: pointer;" onclick="window.UserAccessController.openEditUserModal(${u.id})">
+            <td style="color: var(--text-dim); font-size: 0.75rem;">#${u.id || '-'}</td>
+            <td style="font-weight: 700; color: #fff;">${u.fullName || u.username}</td>
+            <td style="color: var(--cyan); font-family: monospace;">${u.username || '-'}</td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">${u.email || '-'}</td>
+            <td>${roleBadge}</td>
+            <td style="font-size: 0.8rem;">${u.department || 'GENERAL'}</td>
+            <td style="font-size: 0.8rem;">${u.branch || 'HEADQUARTERS'}</td>
+            <td>${statusBadge}</td>
+            <td>${mfaBadge}</td>
+            <td style="font-size: 0.75rem; color: var(--text-dim);">${u.lastLogin ? window.FormatUtil.formatDateTime(u.lastLogin) : 'Never'}</td>
+            <td style="text-align: center;" onclick="event.stopPropagation()">
+              <button class="btn-purple" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" 
+                      onclick="window.UserAccessController.toggleRowActionsMenu(this, ${u.id}, event)" 
+                      title="User Actions">
+                ::: Actions
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    toggleRowActionsMenu(btnEl, userId, event) {
+      if (event) event.stopPropagation();
+      selectedTargetUserId = userId;
+
+      const menu = document.getElementById('user-row-actions-menu');
+      if (!menu) return;
+
+      if (menu.classList.contains('show') && menu.dataset.targetId === String(userId)) {
+        menu.classList.remove('show');
+        return;
+      }
+
+      const rect = btnEl.getBoundingClientRect();
+      const menuWidth = 220;
+      let left = rect.right - menuWidth;
+      let top = rect.bottom + 4;
+
+      if (left < 10) left = 10;
+      if (top + 200 > window.innerHeight) {
+        top = rect.top - 200;
+      }
+
+      menu.style.position = 'fixed';
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+      menu.dataset.targetId = String(userId);
+      menu.classList.add('show');
+
+      const closeHandler = (e) => {
+        if (!menu.contains(e.target) && e.target !== btnEl) {
+          menu.classList.remove('show');
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    },
+
+    async toggleMfaUser(id) {
+      const u = cachedUsers.find(x => x.id === id);
+      if (!u) return;
+      const newState = !u.mfaEnabled;
+      try {
+        await window.ReportService.updateUser(id, {
+          ...u,
+          mfaEnabled: newState,
+          rowVersion: Date.now()
+        });
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast(`MFA ${newState ? 'enabled' : 'disabled'} for ${u.username}`, 'success');
+        this.loadUsers();
+      } catch (err) {
+        window.AppDialogService.showToast(err.message, 'error');
       }
     },
 

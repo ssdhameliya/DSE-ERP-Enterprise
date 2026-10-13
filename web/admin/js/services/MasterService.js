@@ -35,12 +35,24 @@ window.MasterService = {
     return await window.ApiService.post('/api/master/items/bulk-delete/validate', { itemCodes });
   },
 
-  // Categories & Lookups
+  // Categories & Lookups (MasterDataController.java Parity)
   async getCategories() {
     return await window.ApiService.get('/api/master/categories');
   },
+  async addCategory(name) {
+    return await window.ApiService.post(`/api/master/categories?name=${encodeURIComponent(name)}`);
+  },
   async createCategory(catData) {
     return await window.ApiService.post('/api/master/categories', catData);
+  },
+  async renameCategory(oldName, newName, rowVersion = -1) {
+    return await window.ApiService.put(`/api/master/categories/rename?rowVersion=${rowVersion}`, { oldName, newName });
+  },
+  async deleteCategory(name, rowVersion = -1) {
+    return await window.ApiService.delete(`/api/master/categories?name=${encodeURIComponent(name)}&rowVersion=${rowVersion}`);
+  },
+  async setCategoryActive(name, active, rowVersion = -1) {
+    return await window.ApiService.put(`/api/master/categories/active?name=${encodeURIComponent(name)}&active=${active}&rowVersion=${rowVersion}`);
   },
   async getLookups(type) {
     return await window.ApiService.get(`/api/master/lookups?type=${encodeURIComponent(type)}`);
@@ -53,6 +65,21 @@ window.MasterService = {
   },
   async getLookupValuesByCategoryCode(categoryCode) {
     return await window.ApiService.get(`/api/master/lookups/values-by-category-code?code=${encodeURIComponent(categoryCode)}`);
+  },
+  async saveLookup(lookupDto) {
+    return await window.ApiService.post('/api/master/lookups', lookupDto);
+  },
+  async updateLookup(lookupDto) {
+    return await window.ApiService.put('/api/master/lookups', lookupDto);
+  },
+  async deleteLookup(id, rowVersion = -1) {
+    return await window.ApiService.delete(`/api/master/lookups/${id}?rowVersion=${rowVersion}`);
+  },
+  async setLookupActive(id, active, rowVersion = -1) {
+    return await window.ApiService.put(`/api/master/lookups/${id}/active?active=${active}&rowVersion=${rowVersion}`);
+  },
+  async getNextLookupCode(type) {
+    return await window.ApiService.get(`/api/master/lookups/next-code?type=${encodeURIComponent(type)}`);
   },
 
   // Parties (Customer & Supplier)

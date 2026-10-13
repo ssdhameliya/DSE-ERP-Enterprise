@@ -11,14 +11,17 @@ window.App = (function() {
         el.innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
       }
       const footerClock = document.getElementById('footer-live-clock');
-      if (footerClock) {
+      const authFooterClock = document.getElementById('auth-footer-clock');
+      if (footerClock || authFooterClock) {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const day = days[now.getDay()];
         const d = String(now.getDate()).padStart(2, '0');
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const y = now.getFullYear();
         const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
-        footerClock.innerText = `📅 ${day}, ${d}/${m}/${y} | ${timeStr} | IST`;
+        const clockText = `${day}, ${d}/${m}/${y} | ${timeStr} | IST`;
+        if (footerClock) footerClock.innerText = `📅 ${clockText}`;
+        if (authFooterClock) authFooterClock.innerText = `📅 ${clockText}`;
       }
     }
     tick();
@@ -55,6 +58,14 @@ window.App = (function() {
 
   function setupAuthForms() {
     populateLoginRoles();
+
+    const loginRole = document.getElementById('login-role');
+    const mfaGroup = document.getElementById('login-mfa-group');
+    if (loginRole && mfaGroup) {
+      loginRole.addEventListener('change', () => {
+        mfaGroup.style.display = (loginRole.value !== 'ADMIN') ? 'block' : 'none';
+      });
+    }
 
     // Login form submit
     const loginForm = document.getElementById('form-login');
@@ -731,6 +742,23 @@ window.hideAuthOverlay = () => window.App.hideAuthOverlay();
 window.showAuthTab = (tab) => window.App.showAuthTab(tab);
 window.cancelMfa = () => window.App.cancelMfa();
 window.performLogout = () => window.App.performLogout();
+window.togglePasswordVisibility = function(fieldId, btnEl) {
+  const f = document.getElementById(fieldId);
+  if (!f) return;
+  if (f.type === 'password') {
+    f.type = 'text';
+    if (btnEl) btnEl.innerText = '🙈';
+  } else {
+    f.type = 'password';
+    if (btnEl) btnEl.innerText = '👁';
+  }
+};
+window.showMfaHelp = function() {
+  window.AppDialogService.showToast(
+    'MFA Help: Open Google Authenticator or Microsoft Authenticator and enter your 6-digit TOTP code. For lost authenticators, contact Admin (accounts@jasviindustries.in).',
+    'info'
+  );
+};
 window.openNewInvoiceModal = () => window.SalesController.openNewInvoiceModal();
 window.openNewPurchaseModal = () => window.PurchaseController.openNewPurchaseModal();
 window.openNewItemModal = () => window.ItemMasterController.openNewItemModal();

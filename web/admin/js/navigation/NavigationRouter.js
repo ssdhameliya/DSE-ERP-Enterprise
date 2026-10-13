@@ -7,6 +7,8 @@ window.NavigationRouter = (function() {
   const openTabs = [
     { id: 'view-dashboard', title: 'Dashboard', icon: '📊', closable: false }
   ];
+  let hoverHideTimeout = null;
+  let isHoverPeekActive = false;
 
   const viewMetadata = {
     'view-dashboard': { title: 'Dashboard', breadcrumb: 'Executive Command Center', icon: '📊' },
@@ -199,9 +201,88 @@ window.NavigationRouter = (function() {
     toggleSidebar() {
       const sb = document.querySelector('aside.app-sidebar');
       if (sb) {
+        sb.classList.remove('hover-peek');
+        if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
+        isHoverPeekActive = false;
         sb.classList.toggle('collapsed');
         if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+        try { localStorage.setItem('dse_sidebar_collapsed', sb.classList.contains('collapsed')); } catch(e) {}
       }
+    },
+
+    installSidebarHoverPeek() {
+      const sb = document.querySelector('aside.app-sidebar');
+      if (!sb) return;
+
+      const showPeek = () => {
+        if (!sb.classList.contains('collapsed')) return;
+        if (hoverHideTimeout) {
+          clearTimeout(hoverHideTimeout);
+          hoverHideTimeout = null;
+        }
+        if (!sb.classList.contains('hover-peek')) {
+          sb.classList.add('hover-peek');
+          isHoverPeekActive = true;
+        }
+      };
+
+      const scheduleHide = () => {
+        if (!isHoverPeekActive) return;
+        if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
+        hoverHideTimeout = setTimeout(() => {
+          sb.classList.remove('hover-peek');
+          isHoverPeekActive = false;
+          hoverHideTimeout = null;
+        }, 280);
+      };
+
+      // Hover on sidebar
+      sb.addEventListener('mouseenter', () => {
+        if (sb.classList.contains('collapsed')) showPeek();
+        else if (isHoverPeekActive && hoverHideTimeout) {
+          clearTimeout(hoverHideTimeout);
+          hoverHideTimeout = null;
+        }
+      });
+      sb.addEventListener('mouseleave', () => {
+        scheduleHide();
+      });
+
+      // Hover on toggle buttons
+      document.querySelectorAll('.header-badge-btn, #btn-sidebar-toggle').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          if (sb.classList.contains('collapsed')) showPeek();
+        });
+        btn.addEventListener('mouseleave', () => {
+          scheduleHide();
+        });
+      });
+
+      // Left edge hover peek trigger (moving mouse near left screen edge <= 12px)
+      window.addEventListener('mousemove', (e) => {
+        if (sb.classList.contains('collapsed') && !isHoverPeekActive) {
+          if (e.clientX <= 12 && e.clientY >= 50 && e.clientY <= window.innerHeight - 30) {
+            showPeek();
+          }
+        }
+      });
+
+      // Close peek on Escape or click outside
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isHoverPeekActive) {
+          sb.classList.remove('hover-peek');
+          isHoverPeekActive = false;
+          if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (isHoverPeekActive && !sb.contains(e.target) && !e.target.closest('.header-badge-btn')) {
+          sb.classList.remove('hover-peek');
+          isHoverPeekActive = false;
+          if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
+        }
+      });
     },
 
     dispatchLifecycle(viewId) {
@@ -234,7 +315,14 @@ window.NavigationRouter = (function() {
           if (window.ItemMasterController) window.ItemMasterController.loadInventory();
           break;
         case 'view-masters':
-          if (window.ItemMasterController) window.ItemMasterController.loadCategories();
+          if (window.MasterDataController) window.MasterDataController.loadMastersData();
+          break;
+        case 'view-users':
+        case 'view-user-access':
+          if (window.UserAccessController) window.UserAccessController.loadUsers();
+          break;
+        case 'view-settings':
+          if (window.SettingsController) window.SettingsController.init();
           break;
         case 'view-customers':
           if (window.PartyController) window.PartyController.loadCustomers();
@@ -317,17 +405,32 @@ window.NavigationRouter = (function() {
         case 'view-barcode-studio':
           if (window.BarcodeStudioController) window.BarcodeStudioController.init();
           break;
+        case 'view-settings':
+          if (window.SettingsController) window.SettingsController.init('COMPANY');
+          break;
         case 'view-settings-company':
-          if (window.SettingsController) window.SettingsController.loadCompanySettings();
+          if (window.SettingsController) {
+            window.SettingsController.init('COMPANY');
+            window.SettingsController.loadCompanySettings();
+          }
           break;
         case 'view-settings-email':
-          if (window.SettingsController) window.SettingsController.loadEmailSettings();
+          if (window.SettingsController) {
+            window.SettingsController.init('EMAIL');
+            window.SettingsController.loadEmailSettings();
+          }
           break;
         case 'view-settings-security':
-          if (window.SettingsController) window.SettingsController.loadSecuritySettings();
+          if (window.SettingsController) {
+            window.SettingsController.init('SECURITY');
+            window.SettingsController.loadSecuritySettings();
+          }
           break;
         case 'view-settings-shortcuts':
-          if (window.SettingsController) window.SettingsController.loadShortcutsSettings();
+          if (window.SettingsController) {
+            window.SettingsController.init('SHORTCUTS');
+            window.SettingsController.loadShortcutsSettings();
+          }
           break;
         case 'view-safe-rollback':
           if (window.SettingsController) window.SettingsController.loadSafeRollback();
@@ -375,6 +478,17 @@ window.NavigationRouter = (function() {
           this.selectNav(targetView, false);
         }
       });
+
+      // Restore saved sidebar collapsed state
+      try {
+        const savedCollapsed = localStorage.getItem('dse_sidebar_collapsed');
+        const sb = document.querySelector('aside.app-sidebar');
+        if (sb && savedCollapsed === 'true') {
+          sb.classList.add('collapsed');
+        }
+      } catch (e) {}
+
+      this.installSidebarHoverPeek();
     }
   };
 })();

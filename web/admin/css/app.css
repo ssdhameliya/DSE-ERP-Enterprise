@@ -219,12 +219,33 @@
       flex-shrink: 0; padding: 8px 0; overflow-y: auto; transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     aside.app-sidebar.collapsed { width: 68px; }
-    aside.app-sidebar.collapsed .nav-item-left span:last-child,
-    aside.app-sidebar.collapsed .nav-chevron,
-    aside.app-sidebar.collapsed .nav-children { display: none !important; }
-    aside.app-sidebar.collapsed .nav-parent-row,
-    aside.app-sidebar.collapsed .nav-single-item { justify-content: center; padding: 12px 0; }
-    aside.app-sidebar.collapsed .nav-icon { width: auto; font-size: 1.25rem; }
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-item-left span:last-child,
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-chevron,
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-children { display: none !important; }
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-parent-row,
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-single-item { justify-content: center; padding: 12px 0; }
+    aside.app-sidebar.collapsed:not(.hover-peek) .nav-icon { width: auto; font-size: 1.25rem; }
+
+    /* DESKTOP HOVER-PEEK DRAWER PARITY (DashboardController.java lines 850-968) */
+    aside.app-sidebar.collapsed.hover-peek {
+      width: 270px !important;
+      position: fixed !important;
+      top: 56px !important;
+      bottom: 32px !important;
+      left: 0 !important;
+      z-index: 1000 !important;
+      box-shadow: 12px 0 35px rgba(0, 0, 0, 0.75), 0 0 15px rgba(56, 189, 248, 0.2) !important;
+      border-right: 1px solid var(--cyan) !important;
+      background: rgba(15, 23, 42, 0.96) !important;
+    }
+    aside.app-sidebar.collapsed.hover-peek .nav-item-left span:last-child,
+    aside.app-sidebar.collapsed.hover-peek .nav-chevron { display: inline-block !important; }
+    aside.app-sidebar.collapsed.hover-peek .nav-parent-row,
+    aside.app-sidebar.collapsed.hover-peek .nav-single-item { justify-content: space-between !important; padding: 10px 18px !important; }
+    aside.app-sidebar.collapsed.hover-peek .nav-icon { width: 20px !important; font-size: 1.05rem !important; }
+    aside.app-sidebar.collapsed.hover-peek .nav-children { display: none; }
+    aside.app-sidebar.collapsed.hover-peek .nav-group.open .nav-children,
+    aside.app-sidebar.collapsed.hover-peek .nav-group.expanded .nav-children { display: block !important; }
     
     .nav-parent-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -929,6 +950,129 @@
       color: #94a3b8;
       border: 1px solid rgba(148, 163, 184, 0.28);
     }
+
+    /* ================================================================
+       DESKTOP LOGIN UI & AUTH OVERLAY PARITY (Desktop Login.fxml)
+       ================================================================ */
+    #auth-overlay {
+      position: fixed; inset: 0;
+      background: radial-gradient(circle at 75% 50%, #0d1527 0%, #080d1a 100%);
+      z-index: 99999; display: none; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 20px 20px 48px 20px; overflow-y: auto;
+    }
+    .auth-desktop-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      gap: 52px; max-width: 960px; width: 100%; margin: auto;
+    }
+    .auth-brand-col {
+      flex: 1; max-width: 420px; display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+    }
+    .auth-brand-logo-card {
+      background: #ffffff; padding: 20px 24px; border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5); max-width: 320px; width: 100%;
+      margin-bottom: 24px; display: flex; justify-content: center; align-items: center;
+    }
+    .auth-brand-logo-card img {
+      max-width: 100%; max-height: 80px; object-fit: contain;
+    }
+    .auth-brand-title {
+      font-size: 1.65rem; font-weight: 800; color: #ffffff;
+      letter-spacing: -0.02em; margin: 0 0 6px 0;
+    }
+    .auth-brand-line {
+      width: 56px; height: 3px; background: #38bdf8;
+      border-radius: 2px; margin: 10px auto 14px auto;
+    }
+    .auth-brand-subtitle {
+      font-size: 0.90rem; font-weight: 600; color: #94a3b8; margin-bottom: 4px;
+    }
+    .auth-brand-tagline {
+      font-size: 0.76rem; color: #64748b; margin-bottom: 22px;
+    }
+    .auth-brand-version-badge {
+      display: inline-flex; align-items: center; padding: 6px 18px;
+      border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.08); color: #38bdf8;
+      font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .auth-card-col {
+      width: 440px; max-width: 100%; background: #0c1424;
+      border: 1px solid rgba(56, 189, 248, 0.22); border-radius: 16px;
+      padding: 34px 30px; box-shadow: 0 24px 60px rgba(0,0,0,0.65);
+      position: relative;
+    }
+    .auth-shield-icon-box {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(99, 102, 241, 0.15));
+      border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px auto; color: #a78bfa; font-size: 1.3rem;
+    }
+    .auth-btn-purple {
+      background: linear-gradient(135deg, #7c3aed, #6366f1); color: #ffffff;
+      font-weight: 700; border: none; border-radius: 8px; height: 42px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; cursor: pointer; transition: transform 0.12s, box-shadow 0.15s;
+    }
+    .auth-btn-purple:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+    }
+    .auth-btn-purple-outline {
+      background: transparent; color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.45); font-weight: 600;
+      border-radius: 8px; height: 38px; display: flex; align-items: center;
+      justify-content: center; gap: 8px; width: 100%; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .auth-btn-purple-outline:hover {
+      background: rgba(139, 92, 246, 0.12); border-color: #a78bfa; color: #ffffff;
+    }
+    .auth-divider-or {
+      display: flex; align-items: center; text-align: center;
+      margin: 16px 0; color: #475569; font-size: 0.72rem; font-weight: 700;
+    }
+    .auth-divider-or::before, .auth-divider-or::after {
+      content: ''; flex: 1; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .auth-divider-or:not(:empty)::before { margin-right: 10px; }
+    .auth-divider-or:not(:empty)::after { margin-left: 10px; }
+
+    .auth-desktop-footer {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 34px;
+      background: #050a14; border-top: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; font-size: 0.72rem; color: #64748b; z-index: 100000;
+    }
+
+    /* ================================================================
+       SETTINGS STUDIO TAB STRIP & PANELS
+       ================================================================ */
+    .settings-tab-nav {
+      display: flex; gap: 4px; overflow-x: auto;
+      background: rgba(15, 23, 42, 0.7); padding: 6px;
+      border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .settings-tab-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+      font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+      border-radius: 6px; cursor: pointer; white-space: nowrap;
+      border: 1px solid transparent; background: transparent; transition: all 0.15s;
+    }
+    .settings-tab-btn:hover {
+      color: #ffffff; background: rgba(255, 255, 255, 0.04);
+    }
+    .settings-tab-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(56, 189, 248, 0.2));
+      border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;
+    }
+    .settings-panel-host {
+      width: 100%;
+    }
+
 
 
 
