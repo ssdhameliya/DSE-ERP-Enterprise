@@ -145,8 +145,10 @@ window.NavigationRouter = (function() {
         }
       }
 
-      // Dispatch controller onMount lifecycle
-      this.dispatchLifecycle(viewId);
+      // Dispatch controller onMount lifecycle only if authenticated
+      if (window.AuthService && window.AuthService.isAuthenticated()) {
+        this.dispatchLifecycle(viewId);
+      }
     },
 
     closeTab(viewId, e) {

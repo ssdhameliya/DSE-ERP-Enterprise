@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.31.6">
+    <link rel="stylesheet" href="css/app.css?v=10.0.31.7">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -84,7 +84,11 @@
         const auth = document.getElementById('auth-overlay');
         if (auth) auth.style.display = 'none';
       };
-      window.showAuthOverlay = function() {
+      window.showAuthOverlay = function(preferredTab) {
+        if (window.App && window.App.showAuthOverlay) {
+          window.App.showAuthOverlay(preferredTab);
+          return;
+        }
         const auth = document.getElementById('auth-overlay');
         if (auth) {
           auth.style.display = 'flex';
@@ -92,7 +96,14 @@
           if (closeBtn) {
             closeBtn.style.display = (window.AuthService && window.AuthService.isAuthenticated()) ? 'block' : 'none';
           }
-          if (!window.AuthService || !window.AuthService.getPendingMfaChallenge()) {
+          const formMfa = document.getElementById('form-mfa');
+          const hasPendingMfa = (window.AuthService && window.AuthService.getPendingMfaChallenge()) ||
+                                (formMfa && formMfa.style.display !== 'none');
+          if (preferredTab) {
+            window.showAuthTab(preferredTab);
+          } else if (hasPendingMfa) {
+            window.showAuthTab('mfa');
+          } else {
             window.showAuthTab('login');
           }
         }
@@ -8368,47 +8379,47 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.31.6"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.31.6"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.31.6"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.31.6"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.31.6"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.31.7"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.31.7"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.31.7"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.31.7"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.31.7"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.31.6"></script>
-  <script src="js/services/AuthService.js?v=10.0.31.6"></script>
-  <script src="js/services/MasterService.js?v=10.0.31.6"></script>
-  <script src="js/services/OperationsService.js?v=10.0.31.6"></script>
-  <script src="js/services/ReportService.js?v=10.0.31.6"></script>
-  <script src="js/services/ReconService.js?v=10.0.31.6"></script>
-  <script src="js/services/AccountingService.js?v=10.0.31.6"></script>
-  <script src="js/services/ImportService.js?v=10.0.31.6"></script>
+  <script src="js/services/ApiService.js?v=10.0.31.7"></script>
+  <script src="js/services/AuthService.js?v=10.0.31.7"></script>
+  <script src="js/services/MasterService.js?v=10.0.31.7"></script>
+  <script src="js/services/OperationsService.js?v=10.0.31.7"></script>
+  <script src="js/services/ReportService.js?v=10.0.31.7"></script>
+  <script src="js/services/ReconService.js?v=10.0.31.7"></script>
+  <script src="js/services/AccountingService.js?v=10.0.31.7"></script>
+  <script src="js/services/ImportService.js?v=10.0.31.7"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/GstController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.31.6"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.31.6"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/GstController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.31.7"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.31.7"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.31.6"></script>
-  <script src="js/app.js?v=10.0.31.6"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.31.7"></script>
+  <script src="js/app.js?v=10.0.31.7"></script>
 </body>
 </html>

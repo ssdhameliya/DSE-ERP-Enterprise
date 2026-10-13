@@ -67,63 +67,6 @@ window.App = (function() {
       });
     }
 
-    // Login form submit
-    const loginForm = document.getElementById('form-login');
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const identity = document.getElementById('login-identity').value.trim();
-        const password = document.getElementById('login-password').value;
-        const selectedRole = (document.getElementById('login-role') || {}).value || 'ADMIN';
-        const rememberCheck = document.getElementById('login-remember');
-        const alertEl = document.getElementById('auth-alert');
-        const submitBtn = document.getElementById('btn-login-submit');
-
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Verifying credentials...';
-        alertEl.style.display = 'none';
-
-        try {
-          const res = await window.AuthService.login(identity, password, selectedRole);
-          if (res.roleMismatch) {
-            alertEl.className = 'auth-alert error';
-            alertEl.innerText = res.message;
-            alertEl.style.display = 'block';
-            return;
-          }
-          if (res.mfaRequired) {
-            document.getElementById('form-login').style.display = 'none';
-            document.getElementById('form-mfa').style.display = 'block';
-            document.getElementById('mfa-otp').focus();
-          } else if (res.success) {
-            if (rememberCheck && rememberCheck.checked) {
-              localStorage.setItem('dse_saved_identity', identity);
-              localStorage.setItem('dse_saved_role', selectedRole);
-            } else {
-              localStorage.removeItem('dse_saved_identity');
-              localStorage.removeItem('dse_saved_role');
-            }
-            applyUserToHeader(res.user);
-            if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-            window.AppDialogService.closeAllModals();
-            window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
-            window.DashboardController.refresh();
-          } else {
-            alertEl.className = 'auth-alert error';
-            alertEl.innerText = res.message || 'Invalid credentials.';
-            alertEl.style.display = 'block';
-          }
-        } catch (err) {
-          alertEl.className = 'auth-alert error';
-          alertEl.innerText = err.message || 'Authentication error.';
-          alertEl.style.display = 'block';
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerText = 'Authenticate & Launch Studio';
-        }
-      });
-    }
-
     async function populateLoginRoles() {
       const roleSelect = document.getElementById('login-role');
       if (!roleSelect) return;
@@ -143,34 +86,6 @@ window.App = (function() {
       if (savedIdentity && identityInput) {
         identityInput.value = savedIdentity;
       }
-    }
-
-    // MFA form submit
-    const mfaForm = document.getElementById('form-mfa');
-    if (mfaForm) {
-      mfaForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const otp = document.getElementById('mfa-otp').value.trim();
-        const alertEl = document.getElementById('auth-alert');
-        try {
-          const res = await window.AuthService.completeMfa(otp);
-          if (res.success) {
-            applyUserToHeader(res.user);
-            if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-            window.AppDialogService.closeAllModals();
-            window.AppDialogService.showToast(`MFA Verified! Welcome, ${res.user.fullName || res.user.username}!`, 'success');
-            window.DashboardController.refresh();
-          } else {
-            alertEl.className = 'auth-alert error';
-            alertEl.innerText = res.message || 'Invalid MFA code.';
-            alertEl.style.display = 'block';
-          }
-        } catch (err) {
-          alertEl.className = 'auth-alert error';
-          alertEl.innerText = err.message || 'MFA verification failed.';
-          alertEl.style.display = 'block';
-        }
-      });
     }
 
     // Audio toggle
@@ -307,9 +222,12 @@ window.App = (function() {
       const auth = document.getElementById('auth-overlay');
       if (auth) {
         auth.style.display = 'flex';
+        const formMfa = document.getElementById('form-mfa');
+        const hasPendingMfa = (window.AuthService && window.AuthService.getPendingMfaChallenge()) ||
+                              (formMfa && formMfa.style.display !== 'none');
         if (preferredTab) {
           this.showAuthTab(preferredTab);
-        } else if (window.AuthService && window.AuthService.getPendingMfaChallenge()) {
+        } else if (hasPendingMfa) {
           this.showAuthTab('mfa');
         } else {
           this.showAuthTab('login');
@@ -646,15 +564,20 @@ window.completeMfaRecovery = async function() {
   try {
     const res = await window.AuthService.completeLoginMfaRecovery(currentMfaRecoveryChallengeId, otp);
     if (res.success || res.manualSecret) {
+      if (res.challengeId && window.AuthService.setPendingMfaChallenge) {
+        window.AuthService.setPendingMfaChallenge(res.challengeId);
+      }
       window.currentMfaEnrollmentMode = 'login';
       const secretEl = document.getElementById('auth-setup-secret');
       const qrImgEl = document.getElementById('auth-setup-qr-img');
       const errEl = document.getElementById('auth-setup-error');
+      const completeBtn = document.getElementById('btn-auth-setup-complete');
       if (secretEl) secretEl.value = res.manualSecret || '';
       if (qrImgEl && res.provisioningUri) {
         qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
       }
       if (errEl) errEl.style.display = 'none';
+      if (completeBtn) completeBtn.innerText = 'Verify Authenticator & Sign In';
       window.AppDialogService.openModal('modal-authenticator-setup');
       window.AppDialogService.showToast('Email verified! Scan the new QR code in your authenticator app.', 'success');
       setTimeout(() => {
@@ -1147,7 +1070,7 @@ window.toggleNavGroup = (id) => window.NavigationRouter.toggleNavGroup(id);
 window.openModal = (id) => window.AppDialogService.openModal(id);
 window.closeModal = (id) => window.AppDialogService.closeModal(id);
 window.showToast = (msg, type) => window.AppDialogService.showToast(msg, type);
-window.showAuthOverlay = () => window.App.showAuthOverlay();
+window.showAuthOverlay = (tab) => window.App.showAuthOverlay(tab);
 window.hideAuthOverlay = () => window.App.hideAuthOverlay();
 window.showAuthTab = (tab) => window.App.showAuthTab(tab);
 window.cancelMfa = () => window.App.cancelMfa();

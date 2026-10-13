@@ -5,6 +5,7 @@
 window.AuthService = (function() {
   let pendingMfaChallenge = null;
   let pendingUser = null;
+  let pendingRecoveryChallenge = null;
 
   function normalizeRole(role) {
     if (!role) return '';
@@ -78,6 +79,7 @@ window.AuthService = (function() {
       if (res.mfaRequired) {
         pendingMfaChallenge = res.challengeId;
         pendingUser = res.user;
+        pendingRecoveryChallenge = null;
         return {
           mfaRequired: true,
           challengeId: res.challengeId,
@@ -100,6 +102,18 @@ window.AuthService = (function() {
       return pendingMfaChallenge;
     },
 
+    setPendingMfaChallenge(challengeId) {
+      pendingMfaChallenge = challengeId;
+    },
+
+    getPendingRecoveryChallenge() {
+      return pendingRecoveryChallenge;
+    },
+
+    setPendingRecoveryChallenge(challengeId) {
+      pendingRecoveryChallenge = challengeId;
+    },
+
     getPendingUser() {
       return pendingUser;
     },
@@ -112,6 +126,7 @@ window.AuthService = (function() {
         localStorage.setItem('dse_user_info', JSON.stringify(res.user || pendingUser));
         pendingMfaChallenge = null;
         pendingUser = null;
+        pendingRecoveryChallenge = null;
         return { success: true, user: res.user };
       }
       return { success: false, message: res.message || 'Invalid MFA code' };
@@ -120,22 +135,34 @@ window.AuthService = (function() {
     cancelMfa() {
       pendingMfaChallenge = null;
       pendingUser = null;
+      pendingRecoveryChallenge = null;
     },
 
     async requestLoginMfaRecovery() {
       if (!pendingMfaChallenge) throw new Error('No active login MFA challenge found.');
-      return await window.ApiService.post('/api/auth/login/mfa/recovery/request', {
+      const res = await window.ApiService.post('/api/auth/login/mfa/recovery/request', {
         challengeId: pendingMfaChallenge
       });
+      if (res && res.challengeId) {
+        pendingRecoveryChallenge = res.challengeId;
+      }
+      return res;
     },
 
     async completeLoginMfaRecovery(recoveryChallengeId, otp) {
       if (!pendingMfaChallenge) throw new Error('No active login MFA challenge found.');
-      return await window.ApiService.post('/api/auth/login/mfa/recovery/complete', {
+      const activeRecoveryChallenge = recoveryChallengeId || pendingRecoveryChallenge;
+      if (!activeRecoveryChallenge) throw new Error('No active recovery verification challenge found. Please click Resend email code.');
+      const res = await window.ApiService.post('/api/auth/login/mfa/recovery/complete', {
         loginChallengeId: pendingMfaChallenge,
-        recoveryChallengeId,
+        recoveryChallengeId: activeRecoveryChallenge,
         otp
       });
+      if (res && res.challengeId) {
+        pendingMfaChallenge = res.challengeId;
+        pendingRecoveryChallenge = null;
+      }
+      return res;
     },
 
     async getLoginMfaEnrollment() {
