@@ -49,7 +49,7 @@ window.GstController = {
         outwardTaxable += taxable;
         outwardGst += gst;
 
-        const isInterstate = (s.billingGstin && !s.billingGstin.startsWith('24')) || s.gstType === 'INTER_STATE_IGST';
+        const isInterstate = (s.billingGstin && !s.billingGstin.startsWith('24')) || s.gstType === 'IGST' || s.gstType === 'INTER_STATE_IGST';
         if (isInterstate) {
           outwardIgst += gst;
         } else {

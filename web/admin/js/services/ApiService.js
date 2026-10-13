@@ -142,11 +142,18 @@ window.ApiService = (function() {
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.warn(`[ApiService] HTTP ${res.status} on ${endpoint}:`, errData);
-          return errData;
+          const errorMsg = errData.message || errData.error || `Server returned error (${res.status})`;
+          const error = new Error(errorMsg);
+          error.status = res.status;
+          error.data = errData;
+          throw error;
         }
         return await res.json();
       } catch (err) {
-        console.warn(`[ApiService] Network error on ${endpoint}:`, err.message);
+        console.warn(`[ApiService] Request error on ${endpoint}:`, err.message);
+        if (options.method && options.method !== 'GET') {
+          throw err;
+        }
         if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
           return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
         }

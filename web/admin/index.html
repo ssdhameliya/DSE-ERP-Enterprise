@@ -1121,8 +1121,8 @@
                   <div>
                     <label class="form-label" style="font-size: 0.72rem;">GST Type *</label>
                     <select id="ws-gst-type" class="form-select" onchange="window.SalesController.calcWorkspaceTotals()" style="height: 34px; font-size: 0.78rem;">
-                      <option value="INTRA_STATE_CGST_SGST">GST (Intra-State CGST+SGST)</option>
-                      <option value="INTER_STATE_IGST">IGST (Inter-State)</option>
+                      <option value="GST">GST (Intra-State CGST+SGST)</option>
+                      <option value="IGST">IGST (Inter-State)</option>
                     </select>
                   </div>
                   <div>
@@ -2042,8 +2042,8 @@
             <div class="form-group">
               <label class="form-label">Tax Regime</label>
               <select id="inv-gst-type" class="form-select" onchange="window.SalesController.calcInvoiceTotals()">
-                <option value="INTRA_STATE_CGST_SGST">Intra-State (CGST 50% + SGST 50%)</option>
-                <option value="INTER_STATE_IGST">Inter-State (IGST 100%)</option>
+                <option value="GST">Intra-State (CGST 50% + SGST 50%)</option>
+                <option value="IGST">Inter-State (IGST 100%)</option>
               </select>
             </div>
           </div>
@@ -3246,34 +3246,34 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
     <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.9"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.9"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.9"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.9"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.9"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.10"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.10"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.10"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.10"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.10"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.9"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.9"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.9"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.9"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.9"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.10"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.10"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.10"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.10"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.10"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.9"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.9"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.10"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.9"></script>
-  <script src="js/app.js?v=10.0.25.9"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.10"></script>
+  <script src="js/app.js?v=10.0.25.10"></script>
 </body>
 </html>

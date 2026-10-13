@@ -642,12 +642,12 @@ window.SalesController = {
     if (clean.length >= 2) {
       const stateCode = clean.substring(0, 2);
       if (stateCode === '24') {
-        gstTypeEl.value = 'INTRA_STATE_CGST_SGST';
+        gstTypeEl.value = 'GST';
       } else {
-        gstTypeEl.value = 'INTER_STATE_IGST';
+        gstTypeEl.value = 'IGST';
       }
     } else {
-      gstTypeEl.value = 'INTRA_STATE_CGST_SGST';
+      gstTypeEl.value = 'GST';
     }
     this.updateGstHeaders();
   },
@@ -655,7 +655,7 @@ window.SalesController = {
   // Dynamic Header Renaming (Feature 5)
   updateGstHeaders() {
     const gstTypeEl = document.getElementById('ws-gst-type');
-    const isIgst = gstTypeEl && gstTypeEl.value === 'INTER_STATE_IGST';
+    const isIgst = gstTypeEl && (gstTypeEl.value === 'IGST' || gstTypeEl.value === 'INTER_STATE_IGST');
 
     const thGst = document.getElementById('ws-th-gst');
     const thGstAmt = document.getElementById('ws-th-gst-amt');
@@ -1342,21 +1342,22 @@ window.SalesController = {
     }
 
     const invoiceNo = (document.getElementById('ws-inv-no') || {}).value || 'JI/INV';
-    const invoiceDate = (document.getElementById('ws-inv-date') || {}).value;
+    const invoiceDate = (document.getElementById('ws-inv-date') || {}).value || new Date().toISOString().split('T')[0];
     const billingAddress = (document.getElementById('ws-billing-address') || {}).value || '';
     const deliveryAddress = (document.getElementById('ws-delivery-address') || {}).value || '';
     const billingGstin = (document.getElementById('ws-billing-gstin') || {}).value || '';
     const deliveryGstin = (document.getElementById('ws-delivery-gstin') || {}).value || '';
     const paymentTerms = (document.getElementById('ws-payment-terms') || {}).value || '15 Days';
-    const gstType = (document.getElementById('ws-gst-type') || {}).value || 'INTRA_STATE_CGST_SGST';
-    const transporter = (document.getElementById('ws-transporter') || {}).value;
-    const transporterGstin = (document.getElementById('ws-trans-gstin') || {}).value;
-    const vehicleNumber = (document.getElementById('ws-vehicle-no') || {}).value;
-    const contactPerson = (document.getElementById('ws-contact-person') || {}).value;
-    const contactPersonMobile = (document.getElementById('ws-contact-mobile') || {}).value;
-    const poDate = (document.getElementById('ws-po-date') || {}).value;
-    const poNo = (document.getElementById('ws-po-no') || {}).value;
-    const notes = (document.getElementById('ws-invoice-notes') || {}).value;
+    const rawGstType = (document.getElementById('ws-gst-type') || {}).value || 'GST';
+    const gstType = (rawGstType === 'INTER_STATE_IGST' || rawGstType === 'IGST') ? 'IGST' : 'GST';
+    const transporter = (document.getElementById('ws-transporter') || {}).value || '';
+    const transporterGstin = (document.getElementById('ws-trans-gstin') || {}).value || '';
+    const vehicleNumber = (document.getElementById('ws-vehicle-no') || {}).value || '';
+    const contactPerson = (document.getElementById('ws-contact-person') || {}).value || '';
+    const contactPersonMobile = (document.getElementById('ws-contact-mobile') || {}).value || '';
+    const poDate = (document.getElementById('ws-po-date') || {}).value || '';
+    const poNo = (document.getElementById('ws-po-no') || {}).value || '';
+    const notes = (document.getElementById('ws-invoice-notes') || {}).value || '';
     const chkSame = document.getElementById('ws-same-address');
 
     // Strict Address Mismatch Validation (Desktop SalesController.java lines 1395-1402)
@@ -1393,19 +1394,18 @@ window.SalesController = {
       lineTax += tax;
 
       return {
-        itemCode: item.code,
-        itemDescription: item.description,
-        itemCategory: item.category,
-        itemHsn: item.hsn,
-        itemUnit: item.unit,
+        itemCode: item.code || item.itemCode,
+        itemDescription: item.description || '',
+        itemCategory: item.category || 'General',
+        itemHsn: item.hsn || '73063000',
+        itemUnit: item.unit || 'Nos',
+        itemRemarks: item.remarks || '',
         quantity: qty,
         rate,
         discountPercent: discPct,
         discountAmount: disc,
         gstPercent: gstPct,
-        taxableAmount: taxable,
-        gstAmount: tax,
-        totalAmount: taxable + tax
+        totalAmount: Math.round((taxable + tax) * 100) / 100
       };
     });
 
@@ -1428,6 +1428,9 @@ window.SalesController = {
     const totalTaxable = Math.round((itemTaxable + taxableCharges) * 100) / 100;
     const totalTax = Math.round((lineTax + chargeTax) * 100) / 100;
     const grandTotal = Math.round((itemTaxable + lineTax + chargeAmount + chargeTax) * 100) / 100;
+    const totalQty = lines.reduce((acc, l) => acc + (parseFloat(l.quantity) || 0), 0);
+    const calculatedDueDate = this.calculatePaymentDueDate(invoiceDate, paymentTerms);
+    const selectedCust = (this.customersCache || []).find(c => String(c.id) === String(custSel.value));
 
     const payload = {
       invoiceNo,
@@ -1435,31 +1438,52 @@ window.SalesController = {
       customerId: custSel.value,
       customer: {
         id: parseInt(custSel.value) || 1,
-        name: custSel.options[custSel.selectedIndex] ? custSel.options[custSel.selectedIndex].text : ''
+        partyCode: selectedCust ? (selectedCust.partyCode || selectedCust.code || 'CUST') : 'CUST',
+        name: selectedCust ? (selectedCust.name || selectedCust.partyName || '') : (custSel.options[custSel.selectedIndex] ? custSel.options[custSel.selectedIndex].text : ''),
+        email: selectedCust ? (selectedCust.email || '') : '',
+        phone: selectedCust ? (selectedCust.phone || selectedCust.mobile || '') : '',
+        gstin: billingGstin,
+        address: billingAddress
       },
       billingAddress,
       deliveryAddress,
       billingGstin,
       deliveryGstin,
+      gstin: billingGstin,
+      sameAsBilling: chkSame ? chkSame.checked : true,
       paymentTerms,
+      chargeType: chargesPayload.length > 0 ? chargesPayload[0].chargeType : '',
       chargeAmount,
       charges: chargesPayload,
       subtotal: totalTaxable,
       discountAmount: discountTot,
       gstAmount: totalTax,
       totalAmount: grandTotal,
+      quantity: totalQty,
       gstType,
       transporter,
       transporterGstin,
       vehicleNumber,
       contactPerson,
       contactPersonMobile,
-      orderNo: poNo,
-      poDate,
-      notes,
+      orderNo: poNo && poNo.trim() ? poNo.trim() : null,
+      poDate: poDate && poDate.trim() ? poDate.trim() : null,
+      dueDate: calculatedDueDate,
+      salesperson: 'Admin',
+      source: 'MANUAL',
+      remarks: notes || '',
+      notes: notes || '',
+      referenceNo: '',
+      doorDelivery: '',
+      transportNote: '',
+      emailSent: false,
+      whatsappSent: false,
+      invoiceType: this.editingSale ? (this.editingSale.invoiceType || 'TAX INVOICE') : 'TAX INVOICE',
       documentStatus: this.editingSale ? (this.editingSale.documentStatus || 'APPROVED') : 'APPROVED',
       paymentStatus: this.editingSale ? (this.editingSale.paymentStatus || 'PAID') : 'PAID',
       paidAmount: this.editingSale ? (this.editingSale.paidAmount || grandTotal) : grandTotal,
+      attachmentPath: this.pendingAttachmentFile ? this.pendingAttachmentFile.name : null,
+      rowVersion: 0,
       lines
     };
 
@@ -1476,15 +1500,28 @@ window.SalesController = {
     }
 
     try {
+      let savedSale = null;
       if (this.editingSale && this.editingSale.id) {
-        await window.OperationsService.updateSale(payload);
+        savedSale = await window.OperationsService.updateSale(payload);
         window.AppDialogService.showToast(`Invoice ${invoiceNo} updated successfully!`, 'success');
       } else {
-        await window.OperationsService.createSale(payload);
-        window.AppDialogService.showToast(`Invoice ${invoiceNo} generated & saved successfully!`, 'success');
+        savedSale = await window.OperationsService.createSale(payload);
+        const actualInvoiceNo = (savedSale && (savedSale.invoiceNo || savedSale.number)) || invoiceNo;
+        window.AppDialogService.showToast(`Invoice ${actualInvoiceNo} generated & saved successfully!`, 'success');
       }
 
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+
+      // Immediately prepend/update in local cache so user sees it instantly
+      if (savedSale && savedSale.id) {
+        if (this.editingSale) {
+          const idx = this.salesCache.findIndex(s => s.id === savedSale.id);
+          if (idx !== -1) this.salesCache[idx] = savedSale;
+        } else {
+          this.salesCache.unshift(savedSale);
+        }
+        this.renderSalesTable(this.salesCache);
+      }
 
       // Refresh sales register and return to it
       await this.loadSales();
@@ -1953,13 +1990,52 @@ window.SalesController = {
     }
 
     try {
-      // Call real backend email gateway: POST /api/authority/email
+      // 1. Fetch real canonical PDF bytes from backend document service
+      let attachmentBase64 = null;
+      try {
+        const token = localStorage.getItem('dse_access_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const pdfRes = await fetch(`/api/documents/render?type=SALE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
+        if (pdfRes.ok) {
+          const blob = await pdfRes.blob();
+          const reader = new FileReader();
+          attachmentBase64 = await new Promise((resolve, reject) => {
+            reader.onloadend = () => {
+              const res = reader.result || '';
+              const base64 = res.includes(',') ? res.substring(res.indexOf(',') + 1) : res;
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (pdfErr) {
+        console.warn('Could not fetch server PDF, attempting client jsPDF fallback:', pdfErr);
+      }
+
+      // 2. Client jsPDF fallback if server PDF was unreachable
+      if (!attachmentBase64 && window.jspdf) {
+        try {
+          const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+          if (saleObj) {
+            const doc = this.buildSalesInvoiceJsPdf(saleObj);
+            if (doc) {
+              const dataUri = doc.output('datauristring');
+              attachmentBase64 = dataUri.split(',')[1];
+            }
+          }
+        } catch (jsPdfErr) {
+          console.warn('jsPDF fallback failed:', jsPdfErr);
+        }
+      }
+
+      // 3. Dispatch through backend SMTP gateway
       const emailPayload = {
         recipient,
         subject,
         body,
         attachmentName: `Tax_Invoice_${invNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
-        attachmentBase64: null
+        attachmentBase64
       };
 
       const result = await window.OperationsService.sendAuthorityEmail(emailPayload);
