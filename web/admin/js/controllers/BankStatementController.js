@@ -533,6 +533,11 @@ window.BankStatementController = (function() {
 
   let parsedImportRows = [];
 
+  function browseCsvFile() {
+    const el = document.getElementById('import-csv-file');
+    if (el) el.click();
+  }
+
   function onCsvFileSelected(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -764,6 +769,7 @@ window.BankStatementController = (function() {
     quickMoveBankEntry,
     reverseMatch,
     openImportModal,
+    browseCsvFile,
     onCsvFileSelected,
     submitImport,
     toggleStatementHistory,

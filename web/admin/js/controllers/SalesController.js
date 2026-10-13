@@ -2495,156 +2495,28 @@ window.SalesController = {
   },
 
   // =========================================================================
-  // 20. PRINTABLE TAX INVOICE
+  // 20. CANONICAL TAX INVOICE (DESKTOP ProfessionalDocumentRenderer PARITY)
   // =========================================================================
   async printTaxInvoice(invoiceNo) {
-    try {
-      const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
-      if (!sale) return;
-
-      const cust = sale.customer || {};
-      const lines = sale.lines || [];
-      const isInterstate = (sale.gstType || '').includes('INTER');
-      const cgst = isInterstate ? 0 : (sale.gstAmount || 0) / 2;
-      const sgst = isInterstate ? 0 : (sale.gstAmount || 0) / 2;
-      const igst = isInterstate ? (sale.gstAmount || 0) : 0;
-
-      const printContainer = document.getElementById('printable-invoice-modal');
-      if (!printContainer) return;
-
-      printContainer.innerHTML = `
-        <div class="tax-invoice-sheet">
-          <div class="ti-header">
-            <div>
-              <div class="ti-title">JASVI INDUSTRIES</div>
-              <div style="font-size: 10px; color: #4b5563; margin-top: 2px;">Precision Fasteners, High-Tensile Bolts &amp; Industrial Stainless Steel Piping</div>
-              <div style="font-size: 10px; color: #4b5563;">H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat</div>
-              <div style="font-size: 10px; font-weight: 700; margin-top: 2px;">GSTIN: <span style="font-family: monospace;">24AAACJ1234F1Z1</span> | State: Gujarat (24)</div>
-            </div>
-            <div style="text-align: right;">
-              <span class="ti-badge">ORIGINAL FOR RECIPIENT</span>
-              <div style="font-size: 13px; font-weight: 800; margin-top: 6px; color: #1e3a8a;">TAX INVOICE</div>
-              <div style="font-size: 11px; font-weight: 700;">Inv #: ${sale.invoiceNo}</div>
-              <div style="font-size: 10px; color: #4b5563;">Date: ${window.FormatUtil.formatDate(sale.invoiceDate)}</div>
-              <div style="font-size: 10px; color: #4b5563;">Due Date: ${window.FormatUtil.formatDate(sale.dueDate || sale.invoiceDate)}</div>
-            </div>
-          </div>
-
-          <div class="ti-grid">
-            <div class="ti-box">
-              <div class="ti-box-title">BILLED TO (BUYER)</div>
-              <div style="font-size: 11px; font-weight: 700; color: #111827;">${cust.name || sale.customerName || 'Walk-in Client'}</div>
-              <div style="font-size: 10px; color: #4b5563;">${cust.address || sale.billingAddress || '-'}</div>
-              <div style="font-size: 10px; margin-top: 4px;"><strong>GSTIN:</strong> ${cust.gstin || sale.billingGstin || 'Unregistered'}</div>
-              <div style="font-size: 10px;"><strong>Phone:</strong> ${cust.phone || '-'}</div>
-            </div>
-            <div class="ti-box">
-              <div class="ti-box-title">SHIPPED TO &amp; DISPATCH DETAILS</div>
-              <div style="font-size: 10px; color: #4b5563;">${sale.deliveryAddress || cust.address || '-'}</div>
-              <div style="font-size: 10px; margin-top: 4px;"><strong>Transporter:</strong> ${sale.transporter || 'Direct Handover'}</div>
-              <div style="font-size: 10px;"><strong>Vehicle Number:</strong> ${sale.vehicleNumber || 'Not Specified'}</div>
-              <div style="font-size: 10px;"><strong>Payment Terms:</strong> ${sale.paymentTerms || 'Immediate'}</div>
-            </div>
-          </div>
-
-          <table class="ti-table">
-            <thead>
-              <tr>
-                <th style="width: 25px;">#</th>
-                <th>Item Description / Specification</th>
-                <th style="width: 60px;">HSN/SAC</th>
-                <th style="width: 50px; text-align: right;">Qty</th>
-                <th style="width: 40px;">Unit</th>
-                <th style="width: 70px; text-align: right;">Rate (₹)</th>
-                <th style="width: 75px; text-align: right;">Taxable (₹)</th>
-                <th style="width: 50px; text-align: right;">GST%</th>
-                <th style="width: 80px; text-align: right;">Total (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${lines.map((l, i) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode}</td>
-                  <td>${l.itemHsn || '73063000'}</td>
-                  <td style="text-align: right;">${l.quantity || 1}</td>
-                  <td>${l.itemUnit || 'PCS'}</td>
-                  <td style="text-align: right;">${window.FormatUtil.formatRupees(l.rate || 0)}</td>
-                  <td style="text-align: right;">${window.FormatUtil.formatRupees((l.quantity || 1) * (l.rate || 0) - (l.discountAmount || 0))}</td>
-                  <td style="text-align: right;">${l.gstPercent || 18}%</td>
-                  <td style="text-align: right; font-weight: 700;">${window.FormatUtil.formatRupees(l.totalAmount || 0)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="ti-totals-grid">
-            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 12px; font-size: 9.5px;">
-              <div style="font-weight: 700; margin-bottom: 4px;">BANK DETAILS FOR REMITTANCE</div>
-              <div>Bank Name: <strong>HDFC Bank Ltd</strong></div>
-              <div>Account Name: <strong>JASVI INDUSTRIES</strong></div>
-              <div>Account No: <strong>50200088991122</strong></div>
-              <div>IFSC Code: <strong>HDFC0001234</strong> (Branch: Nikol, Ahmedabad)</div>
-              <div style="margin-top: 8px; font-weight: 700;">TERMS &amp; CONDITIONS</div>
-              <div>1. Goods once sold will not be taken back without prior inspection memo.</div>
-              <div>2. Subject to Ahmedabad jurisdiction only.</div>
-            </div>
-
-            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 12px; font-size: 10.5px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span>Taxable Amount:</span>
-                <strong>${window.FormatUtil.formatRupees(sale.subtotal || sale.taxableAmount || 0)}</strong>
-              </div>
-              ${!isInterstate ? `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span>Central GST (CGST):</span>
-                  <span>${window.FormatUtil.formatRupees(cgst)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span>State GST (SGST):</span>
-                  <span>${window.FormatUtil.formatRupees(sgst)}</span>
-                </div>
-              ` : `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span>Integrated GST (IGST):</span>
-                  <span>${window.FormatUtil.formatRupees(igst)}</span>
-                </div>
-              `}
-              ${sale.chargeAmount > 0 ? `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span>Freight &amp; Transportation:</span>
-                  <span>${window.FormatUtil.formatRupees(sale.chargeAmount)}</span>
-                </div>
-              ` : ''}
-              <div style="border-top: 2px solid #111827; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; color: #0284c7;">
-                <span>GRAND TOTAL:</span>
-                <span>${window.FormatUtil.formatRupees(sale.totalAmount || 0)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 28px; padding-top: 14px; border-top: 1px dashed #d1d5db;">
-            <div style="font-size: 9px; color: #6b7280;">This is a computer generated tax invoice.</div>
-            <div style="text-align: right;">
-              <div style="font-size: 10px; font-weight: 700;">For, JASVI INDUSTRIES</div>
-              <div style="margin-top: 36px; font-size: 9px; color: #374151;">Authorized Signatory</div>
-            </div>
-          </div>
-
-          <div class="no-print" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-            <button class="btn btn-secondary" onclick="document.getElementById('printable-invoice-modal').classList.remove('open')">Close Preview</button>
-            <button class="btn btn-primary" onclick="window.print()">&#128438; Print Invoice Now</button>
-          </div>
-        </div>
-      `;
-
-      printContainer.classList.add('open');
-    } catch (err) {
-      window.AppDialogService.showToast('Unable to prepare print invoice: ' + err.message, 'error');
+    if (!invoiceNo) {
+      if (window.AppDialogService) window.AppDialogService.showToast('Please select an invoice first.', 'warning');
+      return;
+    }
+    if (window.openCanonicalDocument) {
+      window.openCanonicalDocument('SALE', invoiceNo, 'PDF');
+    } else {
+      window.open('/api/documents/render?type=SALE&number=' + encodeURIComponent(invoiceNo) + '&format=PDF', '_blank');
     }
   },
 
-  // =========================================================================
+  async downloadInvoicePdf(invoiceNo) {
+    if (window.downloadCanonicalDocument) {
+      window.downloadCanonicalDocument('SALE', invoiceNo, 'PDF');
+    } else {
+      window.open('/api/documents/render?type=SALE&number=' + encodeURIComponent(invoiceNo) + '&format=PDF', '_blank');
+    }
+  },
+
   // 21. RAPID KEYBOARD WORKFLOW (FEATURE 10)
   // =========================================================================
   installKeyboardShortcuts() {

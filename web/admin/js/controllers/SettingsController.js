@@ -1,15 +1,11 @@
 /**
  * Jasvi Industries ERP - SettingsController
- * Full Desktop Parity for Company Profile, SMTP Email, Security, Shortcuts,
- * Database Backup & Recovery, Safe Rollback, and Document Studios
- * Reference: SettingsController.java, BackupRestoreController.java, SafeRollbackController.java, ServerBackupService.java
+ * Full Desktop Parity for Company Profile, SMTP Email, Security, and Shortcuts
+ * Reference: SettingsController.java
  */
 window.SettingsController = (function() {
-  let cachedBackups = [];
-  let cachedBackupMetrics = null;
   let cachedProfile = null;
   let cachedEmailSettings = null;
-  let cachedPdfTemplates = [];
 
   const desktopShortcuts = [
     { key: 'Ctrl + D', action: 'Dashboard Overview', scope: 'Global Navigation', desc: 'Jump to real-time executive operations dashboard' },
@@ -29,12 +25,6 @@ window.SettingsController = (function() {
     { key: 'Ctrl + E', action: 'Export Data to Excel', scope: 'Active View', desc: 'Download current dataset as formatted spreadsheet' }
   ];
 
-  const rollbackCandidates = [
-    { version: '10.0.24', filename: 'DSE-ERP-10.0.24-Setup.exe', schema: '10.0.24', compatibility: 'COMPATIBLE', checksum: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678', size: '142 MB' },
-    { version: '10.0.23', filename: 'DSE-ERP-10.0.23-Setup.exe', schema: '10.0.23', compatibility: 'COMPATIBLE', checksum: 'b2c3d4e5f6a10718293a4b5c6d7e8f9012345678', size: '139 MB' },
-    { version: '10.0.22', filename: 'DSE-ERP-10.0.22-Setup.exe', schema: '10.0.22', compatibility: 'COMPATIBLE', checksum: 'c3d4e5f6a1b20718293a4b5c6d7e8f9012345678', size: '137 MB' },
-    { version: '10.0.21', filename: 'DSE-ERP-10.0.21-Setup.exe', schema: '10.0.21', compatibility: 'MIGRATION_REQUIRED', checksum: 'd4e5f6a1b2c30718293a4b5c6d7e8f9012345678', size: '135 MB' }
-  ];
 
   return {
     activeSection: 'COMPANY',
@@ -92,12 +82,6 @@ window.SettingsController = (function() {
         case 'SHORTCUTS':
           this.loadShortcutsSettings();
           break;
-        case 'BACKUP':
-          this.loadBackups();
-          break;
-        case 'ROLLBACK':
-          this.loadSafeRollback();
-          break;
         default:
           this.loadCompanySettings();
       }
@@ -126,9 +110,6 @@ window.SettingsController = (function() {
           break;
         case 'WORKSPACE':
           await this.saveWorkspaceSettings();
-          break;
-        case 'BACKUP':
-          this.triggerImmediateBackup();
           break;
         default:
           await this.saveCompanySettings();
@@ -437,285 +418,5 @@ window.SettingsController = (function() {
         </tr>
       `).join('');
     },
-
-    // ==========================================
-    // 5. DATABASE BACKUP & RECOVERY (BackupRestore.fxml)
-    // ==========================================
-    async loadBackups() {
-      const tbody = document.getElementById('backups-table-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);"><div class="spinner"></div> Reading PostgreSQL backup catalog...</td></tr>`;
-
-      try {
-        const [backups, metrics] = await Promise.all([
-          window.ReportService.getBackups().catch(() => []),
-          window.ReportService.getBackupMetrics().catch(() => null)
-        ]);
-
-        cachedBackups = Array.isArray(backups) ? backups : [];
-        cachedBackupMetrics = metrics;
-
-        // 4 KPIs matching BackupRestore.fxml
-        const sizeFormatted = metrics && metrics.sizeBytes ? `${(metrics.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : '48.2 MB';
-        const healthStatus = metrics && metrics.ready ? 'HEALTHY (READY)' : 'READY';
-        const count = cachedBackups.length;
-        const lastBackup = cachedBackups.length > 0 ? (cachedBackups[0].createdAt || 'Today') : 'None';
-
-        if (document.getElementById('backup-kpi-size')) document.getElementById('backup-kpi-size').textContent = sizeFormatted;
-        if (document.getElementById('backup-kpi-health')) document.getElementById('backup-kpi-health').textContent = healthStatus;
-        if (document.getElementById('backup-kpi-count')) document.getElementById('backup-kpi-count').textContent = count;
-        if (document.getElementById('backup-kpi-last')) document.getElementById('backup-kpi-last').textContent = lastBackup;
-
-        if (cachedBackups.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No backup archives found. Click "Create Backup Now" to capture an immediate PostgreSQL snapshot.</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = cachedBackups.map(b => {
-          const mb = b.size ? `${(b.size / (1024 * 1024)).toFixed(2)} MB` : '38.4 MB';
-          return `
-            <tr>
-              <td style="font-weight: 700; color: var(--cyan); font-family: monospace;">${b.name}</td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">${b.createdAt ? window.FormatUtil.formatDateTime(b.createdAt) : '-'}</td>
-              <td style="font-size: 0.82rem; font-weight: 600;">${mb}</td>
-              <td><span class="badge badge-paid">VALID</span></td>
-              <td><span class="badge badge-role">${b.source || 'MANUAL'}</span></td>
-              <td style="text-align: right; white-space: nowrap;">
-                <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.validateBackup('${b.name}')" title="Validate SHA256 Integrity">Validate</button>
-                <button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.stageRestore('${b.name}')" title="Stage PostgreSQL Restore">Stage Restore</button>
-                <button class="btn btn-secondary" style="padding: 3px 6px; font-size: 0.72rem; color: #f87171;" onclick="window.SettingsController.deleteBackup('${b.name}')" title="Recycle Archive">&times;</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Failed to read backups: ${err.message}</td></tr>`;
-      }
-    },
-
-    async triggerImmediateBackup() {
-      window.AppDialogService.showToast('Initiating pg_dump snapshot on PostgreSQL server...', 'info');
-      try {
-        const res = await window.ReportService.triggerBackup();
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`PostgreSQL snapshot created: ${res ? res.name : 'DSE-ERP-Server.pgbackup'}`, 'success');
-        this.loadBackups();
-      } catch (err) {
-        window.AppDialogService.showToast('Backup creation failed: ' + err.message, 'error');
-      }
-    },
-
-    async validateBackup(name) {
-      window.AppDialogService.showToast(`Verifying archive structure & SHA256 checksum for "${name}"...`, 'info');
-      try {
-        const res = await window.ReportService.validateBackup(name);
-        if (res && res.valid) {
-          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-          window.AppDialogService.showToast(`Backup "${name}" verified 100% valid!`, 'success');
-        } else {
-          window.AppDialogService.showToast(`Verification issue: ${res ? res.message : 'Unknown'}`, 'error');
-        }
-      } catch (err) {
-        window.AppDialogService.showToast('Validation failed: ' + err.message, 'error');
-      }
-    },
-
-    async stageRestore(name) {
-      if (!confirm(`CAUTION: Staging restore for "${name}" will prepare PostgreSQL to roll back to this snapshot. Proceed?`)) return;
-      try {
-        await window.ReportService.stageRestore(name);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Backup "${name}" staged for restore. Restart server to apply.`, 'success');
-      } catch (err) {
-        window.AppDialogService.showToast('Stage restore failed: ' + err.message, 'error');
-      }
-    },
-
-    async deleteBackup(name) {
-      if (!confirm(`Are you sure you want to move backup archive "${name}" to recycle storage?`)) return;
-      try {
-        await window.ReportService.deleteBackup(name);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Backup "${name}" moved to recycle storage.`, 'success');
-        this.loadBackups();
-      } catch (err) {
-        window.AppDialogService.showToast('Delete failed: ' + err.message, 'error');
-      }
-    },
-
-    exportRecoveryPackage() {
-      window.AppDialogService.showToast('Generating standalone disaster recovery bundle (zip)...', 'info');
-      window.open('/api/authority/backups/recovery-package', '_blank');
-    },
-
-    // ==========================================
-    // 6. SAFE ROLLBACK STUDIO (SafeRollback.fxml)
-    // ==========================================
-    loadSafeRollback() {
-      const tbody = document.getElementById('rollback-candidates-tbody');
-      if (!tbody) return;
-
-      tbody.innerHTML = rollbackCandidates.map(c => `
-        <tr>
-          <td style="font-weight: 700; color: var(--cyan); font-family: monospace;">v${c.version}</td>
-          <td style="font-weight: 600; color: #fff;">${c.filename}</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted);">${c.schema}</td>
-          <td><span class="badge ${c.compatibility === 'COMPATIBLE' ? 'badge-paid' : 'badge-pending'}">${c.compatibility}</span></td>
-          <td style="font-family: monospace; font-size: 0.75rem; color: var(--text-dim);">${c.checksum.substring(0, 16)}...</td>
-          <td style="font-size: 0.8rem;">${c.size}</td>
-          <td style="text-align: right; white-space: nowrap;">
-            <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.verifyRollbackChecksum('${c.version}')">Verify</button>
-            <button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="window.SettingsController.triggerRollback('${c.version}')">Rollback to v${c.version}</button>
-          </td>
-        </tr>
-      `).join('');
-    },
-
-    verifyRollbackChecksum(version) {
-      const cand = rollbackCandidates.find(c => c.version === version);
-      if (!cand) return;
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast(`SHA256 signature verified for v${version}: ${cand.checksum}`, 'success');
-    },
-
-    triggerRollback(version) {
-      const cand = rollbackCandidates.find(c => c.version === version);
-      if (!cand) return;
-
-      const confirmed = confirm(
-        `PRE-FLIGHT SAFETY PROTOCOL FOR ROLLBACK:\n\n` +
-        `1. An automatic safety snapshot of PostgreSQL will be created.\n` +
-        `2. Active user sessions will be gracefully drained.\n` +
-        `3. Application package will be switched to v${version}.\n\n` +
-        `Target Release: v${version} (${cand.filename})\n` +
-        `Schema: ${cand.schema} (${cand.compatibility})\n\n` +
-        `Do you confirm proceeding with rollback?`
-      );
-
-      if (!confirmed) return;
-
-      window.AppDialogService.showToast(`Executing pre-flight snapshot and staging rollback to v${version}...`, 'info');
-      setTimeout(() => {
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Rollback package for v${version} staged! Server will restart in maintenance mode.`, 'success');
-      }, 1500);
-    },
-
-    // ==========================================
-    // 7. PDF STUDIO & EXCEL STUDIO
-    // ==========================================
-    async loadPdfStudio() {
-      const listEl = document.getElementById('pdf-template-list');
-      if (!listEl) return;
-
-      try {
-        const templates = await window.ReportService.getPdfTemplates().catch(() => []);
-        cachedPdfTemplates = Array.isArray(templates) ? templates : [];
-
-        const defaultTemplates = [
-          { key: 'invoice_classic', name: 'Classic Tax Invoice', category: 'SALES', format: 'A4 Portrait', active: true },
-          { key: 'invoice_gst_modern', name: 'Modern GST Enterprise Invoice', category: 'SALES', format: 'A4 Portrait', active: true },
-          { key: 'thermal_80mm', name: 'Thermal Dispatch Roll (80mm)', category: 'RETAIL/POS', format: 'Thermal 80mm', active: true },
-          { key: 'proforma_invoice', name: 'Proforma Invoice Studio', category: 'QUOTATION', format: 'A4 Portrait', active: true },
-          { key: 'purchase_order', name: 'Standard Purchase Order', category: 'PURCHASE', format: 'A4 Portrait', active: true },
-          { key: 'delivery_challan', name: 'Delivery Challan & E-Way Slip', category: 'LOGISTICS', format: 'A4 Landscape', active: true }
-        ];
-
-        const displayList = cachedPdfTemplates.length > 0 ? cachedPdfTemplates : defaultTemplates;
-
-        listEl.innerHTML = displayList.map((t, idx) => `
-          <div class="pdf-template-card ${idx === 0 ? 'active' : ''}" style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.SettingsController.selectPdfTemplate('${t.key || t.name}')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 700; color: #fff;">${t.name}</span>
-              <span class="badge badge-paid" style="font-size: 0.7rem;">${t.format || 'PDF'}</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">Category: ${t.category || 'COMMERCIAL'}</div>
-          </div>
-        `).join('');
-
-        this.renderPdfPreview(displayList[0]);
-      } catch (err) {
-        console.warn('[SettingsController] PDF Studio error:', err);
-      }
-    },
-
-    selectPdfTemplate(key) {
-      document.querySelectorAll('.pdf-template-card').forEach(c => c.classList.remove('active'));
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      window.AppDialogService.showToast(`Selected template: ${key}`, 'info');
-    },
-
-    renderPdfPreview(tpl) {
-      const preview = document.getElementById('pdf-preview-canvas');
-      if (!preview) return;
-      preview.innerHTML = `
-        <div style="background: #ffffff; color: #111827; padding: 32px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-height: 480px; font-family: Inter, sans-serif;">
-          <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 16px;">
-            <div>
-              <h2 style="margin: 0; color: #0284c7; font-size: 1.4rem; font-weight: 800;">JASVI INDUSTRIES</h2>
-              <p style="margin: 4px 0 0; font-size: 0.8rem; color: #4b5563;">Ceramic Tiles & Industrial Vitrified Products</p>
-              <p style="margin: 2px 0 0; font-size: 0.75rem; color: #6b7280;">GSTIN: 24AAACJ1234A1Z5 &bull; Morbi, Gujarat</p>
-            </div>
-            <div style="text-align: right;">
-              <h3 style="margin: 0; font-size: 1.1rem; color: #111827;">TAX INVOICE</h3>
-              <p style="margin: 4px 0 0; font-size: 0.8rem; font-weight: 700;">INV-2026-0042</p>
-              <p style="margin: 2px 0 0; font-size: 0.75rem; color: #6b7280;">Date: 13-Oct-2026</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; font-size: 0.78rem;">
-            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-              <strong>Billed To:</strong><br>
-              Apex Builders & Developers<br>
-              GSTIN: 24BBDDA8899C1Z2<br>
-              Ahmedabad, Gujarat
-            </div>
-            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-              <strong>Dispatch Details:</strong><br>
-              Transporter: Royal Freight Logistics<br>
-              Vehicle: GJ-36-T-8821<br>
-              E-Way Bill: 281920194810
-            </div>
-          </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 16px;">
-            <thead>
-              <tr style="background: #0284c7; color: #fff;">
-                <th style="padding: 6px; text-align: left;">Item Description</th>
-                <th style="padding: 6px; text-align: center;">HSN</th>
-                <th style="padding: 6px; text-align: right;">Qty</th>
-                <th style="padding: 6px; text-align: right;">Rate</th>
-                <th style="padding: 6px; text-align: right;">GST%</th>
-                <th style="padding: 6px; text-align: right;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 6px;">Vitrified Floor Tiles 600x600 Premium</td>
-                <td style="padding: 6px; text-align: center;">6907</td>
-                <td style="padding: 6px; text-align: right;">500 SQM</td>
-                <td style="padding: 6px; text-align: right;">₹320.00</td>
-                <td style="padding: 6px; text-align: right;">18%</td>
-                <td style="padding: 6px; text-align: right; font-weight: 700;">₹1,60,000.00</td>
-              </tr>
-            </tbody>
-          </table>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-            <div>
-              <strong>Bank Details:</strong> State Bank of India<br>
-              A/C: 382910482910 &bull; IFSC: SBIN0001234
-            </div>
-            <div style="text-align: right;">
-              <div>Taxable Value: ₹1,60,000.00</div>
-              <div>CGST (9%): ₹14,400.00</div>
-              <div>SGST (9%): ₹14,400.00</div>
-              <div style="font-size: 1rem; font-weight: 800; color: #0284c7; margin-top: 4px;">Grand Total: ₹1,88,800.00</div>
-            </div>
-          </div>
-        </div>
-      `;
-    },
-
-    loadExcelStudio() {
-      // Excel templates setup
-    }
   };
 })();

@@ -138,10 +138,5 @@ window.ReportService = {
   },
   async testEmail(testPayload) {
     return await window.ApiService.post('/api/authority/email/test', testPayload);
-  },
-
-  // 8. Document Templates (PdfStudioTemplateController Parity)
-  async getPdfTemplates() {
-    return await window.ApiService.get('/api/pdf-studio/templates');
   }
 };

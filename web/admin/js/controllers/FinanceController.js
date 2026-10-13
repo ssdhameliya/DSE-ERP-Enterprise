@@ -226,9 +226,17 @@ window.FinanceController = {
     if (m) m.style.display = 'flex';
   },
 
+  openNewBankEntryModal() {
+    return this.openNewBankEntry();
+  },
+
   openNewExpenseEntry() {
     const m = document.getElementById('modal-new-expense-entry');
     if (m) m.style.display = 'flex';
+  },
+
+  openNewExpenseEntryModal() {
+    return this.openNewExpenseEntry();
   },
 
   async handleBankEntrySave(e) {

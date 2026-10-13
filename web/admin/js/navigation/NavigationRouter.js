@@ -47,15 +47,12 @@ window.NavigationRouter = (function() {
     'view-users': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
     'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
     'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' },
-    'view-pdf-studio': { title: 'PDF Studio', breadcrumb: 'Visual Document Template Designer', icon: '📄' },
     'view-excel-studio': { title: 'Excel Studio', breadcrumb: 'Custom Spreadsheet Exporter', icon: '📊' },
     'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
     'view-settings-company': { title: 'Company Settings', breadcrumb: 'Organization Legal Profile & Banking', icon: '⚙️' },
     'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
     'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
-    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' },
-    'view-safe-rollback': { title: 'Safe Rollback', breadcrumb: 'Application Release Coordinator', icon: '⏮️' },
-    'view-backup': { title: 'Backup & Restore', breadcrumb: 'Database Snapshots & Disaster Recovery', icon: '💾' }
+    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' }
   };
 
   function updateHeader(meta) {
@@ -431,16 +428,6 @@ window.NavigationRouter = (function() {
             window.SettingsController.init('SHORTCUTS');
             window.SettingsController.loadShortcutsSettings();
           }
-          break;
-        case 'view-safe-rollback':
-          if (window.SettingsController) window.SettingsController.loadSafeRollback();
-          break;
-        case 'view-backup':
-        case 'view-backup-restore':
-          if (window.SettingsController) window.SettingsController.loadBackups();
-          break;
-        case 'view-pdf-studio':
-          if (window.SettingsController) window.SettingsController.loadPdfStudio();
           break;
         case 'view-excel-studio':
           if (window.SettingsController) window.SettingsController.loadExcelStudio();

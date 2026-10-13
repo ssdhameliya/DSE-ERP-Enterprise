@@ -133,7 +133,7 @@
             </button>
           </div>
 
-          <button type="submit" id="btn-login-submit" class="auth-btn-purple">
+          <button type="submit" id="btn-login-submit" class="auth-btn-purple" onclick="document.getElementById('auth-login-card').requestSubmit()">
             <span>➜ LOGIN</span>
           </button>
 
@@ -154,7 +154,7 @@
             <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">6-Digit Authenticator TOTP Code *</label>
             <input type="text" id="mfa-otp" class="form-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" required autofocus style="height: 42px; text-align: center; font-size: 1.2rem; letter-spacing: 0.2em;">
           </div>
-          <button type="submit" class="auth-btn-purple" style="height: 42px;">Verify MFA Code</button>
+          <button type="submit" class="auth-btn-purple" style="height: 42px;" onclick="document.getElementById('form-mfa').requestSubmit()">Verify MFA Code</button>
           <button type="button" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 10px; height: 38px;" onclick="cancelMfa()">✕ Back to Login</button>
         </form>
 
@@ -201,7 +201,7 @@
 
           <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button type="button" class="btn btn-secondary" style="flex: 1; height: 38px; justify-content: center;" onclick="showAuthTab('login')">✕ Back to Login</button>
-            <button type="submit" id="btn-forgot-complete" class="auth-btn-purple" style="flex: 1.3; height: 38px; justify-content: center;">🔑 RESET PASSWORD</button>
+            <button type="submit" id="btn-forgot-complete" class="auth-btn-purple" style="flex: 1.3; height: 38px; justify-content: center;" onclick="document.getElementById('form-forgot').requestSubmit()">🔑 RESET PASSWORD</button>
           </div>
 
           <div style="font-size: 0.72rem; color: #10b981; text-align: center;">
@@ -263,7 +263,7 @@
             <button type="button" id="btn-reg-verify-otp" class="btn btn-success" style="width: 100%; justify-content: center; height: 38px;" onclick="window.handleVerifyRegistrationEmail()">Verify Email &amp; Configure Authenticator</button>
           </div>
 
-          <button type="submit" id="btn-reg-submit" class="auth-btn-purple" style="height: 38px;">Send Verification Code</button>
+          <button type="submit" id="btn-reg-submit" class="auth-btn-purple" style="height: 38px;" onclick="document.getElementById('form-register').requestSubmit()">Send Verification Code</button>
           <div style="text-align: center; margin-top: 10px;">
             <a href="javascript:void(0)" onclick="showAuthTab('login')" style="color: #94a3b8; font-size: 0.76rem; text-decoration: none;">✕ Back to Sign In</a>
           </div>
@@ -326,22 +326,22 @@
 
         <!-- Notification & Activity Badges matching desktop Dashboard.fxml -->
         <div class="header-badge-wrap" onclick="selectNav('view-reminders')" title="Reminder Center">
-          <button class="header-badge-btn">⏰</button>
+          <button class="header-badge-btn" onclick="event.stopPropagation(); selectNav('view-reminders');">⏰</button>
           <span class="header-badge-counter cyan" id="badge-reminders">0</span>
         </div>
 
         <div class="header-badge-wrap" onclick="openNotificationsModal()" title="Notification Center">
-          <button class="header-badge-btn">🔔</button>
+          <button class="header-badge-btn" onclick="event.stopPropagation(); openNotificationsModal();">🔔</button>
           <span class="header-badge-counter" id="badge-notifications">0</span>
         </div>
 
         <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="Email Center">
-          <button class="header-badge-btn">✉️</button>
+          <button class="header-badge-btn" onclick="event.stopPropagation(); selectNav('view-communication');">✉️</button>
           <span class="header-badge-counter" id="badge-email">0</span>
         </div>
 
         <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="WhatsApp Activity">
-          <button class="header-badge-btn">💬</button>
+          <button class="header-badge-btn" onclick="event.stopPropagation(); selectNav('view-communication');">💬</button>
           <span class="header-badge-counter cyan" id="badge-whatsapp">0</span>
         </div>
 
@@ -349,7 +349,7 @@
         <button class="header-badge-btn" onclick="openShortcutsHelpModal()" title="Keyboard Shortcuts Help (?)">⌨️</button>
 
         <!-- Synthesizer Audio Toggle -->
-        <button class="audio-toggle active" id="audio-toggle-btn" title="Toggle Synthesizer Audio">
+        <button class="audio-toggle active" id="audio-toggle-btn" onclick="window.AudioSynthesizer.toggleAudio(this)" title="Toggle Synthesizer Audio">
           <span id="audio-icon">&#128266;</span>
           <span id="audio-text">Audio: ON</span>
         </button>
@@ -376,9 +376,7 @@
             <div class="profile-menu-item" onclick="selectNav('view-settings'); hideProfileDropdown();">
               <span class="item-icon">⚙️</span> <span>Settings</span>
             </div>
-            <div class="profile-menu-item" onclick="selectNav('view-backup'); hideProfileDropdown();">
-              <span class="item-icon">💾</span> <span>Backup &amp; Restore</span>
-            </div>
+            
             <div class="profile-menu-item" onclick="selectNav('view-reminders'); hideProfileDropdown();">
               <span class="item-icon">⏰</span> <span>Reminder Center</span>
             </div>
@@ -388,9 +386,7 @@
             <div class="profile-menu-item" onclick="selectNav('view-import'); hideProfileDropdown();">
               <span class="item-icon">📥</span> <span>Data Import</span>
             </div>
-            <div class="profile-menu-item" onclick="selectNav('view-pdf-studio'); hideProfileDropdown();">
-              <span class="item-icon">📄</span> <span>Document Studio</span>
-            </div>
+            
             <div class="profile-menu-divider"></div>
             <div class="profile-menu-item" onclick="openChangePasswordModal(); hideProfileDropdown();">
               <span class="item-icon">🔑</span> <span>Change Password</span>
@@ -566,7 +562,7 @@
             <span class="nav-chevron">&#9654;</span>
           </div>
           <div class="nav-children">
-            <div class="nav-child-item" id="nav-pdf-studio" onclick="selectNav('view-pdf-studio')">PDF Studio</div>
+            
             <div class="nav-child-item" id="nav-excel-studio" onclick="selectNav('view-excel-studio')">Excel Studio</div>
           </div>
         </div>
@@ -586,13 +582,11 @@
         </div>
 
         <!-- 22. SAFE ROLLBACK -->
-        <div class="nav-single-item" id="nav-safe-rollback" onclick="selectNav('view-safe-rollback')">
-          <div class="nav-item-left"><span class="nav-icon">&#9194;</span><span>Safe Rollback</span></div>
+        
         </div>
 
         <!-- 23. BACKUP & RESTORE -->
-        <div class="nav-single-item" id="nav-backup" onclick="selectNav('view-backup')">
-          <div class="nav-item-left"><span class="nav-icon">&#128190;</span><span>Backup &amp; Restore</span></div>
+        
         </div>
       </aside>
 
@@ -736,7 +730,7 @@
                 <button class="btn-quick-action" onclick="openNewCustomerModal()">
                   <span>&#128101;</span> <span>New Customer</span>
                 </button>
-                <button class="btn-quick-action" onclick="openNewQuotationModal()">
+                <button class="btn-quick-action" onclick="window.QuotationController.openQuotationEditor()">
                   <span>&#128221;</span> <span>New Quotation F3</span>
                 </button>
                 <button class="btn-quick-action" onclick="openNewItemModal()">
@@ -4842,77 +4836,6 @@
           </div>
         </div>
 
-        <!-- VIEW: DOCUMENT STUDIO (PDF / EXCEL) -->
-        <!-- VIEW: DOCUMENT STUDIO - PDF TEMPLATE DESIGNER (EXACT DESKTOP PdfStudio.fxml PARITY) -->
-        <div id="view-pdf-studio" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>📄</span> PDF Studio &amp; Template Designer</h1>
-              <p>Configure tax invoice templates, company branding headers, thermal dispatch rolls, and print formats</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.AppDialogService.showToast('Template defaults saved to server.', 'success')">
-                <span>💾</span> Save Template Defaults
-              </button>
-              <button class="btn btn-primary" onclick="window.AppDialogService.showToast('Generating sample PDF preview...', 'info')">
-                <span>⬇️</span> Download Sample PDF
-              </button>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns: 320px 1fr; gap:16px;">
-            <!-- Left Column: Template Selection & Controls -->
-            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:16px;">
-              <h3 style="font-size:0.9rem; margin-top:0; margin-bottom:12px; color:var(--cyan);">Standard Templates</h3>
-              <div id="pdf-template-list" style="margin-bottom:16px;">
-                <!-- Populated dynamically by SettingsController.loadPdfStudio() -->
-              </div>
-
-              <h3 style="font-size:0.9rem; margin-top:16px; margin-bottom:12px; color:var(--cyan);">Layout Controls</h3>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Font Family</label>
-                <select class="form-select form-input-sm">
-                  <option value="Inter">Inter / Modern Sans</option>
-                  <option value="Roboto">Roboto</option>
-                  <option value="Courier">Courier Mono</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Accent Color</label>
-                <input type="color" class="form-input form-input-sm" value="#0284c7" style="height:32px; padding:2px;">
-              </div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px; font-size:0.8rem;">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Show Company Header &amp; Logo
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Print Dynamic UPI QR Code
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Include Bank &amp; Settlement Details
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Print Statutory GST Split (CGST/SGST/IGST)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Include Terms &amp; Conditions
-                </label>
-              </div>
-            </div>
-
-            <!-- Right Column: Live Interactive Preview Canvas -->
-            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); border-radius:8px; padding:20px; overflow-y:auto; max-height:700px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.8rem; color:var(--text-muted);">LIVE 10.0.25 PDF RENDERER PREVIEW</span>
-                <span class="badge badge-paid">A4 HIGH-RES 300 DPI</span>
-              </div>
-              <div id="pdf-preview-canvas">
-                <!-- Live PDF Template canvas rendered by SettingsController -->
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- VIEW: DOCUMENT STUDIO - EXCEL STUDIO -->
         <div id="view-excel-studio" class="module-view">
           <div class="view-header">
@@ -5004,12 +4927,8 @@
             <button type="button" class="settings-tab-btn" data-section="SHORTCUTS" onclick="window.SettingsController.switchSection('SHORTCUTS')">
               <span>⌨️</span> Shortcuts
             </button>
-            <button type="button" class="settings-tab-btn" data-section="BACKUP" onclick="window.SettingsController.switchSection('BACKUP')">
-              <span>🗄️</span> Database Backup
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="ROLLBACK" onclick="window.SettingsController.switchSection('ROLLBACK')">
-              <span>🔄</span> Safe Rollback
-            </button>
+            
+            
           </div>
 
           <!-- PANEL HOST -->
@@ -5361,56 +5280,6 @@ Morbi, Gujarat | Phone: +91 90999 39193</textarea>
               </div>
             </div>
 
-            <!-- 9. BACKUP & RECOVERY PANEL -->
-            <div id="settings-panel-backup" class="settings-subpanel" data-section="BACKUP" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">PostgreSQL Hot Backup &amp; Point-in-time Recovery</h3>
-                    <p style="font-size:0.74rem; color:var(--text-dim); margin:2px 0 0 0;">Automated nightly database dumps and immediate point-in-time snapshot generator</p>
-                  </div>
-                  <button class="btn btn-primary" onclick="window.SettingsController.triggerImmediateBackup()">
-                    <span>🗄️</span> Trigger Immediate Full Backup
-                  </button>
-                </div>
-                <div style="background:rgba(2,132,199,0.08); border:1px solid rgba(2,132,199,0.25); border-radius:8px; padding:12px 16px; font-size:0.78rem; margin-bottom:14px;">
-                  <strong>Database Host:</strong> localhost:55432 &bull; <strong>Database Name:</strong> dse_production &bull; <strong>Engine:</strong> PostgreSQL 16 &bull; <strong>Backup Storage:</strong> D:\DSE Production\backups
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-dim);">
-                  Automated backups are executed every 24 hours via pg_dump to resilient cold storage.
-                </div>
-              </div>
-            </div>
-
-            <!-- 10. SAFE ROLLBACK PANEL -->
-            <div id="settings-panel-rollback" class="settings-subpanel" data-section="ROLLBACK" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Safe Release Rollback Studio</h3>
-                    <p style="font-size:0.74rem; color:var(--text-dim); margin:2px 0 0 0;">Verified binary releases with SHA256 checksums and automated pre-flight safety snapshots</p>
-                  </div>
-                  <button class="btn btn-secondary" onclick="window.SettingsController.loadSafeRollback()">
-                    <span>🔄</span> Refresh Releases
-                  </button>
-                </div>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Target Version</th>
-                      <th>Installer Package</th>
-                      <th>Compatibility</th>
-                      <th>SHA256 Status</th>
-                      <th style="text-align:right;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rollback-settings-tbody">
-                    <!-- Populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- VIEW: COMPANY & BILLING SETTINGS (SettingsController.java & CompanySettingsPanel.fxml PARITY) -->
@@ -5689,7 +5558,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
                   <label class="form-label" style="font-size:0.75rem;">Confirm New Password *</label>
                   <input type="password" id="pw-confirm" class="form-input form-input-sm" required minlength="8">
                 </div>
-                <button type="submit" class="btn btn-primary">Update Password</button>
+                <button type="submit" class="btn btn-primary" onclick="window.SettingsController.handlePasswordChange(event)">Update Password</button>
               </form>
             </div>
           </div>
@@ -5725,1667 +5594,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
         </div>
 
-        <!-- VIEW: SAFE RELEASE ROLLBACK (EXACT DESKTOP SafeRollback.fxml PARITY) -->
-        <div id="view-safe-rollback" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>⏮️</span> Safe Release Rollback Studio</h1>
-              <p>Zero-data-loss application rollback coordinator with automatic pre-flight safety snapshots</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.SettingsController.loadSafeRollback()">
-                <span>🔄</span> Refresh Releases
-              </button>
-            </div>
-          </div>
-
-          <!-- 4 KPIs matching SafeRollback.fxml -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">CURRENT APP VERSION</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--cyan);">v10.0.25</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Build: 2026.10 &bull; Windows x64</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE SCHEMA</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--green);">v10.0.25</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Active PostgreSQL Schema</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">SAFETY PROTOCOL</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--purple);">PROTECTED</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Automated Pre-Flight Snapshot</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">RETAINED INSTALLERS</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--yellow);">4 Packages</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Verified fallback versions</div>
-            </div>
-          </div>
-
-          <!-- Safety Guarantee Alert Banner -->
-          <div style="background:rgba(2,132,199,0.1); border:1px solid rgba(2,132,199,0.3); border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:0.8rem; line-height:1.5;">
-            <strong style="color:var(--cyan);">🛡️ PRODUCTION-SAFE ROLLBACK GUARANTEE:</strong><br>
-            Rollback replaces only the binary application package. It <em>never</em> automatically wipes or downgrades database tables. A verified PostgreSQL safety backup and configuration snapshot are created immediately prior to staging. Database restoration remains an explicit separate administrative action.
-          </div>
-
-          <!-- Rollback Candidates Table -->
-          <div class="data-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="width:110px;">Version</th>
-                  <th>Installer Package</th>
-                  <th style="width:120px;">Target Schema</th>
-                  <th style="width:140px;">Compatibility</th>
-                  <th style="width:180px;">SHA256 Checksum</th>
-                  <th style="width:100px;">Package Size</th>
-                  <th style="text-align: right; width: 190px;">Rollback Action</th>
-                </tr>
-              </thead>
-              <tbody id="rollback-candidates-tbody">
-                <!-- Dynamically populated by SettingsController.loadSafeRollback() -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- VIEW: DATABASE BACKUP & RECOVERY (EXACT DESKTOP BackupRestore.fxml PARITY) -->
-        <div id="view-backup" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>💾</span> Database Backup &amp; Recovery Studio</h1>
-              <p>PostgreSQL server snapshots, automated pg_dump archives, and emergency recovery packages</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.SettingsController.exportRecoveryPackage()">
-                <span>📦</span> Export Recovery Package
-              </button>
-              <button class="btn btn-primary" onclick="window.SettingsController.triggerImmediateBackup()">
-                <span>+</span> Create Backup Now
-              </button>
-              <button class="btn btn-secondary" onclick="window.SettingsController.loadBackups()">
-                <span>🔄</span> Refresh
-              </button>
-            </div>
-          </div>
-
-          <!-- 4 KPIs matching BackupRestore.fxml -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE SIZE</span></div>
-              <div class="kpi-value" id="backup-kpi-size" style="font-size: 1.25rem;">48.2 MB</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">PostgreSQL 18 active storage</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE HEALTH</span></div>
-              <div class="kpi-value" id="backup-kpi-health" style="font-size: 1.25rem; color: var(--green);">100% HEALTHY</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">WAL consistency verified</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL ARCHIVES</span></div>
-              <div class="kpi-value" id="backup-kpi-count" style="font-size: 1.25rem; color: var(--purple);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Retained server pg_dump files</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LAST BACKUP TAKEN</span></div>
-              <div class="kpi-value" id="backup-kpi-last" style="font-size: 1.15rem; color: var(--yellow);">None</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Most recent verified snapshot</div>
-            </div>
-          </div>
-
-          <!-- Stored Backups Table -->
-          <div class="data-panel">
-            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border-subtle);">
-              <div class="panel-title" style="font-weight:700; font-size:0.85rem; color:var(--cyan);">📁 Stored PostgreSQL Server Backups (/Backups/Server)</div>
-              <span style="font-size:0.75rem; color:var(--text-dim);">Automated retention policy preserves last 14 daily snapshots</span>
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Archive Filename</th>
-                  <th style="width:160px;">Created Date &amp; Time</th>
-                  <th style="width:120px;">File Size</th>
-                  <th style="width:100px;">Integrity</th>
-                  <th style="width:110px;">Source</th>
-                  <th style="text-align: right; width: 220px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="backups-table-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading server backups...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </main>
-    </div>
-
-    <!-- PERSISTENT DESKTOP FOOTER BAR (IMAGES 1-4) -->
-    <footer class="app-footer-bar">
-      <div class="footer-left">
-        <span style="display:flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; border-radius:50%; background:#34d399; display:inline-block;"></span> Secure Local Reliable</span>
-        <span>🏢 Jashvi Engineers</span>
-        <span>📞 9099939193</span>
-        <span>✉️ ssdhameliya@gmail.com</span>
-      </div>
-      <div class="footer-right">
-        <span id="footer-live-clock">📅 Monday, 12/10/2026 | 11:04:43 PM | IST</span>
-      </div>
-    </footer>
-  </div>
-
-  <!-- MODALS -->
-
-  <!-- MODAL: CREATE SALES INVOICE -->
-  <div class="modal-overlay" id="modal-new-invoice">
-    <div class="modal-card modal-lg" style="max-width: 980px;">
-      <div class="modal-header">
-        <h3>+ Create Sales Tax Invoice</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-invoice')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-create-invoice" onsubmit="handleInvoiceSave(event)">
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Invoice Number</label>
-              <input type="text" id="inv-no" class="form-input" value="AUTO-GENERATED" readonly style="font-weight: 700; color: var(--cyan);">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Invoice Date</label>
-              <input type="date" id="inv-date" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Due Date</label>
-              <input type="date" id="inv-due-date" class="form-input">
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Select Customer / Client</label>
-              <select id="inv-customer" class="form-select" onchange="window.SalesController.onCustomerSelectChange(this)" required>
-                <option value="">-- Choose Customer --</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Customer GSTIN</label>
-              <input type="text" id="inv-gstin" class="form-input" placeholder="e.g. 24AAAAA0000A1Z5" maxlength="15">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Tax Regime</label>
-              <select id="inv-gst-type" class="form-select" onchange="window.SalesController.calcInvoiceTotals()">
-                <option value="GST">Intra-State (CGST 50% + SGST 50%)</option>
-                <option value="IGST">Inter-State (IGST 100%)</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Billing Address</label>
-              <input type="text" id="inv-billing-address" class="form-input" placeholder="Street, City, State">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Delivery / Shipping Address</label>
-              <input type="text" id="inv-delivery-address" class="form-input" placeholder="Consignee Delivery Location">
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-            <div class="form-group">
-              <label class="form-label">Transporter</label>
-              <input type="text" id="inv-transporter" class="form-input" placeholder="e.g. V-Trans / Self">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Vehicle Number</label>
-              <input type="text" id="inv-vehicle-no" class="form-input" placeholder="GJ-05-BX-1029">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Payment Mode</label>
-              <select id="inv-payment-mode" class="form-select">
-                <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="UPI">UPI</option>
-                <option value="CASH">Cash</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Payment Terms</label>
-              <input type="text" id="inv-payment-terms" class="form-input" value="15 Days">
-            </div>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; font-size: 0.85rem;">Invoice Line Items &bull; Dynamic Grid</span>
-              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addInvoiceItemRow()">+ Add Line Item</button>
-            </div>
-            <div style="overflow-x: auto;">
-              <table class="data-table" id="inv-items-table" style="min-width: 780px;">
-                <thead>
-                  <tr>
-                    <th>Product / Material</th>
-                    <th>HSN</th>
-                    <th>Qty</th>
-                    <th>Unit</th>
-                    <th>Rate (&#8377;)</th>
-                    <th>Disc (%)</th>
-                    <th>GST (%)</th>
-                    <th style="text-align: right;">Total (&#8377;)</th>
-                    <th style="width: 40px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="inv-items-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Bottom Totals & Charges Calculation Box -->
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-            <div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
-                <div class="form-group">
-                  <label class="form-label">Freight / Cartage (&#8377;)</label>
-                  <input type="number" step="0.01" id="inv-freight-charges" class="form-input" value="0.00" oninput="window.SalesController.calcInvoiceTotals()">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Round Off (&#8377;)</label>
-                  <input type="number" step="0.01" id="inv-round-off" class="form-input" value="0.00" oninput="window.SalesController.calcInvoiceTotals()">
-                </div>
-              </div>
-              <div id="inv-tax-breakdown-text" style="font-size: 0.76rem; color: var(--cyan); margin-top: 6px;">CGST: ₹ 0.00 | SGST: ₹ 0.00</div>
-            </div>
-            <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
-              <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">
-                Taxable: <span id="inv-calc-sub" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span> |
-                GST: <span id="inv-calc-tax" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span>
-              </div>
-              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Grand Total Payable:</div>
-              <div style="font-size: 1.6rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';" id="inv-calc-grand">&#8377; 0.00</div>
-            </div>
-          </div>
-
-          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-invoice')">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="padding: 0 24px; height: 40px;">&#10004; Save &amp; Post Sales Invoice</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADD CUSTOMER -->
-  <div class="modal-overlay" id="modal-new-customer">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Add Customer Master</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-customer')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleCustomerSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">Code</label><input type="text" id="cust-code" class="form-input" placeholder="CUST-001" required></div>
-            <div class="form-group"><label class="form-label">Legal Name</label><input type="text" id="cust-name" class="form-input" placeholder="Shree Balaji Traders" required></div>
-            <div class="form-group"><label class="form-label">GSTIN</label><input type="text" id="cust-gstin" class="form-input" placeholder="24AAAAA0000A1Z5" maxlength="15"></div>
-            <div class="form-group"><label class="form-label">Phone</label><input type="text" id="cust-phone" class="form-input" placeholder="+91 9876543210"></div>
-            <div class="form-group" style="grid-column: span 2;"><label class="form-label">Address</label><input type="text" id="cust-address" class="form-input" placeholder="Surat, Gujarat"></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-customer')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save Customer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADD SUPPLIER -->
-  <div class="modal-overlay" id="modal-new-supplier">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Add Supplier Master</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-supplier')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleSupplierSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">Code</label><input type="text" id="sup-code" class="form-input" placeholder="SUP-001" required></div>
-            <div class="form-group"><label class="form-label">Name</label><input type="text" id="sup-name" class="form-input" placeholder="Jindal Steel Works" required></div>
-            <div class="form-group"><label class="form-label">GSTIN</label><input type="text" id="sup-gstin" class="form-input" placeholder="24AAAAA0000A1Z5" maxlength="15"></div>
-            <div class="form-group"><label class="form-label">Phone</label><input type="text" id="sup-phone" class="form-input" placeholder="+91 9876543210"></div>
-            <div class="form-group"><label class="form-label">Bank Name</label><input type="text" id="sup-bank" class="form-input" placeholder="HDFC Bank"></div>
-            <div class="form-group"><label class="form-label">Account #</label><input type="text" id="sup-account" class="form-input" placeholder="50200012345678"></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-supplier')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save Supplier</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADD ITEM -->
-  <div class="modal-overlay" id="modal-new-item">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Add Item Catalog</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-item')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleItemSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">SKU / Code</label><input type="text" id="item-code" class="form-input" placeholder="FAST-001" required></div>
-            <div class="form-group"><label class="form-label">Description</label><input type="text" id="item-desc" class="form-input" placeholder="M12 Galvanized Bolt" required></div>
-            <div class="form-group"><label class="form-label">HSN</label><input type="text" id="item-hsn" class="form-input" placeholder="7318" required></div>
-            <div class="form-group">
-              <label class="form-label">Tax Rate (%)</label>
-              <select id="item-tax" class="form-select" required>
-                <option value="18">18% GST</option><option value="12">12% GST</option><option value="5">5% GST</option><option value="28">28% GST</option><option value="0">0%</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Sale Price (&#8377;)</label><input type="number" step="0.01" id="item-saleprice" class="form-input" placeholder="0.00" required></div>
-            <div class="form-group"><label class="form-label">Purchase Rate (&#8377;)</label><input type="number" step="0.01" id="item-purchaseprice" class="form-input" placeholder="0.00" required></div>
-            <div class="form-group"><label class="form-label">Opening Stock</label><input type="number" id="item-stock" class="form-input" value="100" required></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-item')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save Item</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADD USER -->
-  <div class="modal-overlay" id="modal-new-user">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Add System User</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-user')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleUserSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">Username</label><input type="text" id="usr-username" class="form-input" placeholder="jatin" required></div>
-            <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="usr-fullname" class="form-input" placeholder="Jatin Dhameliya" required></div>
-            <div class="form-group"><label class="form-label">Email</label><input type="email" id="usr-email" class="form-input" placeholder="jatin@jasviindustries.in" required></div>
-            <div class="form-group">
-              <label class="form-label">Role</label>
-              <select id="usr-role" class="form-select" required>
-                <option value="ADMIN">ADMIN &bull; Administrator</option>
-                <option value="SALES">SALES &bull; Sales Officer</option>
-                <option value="ACCOUNTS">ACCOUNTS &bull; Accountant</option>
-                <option value="WAREHOUSE">WAREHOUSE &bull; Store Supervisor</option>
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;"><label class="form-label">Initial Password (8+ chars)</label><input type="password" id="usr-password" class="form-input" required minlength="8"></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-user')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Create User</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CREATE PURCHASE BILL -->
-  <div class="modal-overlay" id="modal-new-purchase">
-    <div class="modal-card modal-lg" style="max-width: 960px;">
-      <div class="modal-header">
-        <h3>+ Create Purchase Bill / Inward Goods Memo</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-purchase')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-create-purchase" onsubmit="handlePurchaseSave(event)">
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Vendor Bill No</label>
-              <input type="text" id="pur-bill-no" class="form-input" placeholder="e.g. BILL-9821" required style="font-weight: 700; color: var(--cyan);">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Bill Date</label>
-              <input type="date" id="pur-bill-date" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Select Supplier / Vendor</label>
-              <select id="pur-supplier" class="form-select" onchange="window.PurchaseController.onSupplierSelectChange(this)" required>
-                <option value="">-- Choose Supplier --</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Supplier GSTIN</label>
-              <input type="text" id="pur-gstin" class="form-input" placeholder="24AAAAA0000A1Z5" maxlength="15">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Supplier Address</label>
-              <input type="text" id="pur-supplier-address" class="form-input" placeholder="Vendor Factory / Office Address">
-            </div>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; font-size: 0.85rem;">Inward Item Lines &bull; Materials Grid</span>
-              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addPurchaseItemRow()">+ Add Material Row</button>
-            </div>
-            <div style="overflow-x: auto;">
-              <table class="data-table" id="pur-items-table" style="min-width: 780px;">
-                <thead>
-                  <tr>
-                    <th>Material / SKU</th>
-                    <th>HSN</th>
-                    <th>Qty</th>
-                    <th>Unit</th>
-                    <th>Cost Rate (&#8377;)</th>
-                    <th>GST (%)</th>
-                    <th style="text-align: right;">Total (&#8377;)</th>
-                    <th style="width: 40px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="pur-items-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Bottom Summary Box -->
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-            <div>
-              <div class="form-group" style="max-width: 220px;">
-                <label class="form-label">Inward Freight / Cartage (&#8377;)</label>
-                <input type="number" step="0.01" id="pur-freight-charges" class="form-input" value="0.00" oninput="window.PurchaseController.calcPurchaseTotals()">
-              </div>
-              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 8px;">GST Input Tax Credit (ITC) calculated and recorded for GSTR-2B.</div>
-            </div>
-            <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
-              <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">
-                Taxable: <span id="pur-calc-sub" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span> |
-                ITC: <span id="pur-calc-tax" style="font-weight: 600; color: var(--text-main);">&#8377; 0.00</span>
-              </div>
-              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Total Inward Bill:</div>
-              <div style="font-size: 1.6rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';" id="pur-calc-grand">&#8377; 0.00</div>
-            </div>
-          </div>
-
-          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-purchase')">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="padding: 0 24px; height: 40px;">&#10004; Save &amp; Record Inward Bill</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- MODAL: GENERATE E-WAY BILL -->
-  <div class="modal-overlay" id="modal-generate-eway-bill">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="modal-header">
-        <h3>🚚 NIC GST E-Way Bill Generation Gateway</h3>
-        <button class="modal-close" onclick="closeModal('modal-generate-eway-bill')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="window.EWayBillController.submitGenerateEWay(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Document / Invoice No</label>
-              <input type="text" id="eway-modal-inv-no" class="form-input" readonly style="font-weight: 700; color: var(--cyan);">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Consignment Value (&#8377;)</label>
-              <input type="text" id="eway-modal-amount" class="form-input" readonly style="font-weight: 700;">
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Consignee Client / Party</label>
-            <input type="text" id="eway-modal-party" class="form-input" readonly>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Dispatch Vehicle Number</label>
-              <input type="text" id="eway-modal-vehicle" class="form-input" placeholder="GJ-05-BX-1029" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Approx Distance (KM)</label>
-              <input type="number" id="eway-modal-distance" class="form-input" value="180" required>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Transporter ID / GSTIN</label>
-              <input type="text" id="eway-modal-transporter-id" class="form-input" placeholder="e.g. 24AABCT1234F1Z9">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Transporter Name</label>
-              <input type="text" id="eway-modal-transporter-name" class="form-input" placeholder="e.g. V-Trans Logistics">
-            </div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-generate-eway-bill')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Generate NIC Portal E-Way Bill</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: UPDATE E-WAY VEHICLE (Part-B Desktop Parity) -->
-  <div class="modal-overlay" id="modal-update-eway-vehicle">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header">
-        <h3>🚛 Update Transport Vehicle (Part-B)</h3>
-        <button class="modal-close" onclick="closeModal('modal-update-eway-vehicle')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="window.EWayBillController.submitUpdateVehicle(event)">
-          <input type="hidden" id="m-veh-eway-id">
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">New Vehicle Number</label>
-            <input type="text" id="m-veh-new-num" class="form-input" placeholder="e.g. GJ-05-BX-1029" required style="font-weight:700; text-transform:uppercase;">
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Reason for Change</label>
-            <select id="m-veh-reason" class="form-input">
-              <option value="Transshipment">Transshipment</option>
-              <option value="Vehicle Breakdown">Vehicle Breakdown</option>
-              <option value="First Time Update">First Time Update</option>
-              <option value="Consignment Split">Consignment Split</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Current Location / Transshipment Place</label>
-            <input type="text" id="m-veh-place" class="form-input" placeholder="e.g. Surat, Gujarat">
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-update-eway-vehicle')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Update Vehicle (Part-B)</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: STOCK ADJUSTMENT (Inventory.fxml Desktop Parity) -->
-  <div class="modal-overlay" id="modal-stock-adjustment">
-    <div class="modal-card" style="max-width: 540px;">
-      <div class="modal-header">
-        <h3>⚡ Stock Adjustment Entry</h3>
-        <button class="modal-close" onclick="closeModal('modal-stock-adjustment')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="window.ItemMasterController.submitStockAdjustment(event)">
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Inventory Item</label>
-            <select id="adj-item-select" class="form-select" required></select>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label class="form-label">Current Physical Stock</label>
-              <input type="text" id="adj-current-stock" class="form-input" readonly style="font-weight: 700; color: var(--cyan);">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Adjustment Type</label>
-              <select id="adj-type" class="form-select">
-                <option value="ADD">ADD (+ Inward Adjustment)</option>
-                <option value="REMOVE">REMOVE (- Outward Wastage/Loss)</option>
-                <option value="SET">SET (= Override Count)</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Adjustment Quantity</label>
-            <input type="number" id="adj-qty" class="form-input" placeholder="Enter adjustment units" step="0.01" min="0.01" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Required Reason / Audit Remark</label>
-            <input type="text" id="adj-reason" class="form-input" placeholder="e.g. Physical inventory variance reconciliation" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label">Reference # (Optional)</label>
-            <input type="text" id="adj-ref" class="form-input" placeholder="e.g. AUDIT-2026-Q3">
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-adjustment')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Apply Stock Adjustment</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: STOCK MOVEMENT HISTORY (Inventory.fxml Desktop Parity) -->
-  <div class="modal-overlay" id="modal-stock-history">
-    <div class="modal-card modal-lg" style="max-width: 860px; max-height: 88vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <div>
-          <h3 id="sh-modal-title" style="margin: 0; font-size: 1.15rem;">Stock Movement Ledger</h3>
-          <div id="sh-modal-subtitle" style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">Movement transactions</div>
-        </div>
-        <button class="modal-close" onclick="closeModal('modal-stock-history')">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 110px;">DATE</th>
-              <th style="width: 120px;">TYPE</th>
-              <th style="text-align: right; width: 100px;">QTY</th>
-              <th>REASON / PARTICULARS</th>
-              <th style="width: 130px;">REFERENCE</th>
-              <th style="width: 90px;">USER</th>
-            </tr>
-          </thead>
-          <tbody id="sh-history-tbody">
-            <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">Loading movements...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-footer" style="border-top: 1px solid var(--border-subtle); padding: 12px 16px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-history')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CUSTOMER 360° PROFILE (Customer360.fxml Desktop Parity) -->
-  <div class="modal-overlay" id="modal-customer-360">
-    <div class="modal-card modal-xl" style="max-width: 980px; max-height: 90vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.6rem;">👥</span>
-          <div>
-            <h3 id="c360-title" style="margin: 0; font-size: 1.25rem;">Customer 360° Profile</h3>
-            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Comprehensive client portfolio, orders, payment history and ledger</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="badge badge-paid">ACTIVE CLIENT</span>
-          <button class="modal-close" onclick="closeModal('modal-customer-360')">&times;</button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding: 18px; overflow-y: auto; flex: 1;">
-        <!-- Identity Card -->
-        <div style="background: var(--bg-surface); padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-bottom: 16px;">
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.8rem;">
-            <div><span style="color: var(--text-dim);">Customer Code:</span> <strong id="c360-code" style="color: var(--cyan);">-</strong></div>
-            <div><span style="color: var(--text-dim);">GSTIN:</span> <strong id="c360-gstin" style="font-family: monospace; color: var(--purple);">-</strong></div>
-            <div><span style="color: var(--text-dim);">Contact Person:</span> <strong id="c360-contact">-</strong></div>
-            <div><span style="color: var(--text-dim);">Mobile:</span> <strong id="c360-phone">-</strong></div>
-            <div><span style="color: var(--text-dim);">Email:</span> <strong id="c360-email">-</strong></div>
-            <div><span style="color: var(--text-dim);">Registered Address:</span> <strong id="c360-address">-</strong></div>
-          </div>
-        </div>
-
-        <!-- 4 360 KPIs -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px;">
-          <div class="standard-kpi-card kpi-blue" style="padding: 12px;">
-            <div class="metric-label">OUTSTANDING RECEIVABLE</div>
-            <div id="c360-kpi-outstanding" class="metric-value" style="font-size: 1.3rem; color: var(--accent-red);">₹ 0.00</div>
-          </div>
-          <div class="standard-kpi-card kpi-green" style="padding: 12px;">
-            <div class="metric-label">SALES DOCUMENTS</div>
-            <div id="c360-kpi-count" class="metric-value" style="font-size: 1.3rem;">0 Invoices</div>
-          </div>
-          <div class="standard-kpi-card kpi-purple" style="padding: 12px;">
-            <div class="metric-label">LIFETIME SALES REVENUE</div>
-            <div id="c360-kpi-total" class="metric-value" style="font-size: 1.3rem;">₹ 0.00</div>
-          </div>
-          <div class="standard-kpi-card kpi-orange" style="padding: 12px;">
-            <div class="metric-label">LAST PAYMENT RECEIVED</div>
-            <div id="c360-kpi-last-payment" class="metric-value" style="font-size: 1.3rem; color: var(--accent-green);">₹ 0.00</div>
-          </div>
-        </div>
-
-        <!-- Sub Tabs -->
-        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px;">
-          <button id="c360-tab-invoices" class="btn btn-secondary btn-sm sub-tab-btn active" onclick="window.PartyController.switch360Tab('c360-tab-invoices', 'c360-pane-invoices')">🛒 Sales Invoices</button>
-          <button id="c360-tab-payments" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('c360-tab-payments', 'c360-pane-payments')">💳 Receipts &amp; Payments</button>
-        </div>
-
-        <div id="c360-pane-invoices" class="sub-tab-pane" style="display: block;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>INVOICE #</th>
-                <th>DATE</th>
-                <th style="text-align: right;">TAXABLE (₹)</th>
-                <th style="text-align: right;">GST (₹)</th>
-                <th style="text-align: right;">TOTAL (₹)</th>
-                <th style="text-align: center;">PAYMENT</th>
-              </tr>
-            </thead>
-            <tbody id="c360-invoices-tbody"></tbody>
-          </table>
-        </div>
-
-        <div id="c360-pane-payments" class="sub-tab-pane" style="display: none;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>RECEIPT #</th>
-                <th>DATE</th>
-                <th>PAYMENT MODE</th>
-                <th>REFERENCE #</th>
-                <th style="text-align: right;">AMOUNT (₹)</th>
-              </tr>
-            </thead>
-            <tbody id="c360-payments-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer" style="border-top: 1px solid var(--border-subtle); padding: 12px 18px; display: flex; justify-content: space-between;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-customer-360')">Close</button>
-        <button type="button" class="btn btn-primary" onclick="closeModal('modal-customer-360'); window.SalesController.openSaleWorkspace();">+ Create New Sale</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: SUPPLIER 360° PROFILE (Supplier360.fxml Desktop Parity) -->
-  <div class="modal-overlay" id="modal-supplier-360">
-    <div class="modal-card modal-xl" style="max-width: 980px; max-height: 90vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.6rem;">🏢</span>
-          <div>
-            <h3 id="s360-title" style="margin: 0; font-size: 1.25rem;">Supplier 360° Profile</h3>
-            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Procurement history, inward bills, outgoing payments and vendor ledger</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="badge badge-paid">APPROVED VENDOR</span>
-          <button class="modal-close" onclick="closeModal('modal-supplier-360')">&times;</button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding: 18px; overflow-y: auto; flex: 1;">
-        <!-- Identity Card -->
-        <div style="background: var(--bg-surface); padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-bottom: 16px;">
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.8rem;">
-            <div><span style="color: var(--text-dim);">Supplier Code:</span> <strong id="s360-code" style="color: var(--cyan);">-</strong></div>
-            <div><span style="color: var(--text-dim);">GSTIN:</span> <strong id="s360-gstin" style="font-family: monospace; color: var(--purple);">-</strong></div>
-            <div><span style="color: var(--text-dim);">Contact Person:</span> <strong id="s360-contact">-</strong></div>
-            <div><span style="color: var(--text-dim);">Mobile:</span> <strong id="s360-phone">-</strong></div>
-            <div><span style="color: var(--text-dim);">Email:</span> <strong id="s360-email">-</strong></div>
-            <div><span style="color: var(--text-dim);">Dispatch Address:</span> <strong id="s360-address">-</strong></div>
-          </div>
-        </div>
-
-        <!-- 4 360 KPIs -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px;">
-          <div class="standard-kpi-card kpi-blue" style="padding: 12px;">
-            <div class="metric-label">OUTSTANDING PAYABLE</div>
-            <div id="s360-kpi-outstanding" class="metric-value" style="font-size: 1.3rem; color: var(--accent-red);">₹ 0.00</div>
-          </div>
-          <div class="standard-kpi-card kpi-green" style="padding: 12px;">
-            <div class="metric-label">PURCHASE DOCUMENTS</div>
-            <div id="s360-kpi-count" class="metric-value" style="font-size: 1.3rem;">0 Bills</div>
-          </div>
-          <div class="standard-kpi-card kpi-purple" style="padding: 12px;">
-            <div class="metric-label">TOTAL PROCUREMENT</div>
-            <div id="s360-kpi-total" class="metric-value" style="font-size: 1.3rem;">₹ 0.00</div>
-          </div>
-          <div class="standard-kpi-card kpi-orange" style="padding: 12px;">
-            <div class="metric-label">LAST PAYMENT MADE</div>
-            <div id="s360-kpi-last-payment" class="metric-value" style="font-size: 1.3rem; color: var(--accent-green);">₹ 0.00</div>
-          </div>
-        </div>
-
-        <!-- Sub Tabs -->
-        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px;">
-          <button id="s360-tab-bills" class="btn btn-secondary btn-sm sub-tab-btn active" onclick="window.PartyController.switch360Tab('s360-tab-bills', 's360-pane-bills')">📦 Purchase Bills</button>
-          <button id="s360-tab-payments" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('s360-tab-payments', 's360-pane-payments')">💸 Payments Dispatched</button>
-        </div>
-
-        <div id="s360-pane-bills" class="sub-tab-pane" style="display: block;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>BILL #</th>
-                <th>DATE</th>
-                <th style="text-align: right;">TAXABLE (₹)</th>
-                <th style="text-align: right;">GST (₹)</th>
-                <th style="text-align: right;">TOTAL (₹)</th>
-                <th style="text-align: center;">STATUS</th>
-              </tr>
-            </thead>
-            <tbody id="s360-bills-tbody"></tbody>
-          </table>
-        </div>
-
-        <div id="s360-pane-payments" class="sub-tab-pane" style="display: none;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>VOUCHER #</th>
-                <th>DATE</th>
-                <th>BANK / MODE</th>
-                <th>REFERENCE #</th>
-                <th style="text-align: right;">AMOUNT (₹)</th>
-              </tr>
-            </thead>
-            <tbody id="s360-payments-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer" style="border-top: 1px solid var(--border-subtle); padding: 12px 18px; display: flex; justify-content: space-between;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-supplier-360')">Close</button>
-        <button type="button" class="btn btn-primary" onclick="closeModal('modal-supplier-360'); window.PurchaseController.openPurchaseEditor();">+ Record Inward Bill</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: PRINTABLE A4 TAX INVOICE -->
-  <div class="modal-overlay" id="printable-invoice-modal">
-    <div class="modal-card modal-xl" style="max-width: 960px; max-height: 92vh; overflow-y: auto;">
-      <div class="modal-header" style="position: sticky; top: 0; background: var(--bg-surface); z-index: 10;">
-        <h3>📄 A4 Tax Invoice Print Studio</h3>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-primary" onclick="window.print()" style="padding: 4px 16px;">🖨️ Print / Save as PDF</button>
-          <button class="modal-close" onclick="closeModal('printable-invoice-modal')">&times;</button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding: 24px; background: #525659;">
-        <div id="printable-invoice-content" style="background: #ffffff; color: #111111; padding: 32px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); min-height: 800px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-          <!-- Loaded dynamically by SalesController.printTaxInvoice() -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SIDE DRAWER OVERLAY -->
-  <div class="side-drawer-overlay" id="side-drawer-overlay" onclick="closeInvoiceDrawer(); closePurchaseDrawer();"></div>
-
-  <!-- SIDE INSPECTION DRAWER: SALES INVOICE -->
-  <div class="side-drawer" id="drawer-invoice-details">
-    <div class="drawer-header">
-      <div>
-        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sales Tax Invoice</div>
-        <h3 id="drawer-inv-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
-      </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="drawer-inv-status" class="badge badge-paid">APPROVED</span>
-        <button class="modal-close" onclick="closeInvoiceDrawer()">&times;</button>
-      </div>
-    </div>
-    <div class="drawer-body">
-      <div class="drawer-section">
-        <div class="drawer-grid">
-          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-inv-date">-</div></div>
-          <div><div class="drawer-grid-label">Transporter</div><div class="drawer-grid-val" id="drawer-transporter">-</div></div>
-          <div><div class="drawer-grid-label">Vehicle #</div><div class="drawer-grid-val" id="drawer-vehicle">-</div></div>
-          <div><div class="drawer-grid-label">Payment Terms</div><div class="drawer-grid-val">15 Days</div></div>
-        </div>
-      </div>
-
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Customer Profile</div>
-        <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;" id="drawer-cust-name">-</div>
-        <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 2px;">GSTIN: <span id="drawer-cust-gstin" style="font-family: monospace;">-</span></div>
-        <div style="font-size: 0.8rem; color: var(--text-dim);" id="drawer-cust-address">-</div>
-        <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Phone: <span id="drawer-cust-phone">-</span></div>
-      </div>
-
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Line Items Consignment</div>
-        <table class="data-table" style="font-size: 0.78rem;">
-          <thead>
-            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th style="text-align: right;">Total</th></tr>
-          </thead>
-          <tbody id="drawer-items-tbody"></tbody>
-        </table>
-      </div>
-
-      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Taxable Subtotal:</span>
-          <span id="drawer-taxable-amt" style="font-weight: 600;">₹ 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">GST Tax Amount:</span>
-          <span id="drawer-gst-amt" style="font-weight: 600;">₹ 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Freight &amp; Charges:</span>
-          <span id="drawer-charges-amt" style="font-weight: 600;">₹ 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
-          <span style="color: var(--cyan);">Grand Total:</span>
-          <span id="drawer-grand-total" style="color: var(--cyan); font-family: 'Space Grotesk';">₹ 0.00</span>
-        </div>
-      </div>
-    </div>
-    <div class="drawer-footer">
-      <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
-      <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">📄 Print Tax Invoice</button>
-    </div>
-  </div>
-
-  <!-- SIDE INSPECTION DRAWER: PURCHASE BILL -->
-  <div class="side-drawer" id="drawer-purchase-details-inspect">
-    <div class="drawer-header">
-      <div>
-        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Purchase Inward Bill</div>
-        <h3 id="drawer-pur-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
-      </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="drawer-pur-status" class="badge badge-paid">ACCEPTED</span>
-        <button class="modal-close" onclick="closePurchaseDrawer()">&times;</button>
-      </div>
-    </div>
-    <div class="drawer-body">
-      <div class="drawer-section">
-        <div class="drawer-grid">
-          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-pur-date">-</div></div>
-          <div><div class="drawer-grid-label">Supplier GSTIN</div><div class="drawer-grid-val" id="drawer-pur-supp-gstin" style="font-family: monospace;">-</div></div>
-          <div><div class="drawer-grid-label">Contact</div><div class="drawer-grid-val" id="drawer-pur-supp-phone">-</div></div>
-        </div>
-      </div>
-
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Supplier Profile</div>
-        <div style="font-size: 0.95rem; font-weight: 700;" id="drawer-pur-supp-name">-</div>
-      </div>
-
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Inward Item Lines</div>
-        <table class="data-table" style="font-size: 0.78rem;">
-          <thead>
-            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Cost Rate</th><th style="text-align: right;">Total</th></tr>
-          </thead>
-          <tbody id="drawer-pur-items-tbody"></tbody>
-        </table>
-      </div>
-
-      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Taxable Inward:</span>
-          <span id="drawer-pur-taxable" style="font-weight: 600;">₹ 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Input Tax Credit (ITC):</span>
-          <span id="drawer-pur-gst" style="font-weight: 600;">₹ 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
-          <span style="color: var(--cyan);">Total Bill Payable:</span>
-          <span id="drawer-pur-total" style="color: var(--cyan); font-family: 'Space Grotesk';">₹ 0.00</span>
-        </div>
-      </div>
-    </div>
-    <div class="drawer-footer">
-      <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
-    </div>
-  </div>
-
-  <!-- MODAL: CREATE SALES QUOTATION -->
-  <div class="modal-overlay" id="modal-new-quotation">
-    <div class="modal-card" style="max-width: 820px;">
-      <div class="modal-header">
-        <h3>+ Create Sales Quotation / Proforma Estimate</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-quotation')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-create-quotation" onsubmit="handleQuotationSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div class="form-group">
-              <label class="form-label">Quotation No</label>
-              <input type="text" id="quote-no" class="form-input" value="AUTO-GENERATED" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Quote Date</label>
-              <input type="date" id="quote-date" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Client / Prospect</label>
-              <select id="quote-customer" class="form-select" required>
-                <option value="">-- Choose Customer --</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; font-size: 0.82rem;">Estimated Items</span>
-              <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addQuotationItemRow()">+ Add Item</button>
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Product / Item</th><th>Qty</th><th>Offer Rate (&#8377;)</th><th>Tax (%)</th><th>Total (&#8377;)</th><th></th></tr>
-              </thead>
-              <tbody id="quote-items-tbody"></tbody>
-            </table>
-          </div>
-
-          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Validity: 30 days. Convertible to Sales Invoice with 1-click.</div>
-            <div style="text-align: right;">
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Quoted Amount:</div>
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--cyan); font-family: 'Space Grotesk';" id="quote-calc-grand">&#8377; 0.00</div>
-            </div>
-          </div>
-
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-quotation')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Generate Quotation</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: NEW BANK ENTRY -->
-  <div class="modal-overlay" id="modal-new-bank-entry">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Record Bank Journal Entry</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-bank-entry')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleBankEntrySave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">Date</label><input type="date" id="bank-date" class="form-input" required></div>
-            <div class="form-group">
-              <label class="form-label">Bank Account</label>
-              <select id="bank-acc" class="form-select" required>
-                <option value="HDFC Bank Primary (A/c 50200012345678)">HDFC Bank Primary (A/c 50200012345678)</option>
-                <option value="SBI Capital Current (A/c 30129845671)">SBI Capital Current (A/c 30129845671)</option>
-                <option value="ICICI Overdraft (A/c 001205012345)">ICICI Overdraft (A/c 001205012345)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Transaction Type</label>
-              <select id="bank-type" class="form-select" required>
-                <option value="RECEIPT">Deposit / Inward Receipt</option>
-                <option value="PAYMENT">Withdrawal / Payment</option>
-                <option value="CONTRA">Transfer between Accounts (Contra)</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Amount (&#8377;)</label><input type="number" step="0.01" id="bank-amount" class="form-input" placeholder="0.00" required></div>
-            <div class="form-group"><label class="form-label">Reference / UTR / Cheque #</label><input type="text" id="bank-ref" class="form-input" placeholder="UTR-9876543210" required></div>
-            <div class="form-group"><label class="form-label">Party / Counterparty</label><input type="text" id="bank-party" class="form-input" placeholder="Customer / Vendor Name"></div>
-            <div class="form-group" style="grid-column: span 2;"><label class="form-label">Narration / Remarks</label><input type="text" id="bank-narration" class="form-input" placeholder="Against Invoice #..."></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-bank-entry')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Post Bank Voucher</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: RECORD EXPENSE -->
-  <div class="modal-overlay" id="modal-new-expense-entry">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Record Operating Expense Voucher</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-expense-entry')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleExpenseSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group"><label class="form-label">Voucher Date</label><input type="date" id="exp-date" class="form-input" required></div>
-            <div class="form-group">
-              <label class="form-label">Expense Head</label>
-              <select id="exp-head" class="form-select" required>
-                <option value="Factory Electricity & Power">Factory Electricity &amp; Power</option>
-                <option value="Freight & Logistics Inward/Outward">Freight &amp; Logistics Inward/Outward</option>
-                <option value="Machinery Tooling & Maintenance">Machinery Tooling &amp; Maintenance</option>
-                <option value="Office Stationery & Software">Office Stationery &amp; Software</option>
-                <option value="Staff Welfare & Canteen">Staff Welfare &amp; Canteen</option>
-                <option value="Packing Materials & Consumables">Packing Materials &amp; Consumables</option>
-                <option value="Legal & Professional Fees">Legal &amp; Professional Fees</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Paid To / Payee</label><input type="text" id="exp-payee" class="form-input" placeholder="Vendor / Service Provider" required></div>
-            <div class="form-group"><label class="form-label">Amount (&#8377;)</label><input type="number" step="0.01" id="exp-amount" class="form-input" placeholder="0.00" required></div>
-            <div class="form-group">
-              <label class="form-label">Payment Mode</label>
-              <select id="exp-mode" class="form-select" required>
-                <option value="NEFT">Bank Transfer (NEFT/RTGS)</option>
-                <option value="UPI">UPI Digital Payment</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="CASH">Petty Cash</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">GST Tax Invoice # (if ITC eligible)</label><input type="text" id="exp-gstinv" class="form-input" placeholder="Optional Tax Inv #"></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-expense-entry')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Record Expense</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CREDIT / DEBIT NOTE -->
-  <div class="modal-overlay" id="modal-new-note">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="note-modal-title">+ Issue Credit / Debit Note</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-note')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleNoteSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group">
-              <label class="form-label">Note Type</label>
-              <select id="note-type" class="form-select" onchange="onNoteTypeChange(this.value)" required>
-                <option value="CREDIT">Credit Note (Against Customer)</option>
-                <option value="DEBIT">Debit Note (Against Supplier)</option>
-                <option value="RETURN">Sales Return Refund Memo</option>
-                <option value="PURCHASE_RETURN">Purchase Inward Return</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Date</label><input type="date" id="note-date" class="form-input" required></div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label class="form-label" id="note-party-label">Customer / Debtor</label>
-              <select id="note-party-select" class="form-select" required>
-                <option value="">-- Choose Party --</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Original Doc # Ref</label><input type="text" id="note-doc-ref" class="form-input" placeholder="INV-2026-..." required></div>
-            <div class="form-group"><label class="form-label">Adjustment Amount (&#8377;)</label><input type="number" step="0.01" id="note-amount" class="form-input" placeholder="0.00" required></div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label class="form-label">Reason</label>
-              <select id="note-reason" class="form-select" required>
-                <option value="Defective / Damaged Goods Returned">Defective / Damaged Goods Returned</option>
-                <option value="Rate / Price Difference Correction">Rate / Price Difference Correction</option>
-                <option value="Quantity Shortage Received">Quantity Shortage Received</option>
-                <option value="Post-Sale Turnover Discount">Post-Sale Turnover Discount</option>
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-note')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Issue Note</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADD MASTER DATA -->
-  <div class="modal-overlay" id="modal-new-master">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>+ Add Master Entry / Lookup</h3>
-        <button class="modal-close" onclick="closeModal('modal-new-master')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="handleMasterSave(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group">
-              <label class="form-label">Master Type</label>
-              <select id="mstr-type" class="form-select" required>
-                <option value="CATEGORY">Item Category</option>
-                <option value="UNIT">Unit of Measurement (UOM)</option>
-                <option value="HSN">HSN Classification</option>
-                <option value="TAX">Tax Bracket</option>
-                <option value="EXPENSE_HEAD">Expense Head</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Code / ID</label><input type="text" id="mstr-code" class="form-input" placeholder="e.g. FASTENERS" required></div>
-            <div class="form-group" style="grid-column: span 2;"><label class="form-label">Display Name / Title</label><input type="text" id="mstr-name" class="form-input" placeholder="e.g. Industrial Fasteners & Bolts" required></div>
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-new-master')">Cancel</button>
-            <button type="submit" class="btn btn-primary">&#10004; Save Master Entry</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CHANGE PASSWORD -->
-  <div class="modal-overlay" id="modal-change-password">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <h3>🔑 Change Account Password</h3>
-        <button class="modal-close" onclick="closeModal('modal-change-password')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-change-password" onsubmit="handleChangePasswordSubmit(event)">
-          <div class="form-group">
-            <label class="form-label">Current Password</label>
-            <input type="password" id="chg-current-pwd" class="form-input" required autocomplete="current-password">
-          </div>
-          <div class="form-group">
-            <label class="form-label">New Password (8+ chars)</label>
-            <input type="password" id="chg-new-pwd" class="form-input" required minlength="8" autocomplete="new-password">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Confirm New Password</label>
-            <input type="password" id="chg-confirm-pwd" class="form-input" required minlength="8" autocomplete="new-password">
-          </div>
-          <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-change-password')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Update Password</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: MY PROFILE -->
-  <div class="modal-overlay" id="modal-my-profile">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header">
-        <h3>👤 User Profile &amp; Identity</h3>
-        <button class="modal-close" onclick="closeModal('modal-my-profile')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-subtle);">
-          <div style="width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #fff;" id="profile-avatar-large">S</div>
-          <div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;" id="profile-full-name">Shailesh Dhameliya</h4>
-            <div style="font-size: 0.8rem; color: var(--cyan); font-weight: 600;" id="profile-role-badge">ADMINISTRATOR</div>
-          </div>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.82rem;">
-          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
-            <div style="color: var(--text-muted); font-size: 0.72rem;">Username</div>
-            <div style="font-weight: 600; margin-top: 2px;" id="profile-username">admin</div>
-          </div>
-          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
-            <div style="color: var(--text-muted); font-size: 0.72rem;">Email</div>
-            <div style="font-weight: 600; margin-top: 2px;" id="profile-email">admin@jasviindustries.in</div>
-          </div>
-          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
-            <div style="color: var(--text-muted); font-size: 0.72rem;">Department</div>
-            <div style="font-weight: 600; margin-top: 2px;">Executive Management</div>
-          </div>
-          <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
-            <div style="color: var(--text-muted); font-size: 0.72rem;">Session Status</div>
-            <div style="font-weight: 600; margin-top: 2px; color: var(--sem-complete);">Active &bull; JWT Verified</div>
-          </div>
-        </div>
-        <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 20px; background: transparent;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-my-profile')">Close</button>
-          <button type="button" class="btn btn-primary" onclick="closeModal('modal-my-profile'); openChangePasswordModal();">Change Password</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: NOTIFICATIONS CENTER -->
-  <div class="modal-overlay" id="modal-notifications-center">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="modal-header">
-        <h3>🔔 System Alerts &amp; Activity Notifications</h3>
-        <button class="modal-close" onclick="closeModal('modal-notifications-center')">&times;</button>
-      </div>
-      <div class="modal-body" id="notifications-list-container">
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--cyan); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>INVOICE CREATED</span><span>10 mins ago</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Sales Invoice INV-2026-0891 posted to General Ledger</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-complete); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>PURCHASE MEMO</span><span>1 hour ago</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Inward Goods Receipt Memo BILL-9821 accepted from Tata Steel</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-warning); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>PAYMENT DUE</span><span>Today</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Outstanding balance due from Maruti Precision Fasteners (₹ 97,232.00)</div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-notifications-center')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: ADDITIONAL CHARGES (DESKTOP DocumentChargeDialog PARITY) -->
-  <div class="modal-overlay" id="modal-manage-charges">
-    <div class="modal-card" style="width: 760px; max-width: 95vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); padding: 0; overflow: hidden; backdrop-filter: blur(16px);">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.9);">
-        <div>
-          <h3 style="margin: 0; font-size: 1.1rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#9881; Additional Charges</h3>
-          <p style="margin: 3px 0 0 0; font-size: 0.76rem; color: var(--text-muted);">Add additional invoice charges with exact GST/IGST calculations matching desktop</p>
-        </div>
-        <button type="button" class="modal-close" onclick="window.SalesController.closeChargesDialog()">&times;</button>
-      </div>
-      
-      <div style="padding: 18px 20px; max-height: 52vh; overflow-y: auto;">
-        <div id="charges-dialog-rows" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Dynamically generated rows -->
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-subtle);">
-          <button type="button" class="btn btn-primary" onclick="window.SalesController.addChargeRow()" style="font-size: 0.8rem;">+ Add Charge</button>
-          <span style="font-size: 0.74rem; color: var(--text-dim);">Add as many charges as required</span>
-        </div>
-      </div>
-      
-      <div style="padding: 14px 20px; border-top: 1px solid var(--border-subtle); background: rgba(0, 0, 0, 0.25); display: flex; justify-content: space-between; align-items: center;">
-        <div id="charges-dialog-totals" style="font-family: 'Space Grotesk'; font-size: 0.9rem; font-weight: 700; color: var(--cyan);">
-          Charges &#8377; 0.00 &nbsp;&bull;&nbsp; GST &#8377; 0.00 &nbsp;&bull;&nbsp; Total &#8377; 0.00
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn btn-secondary" onclick="window.SalesController.closeChargesDialog()">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="window.SalesController.applyCharges()">Apply Charges</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: AUTHENTICATOR SETUP (DESKTOP RegistrationController PARITY) -->
-  <div class="modal-overlay" id="modal-authenticator-setup">
-    <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
-      <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
-        <div>
-          <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#128272; Set Up Authenticator</h3>
-          <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Scan with Google Authenticator or Microsoft Authenticator</p>
-        </div>
-        <button type="button" class="modal-close" onclick="closeModal('modal-authenticator-setup')">&times;</button>
-      </div>
-
-      <div style="text-align: center; margin: 12px 0;">
-        <div id="auth-setup-qr-box" style="display: inline-block; background: #fff; padding: 12px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
-          <!-- QR Canvas or Image -->
-          <img id="auth-setup-qr-img" src="" alt="Authenticator QR Code" style="width: 190px; height: 190px; display: block;">
-        </div>
-        
-        <div style="text-align: left; margin-bottom: 12px;">
-          <label class="form-label" style="font-size: 0.74rem;">Manual Setup Key</label>
-          <div style="display: flex; gap: 6px;">
-            <input type="text" id="auth-setup-secret" class="form-input" readonly style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3);">
-            <button type="button" class="btn btn-secondary" onclick="copyAuthenticatorSecret()" title="Copy setup key" style="padding: 0 10px; font-size: 0.75rem;">Copy</button>
-          </div>
-        </div>
-
-        <div style="text-align: left; margin-bottom: 14px;">
-          <label class="form-label" style="font-size: 0.74rem;">Current 6-Digit Authenticator Code *</label>
-          <input type="text" id="auth-setup-totp" class="form-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 1.1rem; letter-spacing: 4px; font-weight: 700;">
-        </div>
-
-        <div id="auth-setup-error" class="auth-alert error" style="display: none; margin-bottom: 12px;"></div>
-
-        <button type="button" id="btn-auth-setup-complete" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;" onclick="completeRegistrationAuthenticator()">
-          Verify &amp; Submit for Approval
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: SHORTCUTS HELP -->
-  <div class="modal-overlay" id="modal-shortcuts-help">
-    <div class="modal-card" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3>&#9000; Desktop Keyboard Shortcuts</h3>
-        <button class="modal-close" onclick="closeModal('modal-shortcuts-help')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <table class="data-table">
-          <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
-          <tbody>
-            <tr><td><kbd>Ctrl + K</kbd></td><td>Focus Global Omni Search</td></tr>
-            <tr><td><kbd>Ctrl + B</kbd></td><td>Toggle Sidebar Navigation</td></tr>
-            <tr><td><kbd>Alt + N</kbd></td><td>Quick Create New Sales Invoice</td></tr>
-            <tr><td><kbd>Alt + P</kbd></td><td>Quick Create New Purchase Bill</td></tr>
-            <tr><td><kbd>Escape</kbd></td><td>Close Active Modal Dialog / Reset</td></tr>
-            <tr><td><kbd>?</kbd></td><td>Open Keyboard Shortcuts Help</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-        <button type="button" class="btn btn-primary" onclick="closeModal('modal-shortcuts-help')">Got it</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: AUDIT TIMELINE (ACTION: AUDIT) -->
-  <div class="modal-overlay" id="modal-audit-timeline">
-    <div class="modal-card" style="max-width: 680px;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">📜</span>
-          <div>
-            <h3 style="margin: 0;" id="mat-title">Invoice Audit &amp; Activity Trail</h3>
-            <span style="font-size: 0.74rem; color: var(--text-dim);" id="mat-subtitle">Historical transaction milestones</span>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeModal('modal-audit-timeline')">&times;</button>
-      </div>
-      <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
-        <div id="mat-loading" style="text-align: center; padding: 24px; color: var(--text-dim);">Loading activity timeline...</div>
-        <div id="mat-timeline-list" style="display: none; flex-direction: column; gap: 12px;"></div>
-      </div>
-      <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle);">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-audit-timeline')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: RECORD PAYMENT (ACTION: PAYMENT - DESKTOP RecordPaymentController PARITY) -->
-  <div class="modal-overlay" id="modal-record-payment">
-    <div class="modal-card" style="max-width: 720px; width: 95vw;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">💳</span>
-          <div>
-            <h3 style="margin: 0;" id="mrp-title">Record Payment Receipt</h3>
-            <span style="font-size: 0.74rem; color: var(--text-dim);" id="mrp-subtitle">Posting directly to Bank &amp; Customer Ledger</span>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeModal('modal-record-payment')">&times;</button>
-      </div>
-      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
-        <!-- Balance Summary Banner -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; gap: 8px;">
-          <div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Invoice Total</div>
-            <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);" id="mrp-total">₹ 0.00</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Already Paid</div>
-            <div style="font-size: 0.95rem; font-weight: 700; color: #34d399;" id="mrp-paid">₹ 0.00</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Balance Due</div>
-            <div style="font-size: 0.95rem; font-weight: 800; color: #f87171;" id="mrp-balance">₹ 0.00</div>
-          </div>
-        </div>
-
-        <!-- Fully Settled Notice (Shown when balance is 0.00) -->
-        <div id="mrp-settled-notice" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; text-align: center;">
-          <div style="color: #4ade80; font-weight: 700; font-size: 0.88rem;">✔ Invoice is Fully Paid &amp; Settled</div>
-          <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">All amounts have been received. View payment receipts history below or reverse an entry to re-open balance.</div>
-        </div>
-
-        <!-- New Receipt Form (Active when balance > 0) -->
-        <form id="form-record-payment" onsubmit="window.SalesController.submitRecordPayment(event)">
-          <input type="hidden" id="mrp-sale-id">
-          <input type="hidden" id="mrp-inv-no">
-
-          <div id="mrp-new-entry-fields">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--cyan); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">+ Record New Receipt</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
-              <div class="form-group">
-                <label class="form-label">Receipt Date *</label>
-                <input type="date" id="mrp-date" class="form-input" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Payment Mode *</label>
-                <select id="mrp-mode" class="form-select" required>
-                  <option value="Bank">Bank Transfer (NEFT/RTGS)</option>
-                  <option value="Cash">Cash</option>
-                  <option value="UPI">UPI</option>
-                  <option value="Cheque">Cheque</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
-              <div class="form-group">
-                <label class="form-label">Amount (₹) *</label>
-                <input type="number" step="0.01" min="0.01" id="mrp-amount" class="form-input" required style="font-weight: 700; font-size: 1rem; color: var(--cyan);">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Reference / UTR / Cheque #</label>
-                <input type="text" id="mrp-reference" class="form-input" placeholder="e.g. UTR-982341 / CHQ-102">
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 14px;">
-              <label class="form-label">Received From / Deposited By</label>
-              <input type="text" id="mrp-received-from" class="form-input" placeholder="Party or Depositor Name">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label class="form-label">Notes / Narration</label>
-              <input type="text" id="mrp-notes" class="form-input" placeholder="Payment remarks or bank narration">
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 18px;">
-              <button type="submit" class="btn btn-primary" id="mrp-submit-btn">✔ Record Receipt</button>
-            </div>
-          </div>
-        </form>
-
-        <!-- Payment History Table Section (Desktop Parity) -->
-        <div id="mrp-history-section" style="border-top: 1px dashed var(--border-subtle); padding-top: 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">📜 Payment Receipts History</div>
-            <span id="mrp-history-count" style="font-size: 0.74rem; color: var(--cyan); font-weight: 600;">0 receipts</span>
-          </div>
-          <div style="max-height: 200px; overflow-y: auto;">
-            <table class="data-table" style="font-size: 0.74rem;">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Reference</th>
-                  <th>Received From</th>
-                  <th>Mode</th>
-                  <th style="text-align: right;">Amount (₹)</th>
-                  <th>Notes</th>
-                  <th style="text-align: center; width: 60px;">Action</th>
-                </tr>
-              </thead>
-              <tbody id="mrp-history-tbody">
-                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 16px;">Loading receipts history...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="modal-footer" style="padding: 14px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; margin-top: 14px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-record-payment')">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: DISPATCH BARCODE (ACTION: BARCODE / HEADER BUTTON) -->
-  <div class="modal-overlay" id="modal-dispatch-barcode">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">🏷️</span>
-          <div>
-            <h3 style="margin: 0;">Order Dispatch Barcode &amp; Shipping Label</h3>
-            <span style="font-size: 0.74rem; color: var(--text-dim);" id="mdb-subtitle">Code 128 thermal shipping roll generator</span>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeModal('modal-dispatch-barcode')">&times;</button>
-      </div>
-      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center;">
-        <div style="display: flex; gap: 12px; margin-bottom: 16px; width: 100%; justify-content: center;">
-          <label style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-            Label Size:
-            <select id="mdb-size-select" class="form-select" style="width: auto; height: 30px; font-size: 0.75rem;" onchange="window.SalesController.renderDispatchBarcodeSticker()">
-              <option value="50x25">50mm x 25mm (Standard Dispatch)</option>
-              <option value="38x25">38mm x 25mm (Compact Roll)</option>
-            </select>
-          </label>
-        </div>
-
-        <div id="mdb-print-area" style="background: white; color: black; padding: 12px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-          <div class="barcode-sticker" id="mdb-sticker" style="background: #ffffff; color: #0f172a; border: 1px dashed #94a3b8; padding: 8px; width: 280px; text-align: center; font-family: 'Space Grotesk', sans-serif;">
-            <div style="font-weight: 800; font-size: 11px; letter-spacing: 0.5px;">JASVI INDUSTRIES</div>
-            <div id="mdb-sticker-party" style="font-weight: 600; font-size: 9px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">CUSTOMER NAME</div>
-            <canvas id="mdb-barcode-canvas" width="260" height="60" style="margin: 2px auto; display: block;"></canvas>
-            <div id="mdb-sticker-code" style="letter-spacing: 2px; font-weight: 700; font-size: 10px; font-family: monospace;">JI/25-2026/0130</div>
-            <div style="display: flex; justify-content: space-between; width: 100%; font-size: 8px; margin-top: 4px; border-top: 1px solid #cbd5e1; padding-top: 2px;">
-              <span id="mdb-sticker-date">Date: 12/10/2026</span>
-              <span id="mdb-sticker-packages">Qty: 100 Pcs</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 14px; text-align: center;">
-          Compatible with TVS LP 46 Neo, TSC TE244, Zebra GC420t &amp; generic ESC/POS label roll printers.
-        </div>
-      </div>
-      <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-dispatch-barcode')">Close</button>
-        <button type="button" class="btn btn-success" onclick="window.SalesController.printDispatchThermalLabel()">🖨 Print Thermal Label</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: EMAIL INVOICE (ACTION: EMAIL) -->
-  <div class="modal-overlay" id="modal-email-invoice">
-    <div class="modal-card" style="max-width: 600px;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">✉️</span>
-          <div>
-            <h3 style="margin: 0;">Transmit Tax Invoice via Email</h3>
-            <span style="font-size: 0.74rem; color: var(--text-dim);" id="mei-subtitle">Direct SMTP delivery to customer billing contact</span>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeModal('modal-email-invoice')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="form-email-invoice" onsubmit="window.SalesController.submitEmailInvoice(event)">
-          <input type="hidden" id="mei-sale-id">
-          <input type="hidden" id="mei-inv-no">
-
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">Recipient Email Address *</label>
-            <input type="email" id="mei-recipient" class="form-input" required placeholder="accounts@clientcompany.com">
-          </div>
-
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">Subject *</label>
-            <input type="text" id="mei-subject" class="form-input" required>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">Message Body</label>
-            <textarea id="mei-body" class="form-input" rows="5" style="resize: vertical; font-size: 0.82rem; font-family: inherit; line-height: 1.5;"></textarea>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px;">
-            <span style="font-size: 1.1rem;">📎</span>
-            <div style="flex: 1;">
-              <div style="font-size: 0.78rem; font-weight: 600; color: var(--cyan);" id="mei-attachment-name">Tax_Invoice.pdf</div>
-              <div style="font-size: 0.70rem; color: var(--text-dim);">Official Jasvi Industries GST Tax Invoice attached automatically</div>
-            </div>
-            <span class="badge" style="background: rgba(52, 211, 153, 0.2); color: #34d399; font-size: 0.7rem;">ATTACHED</span>
-          </div>
-
-          <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-email-invoice')">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="mei-send-btn">✈ Send Tax Invoice</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- BATCH 1 MODALS: DESKTOP PARITY -->
+        <!-- BATCH 1 MODALS: DESKTOP PARITY -->
 
   <!-- MODAL: CREATE RETURN (DESKTOP ReturnEditorService.java PARITY) -->
   <div id="modal-create-return" class="modal-backdrop" style="display:none;">
@@ -7398,7 +5607,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-dim);">Load items from original invoice and specify return quantities</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.ReturnsController.closeModal('modal-create-return')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-create-return')">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <input type="hidden" id="cr-type" value="SALES RETURN">
@@ -7450,7 +5659,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <div class="modal-footer" style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.ReturnsController.closeModal('modal-create-return')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-create-return')">Cancel</button>
           <button type="button" class="btn btn-primary" id="btn-submit-return" onclick="window.ReturnsController.submitCreateReturn()">Create Return</button>
         </div>
       </div>
@@ -7468,7 +5677,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-dim);">Issue disbursement or payment against approved return</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.ReturnsController.closeModal('modal-record-refund')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-record-refund')">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <input type="hidden" id="rf-return-no">
@@ -7559,7 +5768,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.ReturnsController.closeModal('modal-record-refund')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-record-refund')">Cancel</button>
           <button type="button" class="btn btn-primary" id="btn-submit-refund" onclick="window.ReturnsController.submitRefund()">Record Refund</button>
         </div>
       </div>
@@ -7577,7 +5786,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-dim);">Post customer credit adjustment with GST output liability reduction</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.CreditDebitNoteController.closeModal('modal-create-credit-note')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-create-credit-note')">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <div class="form-group" style="margin-bottom:12px;">
@@ -7632,7 +5841,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
         </div>
         <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.CreditDebitNoteController.closeModal('modal-create-credit-note')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-create-credit-note')">Cancel</button>
           <button type="button" class="btn btn-primary" id="btn-submit-create-cn" onclick="window.CreditDebitNoteController.submitCreateCreditNote()">Issue Credit Note</button>
         </div>
       </div>
@@ -7650,7 +5859,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-dim);">Debit supplier account for purchase returns or price adjustments with ITC reversal</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.CreditDebitNoteController.closeModal('modal-create-debit-note')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-create-debit-note')">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <div class="form-group" style="margin-bottom:12px;">
@@ -7705,7 +5914,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
         </div>
         <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.CreditDebitNoteController.closeModal('modal-create-debit-note')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-create-debit-note')">Cancel</button>
           <button type="button" class="btn btn-primary" id="btn-submit-create-dn" onclick="window.CreditDebitNoteController.submitCreateDebitNote()">Issue Debit Note</button>
         </div>
       </div>
@@ -7723,7 +5932,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-dim);">Set automated reminder for client follow-up</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.QuotationController.closeModal('modal-quote-followup')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-quote-followup')">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <input type="hidden" id="qf-id">
@@ -7739,7 +5948,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.QuotationController.closeModal('modal-quote-followup')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-quote-followup')">Cancel</button>
           <button type="button" class="btn btn-primary" onclick="window.QuotationController.submitFollowUp()">Schedule Follow-Up</button>
         </div>
       </div>
@@ -7755,7 +5964,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-muted);" id="item-dialog-subtitle">Add a new item to your inventory catalog</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.ItemMasterController.closeModal('modal-item-dialog')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-item-dialog')">&times;</button>
       </div>
       <div class="modal-body" style="padding:20px; max-height:calc(85vh - 120px); overflow-y:auto;">
         <form id="form-item-dialog" onsubmit="event.preventDefault(); window.ItemMasterController.submitSaveItem();">
@@ -7843,8 +6052,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
 
           <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" class="btn btn-secondary" onclick="window.ItemMasterController.closeModal('modal-item-dialog')">Cancel</button>
-            <button type="submit" id="btn-save-item-dialog" class="btn btn-primary">Save Item</button>
+            <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-item-dialog')">Cancel</button>
+            <button type="submit" id="btn-save-item-dialog" class="btn btn-primary" onclick="window.ItemMasterController.submitSaveItem()">Save Item</button>
           </div>
         </form>
       </div>
@@ -7862,7 +6071,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <span style="font-size:0.75rem; color:var(--text-muted);" id="party-dialog-subtitle">Maintain account profile, contact and tax registration</span>
           </div>
         </div>
-        <button class="modal-close" onclick="window.PartyController.closeModal('modal-party-dialog')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-party-dialog')">&times;</button>
       </div>
       <div class="modal-body" style="padding:20px; max-height:calc(85vh - 120px); overflow-y:auto;">
         <form id="form-party-dialog" onsubmit="event.preventDefault(); window.PartyController.submitSaveParty();">
@@ -7916,8 +6125,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
 
           <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" class="btn btn-secondary" onclick="window.PartyController.closeModal('modal-party-dialog')">Cancel</button>
-            <button type="submit" id="btn-save-party-dialog" class="btn btn-primary">Save Party</button>
+            <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-party-dialog')">Cancel</button>
+            <button type="submit" id="btn-save-party-dialog" class="btn btn-primary" onclick="window.PartyController.submitSaveParty()">Save Party</button>
           </div>
         </form>
       </div>
@@ -7929,7 +6138,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     <div class="modal-card" style="max-width:560px;">
       <div class="modal-header">
         <h3 style="margin:0;">📥 Import Bank Statement</h3>
-        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-import-statement')">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-import-statement')">&times;</button>
       </div>
       <div class="modal-body" style="padding:20px;">
         <div style="margin-bottom:16px;">
@@ -7953,11 +6162,11 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <div id="import-file-name" style="font-weight: 600; color: var(--cyan); margin-bottom: 6px;">No file selected</div>
             <div id="import-preview-count" style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">0 rows detected</div>
             <input type="file" id="import-csv-file" accept=".csv,.txt" style="display:none;" onchange="window.BankStatementController.onCsvFileSelected(event)">
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-csv-file').click()">Browse Computer...</button>
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.browseCsvFile()">Browse Computer...</button>
           </div>
         </div>
         <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-import-statement')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-import-statement')">Cancel</button>
           <button type="button" id="btn-submit-import" class="btn btn-primary" onclick="window.BankStatementController.submitImport()">Import Statement</button>
         </div>
       </div>
@@ -7974,7 +6183,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
         <div style="display:flex; align-items:center; gap:14px;">
           <span style="font-size:0.8rem; color:var(--text-muted);">Amount: <strong id="mc-txn-amount" style="color:var(--cyan); font-size:1.05rem;">₹ 0.00</strong></span>
-          <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-match-candidate')">&times;</button>
+          <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-match-candidate')">&times;</button>
         </div>
       </div>
       <div class="modal-body" style="padding:16px;">
@@ -7999,7 +6208,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
         <div class="modal-footer" style="padding-top:14px; margin-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:0.75rem; color:var(--text-dim);">Matches are ranked using fuzzy string similarity, amount tolerances, and reference heuristics.</span>
-          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-match-candidate')">Close</button>
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-match-candidate')">Close</button>
         </div>
       </div>
     </div>
@@ -8073,7 +6282,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
           <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-subtle);">
             <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-user-edit')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save User Account</button>
+            <button type="submit" class="btn btn-primary" onclick="window.UserAccessController.submitNewUser(event)">Save User Account</button>
           </div>
         </form>
       </div>
@@ -8101,7 +6310,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
           <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-subtle);">
             <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-user-password')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Set Password</button>
+            <button type="submit" class="btn btn-primary" onclick="window.UserAccessController.submitResetPassword(event)">Set Password</button>
           </div>
         </form>
       </div>
@@ -8216,7 +6425,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     <div class="modal-box" style="max-width: 440px;">
       <div class="modal-header">
         <h3 id="modal-category-title">Add Lookup Category</h3>
-        <button class="modal-close" onclick="window.MasterDataController.closeCategoryModal()">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-add-category')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group" style="margin-bottom: 12px;">
@@ -8229,8 +6438,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button type="button" class="btn btn-secondary" onclick="window.MasterDataController.closeCategoryModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.submitCategorySave()">Save Category</button>
+        <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-add-category')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.saveCategory()">Save Category</button>
       </div>
     </div>
   </div>
@@ -8239,7 +6448,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     <div class="modal-box" style="max-width: 440px;">
       <div class="modal-header">
         <h3>Rename Category</h3>
-        <button class="modal-close" onclick="window.MasterDataController.closeRenameModal()">&times;</button>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-rename-category')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group" style="margin-bottom: 12px;">
@@ -8248,8 +6457,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button type="button" class="btn btn-secondary" onclick="window.MasterDataController.closeRenameModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.submitCategoryRename()">Update Name</button>
+        <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-rename-category')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.renameCategory()">Update Name</button>
       </div>
     </div>
   </div>
@@ -8284,7 +6493,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
         <button type="button" class="btn btn-secondary" onclick="window.MasterDataController.closeLookupModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.submitLookupSave()">Save Lookup</button>
+        <button type="button" class="btn btn-primary" onclick="window.MasterDataController.saveLookup()">Save Lookup</button>
       </div>
     </div>
   </div>
@@ -8335,6 +6544,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
   <script src="js/navigation/NavigationRouter.js?v=10.0.25.15"></script>
+  <script src="js/util/UniversalActionMenu.js?v=10.0.25.16"></script>
   <script src="js/app.js?v=10.0.25.15"></script>
 </body>
 </html>
