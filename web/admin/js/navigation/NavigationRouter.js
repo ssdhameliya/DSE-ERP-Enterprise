@@ -256,7 +256,23 @@ window.NavigationRouter = (function() {
           if (window.CreditDebitNoteController) window.CreditDebitNoteController.loadDebitNotes();
           break;
         case 'view-bank-entry':
+          if (window.FinanceController) window.FinanceController.loadBankMode();
+          break;
         case 'view-expense-entry':
+          if (window.FinanceController) window.FinanceController.loadExpenseMode();
+          break;
+        case 'view-bank-statement':
+          if (window.BankStatementController) window.BankStatementController.loadStatementWorkspace();
+          break;
+        case 'view-purchase-recon':
+          if (window.PurchaseReconController) window.PurchaseReconController.loadPurchaseRecon();
+          break;
+        case 'view-recon-supplier':
+          if (window.PurchaseReconController) window.PurchaseReconController.loadReconSuppliers();
+          break;
+        case 'view-communication':
+          if (window.CommunicationController) window.CommunicationController.loadCommunications();
+          break;
         case 'view-general-ledger':
           if (window.FinanceController) window.FinanceController.loadFinance();
           break;

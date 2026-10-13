@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.12">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.13">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -33,6 +33,16 @@
       window.closeModal = function(id) {
         const m = document.getElementById(id);
         if (m) m.style.display = 'none';
+      };
+      window.handleBankEntrySave = function(e) {
+        if (window.FinanceController && window.FinanceController.handleBankEntrySave) {
+          window.FinanceController.handleBankEntrySave(e);
+        }
+      };
+      window.handleExpenseSave = function(e) {
+        if (window.FinanceController && window.FinanceController.handleExpenseSave) {
+          window.FinanceController.handleExpenseSave(e);
+        }
       };
     </script>
 </head>
@@ -2409,92 +2419,599 @@
           </div>
         </div>
 
-        <!-- VIEW: BANK & EXPENSE (BANK ENTRY / EXPENSE ENTRY / STATEMENTS) -->
+        <!-- VIEW: BANK ENTRY JOURNAL (BankExpense.fxml Parity) -->
         <div id="view-bank-entry" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#127974;</span> Bank Entry Journal</h1>
-              <p>Direct banking deposits, withdrawals, and NEFT/RTGS transfers</p>
+              <h1><span>🏦</span> Bank Entry Journal</h1>
+              <p>Direct banking deposits, withdrawals, NEFT/RTGS transfers and ledger settlements</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadFinanceData()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewBankEntryModal()">+ New Bank Entry</button>
+              <input type="text" id="bank-search" class="filter-input" placeholder="Search reference, narration, account..." oninput="window.FinanceController.applyFinanceFilters()">
+              <button class="btn btn-secondary" onclick="window.FinanceController.loadBankMode()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.FinanceController.openNewBankEntryModal()">+ New Bank Entry</button>
             </div>
           </div>
-          <div class="data-panel">
+
+          <!-- Bank KPIs (BankExpense.fxml Parity) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL NET BALANCE</span><span class="kpi-badge">Cash &amp; Bank</span></div>
+              <div class="kpi-value" id="bank-kpi-balance">&#8377; 0.00</div>
+              <div class="kpi-meta">Net cash &amp; bank ledger position</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL INFLOW</span><span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Deposits</span></div>
+              <div class="kpi-value" id="bank-kpi-inflow" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-meta">Receipt vouchers &amp; contra in</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL OUTFLOW</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Withdrawals</span></div>
+              <div class="kpi-value" id="bank-kpi-outflow" style="color:var(--red);">&#8377; 0.00</div>
+              <div class="kpi-meta">Payment vouchers &amp; contra out</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">NET FLOW</span><span class="kpi-badge">Settlement</span></div>
+              <div class="kpi-value" id="bank-kpi-net">&#8377; 0.00</div>
+              <div class="kpi-meta">Inflow minus outflow</div>
+            </div>
+          </div>
+
+          <div class="data-panel" style="overflow-x:auto;">
             <table class="data-table">
               <thead>
-                <tr><th>Date</th><th>Bank Account</th><th>Txn Type</th><th>Reference / UTR</th><th>Debit (&#8377;)</th><th>Credit (&#8377;)</th></tr>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Description / Narration</th>
+                  <th>Bank Account</th>
+                  <th>Payment Mode</th>
+                  <th>Reference / UTR</th>
+                  <th style="text-align:right;">Amount (&#8377;)</th>
+                  <th>Match / Link</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
               <tbody id="bank-entry-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading bank entries...</td></tr>
+                <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading bank entries...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
+        <!-- VIEW: OPERATING EXPENSE REGISTER (BankExpense.fxml Parity) -->
         <div id="view-expense-entry" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128184;</span> Operating Expense Register</h1>
-              <p>Factory utilities, consumables, courier, office, and administration expenses</p>
+              <h1><span>💸</span> Operating Expense Register</h1>
+              <p>Factory utilities, consumables, courier, administration, and overhead expense vouchers</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadFinanceData()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewExpenseModal()">+ Record Expense</button>
+              <input type="text" id="exp-search" class="filter-input" placeholder="Search voucher, payee, head..." oninput="window.FinanceController.applyFinanceFilters()">
+              <button class="btn btn-secondary" onclick="window.FinanceController.loadExpenseMode()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.FinanceController.openNewExpenseEntryModal()">+ Record Expense</button>
             </div>
           </div>
-          <div class="data-panel">
+
+          <!-- Expense KPIs (BankExpense.fxml Parity) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL OPERATING EXPENSES</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Total</span></div>
+              <div class="kpi-value" id="exp-kpi-total" style="color:var(--red);">&#8377; 0.00</div>
+              <div class="kpi-meta">All recorded expense vouchers</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">THIS MONTH</span><span class="kpi-badge">Current FY</span></div>
+              <div class="kpi-value" id="exp-kpi-month">&#8377; 0.00</div>
+              <div class="kpi-meta">Current period expenses</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">PAID OUTFLOW</span><span class="kpi-badge">Settled</span></div>
+              <div class="kpi-value" id="exp-kpi-cash">&#8377; 0.00</div>
+              <div class="kpi-meta">Bank / Cash disbursed</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">EXPENSE CATEGORIES</span><span class="kpi-badge">Heads</span></div>
+              <div class="kpi-value" id="exp-kpi-categories">0</div>
+              <div class="kpi-meta">Active accounting heads</div>
+            </div>
+          </div>
+
+          <div class="data-panel" style="overflow-x:auto;">
             <table class="data-table">
               <thead>
-                <tr><th>Voucher #</th><th>Date</th><th>Expense Account</th><th>Paid To</th><th>Amount (&#8377;)</th><th>Payment Mode</th></tr>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Description / Voucher</th>
+                  <th>Payee / Paid To</th>
+                  <th>Payment Mode</th>
+                  <th>Voucher #</th>
+                  <th style="text-align:right;">Amount (&#8377;)</th>
+                  <th>Match / Link</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
               <tbody id="expense-entry-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading expenses...</td></tr>
+                <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading expenses...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
+        <!-- VIEW: BANK STATEMENT IMPORT & RECONCILIATION (BankStatement.fxml Parity) -->
         <div id="view-bank-statement" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128196;</span> Bank Statement Import &amp; Reconciliation</h1>
-              <p>Reconcile physical bank CSV/OFX statement against general ledger</p>
+              <h1><span>📑</span> Bank Statement Reconciliation</h1>
+              <p>Reconcile imported bank CSV statements with ERP sales invoices, purchase bills and ledger entries</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-primary" onclick="showToast('Upload Bank CSV Statement', 'info')">&#128229; Import Statement CSV</button>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Statement / Account:</label>
+                <select id="cmbBatch" class="form-select" style="min-width:280px;" onchange="window.BankStatementController.onBatchSelected(this.value)">
+                  <option value="">Loading statements...</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="window.BankStatementController.toggleStatementHistory()">Browse History</button>
+              <button class="btn btn-danger" onclick="window.BankStatementController.deleteStatement()">Delete Statement</button>
+              <button class="btn btn-primary" onclick="window.BankStatementController.openImportModal()">&#128229; Import Statement</button>
             </div>
           </div>
-          <div class="data-panel" style="padding: 24px; text-align: center;">
-            <p style="color: var(--text-muted); margin-bottom: 12px;">Auto-matching rule engine ready for HDFC / SBI statement reconciliations.</p>
-            <span class="badge badge-paid">Reconciliation Engine Online</span>
+
+          <!-- 8 KPI Cards (BankStatement.fxml Parity) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:10px; margin-bottom:16px;">
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem;">TOTAL TXNS</span></div>
+              <div class="kpi-value" id="kpiTotal" style="font-size:1.15rem;">0</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Imported rows</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--red);">UNMATCHED</span></div>
+              <div class="kpi-value" id="kpiUnmatched" style="font-size:1.15rem; color:var(--red);">0</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Needs action</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--yellow);">SUGGESTED</span></div>
+              <div class="kpi-value" id="kpiSuggested" style="font-size:1.15rem; color:var(--yellow);">0</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">System matches</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--green);">MATCHED</span></div>
+              <div class="kpi-value" id="kpiMatched" style="font-size:1.15rem; color:var(--green);">0</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Linked to ERP</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--purple);">EXPENSES</span></div>
+              <div class="kpi-value" id="kpiExpense" style="font-size:1.15rem; color:var(--purple);">0</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Expense entries</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--green);">CREDITS</span></div>
+              <div class="kpi-value" id="kpiCredits" style="font-size:1.05rem; color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Money in</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--red);">DEBITS</span></div>
+              <div class="kpi-value" id="kpiDebits" style="font-size:1.05rem; color:var(--red);">&#8377; 0.00</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Money out</div>
+            </div>
+            <div class="kpi-card" style="padding:10px 12px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--cyan);">RECONCILED</span></div>
+              <div class="kpi-value" id="kpiReconciled" style="font-size:1.15rem; color:var(--cyan);">0.0%</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Completion</div>
+            </div>
+          </div>
+
+          <!-- Filters & Bulk Operations Panel -->
+          <div style="background:var(--bg-card); padding:14px; border-radius:8px 8px 0 0; border:1px solid var(--border-subtle); border-bottom:none; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="txtSearch" class="filter-input" style="flex:1;" placeholder="Search narration, reference, amount..." oninput="window.BankStatementController.applyFilters()">
+              <input type="date" id="bs-from-date" class="form-input" style="width:140px;" onchange="window.BankStatementController.applyFilters()">
+              <input type="date" id="bs-to-date" class="form-input" style="width:140px;" onchange="window.BankStatementController.applyFilters()">
+              <select id="cmbStatus" class="form-select" style="width:160px;" onchange="window.BankStatementController.applyFilters()">
+                <option value="">All Status</option>
+                <option value="UNMATCHED">UNMATCHED</option>
+                <option value="SUGGESTED">SUGGESTED</option>
+                <option value="MATCHED">MATCHED</option>
+                <option value="EXPENSE">EXPENSE</option>
+                <option value="REVIEW">REVIEW</option>
+                <option value="IGNORED">IGNORED</option>
+              </select>
+              <select id="cmbDirection" class="form-select" style="width:120px;" onchange="window.BankStatementController.applyFilters()">
+                <option value="ALL">All (Dr/Cr)</option>
+                <option value="CREDIT">Credits Only</option>
+                <option value="DEBIT">Debits Only</option>
+              </select>
+              <button class="btn btn-secondary" onclick="window.BankStatementController.resetFilters()">Reset</button>
+              <button class="btn btn-secondary" onclick="window.BankStatementController.loadBatch(window.BankStatementController.currentBatchId)">&#8635; Refresh</button>
+            </div>
+
+            <!-- Bulk Actions Toolbar (BankStatement.fxml Parity) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--border-subtle);">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                  <input type="checkbox" id="chkSelectAll" onchange="window.BankStatementController.selectAllVisible(this.checked)"> Select all visible
+                </label>
+                <span id="lblSelected" style="font-size:0.8rem; font-weight:700; color:var(--cyan);">0 selected</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button id="btnBulkReview" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.bulkMarkReview()" disabled>Reviewed</button>
+                <button id="btnBulkIgnore" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.bulkIgnore()" disabled>Ignore</button>
+                <button id="btnMoveExpense" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.moveSelectedToExpense()" disabled>Move to Expense</button>
+                <button id="btnMoveBankEntry" class="btn btn-primary btn-sm" onclick="window.BankStatementController.moveSelectedToBankEntry()" disabled>Move to Bank Entry</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 11 Columns Data Table (BankStatement.fxml Parity) -->
+          <div class="data-panel" style="overflow-x:auto; border-radius:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:36px; text-align:center;"></th>
+                  <th>Date</th>
+                  <th>Value Date</th>
+                  <th>Reference / Cheque</th>
+                  <th>Description / Narration</th>
+                  <th style="text-align:right;">Debit (&#8377;)</th>
+                  <th style="text-align:right;">Credit (&#8377;)</th>
+                  <th style="text-align:right;">Balance (&#8377;)</th>
+                  <th style="text-align:center;">Status</th>
+                  <th>Match / Link</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bank-statement-tbody">
+                <tr><td colspan="11" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading bank statement transactions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer Pagination & Progress -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-top:none; border-radius:0 0 8px 8px; font-size:0.85rem;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <span id="lblShowing" style="color:var(--text-muted);">Showing 0 records</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:140px; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
+                  <div id="reconciliationProgress" style="height:100%; width:0%; background:var(--cyan); transition:width 0.3s;"></div>
+                </div>
+                <span id="lblProgressText" style="font-size:0.75rem; color:var(--text-muted);">0 / 0 reconciled</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span id="lblBatchStatus" class="pill-badge pill-neutral">IMPORTED</span>
+              <button id="btnPrevPage" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.prevPage()">Previous</button>
+              <span id="lblPage" style="color:var(--text-muted);">Page 1 of 1</span>
+              <button id="btnNextPage" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.nextPage()">Next</button>
+            </div>
+          </div>
+
+          <!-- Statement History Drawer (BankStatement.fxml Parity) -->
+          <div id="statement-history-drawer" style="display:none; margin-top:20px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <div>
+                <h3 style="margin:0;">Bank Statement History</h3>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Browse and reopen any previously imported bank statement file</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.toggleStatementHistory()">&times; Close</button>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Imported</th><th>Bank / Account</th><th>Statement Period</th><th>Status</th><th style="text-align:right;">Rows</th><th style="text-align:center;">Actions</th></tr>
+              </thead>
+              <tbody id="history-table-tbody">
+                <tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-dim);">Loading history...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
+        <!-- VIEW: PURCHASE RECONCILIATION (PurchaseRecon.fxml Parity) -->
         <div id="view-purchase-recon" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128269;</span> Purchase Reconciliation (GSTR-2B Mismatch)</h1>
-              <p>Cross-check vendor GSTIN portal filings with inward procurement books</p>
+              <h1><span>🔍</span> Purchase Reconciliation (PRC)</h1>
+              <p>Independent purchase invoice reconciliation against Bank Statement &amp; GSTR-2B</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.selectNav('view-bank-statement')">Bank Statement</button>
+              <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadPurchaseRecon()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewRecon()">+ New Purchase Recon</button>
             </div>
           </div>
-          <div class="data-panel" style="padding: 24px; text-align: center;">
-            <span class="badge badge-paid">Purchase Recon Matching Pipeline Active</span>
+
+          <!-- 6 KPI Cards (PurchaseRecon.fxml Parity) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(6, 1fr); gap:12px; margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL RECORDS</span><span class="kpi-badge">PRC</span></div>
+              <div class="kpi-value" id="pr-kpi-total">0</div>
+              <div class="kpi-meta">All purchase recon records</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--red);">OPEN</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Open</span></div>
+              <div class="kpi-value" id="pr-kpi-open" style="color:var(--red);">0</div>
+              <div class="kpi-meta">Not yet linked to bank</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">PARTIAL</span><span class="kpi-badge" style="background:rgba(234,179,8,0.15); color:var(--yellow);">Partial</span></div>
+              <div class="kpi-value" id="pr-kpi-partial" style="color:var(--yellow);">0</div>
+              <div class="kpi-meta">Partially reconciled</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--green);">RECONCILED</span><span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Done</span></div>
+              <div class="kpi-value" id="pr-kpi-done" style="color:var(--green);">0</div>
+              <div class="kpi-meta">Fully linked to bank</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">NEEDS REVIEW</span><span class="kpi-badge" style="background:rgba(234,179,8,0.15); color:var(--yellow);">Review</span></div>
+              <div class="kpi-value" id="pr-kpi-review" style="color:var(--yellow);">0</div>
+              <div class="kpi-meta">Tax difference review</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--purple);">OUTSTANDING</span><span class="kpi-badge">Balance</span></div>
+              <div class="kpi-value" id="pr-kpi-outstanding" style="color:var(--purple); font-size:1.15rem;">&#8377; 0.00</div>
+              <div class="kpi-meta">Awaiting bank linkage</div>
+            </div>
+          </div>
+
+          <!-- Split Workspace Layout matching desktop -->
+          <div style="display:flex; gap:16px; align-items:flex-start;">
+            <!-- Register Table Panel -->
+            <div style="flex:1; min-width:0;">
+              <div style="background:var(--bg-card); padding:12px; border-radius:8px 8px 0 0; border:1px solid var(--border-subtle); border-bottom:none; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:0.95rem;">Purchase Recon Register</span>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="pr-search" class="filter-input" placeholder="Search PRC ref, supplier, invoice..." style="width:260px;" oninput="window.PurchaseReconController.applyReconFilters()">
+                  <select id="pr-status-filter" class="form-select" style="width:140px;" onchange="window.PurchaseReconController.applyReconFilters()">
+                    <option value="">All Status</option>
+                    <option value="OPEN">OPEN</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="RECONCILED">RECONCILED</option>
+                    <option value="REVIEW">REVIEW</option>
+                  </select>
+                </div>
+              </div>
+              <div class="data-panel" style="overflow-x:auto; border-radius:0;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>System Ref</th>
+                      <th>Invoice Date</th>
+                      <th>Recon Supplier</th>
+                      <th>Supplier Invoice</th>
+                      <th style="text-align:right;">Invoice Value</th>
+                      <th>Linked Ref</th>
+                      <th style="text-align:right;">Balance</th>
+                      <th style="text-align:center;">Status</th>
+                      <th>Source</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="purchase-recon-tbody">
+                    <tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading purchase recon records...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-top:none; border-radius:0 0 8px 8px; font-size:0.85rem;">
+                <span id="pr-page-info" style="color:var(--text-muted);">Showing 0 of 0 records</span>
+                <div style="display:flex; gap:8px;">
+                  <button id="pr-btn-prev" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.prevPage()">Previous</button>
+                  <button id="pr-btn-next" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.nextPage()">Next</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Side Editor Panel (PurchaseRecon.fxml Parity) -->
+            <div id="recon-editor-panel" style="display:none; width:440px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+                <div>
+                  <h3 style="margin:0;" id="pr-editor-title">Purchase Recon Details</h3>
+                  <span style="font-size:0.75rem; color:var(--text-muted);" id="pr-editor-subtitle">Select a record or create a new one</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.closeReconEditor()">&times; Close</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="form-group">
+                  <label class="form-label">Recon Supplier *</label>
+                  <select id="pr-editor-supplier" class="form-select" required>
+                    <option value="">Select Recon Supplier *</option>
+                  </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Supplier Invoice No *</label>
+                    <input type="text" id="pr-editor-invoice-no" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Invoice Date *</label>
+                    <input type="date" id="pr-editor-date" class="form-input" required>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Taxable Value (₹)</label>
+                    <input type="number" step="0.01" id="pr-editor-taxable" class="form-input" oninput="window.PurchaseReconController.calculateEditorTotals()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Invoice Value (₹) *</label>
+                    <input type="number" step="0.01" id="pr-editor-invoice-value" class="form-input" style="font-weight:700; color:var(--yellow);" required>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">CGST (₹)</label>
+                    <input type="number" step="0.01" id="pr-editor-cgst" class="form-input" oninput="window.PurchaseReconController.calculateEditorTotals()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">SGST / UTGST (₹)</label>
+                    <input type="number" step="0.01" id="pr-editor-sgst" class="form-input" oninput="window.PurchaseReconController.calculateEditorTotals()">
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">IGST (₹)</label>
+                    <input type="number" step="0.01" id="pr-editor-igst" class="form-input" oninput="window.PurchaseReconController.calculateEditorTotals()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Other / Rounding (₹)</label>
+                    <input type="number" step="0.01" id="pr-editor-other" class="form-input" oninput="window.PurchaseReconController.calculateEditorTotals()">
+                  </div>
+                </div>
+
+                <!-- Highlight Strip -->
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; text-align:center;">
+                  <div>
+                    <span style="font-size:0.68rem; color:var(--text-muted); display:block;">Linked Amount</span>
+                    <span id="pr-editor-linked" style="font-weight:700; color:var(--cyan); font-size:0.9rem;">₹ 0.00</span>
+                  </div>
+                  <div>
+                    <span style="font-size:0.68rem; color:var(--text-muted); display:block;">Balance</span>
+                    <span id="pr-editor-balance" style="font-weight:700; color:var(--yellow); font-size:0.9rem;">₹ 0.00</span>
+                  </div>
+                  <div>
+                    <span style="font-size:0.68rem; color:var(--text-muted); display:block;">Status</span>
+                    <span id="pr-editor-status" class="pill-badge pill-neutral" style="font-size:0.75rem;">OPEN</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <textarea id="pr-editor-notes" class="form-input" rows="2" placeholder="Reconciliation remarks..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                  <button class="btn btn-secondary" onclick="window.PurchaseReconController.closeReconEditor()">Cancel</button>
+                  <button id="pr-btn-save" class="btn btn-primary" onclick="window.PurchaseReconController.saveReconRecord()">Save Purchase Recon</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- VIEW: RECON SUPPLIER MASTER (ReconSupplier.fxml Parity) -->
         <div id="view-recon-supplier" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#127981;</span> Recon Supplier Dashboard</h1>
-              <p>Supplier-by-supplier compliance score and missing invoice recovery</p>
+              <h1><span>🤝</span> Recon Supplier Master</h1>
+              <p>Independent supplier master directory used exclusively by Purchase Recon</p>
+            </div>
+            <div class="view-actions">
+              <input type="text" id="rs-search" class="filter-input" placeholder="Search reference, name, GSTIN..." oninput="window.PurchaseReconController.loadReconSuppliers()">
+              <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadReconSuppliers()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewSupplier()">+ New Recon Supplier</button>
             </div>
           </div>
-          <div class="data-panel" style="padding: 24px; text-align: center;">
-            <span class="badge badge-role">Vendor Reconciliation Ready</span>
+
+          <!-- 4 KPI Cards (ReconSupplier.fxml Parity) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL SUPPLIERS</span><span class="kpi-badge">Directory</span></div>
+              <div class="kpi-value" id="rs-kpi-total">0</div>
+              <div class="kpi-meta">All recon suppliers</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--green);">ACTIVE</span><span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Live</span></div>
+              <div class="kpi-value" id="rs-kpi-active" style="color:var(--green);">0</div>
+              <div class="kpi-meta">Available for reconciliation</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--purple);">IMPORTED</span><span class="kpi-badge" style="background:rgba(168,85,247,0.15); color:var(--purple);">Auto</span></div>
+              <div class="kpi-value" id="rs-kpi-imported" style="color:var(--purple);">0</div>
+              <div class="kpi-meta">Created via GSTR-2B import</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">RECON RECORDS</span><span class="kpi-badge">Linked</span></div>
+              <div class="kpi-value" id="rs-kpi-recons" style="color:var(--yellow);">0</div>
+              <div class="kpi-meta">Total linked invoices</div>
+            </div>
+          </div>
+
+          <!-- Split Layout -->
+          <div style="display:flex; gap:16px; align-items:flex-start;">
+            <div style="flex:1; min-width:0;">
+              <div class="data-panel" style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Reference</th>
+                      <th>Legal / Trade Name</th>
+                      <th>GSTIN</th>
+                      <th>Phone</th>
+                      <th style="text-align:right;">Recon Records</th>
+                      <th>Source</th>
+                      <th style="text-align:center;">Status</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recon-supplier-tbody">
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading recon suppliers...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Side Editor Panel (ReconSupplier.fxml Parity) -->
+            <div id="recon-supplier-editor-panel" style="display:none; width:400px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+                <div>
+                  <h3 style="margin:0;" id="rs-editor-title">New Recon Supplier</h3>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">Independent supplier profile</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.closeSupplierEditor()">&times; Close</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="form-group">
+                  <label class="form-label">Trade / Legal Name *</label>
+                  <input type="text" id="rs-editor-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">GSTIN (15 Digits)</label>
+                  <input type="text" id="rs-editor-gstin" class="form-input" placeholder="24AAAAA0000A1Z5" maxlength="15" style="text-transform:uppercase; font-family:monospace;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">PAN (10 Digits)</label>
+                  <input type="text" id="rs-editor-pan" class="form-input" placeholder="AAAAA0000A" maxlength="10" style="text-transform:uppercase; font-family:monospace;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Contact Person</label>
+                  <input type="text" id="rs-editor-contact" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  <input type="text" id="rs-editor-phone" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="rs-editor-email" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Status</label>
+                  <select id="rs-editor-status" class="form-select">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <textarea id="rs-editor-notes" class="form-input" rows="2"></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                  <button class="btn btn-secondary" onclick="window.PurchaseReconController.closeSupplierEditor()">Cancel</button>
+                  <button id="rs-btn-save" class="btn btn-primary" onclick="window.PurchaseReconController.saveSupplier()">Save Recon Supplier</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
 
         <!-- VIEW: FINANCE & ACCOUNTS -->
         <div id="view-general-ledger" class="module-view">
@@ -2956,16 +3473,97 @@
           </div>
         </div>
 
-        <!-- VIEW: COMMUNICATION -->
+        <!-- VIEW: COMMUNICATION (EXACT DESKTOP CommunicationCenter.fxml PARITY) -->
         <div id="view-communication" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128172;</span> Communication Center</h1>
-              <p>Email dispatch history, PDF invoice transmissions, and customer notices</p>
+              <h1><span>💬</span> Communication Center</h1>
+              <p>Email dispatch logs, WhatsApp alerts, customer billing notices and delivery audit</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="window.CommunicationController.openEmailSettings()">
+                <span>⚙️</span> Email SMTP Settings
+              </button>
+              <button class="btn btn-primary" onclick="window.CommunicationController.loadCommunications()">
+                <span>🔄</span> Refresh Logs
+              </button>
             </div>
           </div>
-          <div class="data-panel" style="padding: 24px;">
-            <span class="badge badge-paid">SMTP Mail Transport Connected</span>
+
+          <!-- 4 KPI Summary Cards matching desktop -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL DISPATCHES</span></div>
+              <div class="kpi-value" id="comm-kpi-total" style="font-size: 1.25rem;">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Total notifications logged</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--accent); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--accent);">SUCCESS / DELIVERED</span></div>
+              <div class="kpi-value" id="comm-kpi-success" style="font-size: 1.25rem; color: var(--accent);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Transmitted to recipients</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--red); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--red);">FAILED / BOUNCED</span></div>
+              <div class="kpi-value" id="comm-kpi-failed" style="font-size: 1.25rem; color: var(--red);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">SMTP / Gateway error</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--purple-accent);">CHANNEL SPLIT</span></div>
+              <div class="kpi-value" id="comm-kpi-channels" style="font-size: 1.15rem; color: var(--purple-accent);">0 Email / 0 WA</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Multi-channel routing</div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="filter-toolbar" style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+            <div style="flex: 1; position: relative;">
+              <input type="text" id="comm-search" class="form-input" placeholder="🔍 Search recipient email/mobile, invoice #, subject..." oninput="window.CommunicationController.filterCommunications()" style="padding-left: 32px;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none;">✉️</span>
+            </div>
+            <div style="width: 170px;">
+              <select id="comm-channel-filter" class="form-select" onchange="window.CommunicationController.filterCommunications()">
+                <option value="ALL">All Channels</option>
+                <option value="EMAIL">Email Dispatches</option>
+                <option value="WHATSAPP">WhatsApp Alerts</option>
+              </select>
+            </div>
+            <div style="width: 170px;">
+              <select id="comm-status-filter" class="form-select" onchange="window.CommunicationController.filterCommunications()">
+                <option value="ALL">All Statuses</option>
+                <option value="SUCCESS">Success / Delivered</option>
+                <option value="FAILED">Failed / Rejected</option>
+                <option value="PENDING">Queued / Pending</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary" onclick="window.CommunicationController.loadCommunications()" title="Reload Data">
+              <span>🔄</span> Refresh
+            </button>
+          </div>
+
+          <!-- Data Grid: 9 Columns Parity -->
+          <div class="data-panel" style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">TIMESTAMP</th>
+                  <th style="width: 130px;">DOCUMENT / REF</th>
+                  <th style="width: 100px;">CHANNEL</th>
+                  <th style="width: 180px;">RECIPIENT</th>
+                  <th>SUBJECT / TEMPLATE</th>
+                  <th style="width: 100px;">STATUS</th>
+                  <th style="width: 170px;">GATEWAY MESSAGE</th>
+                  <th style="width: 90px;">SENT BY</th>
+                  <th style="width: 80px; text-align: center;">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="communication-tbody">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                    <span class="loading-spinner"></span> Loading communication events...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -4886,42 +5484,127 @@
     </div>
   </div>
 
+  <!-- MODAL: IMPORT BANK STATEMENT CSV (BankStatement.fxml Parity) -->
+  <div id="modal-import-statement" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 style="margin:0;">📥 Import Bank Statement</h3>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-import-statement')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Bank Institution</label>
+          <select id="import-bank-name" class="form-select">
+            <option value="Kotak Mahindra Bank" selected>Kotak Mahindra Bank (Kotak CSV Format)</option>
+            <option value="HDFC Bank">HDFC Bank (Standard CSV)</option>
+            <option value="State Bank of India">State Bank of India (SBI CSV)</option>
+            <option value="ICICI Bank">ICICI Bank (Corporate Statement)</option>
+            <option value="Generic Bank">Generic Bank (Date, Ref, Dr, Cr, Balance)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Bank Account Number / Identifier</label>
+          <input type="text" id="import-bank-acc" class="form-input" value="50200012345678" placeholder="Account Number">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Select Statement File (.CSV / .TXT)</label>
+          <div style="border: 2px dashed var(--border-subtle); padding: 24px; text-align: center; border-radius: 8px; background: rgba(255,255,255,0.02);">
+            <div style="font-size: 2rem; margin-bottom: 8px;">📄</div>
+            <div id="import-file-name" style="font-weight: 600; color: var(--cyan); margin-bottom: 6px;">No file selected</div>
+            <div id="import-preview-count" style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">0 rows detected</div>
+            <input type="file" id="import-csv-file" accept=".csv,.txt" style="display:none;" onchange="window.BankStatementController.onCsvFileSelected(event)">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-csv-file').click()">Browse Computer...</button>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-import-statement')">Cancel</button>
+          <button type="button" id="btn-submit-import" class="btn btn-primary" onclick="window.BankStatementController.submitImport()">Import Statement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MATCH CANDIDATE WORKSPACE (BankStatement.fxml Parity) -->
+  <div id="modal-match-candidate" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width:850px; width:95%;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0;">🔍 Match Transaction to ERP Invoices</h3>
+          <div id="mc-txn-info" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Select transaction</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-size:0.8rem; color:var(--text-muted);">Amount: <strong id="mc-txn-amount" style="color:var(--cyan); font-size:1.05rem;">₹ 0.00</strong></span>
+          <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-match-candidate')">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div class="data-panel" style="max-height:360px; overflow-y:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:60px; text-align:center;">MATCH</th>
+                <th style="width:90px;">TYPE</th>
+                <th style="width:120px;">DOCUMENT #</th>
+                <th>PARTY / ENTITY</th>
+                <th style="width:100px;">DATE</th>
+                <th style="text-align:right; width:110px;">TOTAL (₹)</th>
+                <th style="text-align:right; width:110px;">DUE (₹)</th>
+                <th style="text-align:center; width:120px;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="mc-candidates-tbody">
+              <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-dim);">Loading match candidates...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer" style="padding-top:14px; margin-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.75rem; color:var(--text-dim);">Matches are ranked using fuzzy string similarity, amount tolerances, and reference heuristics.</span>
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-match-candidate')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
 
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.12"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.12"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.12"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.12"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.12"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.13"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.13"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.13"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.13"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.13"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.12"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.12"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.12"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.12"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.12"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.13"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.13"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.13"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.13"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.13"></script>
+  <script src="js/services/ReconService.js?v=10.0.25.13"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.12"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.12"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.13"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.13"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.12"></script>
-  <script src="js/app.js?v=10.0.25.12"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.13"></script>
+  <script src="js/app.js?v=10.0.25.13"></script>
 </body>
 </html>
