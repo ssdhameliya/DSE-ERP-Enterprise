@@ -46,7 +46,7 @@ window.App = (function() {
     }
   }
 
-  function applyUserToHeader(user) {
+  window.applyUserToHeader = function(user) {
     if (!user) return;
     const nameEl = document.getElementById('header-user-name');
     const roleEl = document.getElementById('header-user-role');
@@ -54,7 +54,8 @@ window.App = (function() {
     if (nameEl) nameEl.innerText = user.fullName || user.username || 'User';
     if (roleEl) roleEl.innerText = (user.role || 'USER').toUpperCase();
     if (avatarEl) avatarEl.innerText = (user.fullName || user.username || 'U')[0].toUpperCase();
-  }
+  };
+  function applyUserToHeader(user) { window.applyUserToHeader(user); }
 
   function setupAuthForms() {
     populateLoginRoles();
@@ -302,6 +303,10 @@ window.App = (function() {
       await window.AuthService.logout();
       window.AppDialogService.showToast('Logged out of enterprise session.', 'info');
       this.showAuthOverlay();
+    },
+
+    applyUserToHeader(user) {
+      if (window.applyUserToHeader) window.applyUserToHeader(user);
     }
   };
 })();
