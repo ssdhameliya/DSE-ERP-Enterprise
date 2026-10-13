@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.25.9">
+    <link rel="stylesheet" href="css/app.css?v=10.0.25.11">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -29,6 +29,10 @@
       window.hideProfileDropdown = function() {
         const menu = document.getElementById('profile-dropdown-menu');
         if (menu) menu.style.display = 'none';
+      };
+      window.closeModal = function(id) {
+        const m = document.getElementById(id);
+        if (m) m.style.display = 'none';
       };
     </script>
 </head>
@@ -1216,75 +1220,522 @@
           </div>
         </div>
 
-        <!-- VIEW: SALES RETURNS -->
+        <!-- VIEW: SALES RETURNS (DESKTOP SalesReturns.fxml PARITY) -->
         <div id="view-sales-returns" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#8634;</span> Sales Return Register</h1>
-              <p>Customer returned goods, inspection state, and credit adjustments</p>
+              <h1><span>↩️</span> Sales Return Register</h1>
+              <p>Customer returned goods, inspection state, approval workflow, and refund settlement ledger</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadSalesReturns()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewNoteModal('RETURN')">+ Record Return</button>
+              <button class="btn btn-secondary" onclick="window.ReturnsController.resetFilters(true)">Reset</button>
+              <button class="btn btn-secondary" onclick="window.ReturnsController.loadReturns('SALES RETURN', 0)">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.ReturnsController.openCreateReturnModal()">+ Create Return</button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
+
+          <!-- 5 KPI Summary Cards matching SalesReturnsController.java applyKpis -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>💰</span> Total Returns</div>
+              <div class="kpi-value" id="sr-kpi-total">₹ 0.00</div>
+              <div class="kpi-sub">Total lifetime returns value</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📅</span> This Month</div>
+              <div class="kpi-value" id="sr-kpi-month" style="color:var(--cyan);">₹ 0.00</div>
+              <div class="kpi-sub">Current calendar month returns</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>⏳</span> Pending Approval</div>
+              <div class="kpi-value" id="sr-kpi-pending" style="color:var(--yellow);">₹ 0.00</div>
+              <div class="kpi-sub">Awaiting Admin inspection</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>✅</span> Approved Returns</div>
+              <div class="kpi-value" id="sr-kpi-approved" style="color:var(--green);">₹ 0.00</div>
+              <div class="kpi-sub">Stock movement posted</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>💸</span> Refunded Total</div>
+              <div class="kpi-value" id="sr-kpi-refund" style="color:var(--purple);">₹ 0.00</div>
+              <div class="kpi-sub">Settled via refund ledger</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="sr-filter-search" class="filter-input" placeholder="Search return #, invoice, customer..." style="width:240px;" oninput="window.ReturnsController.loadReturns('SALES RETURN', 0)">
+            <select id="sr-filter-customer" class="form-select" style="width:190px;" onchange="window.ReturnsController.loadReturns('SALES RETURN', 0)">
+              <option value="">All Customers</option>
+            </select>
+            <select id="sr-filter-status" class="form-select" style="width:180px;" onchange="window.ReturnsController.loadReturns('SALES RETURN', 0)">
+              <option value="">All Status</option>
+              <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">From:</span>
+              <input type="date" id="sr-filter-from" class="form-input form-input-sm" style="width:130px;" onchange="window.ReturnsController.loadReturns('SALES RETURN', 0)">
+              <span style="font-size:0.75rem; color:var(--text-muted);">To:</span>
+              <input type="date" id="sr-filter-to" class="form-input form-input-sm" style="width:130px;" onchange="window.ReturnsController.loadReturns('SALES RETURN', 0)">
+            </div>
+          </div>
+
+          <!-- Returns Table -->
+          <div class="sales-table-scroll">
+            <table class="sales-desktop-table">
               <thead>
-                <tr><th>Return #</th><th>Date</th><th>Customer</th><th>Original Invoice</th><th>Amount (&#8377;)</th><th>Status</th><th>Actions</th></tr>
+                <tr>
+                  <th>Return #</th>
+                  <th>Date</th>
+                  <th>Invoice Ref</th>
+                  <th>Customer</th>
+                  <th style="text-align:right;">Amount (₹)</th>
+                  <th style="text-align:right;">Refunded (₹)</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Refund Status</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
-              <tbody id="sales-returns-tbody">
-                <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Loading sales returns...</td></tr>
+              <tbody id="tbl-sales-returns-body">
+                <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading sales returns...</td></tr>
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Footer -->
+          <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+            <div class="footer-left">
+              <span id="sr-pagination-info">Showing 0 returns</span>
+            </div>
+            <div class="footer-right" style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" id="sr-btn-prev" onclick="window.ReturnsController.prevPage()" disabled>&larr; Previous</button>
+              <button class="btn btn-secondary btn-sm" id="sr-btn-next" onclick="window.ReturnsController.nextPage()" disabled>Next &rarr;</button>
+            </div>
+          </div>
         </div>
 
-        <!-- VIEW: CREDIT NOTES -->
+        <!-- SLIDE DETAIL DRAWER: SALES RETURNS -->
+        <div id="sr-detail-drawer" class="slide-detail-drawer">
+          <div class="drawer-header">
+            <div>
+              <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--text-main);" id="sr-detail-no">Return Details</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Customer Return Record &amp; Line Audit</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span class="drawer-field-value" id="sr-detail-date">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Customer:</span><span class="drawer-field-value" id="sr-detail-party">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Original Invoice:</span><span class="drawer-field-value" id="sr-detail-invoice" style="color:var(--cyan);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span class="drawer-field-value" id="sr-detail-total" style="color:var(--yellow); font-size:0.95rem;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Refunded Amount:</span><span class="drawer-field-value" id="sr-detail-refund" style="color:var(--green);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Return Reason:</span><span class="drawer-field-value" id="sr-detail-reason">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Approval Status:</span><span class="drawer-field-value" id="sr-detail-status">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Refund Status:</span><span class="drawer-field-value" id="sr-detail-refund-status">-</span></div>
+            <div style="margin-top:16px; margin-bottom:8px; font-weight:700; font-size:0.80rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Return Line Items</div>
+            <div id="sr-detail-lines" style="max-height:220px; overflow-y:auto;"></div>
+          </div>
+          <div class="drawer-footer">
+            <button class="btn btn-success btn-sm" id="sr-detail-btn-approve" onclick="window.ReturnsController.approveReturn(document.getElementById('sr-detail-no').innerText)" style="display:none;">Approve Return</button>
+            <button class="btn btn-danger btn-sm" id="sr-detail-btn-reject" onclick="window.ReturnsController.rejectReturnPrompt(document.getElementById('sr-detail-no').innerText)" style="display:none;">Reject</button>
+            <button class="btn btn-primary btn-sm" id="sr-detail-btn-refund" onclick="window.ReturnsController.openRefundModal(document.getElementById('sr-detail-no').innerText)">Record Refund</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.downloadPdf(document.getElementById('sr-detail-no').innerText)">PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.sendEmailPrompt(document.getElementById('sr-detail-no').innerText)">Email</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">Close</button>
+          </div>
+        </div>
+
+        <!-- VIEW: CREDIT NOTES (DESKTOP CreditNoteRegister.fxml PARITY) -->
         <div id="view-credit-notes" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128179;</span> Credit Note Register</h1>
-              <p>Issued credit adjustments against customer invoices and GST liabilities</p>
+              <h1><span>💳</span> Sales Credit Note Register</h1>
+              <p>Issued credit adjustments against customer invoices with automatic GST liability reversal</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadCreditNotes()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewNoteModal('CREDIT')">+ Issue Credit Note</button>
+              <button class="btn btn-secondary" onclick="window.CreditDebitNoteController.loadCreditNotes()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.CreditDebitNoteController.openCreateCreditModal()">+ New Credit Note</button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
+
+          <!-- 4 KPI Cards matching desktop CreditNoteRegister.fxml -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📄</span> Total Credit Notes</div>
+              <div class="kpi-value" id="cn-kpi-count">0</div>
+              <div class="kpi-sub">Total issued count</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>💰</span> Total Credit Amount</div>
+              <div class="kpi-value" id="cn-kpi-amount" style="color:var(--yellow);">₹ 0.00</div>
+              <div class="kpi-sub">Active credit notes total</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>⚖️</span> Tax Reversed</div>
+              <div class="kpi-value" id="cn-kpi-tax" style="color:var(--cyan);">₹ 0.00</div>
+              <div class="kpi-sub">GST output tax credited</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📦</span> Restocked Inventory</div>
+              <div class="kpi-value" id="cn-kpi-stock" style="color:var(--green);">0</div>
+              <div class="kpi-sub">Notes with restock reversal</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="cn-filter-search" class="filter-input" placeholder="Search credit note #, customer, invoice ref..." style="width:280px;" oninput="window.CreditDebitNoteController.filterCreditNotes()">
+            <select id="cn-filter-reason" class="form-select" style="width:200px;" onchange="window.CreditDebitNoteController.filterCreditNotes()">
+              <option value="All Reasons">All Reasons</option>
+              <option value="Sales Return">Sales Return</option>
+              <option value="Rate Difference">Rate Difference</option>
+              <option value="Post-Sale Discount">Post-Sale Discount</option>
+              <option value="Correction">Correction</option>
+            </select>
+          </div>
+
+          <!-- Credit Notes Table -->
+          <div class="sales-table-scroll">
+            <table class="sales-desktop-table">
               <thead>
-                <tr><th>Credit Note #</th><th>Date</th><th>Customer</th><th>Invoice Ref</th><th>Taxable (&#8377;)</th><th>Total (&#8377;)</th><th>Actions</th></tr>
+                <tr>
+                  <th>Credit Note #</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Invoice Ref</th>
+                  <th>Reason</th>
+                  <th style="text-align:right;">Taxable (₹)</th>
+                  <th style="text-align:right;">Tax (₹)</th>
+                  <th style="text-align:right;">Total (₹)</th>
+                  <th>Status</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
-              <tbody id="credit-notes-tbody">
-                <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Loading credit notes...</td></tr>
+              <tbody id="tbl-credit-notes-body">
+                <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading credit notes...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- VIEW: QUOTATIONS -->
+        <!-- SLIDE DETAIL DRAWER: CREDIT NOTES -->
+        <div id="cn-detail-drawer" class="slide-detail-drawer">
+          <div class="drawer-header">
+            <div>
+              <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--text-main);" id="cn-detail-no">Credit Note Details</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Accounts &amp; General Ledger Posting</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.closeDrawer(true)">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span class="drawer-field-value" id="cn-detail-date">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Customer:</span><span class="drawer-field-value" id="cn-detail-party">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Original Invoice:</span><span class="drawer-field-value" id="cn-detail-ref" style="color:var(--cyan);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Reason Code:</span><span class="drawer-field-value" id="cn-detail-reason">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Taxable Amount:</span><span class="drawer-field-value" id="cn-detail-taxable">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">CGST (50%):</span><span class="drawer-field-value" id="cn-detail-cgst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">SGST (50%):</span><span class="drawer-field-value" id="cn-detail-sgst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">IGST:</span><span class="drawer-field-value" id="cn-detail-igst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span class="drawer-field-value" id="cn-detail-total" style="color:var(--yellow); font-size:0.95rem;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Stock Restocked:</span><span class="drawer-field-value" id="cn-detail-stock">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span class="drawer-field-value" id="cn-detail-status">-</span></div>
+          </div>
+          <div class="drawer-footer">
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.downloadPdf(document.getElementById('cn-detail-no').innerText, true)">Print PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.closeDrawer(true)">Close</button>
+          </div>
+        </div>
+
+        <!-- VIEW: QUOTATIONS (DESKTOP Quotations.fxml PARITY) -->
         <div id="view-quotations" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128221;</span> Quotations &amp; Proforma Estimates</h1>
-              <p>Client estimates, pricing proposals, and one-click invoice conversion</p>
+              <h1><span>📝</span> Quotations &amp; Proforma Pipeline</h1>
+              <p>Client estimates, pricing proposals, live tracking, and one-click sales invoice conversion</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadQuotations()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewQuotationModal()">+ New Quotation</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.resetFilters()">Reset</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New Quotation</button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
+
+          <!-- 5 KPI Cards matching QuotationController.java applyStats -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📊</span> Pipeline Value</div>
+              <div class="kpi-value" id="quote-kpi-total-val">₹ 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-total-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>⏳</span> Pending Quotes</div>
+              <div class="kpi-value" id="quote-kpi-pending-val" style="color:var(--yellow);">₹ 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-pending-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>✅</span> Accepted Value</div>
+              <div class="kpi-value" id="quote-kpi-accepted-val" style="color:var(--green);">₹ 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-accepted-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>⚠️</span> Expired Value</div>
+              <div class="kpi-value" id="quote-kpi-expired-val" style="color:var(--red);">₹ 0.00</div>
+              <div class="kpi-sub">Passed valid-until date</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>🎯</span> Conversion Rate</div>
+              <div class="kpi-value" id="quote-kpi-conversion" style="color:var(--cyan);">0.0%</div>
+              <div class="kpi-sub">Accepted / Pipeline</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="quote-filter-search" class="filter-input" placeholder="Search quotation, customer, source..." style="width:230px;" oninput="window.QuotationController.loadQuotations(0)">
+            <input type="text" id="quote-filter-number" class="filter-input" placeholder="Quote #" style="width:110px;" oninput="window.QuotationController.loadQuotations(0)">
+            <select id="quote-filter-customer" class="form-select" style="width:180px;" onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All customers</option>
+            </select>
+            <select id="quote-filter-status" class="form-select" style="width:140px;" onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Status</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="SENT">SENT</option>
+              <option value="ACCEPTED">ACCEPTED</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="EXPIRED">EXPIRED</option>
+            </select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">From:</span>
+              <input type="date" id="quote-filter-from" class="form-input form-input-sm" style="width:125px;" onchange="window.QuotationController.loadQuotations(0)">
+              <span style="font-size:0.75rem; color:var(--text-muted);">To:</span>
+              <input type="date" id="quote-filter-to" class="form-input form-input-sm" style="width:125px;" onchange="window.QuotationController.loadQuotations(0)">
+            </div>
+            <select id="quote-filter-salesperson" class="form-select" style="width:140px;" onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Salespersons</option>
+            </select>
+            <select id="quote-filter-followup" class="form-select" style="width:130px;" onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Follow-ups</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Today">Today</option>
+              <option value="Next 7 Days">Next 7 Days</option>
+            </select>
+            <select id="quote-filter-source" class="form-select" style="width:130px;" onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Sources</option>
+              <option value="Direct Inquiry">Direct Inquiry</option>
+              <option value="Email">Email</option>
+              <option value="Phone Call">Phone Call</option>
+              <option value="Website">Website</option>
+            </select>
+          </div>
+
+          <!-- Quotations Table -->
+          <div class="sales-table-scroll">
+            <table class="sales-desktop-table">
               <thead>
-                <tr><th>Quote #</th><th>Date</th><th>Customer</th><th>Valid Until</th><th>Amount (&#8377;)</th><th>Status</th><th>Actions</th></tr>
+                <tr>
+                  <th>Quotation #</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Valid Upto</th>
+                  <th>Status</th>
+                  <th>Follow Up</th>
+                  <th>Converted To</th>
+                  <th>Salesperson</th>
+                  <th style="text-align:right;">Amount (₹)</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
-              <tbody id="quotations-tbody">
-                <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Loading quotations...</td></tr>
+              <tbody id="tbl-quotations-body">
+                <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading quotations...</td></tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+            <div class="footer-left">
+              <span id="quote-pagination-info">Showing 0 quotations</span>
+            </div>
+            <div class="footer-right" style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" id="quote-btn-prev" onclick="window.QuotationController.prevPage()" disabled>&larr; Previous</button>
+              <button class="btn btn-secondary btn-sm" id="quote-btn-next" onclick="window.QuotationController.nextPage()" disabled>Next &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE DETAIL DRAWER: QUOTATIONS -->
+        <div id="quote-detail-drawer" class="slide-detail-drawer">
+          <div class="drawer-header">
+            <div>
+              <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--text-main);" id="qd-no">Quotation Details</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Proforma Proposal &amp; Terms</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.closeDrawer()">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span class="drawer-field-value" id="qd-date">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Customer:</span><span class="drawer-field-value" id="qd-customer">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Contact:</span><span class="drawer-field-value" id="qd-contact" style="white-space:pre-line;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Amount:</span><span class="drawer-field-value" id="qd-amount" style="color:var(--yellow); font-size:0.95rem;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Discount:</span><span class="drawer-field-value" id="qd-discount">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Valid Until:</span><span class="drawer-field-value" id="qd-valid">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Follow-up:</span><span class="drawer-field-value" id="qd-follow">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Converted To:</span><span class="drawer-field-value" id="qd-converted" style="color:var(--purple);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span class="drawer-field-value" id="qd-status">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Source:</span><span class="drawer-field-value" id="qd-source">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Remarks:</span><span class="drawer-field-value" id="qd-remarks">-</span></div>
+          </div>
+          <div class="drawer-footer">
+            <button class="btn btn-success btn-sm" id="qd-btn-convert" onclick="window.QuotationController.convertToSale(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText, window.QuotationController.selectedQuote?.rowVersion || 0)">Convert to Sale</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.printPdf(document.getElementById('qd-no').innerText)">View PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.closeDrawer()">Close</button>
+          </div>
+        </div>
+
+        <!-- VIEW: QUOTATION EDITOR (DESKTOP QuotationEditor.fxml PARITY) -->
+        <div id="view-quotation-editor" class="module-view" style="display:none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 id="qe-title"><span>📝</span> Create Quotation</h1>
+              <p id="qe-subtitle">Sale-style quotation workspace with Master Data lookup and live GST calculations</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.QuotationController.cancelEditor()">Cancel</button>
+              <button class="btn btn-primary" id="btn-save-quotation" onclick="window.QuotationController.saveQuotation()">Save Quotation</button>
+            </div>
+          </div>
+
+          <!-- Master Header Form Card -->
+          <div class="editor-card">
+            <div class="editor-card-header">General Information &amp; Terms</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Customer *</label>
+                <select id="qe-customer-select" class="form-select" required>
+                  <option value="">Select Customer *</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quotation Date *</label>
+                <input type="date" id="qe-date" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Valid Until *</label>
+                <input type="date" id="qe-valid" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Follow-Up Date</label>
+                <input type="date" id="qe-followup" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quotation Source</label>
+                <select id="qe-source-select" class="form-select">
+                  <option value="Direct Inquiry">Direct Inquiry</option>
+                  <option value="Email">Email</option>
+                  <option value="Phone Call">Phone Call</option>
+                  <option value="Website">Website</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Quotation Remarks / Terms</label>
+              <textarea id="qe-remarks" class="form-input" rows="2" placeholder="Enter terms of delivery, payment, or warranty notes..."></textarea>
+            </div>
+          </div>
+
+          <!-- Line Items Editor Card -->
+          <div class="editor-card">
+            <div class="editor-card-header">Line Items Entry</div>
+            
+            <!-- Quick Add Line Item Strip -->
+            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:12px; margin-bottom:14px; position:relative;">
+              <div style="display:grid; grid-template-columns:2.5fr 0.8fr 1fr 0.8fr 0.8fr auto; gap:8px; align-items:flex-end;">
+                <div class="form-group" style="position:relative; margin-bottom:0;">
+                  <label class="form-label">Item Search (Code / Description)</label>
+                  <input type="text" id="qe-line-item-search" class="form-input" placeholder="Type to search SKU or item name..." oninput="window.QuotationController.onEditorItemSearchInput(this.value)" autocomplete="off">
+                  <div id="qe-item-suggestions" style="display:none; position:absolute; left:0; top:100%; right:0; z-index:999; background:#0b1324; border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.6); max-height:220px; overflow-y:auto;"></div>
+                  <input type="hidden" id="qe-line-code">
+                  <input type="hidden" id="qe-line-desc">
+                  <input type="hidden" id="qe-line-hsn">
+                  <input type="hidden" id="qe-line-unit">
+                  <input type="hidden" id="qe-line-category">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Qty</label>
+                  <input type="number" id="qe-line-qty" class="form-input" step="0.01" min="0.01" value="1" placeholder="Qty">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Rate (₹)</label>
+                  <input type="number" id="qe-line-rate" class="form-input" step="0.01" min="0" value="0" placeholder="Rate">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Disc %</label>
+                  <input type="number" id="qe-line-discount" class="form-input" step="0.01" min="0" max="100" value="0" placeholder="Disc %">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">GST %</label>
+                  <input type="number" id="qe-line-gst" class="form-input" step="0.01" min="0" max="100" value="18" placeholder="GST %">
+                </div>
+                <div>
+                  <button type="button" class="btn btn-primary" onclick="window.QuotationController.addEditorLine()" style="height:36px;">+ Add Line</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table of Lines -->
+            <div style="overflow-x:auto;">
+              <table class="sales-desktop-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px; text-align:center;">#</th>
+                    <th>Item Code</th>
+                    <th>Description</th>
+                    <th>HSN</th>
+                    <th style="text-align:right;">Quantity</th>
+                    <th style="text-align:right;">Rate (₹)</th>
+                    <th style="text-align:right;">Disc %</th>
+                    <th style="text-align:right;">GST %</th>
+                    <th style="text-align:right;">Total (₹)</th>
+                    <th style="width:50px; text-align:center;">Del</th>
+                  </tr>
+                </thead>
+                <tbody id="qe-lines-table-body">
+                  <tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No items added yet. Use the search input above to add items.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Financial Summary Box -->
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+              <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:8px; padding:12px 18px; width:340px; font-size:0.82rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <span style="color:var(--text-muted);">Subtotal (Gross):</span>
+                  <span style="font-weight:600;" id="qe-summary-subtotal">₹ 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--cyan);">
+                  <span>Total Discount:</span>
+                  <span style="font-weight:600;" id="qe-summary-discount">- ₹ 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <span style="color:var(--text-muted);">Taxable Amount:</span>
+                  <span style="font-weight:600;" id="qe-summary-taxable">₹ 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--yellow);">
+                  <span>GST Amount:</span>
+                  <span style="font-weight:600;" id="qe-summary-gst">₹ 0.00</span>
+                </div>
+                <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:1.05rem; font-weight:800; color:var(--text-main);">
+                  <span>Grand Total:</span>
+                  <span style="color:var(--yellow);" id="qe-summary-total">₹ 0.00</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1292,7 +1743,7 @@
         <div id="view-purchase-register" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128230;</span> Purchase Register</h1>
+              <h1><span>📦</span> Purchase Register</h1>
               <p>Inward goods bills, vendor invoices, and procurement log</p>
             </div>
             <div class="view-actions">
@@ -1304,7 +1755,7 @@
           <div class="data-panel">
             <table class="data-table">
               <thead>
-                <tr><th>Bill #</th><th>Date</th><th>Supplier</th><th>Taxable (&#8377;)</th><th>GST (&#8377;)</th><th>Total (&#8377;)</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>Bill #</th><th>Date</th><th>Supplier</th><th>Taxable (₹)</th><th>GST (₹)</th><th>Total (₹)</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody id="purchases-table-tbody">
                 <tr><td colspan="8" style="text-align: center; color: var(--text-dim);">Loading purchases...</td></tr>
@@ -1317,47 +1768,135 @@
         <div id="view-purchase-returns" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#8635;</span> Purchase Return Register</h1>
+              <h1><span>🔄</span> Purchase Return Register</h1>
               <p>Rejections sent back to suppliers with debit memo tracking</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadPurchaseReturns()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewNoteModal('PURCHASE_RETURN')">+ Record Return</button>
+              <button class="btn btn-secondary" onclick="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.ReturnsController.openCreateReturnModal()">+ Record Return</button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
+          <div class="sales-table-scroll">
+            <table class="sales-desktop-table">
               <thead>
-                <tr><th>Return #</th><th>Date</th><th>Supplier</th><th>Original Bill</th><th>Amount (&#8377;)</th><th>Status</th></tr>
+                <tr>
+                  <th>Return #</th>
+                  <th>Date</th>
+                  <th>Bill Ref</th>
+                  <th>Supplier</th>
+                  <th style="text-align:right;">Amount (₹)</th>
+                  <th style="text-align:right;">Refunded (₹)</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Refund Status</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
-              <tbody id="purchase-returns-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading purchase returns...</td></tr>
+              <tbody id="tbl-purchase-returns-body">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-dim);">Loading purchase returns...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- VIEW: DEBIT NOTES -->
+        <!-- VIEW: DEBIT NOTES (DESKTOP DebitNoteRegister.fxml PARITY) -->
         <div id="view-debit-notes" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128179;</span> Debit Note Register</h1>
-              <p>Claims and price adjustments issued against vendor bills</p>
+              <h1><span>🧾</span> Supplier Debit Note Register</h1>
+              <p>Claims, purchase returns, and price adjustments issued against vendor bills with ITC reversal</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="loadDebitNotes()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="openNewNoteModal('DEBIT')">+ Issue Debit Note</button>
+              <button class="btn btn-secondary" onclick="window.CreditDebitNoteController.loadDebitNotes()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.CreditDebitNoteController.openCreateDebitModal()">+ New Debit Note</button>
             </div>
           </div>
-          <div class="data-panel">
-            <table class="data-table">
+
+          <!-- 4 KPI Cards matching desktop DebitNoteRegister.fxml -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📄</span> Total Debit Notes</div>
+              <div class="kpi-value" id="dn-kpi-count">0</div>
+              <div class="kpi-sub">Total issued count</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>💰</span> Total Debit Amount</div>
+              <div class="kpi-value" id="dn-kpi-amount" style="color:var(--yellow);">₹ 0.00</div>
+              <div class="kpi-sub">Active debit notes total</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>⚖️</span> Tax Reversed (ITC)</div>
+              <div class="kpi-value" id="dn-kpi-tax" style="color:var(--cyan);">₹ 0.00</div>
+              <div class="kpi-sub">GST input tax reversed</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>📦</span> Returned Items</div>
+              <div class="kpi-value" id="dn-kpi-stock" style="color:var(--green);">0</div>
+              <div class="kpi-sub">Notes with inventory reduction</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="dn-filter-search" class="filter-input" placeholder="Search debit note #, supplier, bill ref..." style="width:280px;" oninput="window.CreditDebitNoteController.filterDebitNotes()">
+            <select id="dn-filter-reason" class="form-select" style="width:200px;" onchange="window.CreditDebitNoteController.filterDebitNotes()">
+              <option value="All Reasons">All Reasons</option>
+              <option value="Purchase Return">Purchase Return</option>
+              <option value="Rate Difference">Rate Difference</option>
+              <option value="Supplier Discount">Supplier Discount</option>
+              <option value="Correction">Correction</option>
+            </select>
+          </div>
+
+          <!-- Debit Notes Table -->
+          <div class="sales-table-scroll">
+            <table class="sales-desktop-table">
               <thead>
-                <tr><th>Debit Note #</th><th>Date</th><th>Supplier</th><th>Bill Ref</th><th>Amount (&#8377;)</th><th>Actions</th></tr>
+                <tr>
+                  <th>Debit Note #</th>
+                  <th>Date</th>
+                  <th>Supplier</th>
+                  <th>Bill Ref</th>
+                  <th>Reason</th>
+                  <th style="text-align:right;">Taxable (₹)</th>
+                  <th style="text-align:right;">Tax (₹)</th>
+                  <th style="text-align:right;">Total (₹)</th>
+                  <th>Status</th>
+                  <th style="text-align:center;">Actions</th>
+                </tr>
               </thead>
-              <tbody id="debit-notes-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading debit notes...</td></tr>
+              <tbody id="tbl-debit-notes-body">
+                <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading debit notes...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- SLIDE DETAIL DRAWER: DEBIT NOTES -->
+        <div id="dn-detail-drawer" class="slide-detail-drawer">
+          <div class="drawer-header">
+            <div>
+              <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--text-main);" id="dn-detail-no">Debit Note Details</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Accounts &amp; General Ledger Posting</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.closeDrawer(false)">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span class="drawer-field-value" id="dn-detail-date">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span class="drawer-field-value" id="dn-detail-party">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span class="drawer-field-value" id="dn-detail-ref" style="color:var(--cyan);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Reason Code:</span><span class="drawer-field-value" id="dn-detail-reason">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Taxable Amount:</span><span class="drawer-field-value" id="dn-detail-taxable">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">CGST (50%):</span><span class="drawer-field-value" id="dn-detail-cgst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">SGST (50%):</span><span class="drawer-field-value" id="dn-detail-sgst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">IGST:</span><span class="drawer-field-value" id="dn-detail-igst">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span class="drawer-field-value" id="dn-detail-total" style="color:var(--yellow); font-size:0.95rem;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Stock Deducted:</span><span class="drawer-field-value" id="dn-detail-stock">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span class="drawer-field-value" id="dn-detail-status">-</span></div>
+          </div>
+          <div class="drawer-footer">
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.downloadPdf(document.getElementById('dn-detail-no').innerText, false)">Print PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.closeDrawer(false)">Close</button>
           </div>
         </div>
 
@@ -3241,39 +3780,403 @@
     </div>
   </div>
 
+  <!-- BATCH 1 MODALS: DESKTOP PARITY -->
+
+  <!-- MODAL: CREATE RETURN (DESKTOP ReturnEditorService.java PARITY) -->
+  <div id="modal-create-return" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width: 900px; width: 95%;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">🔄</span>
+          <div>
+            <h3 style="margin:0;" id="modal-create-return-title">Create Sales Return</h3>
+            <span style="font-size:0.75rem; color:var(--text-dim);">Load items from original invoice and specify return quantities</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.ReturnsController.closeModal('modal-create-return')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <input type="hidden" id="cr-type" value="SALES RETURN">
+
+        <!-- Top Controls: Invoice Search and Return Date -->
+        <div style="display:grid; grid-template-columns: 1fr 180px 140px; gap:12px; margin-bottom:16px; align-items:flex-end;">
+          <div class="form-group">
+            <label class="form-label">Original Tax Invoice / Bill # *</label>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="cr-invoice-input" class="form-input" placeholder="e.g. INV-2026-0001 or BILL-2026-0001">
+              <button class="btn btn-secondary" type="button" onclick="window.ReturnsController.loadReturnableLines()" style="white-space:nowrap;">Load Items</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Return Date *</label>
+            <input type="date" id="cr-return-date" class="form-input" required>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.72rem; color:var(--text-dim);">Estimated Value</div>
+            <div id="cr-estimated-total" style="font-size:1.2rem; font-weight:700; color:var(--yellow); font-family:'Space Grotesk';">₹ 0.00</div>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div style="border:1px solid var(--border-subtle); border-radius:6px; overflow:hidden; margin-bottom:12px; max-height:300px; overflow-y:auto;">
+          <table class="data-table" style="margin:0; width:100%;">
+            <thead>
+              <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
+                <th style="width:36px; text-align:center;"><input type="checkbox" onchange="window.ReturnsController.toggleSelectAllLines(this.checked)"></th>
+                <th>Item Code</th>
+                <th>Description</th>
+                <th style="text-align:right;">Inv Qty</th>
+                <th style="text-align:right;">Ret Qty</th>
+                <th style="text-align:right;">Available</th>
+                <th style="width:110px; text-align:right;">Return Qty</th>
+                <th style="text-align:right;">Amount (₹)</th>
+                <th style="width:160px;">Reason</th>
+              </tr>
+            </thead>
+            <tbody id="cr-lines-body">
+              <tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">Enter an invoice number to load returnable line items.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:var(--text-dim);">
+          <span id="cr-selected-count">0 items selected</span>
+          <span>Returns adjust inventory and issue credit memo upon approval</span>
+        </div>
+
+        <div class="modal-footer" style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.ReturnsController.closeModal('modal-create-return')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-return" onclick="window.ReturnsController.submitCreateReturn()">Create Return</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECORD REFUND (DESKTOP ReturnRefundController.java PARITY) -->
+  <div id="modal-record-refund" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width: 680px; width: 95%;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">💸</span>
+          <div>
+            <h3 style="margin:0;">Record Return Refund / Payout</h3>
+            <span style="font-size:0.75rem; color:var(--text-dim);">Issue disbursement or payment against approved return</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.ReturnsController.closeModal('modal-record-refund')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <input type="hidden" id="rf-return-no">
+        <input type="hidden" id="rf-party-name">
+
+        <!-- Summary Strip -->
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px; margin-bottom:16px;">
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-dim);">Doc Ref</div>
+            <div id="rf-invoice-no" style="font-weight:600; color:var(--text-main); font-size:0.85rem;">-</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-dim);">Return Amount</div>
+            <div id="rf-total-amount" style="font-weight:700; color:var(--yellow); font-size:0.85rem;">₹ 0.00</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-dim);">Already Refunded</div>
+            <div id="rf-already-refunded" style="font-weight:600; color:var(--green); font-size:0.85rem;">₹ 0.00</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-dim);">Balance Due</div>
+            <div id="rf-balance-remaining" style="font-weight:700; color:var(--red); font-size:0.85rem;">₹ 0.00</div>
+          </div>
+        </div>
+
+        <!-- Form Inputs -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Refund Amount (₹) *</label>
+            <input type="number" step="0.01" id="rf-amount" class="form-input" required placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Date *</label>
+            <input type="date" id="rf-date" class="form-input" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Payment Mode *</label>
+            <select id="rf-mode" class="form-select">
+              <option value="Bank Transfer">Bank Transfer (NEFT/RTGS/IMPS)</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="UPI">UPI / QR</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank Account / Ledger</label>
+            <select id="rf-bank-account" class="form-select">
+              <option value="HDFC Bank - Current A/c">HDFC Bank - Current A/c</option>
+              <option value="ICICI Bank - Current A/c">ICICI Bank - Current A/c</option>
+              <option value="State Bank of India">State Bank of India</option>
+              <option value="Cash in Hand">Cash in Hand</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Transaction / UTR Reference #</label>
+            <input type="text" id="rf-reference" class="form-input" placeholder="e.g. UTR123456789">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes / Remarks</label>
+            <input type="text" id="rf-notes" class="form-input" placeholder="Optional payout remarks">
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <input type="checkbox" id="rf-full-toggle">
+          <label for="rf-full-toggle" style="font-size:0.8rem; color:var(--text-main); cursor:pointer;">Mark Return as FULLY Refunded (Settles balance)</label>
+        </div>
+
+        <!-- History -->
+        <div style="font-size:0.78rem; font-weight:600; color:var(--text-dim); margin-bottom:6px;">Prior Refund Transactions</div>
+        <div style="border:1px solid var(--border-subtle); border-radius:6px; max-height:140px; overflow-y:auto; margin-bottom:12px;">
+          <table class="data-table" style="margin:0; width:100%; font-size:0.75rem;">
+            <thead>
+              <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
+                <th>Date</th><th>Mode</th><th>Ref #</th><th>Bank Account</th><th style="text-align:right;">Amount (₹)</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="rf-history-body">
+              <tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">No prior refunds.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.ReturnsController.closeModal('modal-record-refund')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-refund" onclick="window.ReturnsController.submitRefund()">Record Refund</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE CREDIT NOTE (DESKTOP CreditDebitNoteService.java PARITY) -->
+  <div id="modal-create-credit-note" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width: 600px; width: 95%;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">📄</span>
+          <div>
+            <h3 style="margin:0;">Issue Credit Note</h3>
+            <span style="font-size:0.75rem; color:var(--text-dim);">Post customer credit adjustment with GST output liability reduction</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.CreditDebitNoteController.closeModal('modal-create-credit-note')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Customer Name *</label>
+          <input type="text" id="m-cn-party" class="form-input" placeholder="Search or enter customer name" required>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Original Tax Invoice Ref #</label>
+            <input type="text" id="m-cn-invoice" class="form-input" placeholder="e.g. INV-2026-0001">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason Code *</label>
+            <select id="m-cn-reason" class="form-select">
+              <option value="Sales Return">01 - Sales Return</option>
+              <option value="Post-sale Discount">02 - Post-sale Discount</option>
+              <option value="Deficiency in Service">03 - Deficiency in Service</option>
+              <option value="Correction in Invoice">04 - Correction in Invoice</option>
+              <option value="Other">05 - Other Adjustment</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Taxable Amount (₹) *</label>
+            <input type="number" step="0.01" id="m-cn-taxable" class="form-input" placeholder="0.00" oninput="window.CreditDebitNoteController.recalcCreditTax()" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">GST Rate (%) *</label>
+            <select id="m-cn-gst-rate" class="form-select" onchange="window.CreditDebitNoteController.recalcCreditTax()">
+              <option value="18">18% (Standard CGST 9% + SGST 9%)</option>
+              <option value="12">12% (CGST 6% + SGST 6%)</option>
+              <option value="5">5% (CGST 2.5% + SGST 2.5%)</option>
+              <option value="28">28% (CGST 14% + SGST 14%)</option>
+              <option value="0">0% (Nil / Exempt)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <input type="checkbox" id="m-cn-adjust-stock" checked>
+          <label for="m-cn-adjust-stock" style="font-size:0.8rem; color:var(--text-main); cursor:pointer;">Adjust inventory back to warehouse (Stock Returned)</label>
+        </div>
+        <!-- Calculation Preview -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px 14px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.82rem; color:var(--text-dim);">
+            <span>Calculated GST Reversal:</span>
+            <span id="m-cn-preview-tax" style="font-weight:600; color:var(--yellow);">₹ 0.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:700; color:var(--text-main);">
+            <span>Total Credit Note Amount:</span>
+            <span id="m-cn-preview-total" style="color:var(--cyan); font-family:'Space Grotesk';">₹ 0.00</span>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.CreditDebitNoteController.closeModal('modal-create-credit-note')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-create-cn" onclick="window.CreditDebitNoteController.submitCreateCreditNote()">Issue Credit Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE DEBIT NOTE (DESKTOP CreditDebitNoteService.java PARITY) -->
+  <div id="modal-create-debit-note" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width: 600px; width: 95%;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">🧾</span>
+          <div>
+            <h3 style="margin:0;">Issue Debit Note</h3>
+            <span style="font-size:0.75rem; color:var(--text-dim);">Debit supplier account for purchase returns or price adjustments with ITC reversal</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.CreditDebitNoteController.closeModal('modal-create-debit-note')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Supplier Name *</label>
+          <input type="text" id="m-dn-supplier" class="form-input" placeholder="Search or enter supplier name" required>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Original Vendor Bill Ref #</label>
+            <input type="text" id="m-dn-bill" class="form-input" placeholder="e.g. BILL-2026-0001">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason Code *</label>
+            <select id="m-dn-reason" class="form-select">
+              <option value="Purchase Return">01 - Purchase Return</option>
+              <option value="Vendor Overcharge">02 - Vendor Overcharge</option>
+              <option value="Goods Quality Issue">03 - Goods Quality Issue</option>
+              <option value="ITC Reversal">04 - ITC Reversal / Correction</option>
+              <option value="Other">05 - Other Adjustment</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Taxable Amount (₹) *</label>
+            <input type="number" step="0.01" id="m-dn-taxable" class="form-input" placeholder="0.00" oninput="window.CreditDebitNoteController.recalcDebitTax()" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">GST Rate (%) *</label>
+            <select id="m-dn-gst-rate" class="form-select" onchange="window.CreditDebitNoteController.recalcDebitTax()">
+              <option value="18">18% (Standard CGST 9% + SGST 9%)</option>
+              <option value="12">12% (CGST 6% + SGST 6%)</option>
+              <option value="5">5% (CGST 2.5% + SGST 2.5%)</option>
+              <option value="28">28% (CGST 14% + SGST 14%)</option>
+              <option value="0">0% (Nil / Exempt)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <input type="checkbox" id="m-dn-adjust-stock" checked>
+          <label for="m-dn-adjust-stock" style="font-size:0.8rem; color:var(--text-main); cursor:pointer;">Reduce inventory from warehouse (Stock Returned to Vendor)</label>
+        </div>
+        <!-- Calculation Preview -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px 14px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.82rem; color:var(--text-dim);">
+            <span>Calculated ITC Reversal:</span>
+            <span id="m-dn-preview-tax" style="font-weight:600; color:var(--yellow);">₹ 0.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:700; color:var(--text-main);">
+            <span>Total Debit Note Amount:</span>
+            <span id="m-dn-preview-total" style="color:var(--cyan); font-family:'Space Grotesk';">₹ 0.00</span>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.CreditDebitNoteController.closeModal('modal-create-debit-note')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-create-dn" onclick="window.CreditDebitNoteController.submitCreateDebitNote()">Issue Debit Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QUOTATION FOLLOW-UP (DESKTOP QuotationController.java PARITY) -->
+  <div id="modal-quote-followup" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; width: 95%;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">⏰</span>
+          <div>
+            <h3 style="margin:0;" id="qf-title">Schedule Follow-Up</h3>
+            <span style="font-size:0.75rem; color:var(--text-dim);">Set automated reminder for client follow-up</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.QuotationController.closeModal('modal-quote-followup')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <input type="hidden" id="qf-id">
+        <input type="hidden" id="qf-row-version" value="0">
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Next Follow-Up Date *</label>
+          <input type="date" id="qf-date" class="form-input" required>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Follow-Up Notes</label>
+          <textarea id="qf-notes" class="form-input" rows="3" placeholder="e.g. Customer requested technical drawing review..."></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding-top:12px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.QuotationController.closeModal('modal-quote-followup')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="window.QuotationController.submitFollowUp()">Schedule Follow-Up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
 
   <!-- JAVASCRIPT STUDIO ENGINE -->
-    <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
+  <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.25.10"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.25.10"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.25.10"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.25.10"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.25.10"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.25.11"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.25.11"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.25.11"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.25.11"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.25.11"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.25.10"></script>
-  <script src="js/services/AuthService.js?v=10.0.25.10"></script>
-  <script src="js/services/MasterService.js?v=10.0.25.10"></script>
-  <script src="js/services/OperationsService.js?v=10.0.25.10"></script>
-  <script src="js/services/ReportService.js?v=10.0.25.10"></script>
+  <script src="js/services/ApiService.js?v=10.0.25.11"></script>
+  <script src="js/services/AuthService.js?v=10.0.25.11"></script>
+  <script src="js/services/MasterService.js?v=10.0.25.11"></script>
+  <script src="js/services/OperationsService.js?v=10.0.25.11"></script>
+  <script src="js/services/ReportService.js?v=10.0.25.11"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/GstController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.25.10"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.25.10"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/GstController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.25.11"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.25.11"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.25.10"></script>
-  <script src="js/app.js?v=10.0.25.10"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.25.11"></script>
+  <script src="js/app.js?v=10.0.25.11"></script>
 </body>
 </html>

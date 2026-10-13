@@ -15,6 +15,7 @@ window.NavigationRouter = (function() {
     'view-sales-returns': { title: 'Sales Returns', breadcrumb: 'Customer Goods Inward', icon: '↩️' },
     'view-credit-notes': { title: 'Credit Notes', breadcrumb: 'Accounts & Adjustments', icon: '💳' },
     'view-quotations': { title: 'Quotations', breadcrumb: 'Proforma & Quotation Pipeline', icon: '📝' },
+    'view-quotation-editor': { title: 'Quotation Editor', breadcrumb: 'Sales & Distribution', icon: '📝' },
     'view-purchase-register': { title: 'Purchase Register', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
     'view-purchase-returns': { title: 'Purchase Returns', breadcrumb: 'Supplier Returns & Memos', icon: '🔄' },
     'view-debit-notes': { title: 'Debit Notes', breadcrumb: 'Supplier Debit Notes', icon: '🧾' },
@@ -233,19 +234,22 @@ window.NavigationRouter = (function() {
           if (window.PartyController) window.PartyController.loadSuppliers();
           break;
         case 'view-quotations':
-          if (window.SalesController) window.SalesController.loadQuotations();
+          if (window.QuotationController) window.QuotationController.loadQuotations();
+          break;
+        case 'view-quotation-editor':
+          // Managed by QuotationController.openQuotationEditor
           break;
         case 'view-sales-returns':
-          if (window.SalesController) window.SalesController.loadReturns();
-          break;
-        case 'view-credit-notes':
-          if (window.SalesController) window.SalesController.loadCreditNotes();
+          if (window.ReturnsController) window.ReturnsController.loadReturns('SALES RETURN');
           break;
         case 'view-purchase-returns':
-          if (window.PurchaseController) window.PurchaseController.loadReturns();
+          if (window.ReturnsController) window.ReturnsController.loadReturns('PURCHASE RETURN');
+          break;
+        case 'view-credit-notes':
+          if (window.CreditDebitNoteController) window.CreditDebitNoteController.loadCreditNotes();
           break;
         case 'view-debit-notes':
-          if (window.PurchaseController) window.PurchaseController.loadDebitNotes();
+          if (window.CreditDebitNoteController) window.CreditDebitNoteController.loadDebitNotes();
           break;
         case 'view-bank-entry':
         case 'view-expense-entry':

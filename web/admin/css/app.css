@@ -778,4 +778,157 @@
       border-left: 3px solid var(--cyan) !important;
     }
 
+    /* BATCH 1: DESKTOP-PARITY KPI CARDS & REGISTERS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .kpi-card:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      transform: translateY(-1px);
+    }
+    .kpi-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpi-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+    .kpi-sub {
+      font-size: 0.70rem;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    /* FILTER TOOLBAR STRIP */
+    .filter-toolbar-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+    }
+
+    /* SLIDE DETAIL DRAWER (PARITY WITH DESKTOP SalesReturns.fxml / CreditNoteRegister.fxml) */
+    .slide-detail-drawer {
+      position: fixed;
+      right: 0;
+      top: 64px;
+      bottom: 30px;
+      width: 440px;
+      max-width: 90vw;
+      background: #0b1324;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: -12px 0 35px rgba(0, 0, 0, 0.65);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      backdrop-filter: blur(20px);
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide-detail-drawer.open {
+      display: flex;
+      transform: translateX(0);
+    }
+    .drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+    }
+    .drawer-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .drawer-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .drawer-field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.80rem;
+    }
+    .drawer-field-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .drawer-field-value {
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: right;
+    }
+
+    /* PILL BADGES */
+    .pill-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .pill-success {
+      background: rgba(16, 185, 129, 0.16);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.32);
+    }
+    .pill-warning {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.32);
+    }
+    .pill-danger {
+      background: rgba(239, 68, 68, 0.16);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.32);
+    }
+    .pill-neutral {
+      background: rgba(148, 163, 184, 0.16);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+
+
 

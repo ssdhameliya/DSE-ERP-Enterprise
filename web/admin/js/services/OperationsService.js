@@ -30,21 +30,131 @@ window.OperationsService = {
   async deleteSale(invoiceNo) {
     return await window.ApiService.delete(`/api/operations/sales?invoiceNo=${encodeURIComponent(invoiceNo)}`);
   },
-  async getQuotations() {
-    return await window.ApiService.get('/api/quotations');
+  // Quotations (Desktop QuotationController Parity)
+  async getQuotationsPage(page = 0, size = 25, q = '', number = '', customer = '', status = '', from = '', to = '', valid = '', salesperson = '', minAmount = '', maxAmount = '', followUp = '', source = '') {
+    let url = `/api/quotations/page?page=${page}&size=${size}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (number) url += `&number=${encodeURIComponent(number)}`;
+    if (customer && customer !== 'All customers' && customer !== 'All') url += `&customer=${encodeURIComponent(customer)}`;
+    if (status && status !== 'All') url += `&status=${encodeURIComponent(status)}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (valid) url += `&valid=${encodeURIComponent(valid)}`;
+    if (salesperson && salesperson !== 'All') url += `&salesperson=${encodeURIComponent(salesperson)}`;
+    if (minAmount) url += `&minAmount=${encodeURIComponent(minAmount)}`;
+    if (maxAmount) url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
+    if (followUp && followUp !== 'All') url += `&followUp=${encodeURIComponent(followUp)}`;
+    if (source && source !== 'All') url += `&source=${encodeURIComponent(source)}`;
+    return await window.ApiService.get(url);
+  },
+  async getQuotation(id) {
+    return await window.ApiService.get(`/api/quotations/${id}`);
+  },
+  async getQuotationBootstrap(id = null) {
+    let url = '/api/quotations/editor-bootstrap';
+    if (id) url += `?id=${id}`;
+    return await window.ApiService.get(url);
+  },
+  async searchQuotationItems(q = '', limit = 12) {
+    return await window.ApiService.get(`/api/quotations/items/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+  },
+  async getQuotationSources() {
+    return await window.ApiService.get('/api/quotations/sources');
   },
   async createQuotation(data) {
     return await window.ApiService.post('/api/quotations', data);
   },
-  async getSalesReturns() {
-    return await window.ApiService.get('/api/returns/page?type=SALES');
+  async updateQuotation(id, data) {
+    return await window.ApiService.put(`/api/quotations/${id}`, data);
   },
+  async convertQuotation(id, user = 'Admin', rowVersion = 0) {
+    return await window.ApiService.post(`/api/quotations/${id}/convert?user=${encodeURIComponent(user)}&rowVersion=${rowVersion}`, {});
+  },
+  async duplicateQuotation(id, user = 'Admin') {
+    return await window.ApiService.post(`/api/quotations/${id}/duplicate?user=${encodeURIComponent(user)}`, {});
+  },
+  async deleteQuotation(id, rowVersion = 0) {
+    return await window.ApiService.delete(`/api/quotations/${id}?rowVersion=${rowVersion}`);
+  },
+  async scheduleQuotationFollowUp(id, followUpData) {
+    return await window.ApiService.post(`/api/quotations/${id}/follow-up`, followUpData);
+  },
+  async markQuotationSent(id, channel = 'EMAIL', rowVersion = 0) {
+    return await window.ApiService.post(`/api/quotations/${id}/sent?channel=${encodeURIComponent(channel)}&rowVersion=${rowVersion}`, {});
+  },
+
+  // Returns (Sales Return & Purchase Return - ReturnController Parity)
+  async getReturnsPage(type = 'SALES RETURN', page = 0, size = 25, q = '', party = '', status = '', from = '', to = '') {
+    let url = `/api/returns/page?type=${encodeURIComponent(type)}&page=${page}&size=${size}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (party && party !== 'All Customers' && party !== 'All Suppliers' && party !== 'All') url += `&party=${encodeURIComponent(party)}`;
+    if (status && status !== 'All Status' && status !== 'All') url += `&status=${encodeURIComponent(status)}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    return await window.ApiService.get(url);
+  },
+  async getReturnableLines(type = 'SALES RETURN', invoice = '') {
+    return await window.ApiService.get(`/api/returns/returnable-lines?type=${encodeURIComponent(type)}&invoice=${encodeURIComponent(invoice)}`);
+  },
+  async createReturn(data) {
+    return await window.ApiService.post('/api/returns', data);
+  },
+  async getReturnDetails(no) {
+    return await window.ApiService.get(`/api/returns/${encodeURIComponent(no)}`);
+  },
+  async updateReturn(no, field, value, expectedRowVersion = 0) {
+    return await window.ApiService.put(`/api/returns/${encodeURIComponent(no)}`, { field, value, expectedRowVersion });
+  },
+  async approveReturn(no) {
+    return await window.ApiService.post(`/api/returns/${encodeURIComponent(no)}/approve`, {});
+  },
+  async rejectReturn(no, reason = '') {
+    return await window.ApiService.post(`/api/returns/${encodeURIComponent(no)}/reject?reason=${encodeURIComponent(reason)}`, {});
+  },
+  async cancelReturn(no, isSales = true) {
+    return await window.ApiService.post(`/api/returns/${encodeURIComponent(no)}/cancel?sales=${isSales}`, {});
+  },
+  async deleteReturn(no, isSales = true) {
+    return await window.ApiService.delete(`/api/returns/${encodeURIComponent(no)}?sales=${isSales}`);
+  },
+  async getReturnRefunds(no) {
+    return await window.ApiService.get(`/api/returns/${encodeURIComponent(no)}/refunds`);
+  },
+  async recordReturnRefund(no, refundData) {
+    return await window.ApiService.post(`/api/returns/${encodeURIComponent(no)}/refunds`, refundData);
+  },
+
+  // Credit Notes (Desktop CreditNoteRegisterController Parity)
   async getCreditNotes() {
-    return await window.ApiService.get('/api/notes/credit');
+    return await window.ApiService.get('/api/credit-notes');
   },
-  async createCreditNote(data) {
-    return await window.ApiService.post('/api/notes/credit', data);
+  async getCreditNote(id) {
+    return await window.ApiService.get(`/api/credit-notes/${id}`);
   },
+  async createCreditNote(data, user = 'Admin') {
+    return await window.ApiService.post(`/api/credit-notes?user=${encodeURIComponent(user)}`, data);
+  },
+  async cancelCreditNote(id, user = 'Admin') {
+    return await window.ApiService.post(`/api/credit-notes/${id}/cancel?user=${encodeURIComponent(user)}`, {});
+  },
+
+  // Debit Notes (Desktop DebitNoteRegisterController Parity)
+  async getDebitNotes() {
+    return await window.ApiService.get('/api/debit-notes');
+  },
+  async getDebitNote(id) {
+    return await window.ApiService.get(`/api/debit-notes/${id}`);
+  },
+  async createDebitNote(data, user = 'Admin') {
+    return await window.ApiService.post(`/api/debit-notes?user=${encodeURIComponent(user)}`, data);
+  },
+  async cancelDebitNote(id, user = 'Admin') {
+    return await window.ApiService.post(`/api/debit-notes/${id}/cancel?user=${encodeURIComponent(user)}`, {});
+  },
+
+  // Legacy compatibility aliases
+  async getSalesReturns() { return this.getReturnsPage('SALES RETURN'); },
+  async getPurchaseReturns() { return this.getReturnsPage('PURCHASE RETURN'); },
 
   // Purchases
   async getPurchases(page = 0, size = 50, q = '', from = '', to = '') {
@@ -68,15 +178,6 @@ window.OperationsService = {
   },
   async cancelPurchase(invoiceNo) {
     return await window.ApiService.post(`/api/operations/purchases/cancel?invoiceNo=${encodeURIComponent(invoiceNo)}`, {});
-  },
-  async getPurchaseReturns() {
-    return await window.ApiService.get('/api/returns/page?type=PURCHASE');
-  },
-  async getDebitNotes() {
-    return await window.ApiService.get('/api/notes/debit');
-  },
-  async createDebitNote(data) {
-    return await window.ApiService.post('/api/notes/debit', data);
   },
 
   // Finance & Banking
