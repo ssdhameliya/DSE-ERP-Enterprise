@@ -201,6 +201,9 @@ window.App = (function() {
   }
 
   async function pollShellCounts() {
+    if (!window.AuthService || !window.AuthService.isAuthenticated()) {
+      return; // Never poll backend counts when session is unauthenticated
+    }
     try {
       const counts = await window.ApiService.get('/api/insights/shell-counts');
       if (counts) {
@@ -254,9 +257,11 @@ window.App = (function() {
         if (text) text.innerText = 'Light';
       }
 
-      // Initial shell counts poll and background timer
-      await pollShellCounts();
-      setInterval(pollShellCounts, 30000);
+      // Initial shell counts poll and background timer only when session is authenticated
+      if (window.AuthService.isAuthenticated()) {
+        await pollShellCounts();
+        setInterval(pollShellCounts, 30000);
+      }
 
       // Global click handler to close profile dropdown
       document.addEventListener('click', (e) => {
@@ -298,11 +303,17 @@ window.App = (function() {
       window.AppDialogService.showToast(`Switched to ${isLight ? 'Light' : 'Dark'} theme`, 'info');
     },
 
-    showAuthOverlay() {
+    showAuthOverlay(preferredTab) {
       const auth = document.getElementById('auth-overlay');
       if (auth) {
         auth.style.display = 'flex';
-        this.showAuthTab('login');
+        if (preferredTab) {
+          this.showAuthTab(preferredTab);
+        } else if (window.AuthService && window.AuthService.getPendingMfaChallenge()) {
+          this.showAuthTab('mfa');
+        } else {
+          this.showAuthTab('login');
+        }
       }
     },
 

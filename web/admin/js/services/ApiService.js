@@ -136,7 +136,14 @@ window.ApiService = (function() {
           const errorMsg = errData.message || errData.error || 'Authentication required';
           if (!endpoint.includes('/api/auth/')) {
             localStorage.removeItem('dse_access_token');
-            if (window.showAuthOverlay) window.showAuthOverlay();
+            const formMfa = document.getElementById('form-mfa');
+            const isMfaActive = (window.AuthService && window.AuthService.getPendingMfaChallenge()) ||
+                                (formMfa && formMfa.style.display !== 'none');
+            if (isMfaActive) {
+              console.warn('[ApiService] Active MFA session detected; suppressing 401 redirect to login');
+            } else {
+              if (window.showAuthOverlay) window.showAuthOverlay();
+            }
             if (endpoint.includes('/operations/sales') || endpoint.includes('/operations/purchases')) {
               return { rows: [], content: [], totalRows: 0, totalElements: 0, totalPages: 0, metrics: { totalSales: 0, invoiceCount: 0 } };
             }
