@@ -48,6 +48,11 @@ window.NavigationRouter = (function() {
     'view-pdf-studio': { title: 'PDF Studio', breadcrumb: 'Visual Document Template Designer', icon: '📄' },
     'view-excel-studio': { title: 'Excel Studio', breadcrumb: 'Custom Spreadsheet Exporter', icon: '📊' },
     'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
+    'view-settings-company': { title: 'Company Settings', breadcrumb: 'Organization Legal Profile & Banking', icon: '⚙️' },
+    'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
+    'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
+    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' },
+    'view-safe-rollback': { title: 'Safe Rollback', breadcrumb: 'Application Release Coordinator', icon: '⏮️' },
     'view-backup': { title: 'Backup & Restore', breadcrumb: 'Database Snapshots & Disaster Recovery', icon: '💾' }
   };
 
@@ -274,7 +279,10 @@ window.NavigationRouter = (function() {
           if (window.CommunicationController) window.CommunicationController.loadCommunications();
           break;
         case 'view-general-ledger':
-          if (window.FinanceController) window.FinanceController.loadFinance();
+          if (window.FinanceController) {
+            if (window.FinanceController.loadGeneralLedger) window.FinanceController.loadGeneralLedger();
+            else window.FinanceController.loadFinance();
+          }
           break;
         case 'view-financial-statements':
           if (window.FinanceController) window.FinanceController.loadFinancialStatements();
@@ -288,6 +296,12 @@ window.NavigationRouter = (function() {
         case 'view-eway-bill':
           if (window.EWayBillController) window.EWayBillController.loadEWayBills();
           break;
+        case 'view-reports':
+          if (window.ReportsController) window.ReportsController.init();
+          break;
+        case 'view-reminders':
+          if (window.ReminderCenterController) window.ReminderCenterController.init();
+          break;
         case 'view-users':
         case 'view-user-access':
           if (window.UserAccessController) window.UserAccessController.loadUsers();
@@ -296,13 +310,37 @@ window.NavigationRouter = (function() {
         case 'view-global-audit':
           if (window.UserAccessController) window.UserAccessController.loadAudit();
           break;
+        case 'view-import':
+          if (window.ImportController) window.ImportController.init();
+          break;
         case 'view-barcode':
         case 'view-barcode-studio':
           if (window.BarcodeStudioController) window.BarcodeStudioController.init();
           break;
+        case 'view-settings-company':
+          if (window.SettingsController) window.SettingsController.loadCompanySettings();
+          break;
+        case 'view-settings-email':
+          if (window.SettingsController) window.SettingsController.loadEmailSettings();
+          break;
+        case 'view-settings-security':
+          if (window.SettingsController) window.SettingsController.loadSecuritySettings();
+          break;
+        case 'view-settings-shortcuts':
+          if (window.SettingsController) window.SettingsController.loadShortcutsSettings();
+          break;
+        case 'view-safe-rollback':
+          if (window.SettingsController) window.SettingsController.loadSafeRollback();
+          break;
         case 'view-backup':
         case 'view-backup-restore':
           if (window.SettingsController) window.SettingsController.loadBackups();
+          break;
+        case 'view-pdf-studio':
+          if (window.SettingsController) window.SettingsController.loadPdfStudio();
+          break;
+        case 'view-excel-studio':
+          if (window.SettingsController) window.SettingsController.loadExcelStudio();
           break;
       }
     },

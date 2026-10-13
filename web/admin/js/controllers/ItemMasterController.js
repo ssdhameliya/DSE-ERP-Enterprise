@@ -364,6 +364,315 @@ window.ItemMasterController = (function() {
     if (m) m.style.display = 'none';
   }
 
+  // --- WAREHOUSE INVENTORY LEDGER (Inventory.fxml Parity) ---
+  let inventoryItems = [];
+
+  async function loadInventory() {
+    const tbody = document.getElementById('inventory-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading stock records from master database...</td></tr>`;
+    }
+
+    try {
+      const items = await window.MasterService.getItems();
+      inventoryItems = items || [];
+      updateInventoryKpis(inventoryItems);
+      populateInventoryCategories(inventoryItems);
+      renderInventoryTable(inventoryItems);
+    } catch (err) {
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--accent-red);">Failed to load inventory: ${err.message}</td></tr>`;
+      }
+    }
+  }
+
+  function updateInventoryKpis(items) {
+    let totalItems = items.length;
+    let inStock = 0;
+    let lowStock = 0;
+    let outStock = 0;
+    let totalValue = 0;
+
+    items.forEach(i => {
+      const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
+      const min = parseFloat(i.minimumStock || 10);
+      const cost = parseFloat(i.purchasePrice || i.costPrice || 0);
+
+      totalValue += stock * cost;
+      if (stock <= 0) outStock++;
+      else if (stock <= min) lowStock++;
+      else inStock++;
+    });
+
+    const elTotal = document.getElementById('lbl-inv-total-items') || document.getElementById('lblTotalItems');
+    const elIn = document.getElementById('lbl-inv-in-stock') || document.getElementById('lblInStock');
+    const elLow = document.getElementById('lbl-inv-low-stock') || document.getElementById('lblLowStock');
+    const elOut = document.getElementById('lbl-inv-out-stock') || document.getElementById('lblOutStock');
+    const elVal = document.getElementById('lbl-inv-stock-value') || document.getElementById('lblStockValue');
+    const elCount = document.getElementById('lbl-inv-record-count');
+
+    if (elTotal) elTotal.innerText = totalItems;
+    if (elIn) elIn.innerText = inStock;
+    if (elLow) elLow.innerText = lowStock;
+    if (elOut) elOut.innerText = outStock;
+    if (elVal) elVal.innerText = formatMoney(totalValue);
+    if (elCount) elCount.innerText = `Showing ${items.length} Records`;
+  }
+
+  function populateInventoryCategories(items) {
+    const sel = document.getElementById('inv-category-filter');
+    if (!sel || sel.options.length > 1) return;
+    const cats = Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort();
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.innerText = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function filterInventory() {
+    const q = (document.getElementById('inv-search-input')?.value || '').toLowerCase();
+    const cat = document.getElementById('inv-category-filter')?.value || '';
+    const status = document.getElementById('inv-status-filter')?.value || '';
+
+    const filtered = inventoryItems.filter(i => {
+      const code = (i.itemCode || i.code || '').toLowerCase();
+      const desc = (i.description || i.name || '').toLowerCase();
+      const hsn = (i.hsn || '').toLowerCase();
+      const itemCat = (i.category || '').toLowerCase();
+      const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
+      const min = parseFloat(i.minimumStock || 10);
+
+      const matchesQ = !q || code.includes(q) || desc.includes(q) || hsn.includes(q);
+      const matchesCat = !cat || (i.category === cat);
+      let matchesStatus = true;
+      if (status === 'IN_STOCK') matchesStatus = stock > min;
+      else if (status === 'LOW_STOCK') matchesStatus = stock > 0 && stock <= min;
+      else if (status === 'OUT_OF_STOCK') matchesStatus = stock <= 0;
+
+      return matchesQ && matchesCat && matchesStatus;
+    });
+
+    renderInventoryTable(filtered);
+    const elCount = document.getElementById('lbl-inv-record-count');
+    if (elCount) elCount.innerText = `Showing ${filtered.length} of ${inventoryItems.length} Records`;
+  }
+
+  function renderInventoryTable(items) {
+    const tbody = document.getElementById('inventory-tbody');
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">No inventory records match the selected filters.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => {
+      const code = item.itemCode || item.code || '';
+      const desc = item.description || item.name || '';
+      const cat = item.category || 'GENERAL';
+      const hsn = item.hsn || '-';
+      const unit = item.unit || 'NOS';
+      const gst = parseFloat(item.gst || 18).toFixed(1);
+      const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
+      const available = parseFloat(item.availableStock != null ? item.availableStock : stock);
+      const min = parseFloat(item.minimumStock || 10);
+      const cost = parseFloat(item.purchasePrice || item.costPrice || 0);
+      const valuation = stock * cost;
+
+      let statusBadge = '<span class="badge badge-paid">HEALTHY</span>';
+      if (stock <= 0) {
+        statusBadge = '<span class="badge badge-cancelled">OUT OF STOCK</span>';
+      } else if (stock <= min) {
+        statusBadge = '<span class="badge badge-pending">LOW STOCK</span>';
+      }
+
+      return `
+        <tr>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${code}</td>
+          <td style="font-weight:600;">${desc}</td>
+          <td><span class="badge badge-neutral">${cat}</span></td>
+          <td style="font-family:monospace;">${hsn}</td>
+          <td>${unit}</td>
+          <td>${gst}%</td>
+          <td style="text-align:right; font-weight:700; color:${stock <= min ? 'var(--accent-red)' : 'var(--accent-green)'};">
+            ${stock.toFixed(2)}
+          </td>
+          <td style="text-align:right; font-weight:600;">${available.toFixed(2)}</td>
+          <td style="text-align:right; color:var(--text-dim);">${min.toFixed(2)}</td>
+          <td style="text-align:right; font-weight:700;">${formatMoney(valuation)}</td>
+          <td style="text-align:center;">${statusBadge}</td>
+          <td style="text-align:center;">
+            <div style="display:flex; gap:6px; justify-content:center;">
+              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockAdjustment('${code}')" title="Adjust Physical Stock">⚡ Adjust</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockHistory('${code}')" title="View Stock Movement History">📜 History</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.printBarcode('${code}')" title="Print Barcode">🏷️ Label</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function openStockAdjustment(itemCode) {
+    const item = inventoryItems.find(i => (i.itemCode || i.code) === itemCode) || inventoryItems[0];
+    const modal = document.getElementById('modal-stock-adjustment');
+    if (!modal) return;
+
+    const sel = document.getElementById('adj-item-select');
+    if (sel) {
+      sel.innerHTML = inventoryItems.map(i => {
+        const c = i.itemCode || i.code;
+        return `<option value="${c}" ${c === (item?.itemCode || item?.code) ? 'selected' : ''}>${c} - ${i.description || i.name}</option>`;
+      }).join('');
+    }
+
+    const currentStock = parseFloat(item ? (item.openingStock || item.currentStock || item.stock || 0) : 0);
+    document.getElementById('adj-current-stock').value = currentStock.toFixed(2);
+    document.getElementById('adj-qty').value = '';
+    document.getElementById('adj-reason').value = 'Physical Stock Audit Reconciliation';
+    document.getElementById('adj-ref').value = 'AUDIT-' + new Date().toISOString().slice(0,10);
+    document.getElementById('adj-type').value = 'ADD';
+
+    modal.style.display = 'flex';
+  }
+
+  async function submitStockAdjustment(e) {
+    if (e) e.preventDefault();
+    const sel = document.getElementById('adj-item-select');
+    const itemCode = sel?.value;
+    const type = document.getElementById('adj-type')?.value || 'ADD';
+    const qty = parseFloat(document.getElementById('adj-qty')?.value);
+    const reason = document.getElementById('adj-reason')?.value || 'Audit';
+    const ref = document.getElementById('adj-ref')?.value || '';
+
+    if (isNaN(qty) || qty <= 0) {
+      alert('Please enter a valid adjustment quantity greater than 0.');
+      return;
+    }
+
+    const payload = {
+      itemCode,
+      type,
+      quantity: qty,
+      reason,
+      reference: ref,
+      user: 'Admin'
+    };
+
+    try {
+      if (window.OperationsService && window.OperationsService.adjustStock) {
+        await window.OperationsService.adjustStock(payload);
+      }
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Stock adjusted successfully for ${itemCode}!`);
+      closeModal('modal-stock-adjustment');
+      loadInventory();
+    } catch (err) {
+      alert('Stock Adjustment Failed: ' + err.message);
+    }
+  }
+
+  async function openStockHistory(itemCode) {
+    const item = inventoryItems.find(i => (i.itemCode || i.code) === itemCode);
+    const modal = document.getElementById('modal-stock-history');
+    if (!modal) return;
+
+    document.getElementById('sh-modal-title').innerText = `Stock Movement Ledger — ${itemCode}`;
+    document.getElementById('sh-modal-subtitle').innerText = `${item ? (item.description || item.name) : ''} | Unit: ${item ? item.unit : 'NOS'}`;
+    const tbody = document.getElementById('sh-history-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading movement history...</td></tr>`;
+    }
+
+    modal.style.display = 'flex';
+
+    try {
+      let rows = [];
+      if (window.OperationsService && window.OperationsService.getStockHistory) {
+        rows = await window.OperationsService.getStockHistory(itemCode);
+      }
+      if (!rows || rows.length === 0) {
+        // Fallback default opening row
+        rows = [{
+          date: new Date().toISOString().slice(0, 10),
+          type: 'OPENING BALANCE',
+          quantity: item ? (item.openingStock || 0) : 0,
+          reason: 'Initial System Stock Balance',
+          reference: 'INIT-001',
+          user: 'System'
+        }];
+      }
+
+      if (tbody) {
+        tbody.innerHTML = rows.map(r => {
+          const q = parseFloat(r.quantity || 0);
+          const isPos = q > 0 || r.type === 'PURCHASE' || r.type === 'RETURN INWARD';
+          return `
+            <tr>
+              <td>${r.date || '-'}</td>
+              <td><span class="badge badge-neutral">${r.type || 'MOVEMENT'}</span></td>
+              <td style="text-align:right; font-weight:700; color:${isPos ? 'var(--accent-green)' : 'var(--accent-red)'}; font-family:monospace;">
+                ${isPos ? '+' : ''}${q.toFixed(2)}
+              </td>
+              <td>${r.reason || '-'}</td>
+              <td style="font-family:monospace; color:var(--cyan);">${r.reference || '-'}</td>
+              <td style="color:var(--text-dim);">${r.user || 'Admin'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    } catch (err) {
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--accent-red);">Failed to load history: ${err.message}</td></tr>`;
+      }
+    }
+  }
+
+  function exportInventoryExcel() {
+    if (!inventoryItems || inventoryItems.length === 0) {
+      alert('No inventory records to export.');
+      return;
+    }
+
+    const headers = ['Item Code', 'Item Name', 'Category', 'HSN/SAC', 'Unit', 'GST %', 'In Stock', 'Available', 'Min Stock', 'Valuation Rate', 'Total Valuation', 'Status'];
+    const rows = inventoryItems.map(i => {
+      const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
+      const min = parseFloat(i.minimumStock || 10);
+      const cost = parseFloat(i.purchasePrice || i.costPrice || 0);
+      let status = 'HEALTHY';
+      if (stock <= 0) status = 'OUT OF STOCK';
+      else if (stock <= min) status = 'LOW STOCK';
+
+      return [
+        i.itemCode || i.code || '',
+        `"${(i.description || i.name || '').replace(/"/g, '""')}"`,
+        i.category || 'GENERAL',
+        i.hsn || '',
+        i.unit || 'NOS',
+        i.gst || 18,
+        stock.toFixed(2),
+        (i.availableStock != null ? i.availableStock : stock).toFixed(2),
+        min.toFixed(2),
+        cost.toFixed(2),
+        (stock * cost).toFixed(2),
+        status
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Stock_Register_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return {
     loadItems,
     filterItems,
@@ -377,8 +686,16 @@ window.ItemMasterController = (function() {
     printBarcode,
     closeModal,
     loadCategories() { loadCategoriesDropdown(); },
-    loadInventory() { loadItems(); },
+
+    // Inventory Ledger Parity
+    loadInventory,
+    filterInventory,
+    openStockAdjustment,
+    submitStockAdjustment,
+    openStockHistory,
+    exportInventoryExcel,
+
     exportItems() { window.open('/api/master/items/export/excel', '_blank'); },
-    importItems() { alert('Import items via Excel wizard.'); }
+    importItems() { if (window.NavigationRouter) window.NavigationRouter.selectNav('view-import'); }
   };
 })();

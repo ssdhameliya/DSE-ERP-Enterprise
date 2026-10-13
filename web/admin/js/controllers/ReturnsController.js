@@ -53,7 +53,7 @@ window.ReturnsController = (function() {
     }
 
     const q = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search')?.value?.trim() || '';
-    const party = document.getElementById(isSales ? 'sr-filter-customer' : 'pr-filter-supplier')?.value || '';
+    const party = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier')?.value || '';
     const status = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status')?.value || '';
     const from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
     const to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
@@ -105,7 +105,7 @@ window.ReturnsController = (function() {
   }
 
   function populatePartyFilter(parties, isSales) {
-    const select = document.getElementById(isSales ? 'sr-filter-customer' : 'pr-filter-supplier');
+    const select = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier');
     if (!select || !parties || select.options.length > 2) return;
     const currentVal = select.value;
     select.innerHTML = `<option value="">${isSales ? 'All Customers' : 'All Suppliers'}</option>`;
@@ -750,7 +750,7 @@ window.ReturnsController = (function() {
     nextPage() { if (currentPage < totalPages - 1) loadReturns(currentType, currentPage + 1); },
     resetFilters(isSales) {
       const s = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search'); if (s) s.value = '';
-      const c = document.getElementById(isSales ? 'sr-filter-customer' : 'pr-filter-supplier'); if (c) c.value = '';
+      const c = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier'); if (c) c.value = '';
       const st = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status'); if (st) st.value = '';
       const f = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from'); if (f) f.value = '';
       const t = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to'); if (t) t.value = '';
