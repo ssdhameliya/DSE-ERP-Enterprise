@@ -544,6 +544,25 @@ window.handleMfaSubmit = async function(e) {
   }
 };
 
+window.cancelMfa = function() {
+  if (window.AuthService && window.AuthService.cancelMfa) {
+    window.AuthService.cancelMfa();
+  }
+  currentMfaRecoveryChallengeId = null;
+  const mfaForm = document.getElementById('form-mfa');
+  const loginForm = document.getElementById('form-login');
+  const alertEl = document.getElementById('auth-alert');
+  const recoveryGroup = document.getElementById('mfa-recovery-group');
+  if (mfaForm) mfaForm.style.display = 'none';
+  if (loginForm) loginForm.style.display = 'block';
+  if (recoveryGroup) recoveryGroup.style.display = 'none';
+  if (alertEl) { alertEl.style.display = 'none'; alertEl.innerText = ''; }
+  const title = document.querySelector('.auth-modal-title');
+  const subtitle = document.querySelector('.auth-modal-subtitle');
+  if (title) title.innerText = 'Sign In to Studio';
+  if (subtitle) subtitle.innerText = 'Enter your enterprise credentials to access your ERP workspace.';
+};
+
 window.requestMfaRecovery = async function() {
   const alertEl = document.getElementById('auth-alert');
   const promptBtn = document.getElementById('btn-mfa-recovery-prompt');
@@ -558,7 +577,7 @@ window.requestMfaRecovery = async function() {
 
   try {
     const res = await window.AuthService.requestLoginMfaRecovery();
-    if (res.success || res.challengeId) {
+    if (res && (res.success || res.challengeId)) {
       currentMfaRecoveryChallengeId = res.challengeId;
       if (recoveryGroup) recoveryGroup.style.display = 'block';
       if (destText && res.maskedDestination) {
@@ -573,7 +592,7 @@ window.requestMfaRecovery = async function() {
     } else {
       if (alertEl) {
         alertEl.className = 'auth-alert error';
-        alertEl.innerText = res.message || 'Unable to start authenticator recovery.';
+        alertEl.innerText = (res && res.message) ? res.message : 'Unable to start authenticator recovery.';
         alertEl.style.display = 'block';
       }
     }

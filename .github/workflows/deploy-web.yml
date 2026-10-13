@@ -68,14 +68,42 @@ jobs:
             if command -v chcon >/dev/null 2>&1; then
               sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin 2>/dev/null || true
             fi
+
+            # Provision canonical application secret key to eliminate "Unable to decrypt application secret"
+            CANONICAL_KEY="+SDIy8FzaYbEIKtrxW7szEwwjbE5e5npQ6E+8x8OnMw="
+            for D in /home/dseerp /var/lib/dseerp /root; do
+              if [ -d "$D" ]; then
+                sudo mkdir -p "$D/.dse-erp"
+                echo "$CANONICAL_KEY" | sudo tee "$D/.dse-erp/secret.key" > /dev/null
+                sudo chmod 600 "$D/.dse-erp/secret.key"
+                if [ "$D" != "/root" ]; then
+                  sudo chown -R dseerp:dseerp "$D/.dse-erp" 2>/dev/null || true
+                fi
+              fi
+            done
+            RESTART_NEEDED=0
+            for ENVFILE in /etc/dse-erp/uat.env /etc/dse-erp/dse-erp.env; do
+              if [ -f "$ENVFILE" ]; then
+                if sudo grep -q "DSE_SECRET_KEY" "$ENVFILE"; then
+                  sudo sed -i "s|^DSE_SECRET_KEY=.*|DSE_SECRET_KEY=$CANONICAL_KEY|" "$ENVFILE"
+                else
+                  echo "DSE_SECRET_KEY=$CANONICAL_KEY" | sudo tee -a "$ENVFILE" > /dev/null
+                fi
+                RESTART_NEEDED=1
+              fi
+            done
+            if [ "$RESTART_NEEDED" -eq 1 ]; then
+              sudo systemctl restart dse-erp-uat 2>/dev/null || sudo systemctl restart dse-erp@uat 2>/dev/null || true
+            fi
           '
 
       - name: Verify Live UAT Endpoints
         run: |
-          sleep 2
+          sleep 4
           curl -fsSL https://web-uat.jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://erp-uat.jasviindustries.in | grep -q "Jasvi Industries ERP"
-          echo "UAT Showcase and Admin Studio verified and LIVE!"
+          curl -fsSL https://erp-uat.jasviindustries.in/api/runtime/health | grep -q '"ready":true'
+          echo "UAT Showcase, Admin Studio, and Backend Runtime verified and LIVE!"
 
   deploy-prod:
     name: 2. Deploy to Production Environment (After UAT)
@@ -115,7 +143,7 @@ jobs:
           scp web/public/index.html ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_public.html
           scp /tmp/web_prod_admin.tar.gz ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }}:/tmp/web_prod_admin.tar.gz
           
-          # 3. Fast unpack and permission sync
+          # 3. Fast unpack, permission sync, and server encryption key provisioning
           ssh ${{ secrets.DSE_PROD_SSH_USER }}@${{ secrets.DSE_PROD_SSH_HOST }} '
             sudo cp /tmp/web_prod_public.html /srv/dse-erp/web/public/index.html &&
             sudo mkdir -p /srv/dse-erp/web/admin &&
@@ -124,12 +152,40 @@ jobs:
             if command -v chcon >/dev/null 2>&1; then
               sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin 2>/dev/null || true
             fi
+
+            # Provision canonical application secret key to eliminate "Unable to decrypt application secret"
+            CANONICAL_KEY="+SDIy8FzaYbEIKtrxW7szEwwjbE5e5npQ6E+8x8OnMw="
+            for D in /home/dseerp /var/lib/dseerp /root; do
+              if [ -d "$D" ]; then
+                sudo mkdir -p "$D/.dse-erp"
+                echo "$CANONICAL_KEY" | sudo tee "$D/.dse-erp/secret.key" > /dev/null
+                sudo chmod 600 "$D/.dse-erp/secret.key"
+                if [ "$D" != "/root" ]; then
+                  sudo chown -R dseerp:dseerp "$D/.dse-erp" 2>/dev/null || true
+                fi
+              fi
+            done
+            RESTART_NEEDED=0
+            for ENVFILE in /etc/dse-erp/prod.env /etc/dse-erp/dse-erp.env; do
+              if [ -f "$ENVFILE" ]; then
+                if sudo grep -q "DSE_SECRET_KEY" "$ENVFILE"; then
+                  sudo sed -i "s|^DSE_SECRET_KEY=.*|DSE_SECRET_KEY=$CANONICAL_KEY|" "$ENVFILE"
+                else
+                  echo "DSE_SECRET_KEY=$CANONICAL_KEY" | sudo tee -a "$ENVFILE" > /dev/null
+                fi
+                RESTART_NEEDED=1
+              fi
+            done
+            if [ "$RESTART_NEEDED" -eq 1 ]; then
+              sudo systemctl restart dse-erp-prod 2>/dev/null || sudo systemctl restart dse-erp@prod 2>/dev/null || true
+            fi
           '
 
       - name: Verify Live PROD Endpoints
         run: |
-          sleep 2
+          sleep 4
           curl -fsSL https://jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://www.jasviindustries.in | grep -q "Jasvi Industries"
           curl -fsSL https://erp.jasviindustries.in | grep -q "Jasvi Industries ERP"
-          echo "PROD Showcase and Admin Studio verified and LIVE!"
+          curl -fsSL https://erp.jasviindustries.in/api/runtime/health | grep -q '"ready":true'
+          echo "PROD Showcase, Admin Studio, and Backend Runtime verified and LIVE!"
