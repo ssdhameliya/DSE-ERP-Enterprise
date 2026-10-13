@@ -78,7 +78,13 @@ window.AuthService = (function() {
       if (res.mfaRequired) {
         pendingMfaChallenge = res.challengeId;
         pendingUser = res.user;
-        return { mfaRequired: true, challengeId: res.challengeId, maskedDestination: res.maskedDestination };
+        return {
+          mfaRequired: true,
+          challengeId: res.challengeId,
+          maskedDestination: res.maskedDestination,
+          enrollmentRequired: res.enrollmentRequired,
+          enrollment: res.enrollment
+        };
       }
 
       if (res.success && res.accessToken) {
@@ -124,11 +130,11 @@ window.AuthService = (function() {
       return await window.ApiService.post('/api/auth/password-reset/request', { identity });
     },
 
-    async completePasswordReset(challengeId, otp, password) {
+    async completePasswordReset(challengeId, otp, totp, password) {
       return await window.ApiService.post('/api/auth/password-reset/complete', {
         challengeId,
         otp,
-        totp: '',
+        totp: totp || '',
         password
       });
     },

@@ -411,11 +411,11 @@
     .auth-alert.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; display: block; }
 
     /* MODAL */
-    .modal-overlay {
+    .modal-overlay, .modal, .modal-backdrop {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active, .modal.active, .modal-backdrop.active { display: flex; }
     .modal-card {
       background: #0f172a; border: 1px solid var(--border-subtle); border-radius: 14px;
       width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);

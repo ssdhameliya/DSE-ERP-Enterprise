@@ -312,31 +312,54 @@ window.App = (function() {
     },
 
     showAuthTab(tab) {
-      document.getElementById('tab-login-btn').classList.toggle('active', tab === 'login');
-      document.getElementById('tab-register-btn').classList.toggle('active', tab === 'register');
-      document.getElementById('tab-forgot-btn').classList.toggle('active', tab === 'forgot');
+      const tabLogin = document.getElementById('tab-login-btn');
+      const tabReg = document.getElementById('tab-register-btn');
+      const tabForgot = document.getElementById('tab-forgot-btn');
+      if (tabLogin) tabLogin.classList.toggle('active', tab === 'login');
+      if (tabReg) tabReg.classList.toggle('active', tab === 'register');
+      if (tabForgot) tabForgot.classList.toggle('active', tab === 'forgot');
 
-      document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
-      document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
-      document.getElementById('form-forgot').style.display = tab === 'forgot' ? 'block' : 'none';
-      document.getElementById('form-mfa').style.display = 'none';
-      document.getElementById('auth-alert').style.display = 'none';
+      const formLogin = document.getElementById('form-login');
+      const formRegister = document.getElementById('form-register');
+      const formForgot = document.getElementById('form-forgot');
+      const formMfa = document.getElementById('form-mfa');
+      const alertEl = document.getElementById('auth-alert');
+      const cardTitle = document.getElementById('auth-card-title');
+      const cardSub = document.getElementById('auth-card-subtitle');
 
-      // Reset forgot password sub-steps
-      if (tab === 'forgot') {
-        document.getElementById('forgot-step-1').style.display = 'block';
-        document.getElementById('forgot-step-2').style.display = 'none';
-        document.getElementById('forgot-identity').focus();
-      }
+      if (formLogin) formLogin.style.display = tab === 'login' ? 'block' : 'none';
+      if (formRegister) formRegister.style.display = tab === 'register' ? 'block' : 'none';
+      if (formForgot) formForgot.style.display = tab === 'forgot' ? 'block' : 'none';
+      if (formMfa) formMfa.style.display = tab === 'mfa' ? 'block' : 'none';
+      if (alertEl) alertEl.style.display = 'none';
 
-      // Initialize registration on tab open
-      if (tab === 'register') {
-        window.refreshRegistrationCaptcha();
-        window.loadRegistrationRoles();
+      if (tab === 'login') {
+        if (cardTitle) cardTitle.innerText = 'Sign in to your account';
+        if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+        if (window.loadLoginRoles) window.loadLoginRoles();
+        const identInput = document.getElementById('login-identity');
+        if (identInput) identInput.focus();
+      } else if (tab === 'register') {
+        if (cardTitle) cardTitle.innerText = 'Create New Account';
+        if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
+        if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
+        if (window.loadRegistrationRoles) window.loadRegistrationRoles();
         const otpGroup = document.getElementById('reg-email-otp-group');
         const submitBtn = document.getElementById('btn-reg-submit');
         if (otpGroup) otpGroup.style.display = 'none';
         if (submitBtn) submitBtn.style.display = 'block';
+        const regName = document.getElementById('reg-name');
+        if (regName) regName.focus();
+      } else if (tab === 'forgot') {
+        if (cardTitle) cardTitle.innerText = 'Reset your password';
+        if (cardSub) cardSub.innerText = 'Admin keeps the existing email-OTP recovery flow. Non-Admin users must also enter their current authenticator code.';
+        const forgotIdent = document.getElementById('forgot-identity');
+        if (forgotIdent) forgotIdent.focus();
+      } else if (tab === 'mfa') {
+        if (cardTitle) cardTitle.innerText = 'Two-Factor Authentication';
+        if (cardSub) cardSub.innerText = 'Enter your 6-digit Authenticator code to proceed';
+        const mfaIn = document.getElementById('mfa-otp');
+        if (mfaIn) { mfaIn.value = ''; mfaIn.focus(); }
       }
     },
 
@@ -360,6 +383,143 @@ let currentRegistrationCaptchaId = null;
 let currentRegistrationChallengeId = null;
 let currentRegistrationId = null;
 let currentRegistrationPending = null;
+
+window.loadLoginRoles = async function() {
+  const roleSelect = document.getElementById('login-role');
+  if (!roleSelect) return;
+  try {
+    const roles = await window.AuthService.getLoginRoles();
+    if (Array.isArray(roles) && roles.length > 0) {
+      const current = roleSelect.value || 'ADMIN';
+      roleSelect.innerHTML = roles.map(r => `<option value="${r.code}" ${r.code === current ? 'selected' : ''}>${r.displayName || r.code}</option>`).join('');
+    }
+  } catch (e) {
+    console.warn('Could not load login roles:', e);
+  }
+};
+
+window.handleLoginSubmit = async function(e) {
+  if (e) e.preventDefault();
+  const identity = ((document.getElementById('login-identity') || {}).value || '').trim();
+  const password = ((document.getElementById('login-password') || {}).value || '');
+  const selectedRole = (((document.getElementById('login-role') || {}).value || 'ADMIN')).toUpperCase();
+  const rememberCheck = document.getElementById('login-remember');
+  const alertEl = document.getElementById('auth-alert');
+  const submitBtn = document.getElementById('btn-login-submit');
+
+  if (!identity || !password) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Please enter both email/username and password.';
+      alertEl.style.display = 'block';
+    }
+    return;
+  }
+
+  submitBtn.disabled = true;
+  const origHtml = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<span>⏳ VERIFYING...</span>';
+  if (alertEl) alertEl.style.display = 'none';
+
+  try {
+    const res = await window.AuthService.login(identity, password, selectedRole);
+    if (res.roleMismatch) {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Selected role does not match this user account. Please select the role assigned to this account.';
+        alertEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (res.mfaRequired) {
+      if (res.enrollmentRequired && res.enrollment) {
+        const secretEl = document.getElementById('auth-setup-secret');
+        const qrImgEl = document.getElementById('auth-setup-qr-img');
+        if (secretEl) secretEl.value = res.enrollment.manualSecret || '';
+        if (qrImgEl && res.enrollment.provisioningUri) {
+          qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.enrollment.provisioningUri)}`;
+        }
+        window.AppDialogService.openModal('modal-authenticator-setup');
+      } else {
+        window.App.showAuthTab('mfa');
+      }
+      return;
+    }
+
+    if (res.success && res.user) {
+      if (rememberCheck && rememberCheck.checked) {
+        localStorage.setItem('dse_saved_identity', identity);
+        localStorage.setItem('dse_saved_role', selectedRole);
+      } else {
+        localStorage.removeItem('dse_saved_identity');
+        localStorage.removeItem('dse_saved_role');
+      }
+      applyUserToHeader(res.user);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.App.hideAuthOverlay();
+      window.AppDialogService.closeAllModals();
+      window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
+      if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+      if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
+      if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+    } else {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Invalid email/username or password.';
+        alertEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = err.message || 'Authentication error. Please check server connection.';
+      alertEl.style.display = 'block';
+    }
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = origHtml;
+  }
+};
+
+window.handleMfaSubmit = async function(e) {
+  if (e) e.preventDefault();
+  const otp = ((document.getElementById('mfa-otp') || {}).value || '').trim();
+  const alertEl = document.getElementById('auth-alert');
+
+  if (!otp || !otp.match(/^\d{6}$/)) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Enter the current 6-digit authenticator code.';
+      alertEl.style.display = 'block';
+    }
+    return;
+  }
+
+  try {
+    const res = await window.AuthService.completeMfa(otp);
+    if (res.success && res.user) {
+      applyUserToHeader(res.user);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.App.hideAuthOverlay();
+      window.AppDialogService.closeAllModals();
+      window.AppDialogService.showToast(`MFA Verified! Welcome, ${res.user.fullName || res.user.username}!`, 'success');
+      if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+    } else {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Invalid authenticator code. Please check your authenticator app.';
+        alertEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = err.message || 'MFA verification failed.';
+      alertEl.style.display = 'block';
+    }
+  }
+};
 
 window.refreshRegistrationCaptcha = async function() {
   const qEl = document.getElementById('reg-captcha-question');
@@ -593,76 +753,144 @@ window.completeRegistrationAuthenticator = async function() {
 };
 
 window.requestPasswordResetOtp = async function() {
-  const identity = document.getElementById('forgot-identity').value.trim();
+  const identity = ((document.getElementById('forgot-identity') || {}).value || '').trim();
   const alertEl = document.getElementById('auth-alert');
   const btn = document.getElementById('btn-forgot-request-otp');
   if (!identity) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Please enter your username or registered email.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Email or username is required.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
   btn.disabled = true;
-  btn.innerText = 'Sending OTP...';
-  alertEl.style.display = 'none';
+  btn.innerText = 'Sending reset code...';
+  if (alertEl) alertEl.style.display = 'none';
   try {
     const res = await window.AuthService.requestPasswordReset(identity);
-    if (res.success) {
+    if (res.success || res.challengeId) {
       currentForgotChallengeId = res.challengeId;
-      document.getElementById('forgot-step-1').style.display = 'none';
-      document.getElementById('forgot-step-2').style.display = 'block';
-      document.getElementById('forgot-otp').focus();
-      window.AppDialogService.showToast('Verification OTP sent to your registered email.', 'info');
+      const otpIn = document.getElementById('forgot-otp');
+      if (otpIn) otpIn.focus();
+      if (alertEl) {
+        alertEl.className = 'auth-alert success';
+        alertEl.innerText = (res.message || 'Verification code sent to registered email') + '. Enter code and new password below.';
+        alertEl.style.display = 'block';
+      }
+      window.AppDialogService.showToast('Reset verification code sent.', 'info');
     } else {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = res.message || 'Unable to request password reset.';
-      alertEl.style.display = 'block';
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Unable to send reset code.';
+        alertEl.style.display = 'block';
+      }
     }
   } catch (err) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = err.message || 'Error communicating with authentication server.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Unable to send reset code: ' + (err.message || 'Unknown error');
+      alertEl.style.display = 'block';
+    }
   } finally {
     btn.disabled = false;
-    btn.innerText = 'Send Reset OTP Code';
+    btn.innerText = '✉ SEND RESET CODE';
   }
 };
 
 window.handleForgotPasswordSubmit = async function(e) {
-  e.preventDefault();
-  const otp = document.getElementById('forgot-otp').value.trim();
-  const pwd = document.getElementById('forgot-new-pwd').value;
-  const confirmPwd = document.getElementById('forgot-confirm-pwd').value;
+  if (e) e.preventDefault();
   const alertEl = document.getElementById('auth-alert');
   const btn = document.getElementById('btn-forgot-complete');
 
-  if (pwd !== confirmPwd) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Passwords do not match. Please re-enter.';
-    alertEl.style.display = 'block';
-    return;
-  }
-  btn.disabled = true;
-  btn.innerText = 'Updating password...';
-  try {
-    const res = await window.AuthService.completePasswordReset(currentForgotChallengeId, otp, pwd);
-    if (res.success) {
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast('Password updated! You can now sign in.', 'success');
-      window.App.showAuthTab('login');
-      document.getElementById('login-password').value = pwd;
-    } else {
+  if (!currentForgotChallengeId) {
+    if (alertEl) {
       alertEl.className = 'auth-alert error';
-      alertEl.innerText = res.message || 'Invalid or expired OTP code.';
+      alertEl.innerText = 'Send a password reset code first.';
       alertEl.style.display = 'block';
     }
+    const identIn = document.getElementById('forgot-identity');
+    if (identIn) identIn.focus();
+    return;
+  }
+
+  const identity = ((document.getElementById('forgot-identity') || {}).value || '').trim();
+  const otp = ((document.getElementById('forgot-otp') || {}).value || '').trim();
+  const totp = ((document.getElementById('forgot-authenticator') || {}).value || '').trim();
+  const pwd = ((document.getElementById('forgot-new-pwd') || {}).value || '');
+  const confirmPwd = ((document.getElementById('forgot-confirm-pwd') || {}).value || '');
+
+  if (!otp) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Reset code is required.';
+      alertEl.style.display = 'block';
+    }
+    const otpIn = document.getElementById('forgot-otp');
+    if (otpIn) otpIn.focus();
+    return;
+  }
+
+  // Desktop validation parity (LoginController.java line 756-759: 8+ chars with letter and number)
+  if (pwd.length < 8 || !/[A-Za-z]/.test(pwd) || !/[0-9]/.test(pwd)) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Use 8+ characters with a letter and number.';
+      alertEl.style.display = 'block';
+    }
+    const pwdIn = document.getElementById('forgot-new-pwd');
+    if (pwdIn) pwdIn.focus();
+    return;
+  }
+
+  if (pwd !== confirmPwd) {
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Passwords do not match.';
+      alertEl.style.display = 'block';
+    }
+    const cnfIn = document.getElementById('forgot-confirm-pwd');
+    if (cnfIn) cnfIn.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Updating password...';
+  if (alertEl) alertEl.style.display = 'none';
+
+  try {
+    const res = await window.AuthService.completePasswordReset(currentForgotChallengeId, otp, totp, pwd);
+    if (res.success) {
+      currentForgotChallengeId = null;
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.AppDialogService.showToast('Password updated successfully! Sign in with your new password.', 'success');
+      window.App.showAuthTab('login');
+      const loginIdent = document.getElementById('login-identity');
+      const loginPwd = document.getElementById('login-password');
+      if (loginIdent && identity) loginIdent.value = identity;
+      if (loginPwd) { loginPwd.value = ''; loginPwd.focus(); }
+      const loginAlert = document.getElementById('auth-alert');
+      if (loginAlert) {
+        loginAlert.className = 'auth-alert success';
+        loginAlert.innerText = 'Password updated successfully. Sign in with your new password.';
+        loginAlert.style.display = 'block';
+      }
+    } else {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Unable to update password.';
+        alertEl.style.display = 'block';
+      }
+    }
   } catch (err) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = err.message || 'Password reset failed.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Unable to update password: ' + (err.message || 'Unknown error');
+      alertEl.style.display = 'block';
+    }
   } finally {
     btn.disabled = false;
-    btn.innerText = 'Update Password & Login';
+    btn.innerText = '🔑 RESET PASSWORD';
   }
 };
 
