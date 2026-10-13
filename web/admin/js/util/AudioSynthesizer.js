@@ -22,15 +22,6 @@ window.AudioSynthesizer = (function() {
       return audioEnabled;
     },
 
-    toggleAudio(btn) {
-      audioEnabled = !audioEnabled;
-      if (btn) {
-        btn.classList.toggle('active', audioEnabled);
-        btn.innerHTML = audioEnabled ? '🔊 Audio: ON' : '🔇 Audio: OFF';
-      }
-      return audioEnabled;
-    },
-
     isEnabled() {
       return audioEnabled;
     },

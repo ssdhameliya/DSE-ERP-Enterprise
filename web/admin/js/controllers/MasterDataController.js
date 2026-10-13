@@ -249,10 +249,6 @@ window.MasterDataController = (function() {
       if (modal) modal.style.display = 'none';
     },
 
-    saveCategory(e) {
-      return this.submitAddCategory(e);
-    },
-
     async submitAddCategory(e) {
       if (e) e.preventDefault();
       const input = document.getElementById('input-new-category-name');
@@ -287,10 +283,6 @@ window.MasterDataController = (function() {
     closeRenameCategoryModal() {
       const modal = document.getElementById('modal-rename-category');
       if (modal) modal.style.display = 'none';
-    },
-
-    renameCategory(e) {
-      return this.submitRenameCategory(e);
     },
 
     async submitRenameCategory(e) {
@@ -380,10 +372,6 @@ window.MasterDataController = (function() {
       if (sortField) sortField.value = item.sortOrder || 1;
       if (modal) modal.style.display = 'flex';
       if (valField) valField.focus();
-    },
-
-    saveLookup(e) {
-      return this.submitSaveLookup(e);
     },
 
     async submitSaveLookup(e) {

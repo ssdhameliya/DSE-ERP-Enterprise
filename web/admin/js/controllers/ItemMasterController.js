@@ -681,7 +681,6 @@ window.ItemMasterController = (function() {
     openNewItemModal,
     openEditItemModal,
     submitSaveItem,
-    saveItem: submitSaveItem,
     deleteSingleItem,
     deleteSelectedItems,
     printBarcode,

@@ -617,7 +617,6 @@ window.PartyController = (function() {
     openNewPartyModal,
     openEditPartyModal,
     submitSaveParty,
-    saveParty: submitSaveParty,
     deleteParty,
     closeModal,
     openCustomer360,

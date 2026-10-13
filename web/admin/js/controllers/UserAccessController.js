@@ -358,14 +358,6 @@ window.UserAccessController = (function() {
       window.AppDialogService.openModal('modal-user-edit');
     },
 
-    submitNewUser(e) {
-      return this.handleUserFormSubmit(e);
-    },
-
-    submitResetPassword(e) {
-      return this.submitPasswordReset(e);
-    },
-
     async handleUserFormSubmit(e) {
       if (e) e.preventDefault();
       const username = document.getElementById('user-form-username').value.trim();
