@@ -17,6 +17,7 @@ window.NavigationRouter = (function() {
     'view-quotations': { title: 'Quotations', breadcrumb: 'Proforma & Quotation Pipeline', icon: '📝' },
     'view-quotation-editor': { title: 'Quotation Editor', breadcrumb: 'Sales & Distribution', icon: '📝' },
     'view-purchase-register': { title: 'Purchase Register', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
+    'view-purchase-creation': { title: 'Purchase Invoice', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
     'view-purchase-returns': { title: 'Purchase Returns', breadcrumb: 'Supplier Returns & Memos', icon: '🔄' },
     'view-debit-notes': { title: 'Debit Notes', breadcrumb: 'Supplier Debit Notes', icon: '🧾' },
     'view-item-master': { title: 'Item Master', breadcrumb: 'Materials & SKU Catalog', icon: '🏷️' },
@@ -217,6 +218,9 @@ window.NavigationRouter = (function() {
           break;
         case 'view-purchase-register':
           if (window.PurchaseController) window.PurchaseController.loadPurchases();
+          break;
+        case 'view-purchase-creation':
+          // Managed by PurchaseController.openPurchaseEditor
           break;
         case 'view-item-master':
           if (window.ItemMasterController) window.ItemMasterController.loadItems();

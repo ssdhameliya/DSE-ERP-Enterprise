@@ -156,13 +156,23 @@ window.OperationsService = {
   async getSalesReturns() { return this.getReturnsPage('SALES RETURN'); },
   async getPurchaseReturns() { return this.getReturnsPage('PURCHASE RETURN'); },
 
-  // Purchases
-  async getPurchases(page = 0, size = 50, q = '', from = '', to = '') {
+  // Purchases (Desktop PurchaseListController & PurchaseController Parity)
+  async getPurchasesPage(page = 0, size = 25, q = '', supplier = '', from = '', to = '', paymentStatus = '', due = '', mail = '', documentStatus = '', returnStatus = '', includeSummary = true, includeOptions = true) {
     let url = `/api/operations/purchases/page?page=${page}&size=${size}`;
     if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (supplier && supplier !== 'All Suppliers' && supplier !== 'All') url += `&supplier=${encodeURIComponent(supplier)}`;
     if (from) url += `&from=${encodeURIComponent(from)}`;
     if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (paymentStatus && paymentStatus !== 'ALL') url += `&paymentStatus=${encodeURIComponent(paymentStatus)}`;
+    if (due) url += `&due=${encodeURIComponent(due)}`;
+    if (mail) url += `&mail=${encodeURIComponent(mail)}`;
+    if (documentStatus && documentStatus !== 'ALL') url += `&documentStatus=${encodeURIComponent(documentStatus)}`;
+    if (returnStatus && returnStatus !== 'ALL') url += `&returnStatus=${encodeURIComponent(returnStatus)}`;
+    url += `&includeSummary=${includeSummary}&includeOptions=${includeOptions}`;
     return await window.ApiService.get(url);
+  },
+  async getPurchases(page = 0, size = 50, q = '', from = '', to = '') {
+    return this.getPurchasesPage(page, size, q, '', from, to);
   },
   async getNextPurchaseInvoice() {
     return await window.ApiService.get('/api/operations/purchases/next-invoice');
@@ -170,14 +180,29 @@ window.OperationsService = {
   async getPurchaseByInvoice(invoiceNo) {
     return await window.ApiService.get(`/api/operations/purchases/by-invoice?invoiceNo=${encodeURIComponent(invoiceNo)}`);
   },
+  async checkPurchaseExists(invoiceNo) {
+    return await window.ApiService.get(`/api/operations/purchases/exists?invoiceNo=${encodeURIComponent(invoiceNo)}`);
+  },
   async createPurchase(purchaseData) {
     return await window.ApiService.post('/api/operations/purchases', purchaseData);
   },
   async updatePurchase(purchaseData) {
     return await window.ApiService.put('/api/operations/purchases', purchaseData);
   },
+  async deletePurchase(invoiceNo) {
+    return await window.ApiService.delete(`/api/operations/purchases?invoiceNo=${encodeURIComponent(invoiceNo)}`);
+  },
   async cancelPurchase(invoiceNo) {
     return await window.ApiService.post(`/api/operations/purchases/cancel?invoiceNo=${encodeURIComponent(invoiceNo)}`, {});
+  },
+  async approvePurchase(invoiceNo) {
+    return await window.ApiService.post(`/api/operations/purchases/approve?invoiceNo=${encodeURIComponent(invoiceNo)}`, {});
+  },
+  async rejectPurchase(invoiceNo, reason = '') {
+    return await window.ApiService.post(`/api/operations/purchases/reject?invoiceNo=${encodeURIComponent(invoiceNo)}&reason=${encodeURIComponent(reason)}`, {});
+  },
+  async markPurchaseEmailSent(id) {
+    return await window.ApiService.post(`/api/operations/purchases/email-sent/${id}`, {});
   },
 
   // Finance & Banking
