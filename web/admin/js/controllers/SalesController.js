@@ -72,17 +72,144 @@ window.SalesController = {
     this.renderSalesTable(list);
   },
 
-  filterFastItems(filterText) {
-    const sel = document.getElementById('ws-fast-item-select');
-    if (!sel) return;
-    const query = (filterText || '').trim().toLowerCase();
+  async filterFastItems(filterText) {
+    if (!this.itemsCache || this.itemsCache.length === 0) {
+      try {
+        if (window.MasterService && typeof window.MasterService.getItems === 'function') {
+          this.itemsCache = await window.MasterService.getItems();
+        }
+      } catch (e) {
+        console.warn('Could not fetch items cache:', e);
+      }
+    }
     const items = this.itemsCache || [];
-    const filtered = query ? items.filter(it => 
-      (it.name || it.itemName || '').toLowerCase().includes(query) ||
-      (it.code || it.itemCode || '').toLowerCase().includes(query)
-    ) : items;
-    sel.innerHTML = '<option value="">Select Item Master...</option>' + 
-      filtered.map(it => `<option value="${it.code || it.itemCode}">${it.name || it.itemName} (${it.code || it.itemCode})</option>`).join('');
+    const query = (filterText || '').trim().toLowerCase();
+    const popup = document.getElementById('ws-fast-item-results');
+    const sel = document.getElementById('ws-fast-item-select');
+
+    const filtered = query ? items.filter(it => {
+      const code = (it.itemCode || it.code || '').toLowerCase();
+      const desc = (it.description || it.name || it.itemName || '').toLowerCase();
+      const cat = (it.category || '').toLowerCase();
+      const hsn = (it.hsn || '').toLowerCase();
+      return code.includes(query) || desc.includes(query) || cat.includes(query) || hsn.includes(query);
+    }) : items.slice(0, 50);
+
+    // 1. Keep the select dropdown synchronized with all data attributes
+    if (sel) {
+      sel.innerHTML = '<option value="">Select Item Master...</option>' + 
+        filtered.map(it => {
+          const code = it.itemCode || it.code || '';
+          const desc = it.description || it.name || it.itemName || code;
+          const cat = it.category || 'General';
+          const hsn = it.hsn || '73063000';
+          const unit = it.unit || 'PCS';
+          const rate = it.sellingPrice != null ? it.sellingPrice : (it.rate != null ? it.rate : 100);
+          const tax = it.gst != null ? it.gst : (it.gstPercent != null ? it.gstPercent : 18);
+          const stock = it.openingStock != null ? it.openingStock : (it.currentStock != null ? it.currentStock : 0);
+          return `<option value="${code}" data-desc="${desc}" data-category="${cat}" data-hsn="${hsn}" data-unit="${unit}" data-rate="${rate}" data-tax="${tax}" data-stock="${stock}">${code} - ${desc} (Stock: ${stock})</option>`;
+        }).join('');
+    }
+
+    // 2. Render autocomplete popup
+    if (popup) {
+      if (!query && filtered.length === 0) {
+        popup.style.display = 'none';
+        return;
+      }
+      if (filtered.length === 0) {
+        popup.innerHTML = `<div style="padding: 12px; text-align: center; color: var(--text-dim); font-size: 0.76rem;">No items matching "${filterText}"</div>`;
+        popup.style.display = 'block';
+        return;
+      }
+      popup.innerHTML = filtered.slice(0, 20).map((it, idx) => {
+        const code = it.itemCode || it.code || '';
+        const desc = it.description || it.name || it.itemName || code;
+        const rate = parseFloat(it.sellingPrice != null ? it.sellingPrice : (it.rate != null ? it.rate : 100)) || 0;
+        const stock = parseFloat(it.openingStock != null ? it.openingStock : (it.currentStock != null ? it.currentStock : 0)) || 0;
+        return `
+          <div class="fast-item-row ${idx === 0 ? 'selected' : ''}" data-code="${code}" onclick="window.SalesController.selectFastItem('${code.replace(/'/g, "\\'")}')">
+            <div>
+              <div class="fast-item-code">${code}</div>
+              <div class="fast-item-desc" title="${desc}">${desc}</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="fast-item-rate">₹ ${rate.toFixed(2)}</div>
+              <span class="fast-item-stock ${stock > 0 ? 'in-stock' : 'low-stock'}">Stock: ${stock}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      popup.style.display = 'block';
+    }
+  },
+
+  selectFastItem(itemCode) {
+    const item = (this.itemsCache || []).find(i => (i.itemCode || i.code) === itemCode);
+    if (!item) return;
+
+    this.selectedWorkspaceItem = item;
+    const desc = item.description || item.name || item.itemName || itemCode;
+    const rate = item.sellingPrice != null ? item.sellingPrice : (item.rate != null ? item.rate : 100);
+    const tax = item.gst != null ? item.gst : (item.gstPercent != null ? item.gstPercent : 18);
+
+    // Update search input
+    const searchInput = document.getElementById('ws-fast-item-search');
+    if (searchInput) searchInput.value = `${itemCode} - ${desc}`;
+
+    // Hide popup
+    const popup = document.getElementById('ws-fast-item-results');
+    if (popup) popup.style.display = 'none';
+
+    // Update select dropdown
+    const sel = document.getElementById('ws-fast-item-select');
+    if (sel) sel.value = itemCode;
+
+    // Fill rate & tax
+    const elRate = document.getElementById('ws-fast-rate');
+    const elTax = document.getElementById('ws-fast-tax');
+    const elQty = document.getElementById('ws-fast-qty');
+    if (elRate) elRate.value = rate;
+    if (elTax) elTax.value = tax;
+    if (elQty && (!elQty.value || parseFloat(elQty.value) <= 0)) elQty.value = 1;
+
+    this.updateStockPositionUi();
+
+    // Auto-focus quantity for immediate fast data entry
+    if (elQty) {
+      elQty.focus();
+      elQty.select();
+    }
+  },
+
+  onFastSearchKeyDown(e) {
+    const popup = document.getElementById('ws-fast-item-results');
+    if (!popup || popup.style.display === 'none') return;
+    const rows = Array.from(popup.querySelectorAll('.fast-item-row'));
+    if (rows.length === 0) return;
+
+    let selectedIdx = rows.findIndex(r => r.classList.contains('selected'));
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (selectedIdx >= 0) rows[selectedIdx].classList.remove('selected');
+      selectedIdx = (selectedIdx + 1) % rows.length;
+      rows[selectedIdx].classList.add('selected');
+      rows[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (selectedIdx >= 0) rows[selectedIdx].classList.remove('selected');
+      selectedIdx = (selectedIdx - 1 + rows.length) % rows.length;
+      rows[selectedIdx].classList.add('selected');
+      rows[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIdx >= 0) {
+        const code = rows[selectedIdx].getAttribute('data-code');
+        if (code) this.selectFastItem(code);
+      }
+    } else if (e.key === 'Escape') {
+      popup.style.display = 'none';
+    }
   },
 
   // =========================================================================
@@ -349,7 +476,7 @@ window.SalesController = {
           const paid = isCancelled ? 0 : (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0));
           const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
           const custName = (sale.customer && sale.customer.name) || sale.customerName || sale.partyName || 'Customer';
-          window.openInvoicePaymentDetails('SALE', sale.id, invNo, custName, grandTotal, paid, pending);
+          window.openInvoicePaymentDetails('SALE', sale.id, invNo, custName, grandTotal, paid, pending, sale);
         } else {
           this.openRecordPaymentModal(invNo);
         }

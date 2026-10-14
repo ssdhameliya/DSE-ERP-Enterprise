@@ -103,6 +103,7 @@ window.PurchaseController = (function() {
     const retStatus = document.getElementById('pur-filter-ret-status')?.value || '';
 
     try {
+      const apiPayStatus = payStatus === 'PAYABLES' ? '' : payStatus;
       const res = await window.OperationsService.getPurchasesPage(
         currentPage,
         pageSize,
@@ -110,7 +111,7 @@ window.PurchaseController = (function() {
         supplier,
         from,
         to,
-        payStatus,
+        apiPayStatus,
         '',
         '',
         docStatus,
@@ -120,6 +121,9 @@ window.PurchaseController = (function() {
       );
 
       purchases = res?.rows || [];
+      if (payStatus === 'PAYABLES') {
+        purchases = purchases.filter(p => ((p.totalAmount || 0) - (p.paidAmount || 0)) > 0.005);
+      }
       totalRows = res?.totalRows || purchases.length;
       totalPages = Math.max(1, res?.totalPages || Math.ceil(totalRows / pageSize));
 
@@ -178,7 +182,7 @@ window.PurchaseController = (function() {
     if (!rows || rows.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="13" style="text-align:center; padding:40px; color:var(--text-muted);">
+          <td colspan="14" style="text-align:center; padding:40px; color:var(--text-muted);">
             <div style="font-size:1.8rem; margin-bottom:8px;">📦</div>
             <div style="font-weight:600; font-size:0.95rem; color:var(--text-main);">No purchase records found</div>
             <div style="font-size:0.78rem;">Create a purchase invoice or adjust your search filters.</div>
@@ -194,6 +198,7 @@ window.PurchaseController = (function() {
       const invNo = p.invoiceNo || '-';
       const suppName = (p.supplier && p.supplier.name) || p.supplierName || '-';
       const suppPhone = (p.supplier && p.supplier.phone) || p.contactPersonMobile || '-';
+      const suppGstin = (p.supplier && p.supplier.gstin) || p.supplierGstin || p.gstin || '-';
       const pendingBalance = Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0));
 
       return `
@@ -202,6 +207,7 @@ window.PurchaseController = (function() {
           <td>${formatDate(p.invoiceDate)}</td>
           <td style="font-weight:600; color:var(--text-main);">${suppName}</td>
           <td style="color:var(--text-muted);">${suppPhone}</td>
+          <td style="font-family:'Space Grotesk', monospace; font-size:0.75rem; color:var(--text-dim);">${suppGstin}</td>
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(p.totalAmount)}</td>
           <td style="text-align:right; font-weight:600; color:var(--green);">${formatMoney(p.paidAmount)}</td>
           <td style="text-align:right; font-weight:600; color:${pendingBalance > 0 ? 'var(--red)' : 'var(--text-dim)'};">${formatMoney(pendingBalance)}</td>
@@ -212,10 +218,10 @@ window.PurchaseController = (function() {
           <td>${p.emailSent ? '<span class="pill-badge pill-success">SENT</span>' : '<span class="pill-badge pill-neutral">NOT SENT</span>'}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.toggleActionMenu('${invNo}', event)" style="padding:2px 8px; font-size:0.75rem; height:26px;">
-                Actions ▼
+              <button class="btn-purple" onclick="window.PurchaseController.toggleActionMenu('${invNo}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
               </button>
-              <div id="pur-action-menu-${invNo.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; padding:6px 0; text-align:left;">
+              <div id="pur-action-menu-${invNo.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:240px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseView('${invNo}')"><span style="margin-right:8px;">📄</span> View Purchase (Read-Only)</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.showDetails('${invNo}')"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.openPayments('${invNo}')"><span style="margin-right:8px;">💳</span> View / Record Payments</div>
@@ -284,7 +290,7 @@ window.PurchaseController = (function() {
         targetMenu.style.zIndex = '100005';
         const btn = event.currentTarget || event.target;
         const rect = btn.getBoundingClientRect();
-        const menuWidth = 220;
+        const menuWidth = 240;
         let left = rect.right - menuWidth;
         let top = rect.bottom + 4;
         if (left < 10) left = 10;
@@ -474,7 +480,7 @@ window.PurchaseController = (function() {
     const purchaseId = p ? (p.id || 0) : 0;
 
     if (window.openInvoicePaymentDetails) {
-      window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending);
+      window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending, p);
     } else {
       alert(`Payment drilldown for purchase ${invoiceNo}`);
     }

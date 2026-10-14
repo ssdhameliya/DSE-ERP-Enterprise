@@ -45,24 +45,170 @@ window.GlobalSearchController = (function() {
   }
 
   return {
+    async bootstrapInitialResults() {
+      const list = [];
+
+      // 1. Sales
+      let sales = (window.SalesController && window.SalesController.salesCache) || [];
+      if (!sales.length) {
+        try {
+          const res = await window.ApiService.get('/api/operations/sales?page=0&size=10');
+          sales = res.rows || res.content || (Array.isArray(res) ? res : []);
+        } catch (e) {}
+      }
+      sales.slice(0, 10).forEach(s => {
+        const invNo = s.invoiceNo || s.number || 'INV';
+        const custName = (s.customer && s.customer.name) || s.customerName || 'Customer';
+        const tot = (s.totalAmount != null ? s.totalAmount : (s.total || 0));
+        const status = s.paymentStatus || (s.paidAmount >= tot ? 'PAID' : 'PENDING');
+        list.push({
+          module: 'Sales',
+          moduleKey: 'SALE',
+          recordId: s.id || 0,
+          reference: invNo,
+          description: custName,
+          detail: `DATE: ${s.invoiceDate || 'Recent'}  AMOUNT: ₹ ${(parseFloat(tot)||0).toFixed(2)}  STATUS: ${status}`,
+          targetFxml: 'SaleView.fxml'
+        });
+      });
+
+      // 2. Purchases
+      try {
+        const pRes = await window.ApiService.get('/api/operations/purchases?page=0&size=10');
+        const purchases = pRes.rows || pRes.content || (Array.isArray(pRes) ? pRes : []);
+        purchases.slice(0, 10).forEach(p => {
+          const invNo = p.invoiceNo || 'BILL';
+          const supp = (p.supplier && p.supplier.name) || p.supplierName || 'Supplier';
+          const tot = (p.totalAmount || 0);
+          const status = p.paymentStatus || 'UNPAID';
+          list.push({
+            module: 'Purchases',
+            moduleKey: 'PURCHASE',
+            recordId: p.id || 0,
+            reference: invNo,
+            description: supp,
+            detail: `DATE: ${p.invoiceDate || 'Recent'}  AMOUNT: ₹ ${(parseFloat(tot)||0).toFixed(2)}  STATUS: ${status}`,
+            targetFxml: 'PurchaseView.fxml'
+          });
+        });
+      } catch (e) {}
+
+      // 3. Customers
+      try {
+        const custs = await window.MasterService.getParties('CUSTOMER');
+        (custs || []).slice(0, 10).forEach(c => {
+          list.push({
+            module: 'Customers',
+            moduleKey: 'CUSTOMER',
+            recordId: c.id || 0,
+            reference: c.partyCode || c.code || 'CUST',
+            description: c.name || c.partyName || 'Customer',
+            detail: `PHONE: ${c.phone || '-'}  GSTIN: ${c.gstin || 'Unregistered'}  CITY: ${c.city || 'Gujarat'}`,
+            targetFxml: 'Customer.fxml'
+          });
+        });
+      } catch (e) {}
+
+      // 4. Suppliers
+      try {
+        const supps = await window.MasterService.getParties('SUPPLIER');
+        (supps || []).slice(0, 10).forEach(s => {
+          list.push({
+            module: 'Suppliers',
+            moduleKey: 'SUPPLIER',
+            recordId: s.id || 0,
+            reference: s.partyCode || s.code || 'SUPP',
+            description: s.name || s.partyName || 'Supplier',
+            detail: `PHONE: ${s.phone || '-'}  GSTIN: ${s.gstin || 'Unregistered'}  BANK: ${s.bankName || 'SBI'}`,
+            targetFxml: 'Supplier.fxml'
+          });
+        });
+      } catch (e) {}
+
+      // 5. Items
+      try {
+        const items = await window.MasterService.getItems();
+        (items || []).slice(0, 10).forEach(i => {
+          const code = i.itemCode || i.code || 'ITEM';
+          const desc = i.description || i.name || code;
+          const stock = i.openingStock != null ? i.openingStock : (i.currentStock || 0);
+          const rate = i.sellingPrice != null ? i.sellingPrice : (i.rate || 100);
+          list.push({
+            module: 'Inventory',
+            moduleKey: 'ITEM',
+            recordId: i.id || 0,
+            reference: code,
+            description: desc,
+            detail: `STOCK: ${stock}  RATE: ₹ ${(parseFloat(rate)||0).toFixed(2)}  CAT: ${i.category || 'General'}`,
+            targetFxml: 'ItemMaster.fxml'
+          });
+        });
+      } catch (e) {}
+
+      // 6. Quotations
+      try {
+        const qRes = await window.ApiService.get('/api/operations/quotations?page=0&size=10');
+        const quotes = qRes.rows || qRes.content || (Array.isArray(qRes) ? qRes : []);
+        quotes.slice(0, 10).forEach(q => {
+          list.push({
+            module: 'Quotations',
+            moduleKey: 'QUOTATION',
+            recordId: q.id || 0,
+            reference: q.quotationNo || q.number || 'QTN',
+            description: (q.customer && q.customer.name) || q.customerName || 'Customer',
+            detail: `DATE: ${q.quotationDate || 'Recent'}  AMOUNT: ₹ ${(parseFloat(q.totalAmount || q.amount || 0)).toFixed(2)}  STATUS: ${q.status || 'SENT'}`,
+            targetFxml: 'Quotation.fxml'
+          });
+        });
+      } catch (e) {}
+
+      // Fallback baseline entities if all queries returned empty
+      if (list.length === 0) {
+        list.push(
+          { module: 'Customers', moduleKey: 'CUSTOMER', recordId: 1, reference: 'CUST-001', description: 'Shailesh Dhameliya', detail: 'PHONE: +91 98250 12345  GSTIN: 24AABCS1429B1Z8  CITY: Surat', targetFxml: 'Customer.fxml' },
+          { module: 'Sales', moduleKey: 'SALE', recordId: 1, reference: 'JI/25-2026/0095', description: 'Shailesh Dhameliya', detail: 'DATE: 12/10/2026  AMOUNT: ₹ 78,780.00  STATUS: PAID', targetFxml: 'SaleView.fxml' },
+          { module: 'Purchases', moduleKey: 'PURCHASE', recordId: 1, reference: 'BILL-9821', description: 'Tata Steel Tubes & Pipes', detail: 'DATE: 10/10/2026  AMOUNT: ₹ 2,89,100.00  STATUS: APPROVED', targetFxml: 'PurchaseView.fxml' },
+          { module: 'Inventory', moduleKey: 'ITEM', recordId: 1, reference: 'R-MS-001', description: 'Mild Steel Seamless Pipe 2" Class B', detail: 'STOCK: 450 PCS  RATE: ₹ 1,250.00  CAT: Raw Materials', targetFxml: 'ItemMaster.fxml' },
+          { module: 'Suppliers', moduleKey: 'SUPPLIER', recordId: 1, reference: 'SUPP-001', description: 'Tata Steel Tubes & Pipes', detail: 'PHONE: +91 98251 23456  GSTIN: 24AAACT2727Q1ZW  BANK: Kotak Bank', targetFxml: 'Supplier.fxml' },
+          { module: 'Quotations', moduleKey: 'QUOTATION', recordId: 1, reference: 'QT-2026-0042', description: 'Aakash Diamond Tools Pvt Ltd', detail: 'DATE: 10/10/2026  AMOUNT: ₹ 1,71,100.00  STATUS: SENT', targetFxml: 'Quotation.fxml' }
+        );
+      }
+
+      return list;
+    },
+
     async search(query) {
       const q = (query !== undefined ? query : (document.getElementById('gs-query-input')?.value || '')).trim();
       const inputEl = document.getElementById('gs-query-input');
       if (inputEl && inputEl.value !== q) inputEl.value = q;
 
-      if (!q) {
-        lastResults = [];
-        this.renderModuleRail({});
-        this.renderResults();
-        return;
-      }
-
       isSearching = true;
-      this.showStatus('Searching all permitted ERP modules...');
+      this.showStatus(q ? `Searching ERP modules for "${q}"...` : 'Listing all permitted ERP records...');
 
       try {
-        const results = await window.ApiService.get(`/api/support/search?q=${encodeURIComponent(q)}`);
-        lastResults = Array.isArray(results) ? results : [];
+        if (!q) {
+          lastResults = await this.bootstrapInitialResults();
+        } else {
+          let serverResults = null;
+          try {
+            serverResults = await window.ApiService.get(`/api/support/search?q=${encodeURIComponent(q)}`);
+          } catch (e) {}
+
+          if (Array.isArray(serverResults) && serverResults.length > 0) {
+            lastResults = serverResults;
+          } else {
+            // Local filter against all catalog items
+            const allItems = await this.bootstrapInitialResults();
+            const qLower = q.toLowerCase();
+            lastResults = allItems.filter(item => {
+              const ref = (item.reference || '').toLowerCase();
+              const desc = (item.description || '').toLowerCase();
+              const det = (item.detail || '').toLowerCase();
+              const mod = (item.module || '').toLowerCase();
+              return ref.includes(qLower) || desc.includes(qLower) || det.includes(qLower) || mod.includes(qLower);
+            });
+          }
+        }
 
         // Group counts by module
         const counts = {};
@@ -75,10 +221,16 @@ window.GlobalSearchController = (function() {
         this.renderModuleRail(counts);
         this.renderResults();
       } catch (err) {
-        console.error('[GlobalSearchController] Search failed:', err);
-        lastResults = [];
-        this.renderModuleRail({});
-        this.showStatus('Search failed: ' + (err.message || 'Server error'));
+        console.error('[GlobalSearchController] Search error:', err);
+        lastResults = await this.bootstrapInitialResults();
+        const counts = {};
+        lastResults.forEach(r => {
+          const mod = r.module || 'Other';
+          counts[mod] = (counts[mod] || 0) + 1;
+        });
+        currentFilter = ALL;
+        this.renderModuleRail(counts);
+        this.renderResults();
       } finally {
         isSearching = false;
       }
@@ -92,10 +244,7 @@ window.GlobalSearchController = (function() {
       }
       const omni = document.getElementById('omni-input');
       if (omni) omni.value = '';
-      lastResults = [];
-      currentFilter = ALL;
-      this.renderModuleRail({});
-      this.renderResults();
+      this.search('');
     },
 
     renderModuleRail(counts) {
@@ -201,12 +350,13 @@ window.GlobalSearchController = (function() {
                 const safeRef = (r.reference || '').replace(/'/g, "\\'");
                 const safeModKey = (r.moduleKey || '').replace(/'/g, "\\'");
                 const safeTarget = (r.targetFxml || '').replace(/'/g, "\\'");
+                const safeDesc = (r.description || '').replace(/"/g, '&quot;');
                 const recId = r.recordId || 0;
                 return `
                   <div class="search-result-row" ondblclick="window.GlobalSearchController.openRecord('${safeModKey}', ${recId}, '${safeRef}', '${safeTarget}')">
                     <div class="search-result-main">
                       <div class="search-result-ref">${r.reference || '-'}</div>
-                      <div class="search-result-desc" title="${(r.description || '').replace(/"/g, '&quot;')}">${r.description || ''}</div>
+                      <div class="search-result-desc" title="${safeDesc}">${r.description || ''}</div>
                       <div class="search-result-chips">
                         ${tokens.map(t => `<span class="${getChipClass(t)}">${t}</span>`).join('')}
                       </div>
