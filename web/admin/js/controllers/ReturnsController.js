@@ -746,6 +746,8 @@ window.ReturnsController = (function() {
     openRefundModal,
     submitRefund,
     closeModal,
+    setType(type) { currentType = type; },
+    getType() { return currentType; },
     prevPage() { if (currentPage > 0) loadReturns(currentType, currentPage - 1); },
     nextPage() { if (currentPage < totalPages - 1) loadReturns(currentType, currentPage + 1); },
     resetFilters(isSales) {

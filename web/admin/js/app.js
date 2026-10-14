@@ -235,6 +235,7 @@ window.App = (function() {
     },
 
     showAuthOverlay(preferredTab) {
+      document.documentElement.classList.add('auth-required');
       const auth = document.getElementById('auth-overlay');
       if (auth) {
         auth.style.display = 'flex';
@@ -247,6 +248,7 @@ window.App = (function() {
     },
 
     hideAuthOverlay() {
+      document.documentElement.classList.remove('auth-required');
       const auth = document.getElementById('auth-overlay');
       if (auth) auth.style.display = 'none';
     },
@@ -1416,6 +1418,79 @@ window.loadEWayBills = () => window.EWayBillController.loadEWayBills();
 window.openGenerateEWayModal = (invNo) => window.EWayBillController.openGenerateEWayModal(invNo);
 window.handleGenerateEWayBill = (e) => window.EWayBillController.handleGenerateEWayBill(e);
 window.printBarcodeStickers = () => window.BarcodeStudioController.printBarcode();
+
+window.openInvoicePaymentDetails = async function(type, id, invoiceNo, partyName, total, paid, balance) {
+  try {
+    const titleEl = document.getElementById('ipd-title');
+    const subtitleEl = document.getElementById('ipd-subtitle');
+    const kpiTotalEl = document.getElementById('ipd-kpi-total');
+    const kpiPaidEl = document.getElementById('ipd-kpi-paid');
+    const kpiDueEl = document.getElementById('ipd-kpi-due');
+    const kpiStatusEl = document.getElementById('ipd-kpi-status');
+    const tbody = document.getElementById('ipd-payments-tbody');
+
+    if (titleEl) titleEl.textContent = `Payment History - ${invoiceNo || ('#' + id)}`;
+    if (subtitleEl) subtitleEl.textContent = `${type === 'PURCHASE' ? 'Supplier' : 'Customer'}: ${partyName || 'N/A'}`;
+    
+    const numTotal = Number(total || 0);
+    const numPaid = Number(paid || 0);
+    const numBalance = balance !== undefined ? Number(balance) : Math.max(0, numTotal - numPaid);
+
+    if (kpiTotalEl) kpiTotalEl.textContent = '₹ ' + (window.FormatUtil ? window.FormatUtil.formatCurrency(numTotal) : numTotal.toFixed(2));
+    if (kpiPaidEl) kpiPaidEl.textContent = '₹ ' + (window.FormatUtil ? window.FormatUtil.formatCurrency(numPaid) : numPaid.toFixed(2));
+    if (kpiDueEl) kpiDueEl.textContent = '₹ ' + (window.FormatUtil ? window.FormatUtil.formatCurrency(numBalance) : numBalance.toFixed(2));
+    
+    if (kpiStatusEl) {
+      if (numBalance <= 0.01 && numTotal > 0) {
+        kpiStatusEl.textContent = 'PAID';
+        kpiStatusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+        kpiStatusEl.style.color = '#4ade80';
+      } else if (numPaid > 0.01) {
+        kpiStatusEl.textContent = 'PARTIAL';
+        kpiStatusEl.style.background = 'rgba(245, 158, 11, 0.2)';
+        kpiStatusEl.style.color = '#fbbf24';
+      } else {
+        kpiStatusEl.textContent = 'PENDING';
+        kpiStatusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+        kpiStatusEl.style.color = '#f87171';
+      }
+    }
+
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">Loading payments...</td></tr>`;
+    if (window.openModal) window.openModal('modal-invoice-payments');
+
+    const res = await window.ApiService.get(`/api/support/payments?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+    const payments = Array.isArray(res) ? res : (res && res.data ? res.data : []);
+
+    if (!payments.length) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No payment records found for this invoice.</td></tr>`;
+      return;
+    }
+
+    let rowsHtml = '';
+    payments.forEach(p => {
+      const pDate = p.date || p.paymentDate || '-';
+      const pRef = p.reference || p.receiptNo || p.voucherNo || '-';
+      const pMode = p.mode || p.paymentMode || 'Cash';
+      const pFrom = p.receivedFrom || p.partyName || partyName || '-';
+      const pAmt = Number(p.amount || 0);
+      const pNotes = p.notes || p.remarks || '-';
+      rowsHtml += `<tr>
+        <td style="font-weight:600; color:var(--text-main);">${pRef}</td>
+        <td>${pDate}</td>
+        <td><span class="badge" style="background:rgba(56,189,248,0.15); color:var(--cyan);">${pMode}</span></td>
+        <td>${pFrom}</td>
+        <td style="text-align:right; font-weight:700; color:#34d399;">₹ ${(window.FormatUtil ? window.FormatUtil.formatCurrency(pAmt) : pAmt.toFixed(2))}</td>
+        <td style="color:var(--text-dim); font-size:0.75rem;">${pNotes}</td>
+      </tr>`;
+    });
+    if (tbody) tbody.innerHTML = rowsHtml;
+  } catch (err) {
+    console.error('Error loading payment details:', err);
+    const tbody = document.getElementById('ipd-payments-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#f87171;">Failed to load payment history: ${err.message || 'Server error'}</td></tr>`;
+  }
+};
 
 // Bootstrap on window load
 window.addEventListener('load', () => {

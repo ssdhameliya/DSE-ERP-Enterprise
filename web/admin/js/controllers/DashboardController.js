@@ -1,89 +1,178 @@
 /**
  * Jasvi Industries ERP - DashboardController
- * Executive Command Center metrics and desktop parity analytics matching desktop DashboardController
+ * Executive Command Center metrics and desktop parity analytics matching desktop DashboardHomeController.java
+ * Backed by GET /api/insights/dashboard?period={period}
  */
 window.DashboardController = {
-  async refresh() {
+  periods: ['This Month', 'This Quarter', 'This Year', 'All Time'],
+  currentPeriodIndex: 0,
+
+  async cyclePeriod() {
+    this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.periods.length;
+    const period = this.periods[this.currentPeriodIndex];
+
+    const btn = document.getElementById('dashboard-period-btn');
+    if (btn) btn.innerHTML = `📅 ${period} &#9662;`;
+
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    window.AppDialogService.showToast(`Switched dashboard period to: ${period}`, 'info');
+
+    await this.refresh(period);
+  },
+
+  getCurrentPeriod() {
+    return this.periods[this.currentPeriodIndex] || 'This Month';
+  },
+
+  async refresh(periodParam) {
+    const period = periodParam || this.getCurrentPeriod();
+
+    const btn = document.getElementById('dashboard-period-btn');
+    if (btn) btn.innerHTML = `📅 ${period} &#9662;`;
+
     try {
-      // 1. Fetch Sales Data
+      // 1. Try server-canonical insights bundle
+      let serverBundle = null;
+      try {
+        serverBundle = await window.ApiService.get(`/api/insights/dashboard?period=${encodeURIComponent(period)}`);
+      } catch (err) {
+        console.warn('[DashboardController] Server dashboard bundle fetch fallback:', err.message);
+      }
+
+      if (serverBundle && serverBundle.snapshot) {
+        const snap = serverBundle.snapshot;
+
+        // 1. Active Sales
+        const salesAmtEl = document.getElementById('dash-kpi-sales-amount');
+        const salesCntEl = document.getElementById('dash-kpi-sales-count');
+        if (salesAmtEl) salesAmtEl.innerText = window.FormatUtil.formatRupees(snap.salesValue || 0);
+        if (salesCntEl) salesCntEl.innerText = snap.invoices || 0;
+
+        // 2. Active Purchases
+        const purAmtEl = document.getElementById('dash-kpi-pur-amount');
+        const purCntEl = document.getElementById('dash-kpi-pur-count');
+        if (purAmtEl) purAmtEl.innerText = window.FormatUtil.formatRupees(snap.purchaseValue || 0);
+        if (purCntEl) purCntEl.innerText = snap.purchases || 0;
+
+        // 3. Receivables
+        const recAmtEl = document.getElementById('dash-kpi-receivables');
+        const recCntEl = document.getElementById('dash-kpi-receivables-count');
+        if (recAmtEl) recAmtEl.innerText = window.FormatUtil.formatRupees(snap.receivables || 0);
+        if (recCntEl) recCntEl.innerText = snap.openReceivables || 0;
+
+        // 4. Payables
+        const payAmtEl = document.getElementById('dash-kpi-payables');
+        const payCntEl = document.getElementById('dash-kpi-payables-count');
+        if (payAmtEl) payAmtEl.innerText = window.FormatUtil.formatRupees(snap.payables || 0);
+        if (payCntEl) payCntEl.innerText = snap.openPayables || 0;
+
+        // 5. Cash Position
+        const cashEl = document.getElementById('dash-kpi-cash-position');
+        if (cashEl) cashEl.innerText = window.FormatUtil.formatRupees(snap.cash || 0);
+
+        // 6. Low Stock
+        const lowStockEl = document.getElementById('dash-kpi-low-stock');
+        if (lowStockEl) lowStockEl.innerText = snap.lowStock || 0;
+
+        // Directories
+        const dirSalesCntEl = document.getElementById('dash-dir-sales-count');
+        if (dirSalesCntEl) dirSalesCntEl.innerText = snap.invoices || 0;
+
+        const dirPurCntEl = document.getElementById('dash-dir-pur-count');
+        if (dirPurCntEl) dirPurCntEl.innerText = snap.purchases || 0;
+
+        const dirCustCntEl = document.getElementById('dash-dir-cust-count');
+        if (dirCustCntEl) dirCustCntEl.innerText = snap.customers || 0;
+
+        const dirItemCntEl = document.getElementById('dash-dir-item-count');
+        if (dirItemCntEl) dirItemCntEl.innerText = snap.products || 0;
+
+        const remEl = document.getElementById('dash-reminders-count');
+        if (remEl) remEl.innerText = snap.openReminders || 0;
+
+        // Recent activities from bundle
+        if (serverBundle.recent && Array.isArray(serverBundle.recent) && serverBundle.recent.length > 0) {
+          this.renderRecentActivitiesFromDto(serverBundle.recent);
+        }
+      }
+
+      // 2. Fetch fresh local operations dataset for detailed ranking and ageing calculations
       const salesRes = await window.OperationsService.getSales(0, 100);
       const sales = salesRes.rows || salesRes.content || (Array.isArray(salesRes) ? salesRes : []);
       const activeSales = sales.filter(s => s.documentStatus !== 'CANCELLED');
-      const salesAmount = activeSales.reduce((acc, s) => acc + (s.totalAmount || s.total || 0), 0);
       const pendingSales = activeSales.filter(s => s.paymentStatus === 'PENDING' || (s.paidAmount < (s.totalAmount || 0)));
-      const receivablesAmount = pendingSales.reduce((acc, s) => acc + Math.max(0, (s.totalAmount || 0) - (s.paidAmount || 0)), 0);
 
-      const salesAmtEl = document.getElementById('dash-kpi-sales-amount');
-      const salesCntEl = document.getElementById('dash-kpi-sales-count');
-      if (salesAmtEl) salesAmtEl.innerText = window.FormatUtil.formatRupees(salesAmount);
-      if (salesCntEl) salesCntEl.innerText = activeSales.length;
+      // If server bundle was not present, populate metrics from live sales
+      if (!serverBundle || !serverBundle.snapshot) {
+        const salesAmount = activeSales.reduce((acc, s) => acc + (s.totalAmount || s.total || 0), 0);
+        const receivablesAmount = pendingSales.reduce((acc, s) => acc + Math.max(0, (s.totalAmount || 0) - (s.paidAmount || 0)), 0);
 
-      const recAmtEl = document.getElementById('dash-kpi-receivables');
-      const recCntEl = document.getElementById('dash-kpi-receivables-count');
-      if (recAmtEl) recAmtEl.innerText = window.FormatUtil.formatRupees(receivablesAmount);
-      if (recCntEl) recCntEl.innerText = pendingSales.length;
+        const salesAmtEl = document.getElementById('dash-kpi-sales-amount');
+        const salesCntEl = document.getElementById('dash-kpi-sales-count');
+        if (salesAmtEl) salesAmtEl.innerText = window.FormatUtil.formatRupees(salesAmount);
+        if (salesCntEl) salesCntEl.innerText = activeSales.length;
 
-      const dirSalesCntEl = document.getElementById('dash-dir-sales-count');
-      if (dirSalesCntEl) dirSalesCntEl.innerText = activeSales.length;
+        const recAmtEl = document.getElementById('dash-kpi-receivables');
+        const recCntEl = document.getElementById('dash-kpi-receivables-count');
+        if (recAmtEl) recAmtEl.innerText = window.FormatUtil.formatRupees(receivablesAmount);
+        if (recCntEl) recCntEl.innerText = pendingSales.length;
 
-      // 2. Fetch Purchases Data
-      const purRes = await window.OperationsService.getPurchases(0, 100);
-      const purchases = purRes.rows || purRes.content || (Array.isArray(purRes) ? purRes : []);
-      const activePur = purchases.filter(p => p.documentStatus !== 'CANCELLED');
-      const purAmount = activePur.reduce((acc, p) => acc + (p.totalAmount || p.total || 0), 0);
-      const pendingPur = activePur.filter(p => p.paymentStatus === 'PENDING' || (p.paidAmount < (p.totalAmount || 0)));
-      const payablesAmount = pendingPur.reduce((acc, p) => acc + Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0)), 0);
+        const dirSalesCntEl = document.getElementById('dash-dir-sales-count');
+        if (dirSalesCntEl) dirSalesCntEl.innerText = activeSales.length;
 
-      const purAmtEl = document.getElementById('dash-kpi-pur-amount');
-      const purCntEl = document.getElementById('dash-kpi-pur-count');
-      if (purAmtEl) purAmtEl.innerText = window.FormatUtil.formatRupees(purAmount);
-      if (purCntEl) purCntEl.innerText = activePur.length;
+        const purRes = await window.OperationsService.getPurchases(0, 100);
+        const purchases = purRes.rows || purRes.content || (Array.isArray(purRes) ? purRes : []);
+        const activePur = purchases.filter(p => p.documentStatus !== 'CANCELLED');
+        const purAmount = activePur.reduce((acc, p) => acc + (p.totalAmount || p.total || 0), 0);
+        const pendingPur = activePur.filter(p => p.paymentStatus === 'PENDING' || (p.paidAmount < (p.totalAmount || 0)));
+        const payablesAmount = pendingPur.reduce((acc, p) => acc + Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0)), 0);
 
-      const payAmtEl = document.getElementById('dash-kpi-payables');
-      const payCntEl = document.getElementById('dash-kpi-payables-count');
-      if (payAmtEl) payAmtEl.innerText = window.FormatUtil.formatRupees(payablesAmount);
-      if (payCntEl) payCntEl.innerText = pendingPur.length;
+        const purAmtEl = document.getElementById('dash-kpi-pur-amount');
+        const purCntEl = document.getElementById('dash-kpi-pur-count');
+        if (purAmtEl) purAmtEl.innerText = window.FormatUtil.formatRupees(purAmount);
+        if (purCntEl) purCntEl.innerText = activePur.length;
 
-      const dirPurCntEl = document.getElementById('dash-dir-pur-count');
-      if (dirPurCntEl) dirPurCntEl.innerText = activePur.length;
+        const payAmtEl = document.getElementById('dash-kpi-payables');
+        const payCntEl = document.getElementById('dash-kpi-payables-count');
+        if (payAmtEl) payAmtEl.innerText = window.FormatUtil.formatRupees(payablesAmount);
+        if (payCntEl) payCntEl.innerText = pendingPur.length;
 
-      // 3. Cash Position = (Paid Sales) - (Paid Purchases)
-      const totalPaidSales = activeSales.reduce((acc, s) => acc + (s.paidAmount || (s.paymentStatus === 'PAID' ? s.totalAmount : 0) || 0), 0);
-      const totalPaidPurchases = activePur.reduce((acc, p) => acc + (p.paidAmount || (p.paymentStatus === 'PAID' ? p.totalAmount : 0) || 0), 0);
-      const cashPosition = totalPaidSales - totalPaidPurchases;
-      const cashEl = document.getElementById('dash-kpi-cash-position');
-      if (cashEl) cashEl.innerText = window.FormatUtil.formatRupees(cashPosition);
+        const dirPurCntEl = document.getElementById('dash-dir-pur-count');
+        if (dirPurCntEl) dirPurCntEl.innerText = activePur.length;
 
-      // 4. Items & Low Stock
-      const items = await window.MasterService.getItems();
-      if (items && Array.isArray(items)) {
-        const dirItemCntEl = document.getElementById('dash-dir-item-count');
-        if (dirItemCntEl) dirItemCntEl.innerText = items.length;
+        const totalPaidSales = activeSales.reduce((acc, s) => acc + (s.paidAmount || (s.paymentStatus === 'PAID' ? s.totalAmount : 0) || 0), 0);
+        const totalPaidPurchases = activePur.reduce((acc, p) => acc + (p.paidAmount || (p.paymentStatus === 'PAID' ? p.totalAmount : 0) || 0), 0);
+        const cashPosition = totalPaidSales - totalPaidPurchases;
+        const cashEl = document.getElementById('dash-kpi-cash-position');
+        if (cashEl) cashEl.innerText = window.FormatUtil.formatRupees(cashPosition);
 
-        const lowStockCount = items.filter(i => (i.currentStock || i.stock || 0) <= (i.minStock || i.reorderPoint || 0)).length;
-        const lowStockEl = document.getElementById('dash-kpi-low-stock');
-        if (lowStockEl) lowStockEl.innerText = lowStockCount;
+        const items = await window.MasterService.getItems();
+        if (items && Array.isArray(items)) {
+          const dirItemCntEl = document.getElementById('dash-dir-item-count');
+          if (dirItemCntEl) dirItemCntEl.innerText = items.length;
+
+          const lowStockCount = items.filter(i => (i.currentStock || i.stock || 0) <= (i.minStock || i.reorderPoint || 0)).length;
+          const lowStockEl = document.getElementById('dash-kpi-low-stock');
+          if (lowStockEl) lowStockEl.innerText = lowStockCount;
+        }
+
+        const customers = await window.MasterService.getParties('CUSTOMER');
+        if (customers && Array.isArray(customers)) {
+          const dirCustCntEl = document.getElementById('dash-dir-cust-count');
+          if (dirCustCntEl) dirCustCntEl.innerText = customers.length;
+        }
       }
 
-      // 5. Customers Count
-      const customers = await window.MasterService.getParties('CUSTOMER');
-      if (customers && Array.isArray(customers)) {
-        const dirCustCntEl = document.getElementById('dash-dir-cust-count');
-        if (dirCustCntEl) dirCustCntEl.innerText = customers.length;
-      }
-
-      // 6. Reminders Count
-      const remEl = document.getElementById('dash-reminders-count');
-      if (remEl) remEl.innerText = '0';
-
-      // 7. Top Customers Ranking (from real sales)
+      // 7. Top Customers Ranking
       this.renderTopCustomers(activeSales);
 
       // 8. Receivables Ageing Buckets
       this.renderAgeingBuckets(pendingSales);
 
-      // 9. Recent Activities
-      this.renderRecentActivities(sales);
+      // 9. Recent Activities fallback
+      if (!serverBundle || !serverBundle.recent || serverBundle.recent.length === 0) {
+        this.renderRecentActivities(sales);
+      }
     } catch (e) {
       console.warn('[DashboardController] Error refreshing metrics:', e);
     }
@@ -142,6 +231,20 @@ window.DashboardController = {
     if (el11) el11.innerText = window.FormatUtil.formatRupees(b11_20);
     if (el1) el1.innerText = window.FormatUtil.formatRupees(b1_10);
     if (elNotDue) elNotDue.innerText = window.FormatUtil.formatRupees(notDue);
+  },
+
+  renderRecentActivitiesFromDto(recentList) {
+    const actListEl = document.getElementById('dash-recent-activities-list');
+    if (!actListEl) return;
+    actListEl.innerHTML = recentList.slice(0, 5).map(item => `
+      <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+        <div style="display:flex; justify-content:space-between; width:100%;">
+          <span style="font-weight:600; color: var(--text-main);">${item.type || 'Transaction'}: ${item.number || ''}</span>
+          <span style="font-weight:700; color: var(--cyan);">${window.FormatUtil.formatRupees(item.amount || 0)}</span>
+        </div>
+        <span style="color:var(--text-dim); font-size: 0.72rem;">${item.party || ''} • ${window.FormatUtil.formatDate(item.date)}</span>
+      </div>
+    `).join('');
   },
 
   renderRecentActivities(sales) {

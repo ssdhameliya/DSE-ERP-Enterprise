@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+      if (!localStorage.getItem('dse_access_token')) {
+        document.documentElement.classList.add('auth-required');
+      }
+    </script>
+    <style>
+      html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
+      html.auth-required #app-container { visibility: hidden !important; }
+    </style>
     <link rel="stylesheet" href="css/app.css?v=10.0.32.3">
     <script>
       window.toggleNavGroup = function(groupId) {
@@ -419,7 +428,7 @@
 
       <div class="header-center">
         <span class="omni-icon">&#128269;</span>
-        <input type="text" id="omni-input" class="omni-search" placeholder="Search invoices, parties, items, ledgers (Ctrl+K)..." oninput="handleOmniSearch(this.value)">
+        <input type="text" id="omni-input" class="omni-search" placeholder="Search invoices, parties, items, ledgers (Ctrl+K)..." oninput="if(window.GlobalSearchController) window.GlobalSearchController.search(this.value); else handleOmniSearch(this.value);" onkeydown="if(event.key==='Enter' && window.GlobalSearchController) window.GlobalSearchController.openGlobalSearch(this.value);">
       </div>
 
       <div class="header-right">
@@ -445,7 +454,7 @@
           <span class="header-badge-counter cyan" id="badge-reminders">0</span>
         </div>
 
-        <div class="header-badge-wrap" onclick="openNotificationsModal()" title="Notification Center">
+        <div class="header-badge-wrap" onclick="if(window.NotificationCenterController) window.NotificationCenterController.openModal(); else openNotificationsModal();" title="Notification Center">
           <button class="header-badge-btn">🔔</button>
           <span class="header-badge-counter" id="badge-notifications">0</span>
         </div>
@@ -459,9 +468,6 @@
           <button class="header-badge-btn">💬</button>
           <span class="header-badge-counter cyan" id="badge-whatsapp">0</span>
         </div>
-
-        <!-- Hotkeys Help Button -->
-        <button class="header-badge-btn" onclick="openShortcutsHelpModal()" title="Keyboard Shortcuts Help (?)">⌨️</button>
 
         <!-- Synthesizer Audio Toggle -->
         <button class="audio-toggle active" id="audio-toggle-btn" title="Toggle Synthesizer Audio">
@@ -491,9 +497,6 @@
             <div class="profile-menu-item" onclick="selectNav('view-settings'); hideProfileDropdown();">
               <span class="item-icon">⚙️</span> <span>Settings</span>
             </div>
-            <div class="profile-menu-item" onclick="selectNav('view-backup'); hideProfileDropdown();">
-              <span class="item-icon">💾</span> <span>Backup &amp; Restore</span>
-            </div>
             <div class="profile-menu-item" onclick="selectNav('view-reminders'); hideProfileDropdown();">
               <span class="item-icon">⏰</span> <span>Reminder Center</span>
             </div>
@@ -502,9 +505,6 @@
             </div>
             <div class="profile-menu-item" onclick="selectNav('view-import'); hideProfileDropdown();">
               <span class="item-icon">📥</span> <span>Data Import</span>
-            </div>
-            <div class="profile-menu-item" onclick="selectNav('view-pdf-studio'); hideProfileDropdown();">
-              <span class="item-icon">📄</span> <span>Document Studio</span>
             </div>
             <div class="profile-menu-divider"></div>
             <div class="profile-menu-item" onclick="openChangePasswordModal(); hideProfileDropdown();">
@@ -538,6 +538,11 @@
         <!-- 1. DASHBOARD -->
         <div class="nav-single-item active" id="nav-dashboard" onclick="selectNav('view-dashboard')">
           <div class="nav-item-left"><span class="nav-icon">&#128202;</span><span>Dashboard</span></div>
+        </div>
+
+        <!-- 1.1 GLOBAL SEARCH -->
+        <div class="nav-single-item" id="nav-global-search" onclick="selectNav('view-global-search')">
+          <div class="nav-item-left"><span class="nav-icon">&#128269;</span><span>Global Search</span></div>
         </div>
 
         <!-- 2. SALES (EXPANDABLE) -->
@@ -728,15 +733,15 @@
               </div>
             </div>
             <div class="view-actions" style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="showToast('Period: This Month', 'info')">&#128197; This Month &#9662;</button>
-              <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="refreshDashboardData()">&#8635; Refresh</button>
+              <button id="dashboard-period-btn" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 600;" onclick="window.DashboardController.cyclePeriod()">📅 This Month &#9662;</button>
+              <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="window.DashboardController.refresh()">&#8635; Refresh</button>
             </div>
           </div>
 
           <!-- Top 6 KPI Cards (Image 1) -->
           <div class="dash-kpi-row-6">
             <!-- 1. Active Sales -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-sales-register')" title="View Sales Register">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#128196; Active Sales</span>
                 <span class="dash-kpi-badge green">+3.4%</span>
@@ -745,7 +750,7 @@
               <div class="dash-kpi-sub"><span id="dash-kpi-sales-count">0</span> active sales invoices</div>
             </div>
             <!-- 2. Active Purchases -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-purchase-register')" title="View Purchase Register">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#128230; Active Purchases</span>
                 <span class="dash-kpi-badge grey">Active</span>
@@ -754,7 +759,7 @@
               <div class="dash-kpi-sub"><span id="dash-kpi-pur-count">0</span> active purchase invoices</div>
             </div>
             <!-- 3. Receivables -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-customers')" title="View Customers">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#128179; Receivables</span>
                 <span class="dash-kpi-badge amber">Pending</span>
@@ -763,7 +768,7 @@
               <div class="dash-kpi-sub"><span id="dash-kpi-receivables-count">0</span> open sales invoices</div>
             </div>
             <!-- 4. Payables -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-suppliers')" title="View Suppliers">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#128184; Payables</span>
                 <span class="dash-kpi-badge red">Payable</span>
@@ -772,7 +777,7 @@
               <div class="dash-kpi-sub"><span id="dash-kpi-payables-count">0</span> open purchase invoices</div>
             </div>
             <!-- 5. Cash Position -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-bank-entry')" title="View Bank Entry">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#128176; Cash Position</span>
                 <span class="dash-kpi-badge green">Net Cash</span>
@@ -781,7 +786,7 @@
               <div class="dash-kpi-sub">Received less paid and expenses</div>
             </div>
             <!-- 6. Low Stock -->
-            <div class="dash-kpi-card">
+            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-item-master')" title="View Item Master">
               <div class="dash-kpi-header">
                 <span class="dash-kpi-title">&#9888; Low Stock</span>
                 <span class="dash-kpi-badge amber">Alert</span>
@@ -938,6 +943,44 @@
                   <span style="font-weight:600;">Payment received for JI/25-2026/0103</span>
                   <span style="color:var(--text-dim); font-size: 0.7rem;">10/10/2026, 09:57 PM</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: GLOBAL SEARCH (EXACT DESKTOP PARITY) -->
+        <div id="view-global-search" class="module-view">
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128269;
+              </div>
+              <div>
+                <h1 style="font-size: 1.4rem; font-weight: 800; font-family: 'Space Grotesk';">Global Search</h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted);" id="gs-summary-status">Search invoices, orders, parties, items, returns, payments, bank transactions, reminders, communications and master data.</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 10px; align-items: center;">
+              <div style="position: relative; width: 340px;">
+                <input type="text" id="gs-query-input" class="form-input" style="padding-left: 32px; height: 36px;" placeholder="Search all ERP modules..." oninput="window.GlobalSearchController.search(this.value)" onkeydown="if(event.key==='Enter') window.GlobalSearchController.search(this.value)">
+                <span style="position: absolute; left: 10px; top: 9px; color: var(--text-dim); pointer-events: none;">🔍</span>
+              </div>
+              <button class="btn btn-secondary" style="height: 36px;" onclick="window.GlobalSearchController.clear()">Clear</button>
+            </div>
+          </div>
+
+          <div class="search-workspace-layout">
+            <div class="search-module-rail" id="gs-module-rail">
+              <div class="search-module-item active" onclick="window.GlobalSearchController.setFilter('All Results')">
+                <span>All Results</span>
+                <span class="search-module-badge">0</span>
+              </div>
+            </div>
+            <div class="search-results-pane" id="gs-results-container">
+              <div class="search-group-card" style="padding: 36px; text-align: center; color: var(--text-dim);">
+                <div style="font-size: 2.2rem; margin-bottom: 10px;">🔍</div>
+                <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Search Jasvi Industries ERP</div>
+                <div style="font-size: 0.78rem;">Type an invoice number, party name, phone, item code, or transaction reference to search across all modules.</div>
               </div>
             </div>
           </div>
@@ -1106,9 +1149,17 @@
                 <span id="sr-entries-counter" style="font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 4px;">Showing 1 to 25 entries</span>
               </div>
               <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="pagination-bar" id="sales-pagination-controls">
+                  <button type="button" class="btn-page" id="sr-btn-first" onclick="window.SalesController.goToPage('first')" title="First Page">&laquo;</button>
+                  <button type="button" class="btn-page" id="sr-btn-prev" onclick="window.SalesController.goToPage('prev')" title="Previous Page">&lsaquo;</button>
+                  <span class="page-indicator" id="sr-page-display">Page 1 of 1</span>
+                  <button type="button" class="btn-page" id="sr-btn-next" onclick="window.SalesController.goToPage('next')" title="Next Page">&rsaquo;</button>
+                  <button type="button" class="btn-page" id="sr-btn-last" onclick="window.SalesController.goToPage('last')" title="Last Page">&raquo;</button>
+                </div>
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted);">
                   <span>Rows per page</span>
-                  <select class="form-select" style="height: 28px; font-size: 0.75rem; padding: 2px 6px;">
+                  <select id="sr-page-size" class="form-select" onchange="window.SalesController.changePageSize(this.value)" style="height: 28px; font-size: 0.75rem; padding: 2px 6px;">
+                    <option value="10">10</option>
                     <option value="25" selected>25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -1142,6 +1193,11 @@
               <button type="button" id="ws-btn-dispatch-barcode" class="btn btn-secondary" onclick="window.SalesController.printDispatchBarcodeFromWorkspace()" style="font-size: 0.78rem;">&#128207; Dispatch Barcode</button>
               <button type="button" id="ws-btn-save-sale" class="btn-purple" onclick="window.SalesController.handleSaleWorkspaceSave(event)">&#128190; Save</button>
             </div>
+          </div>
+
+          <!-- Read-Only Mode Banner -->
+          <div id="ws-read-only-banner" class="read-only-banner" style="display: none; margin-bottom: 14px;">
+            🔒 Read-Only Mode: Viewing posted invoice details. Modifications, additions, and deletions are locked.
           </div>
 
           <!-- 2-Column Grid (Image 4) -->
@@ -1234,13 +1290,7 @@
                 <div class="editor-card-header">
                   <div style="display: flex; align-items: center; gap: 14px;">
                     <span>&#128230; Invoice Items</span>
-                    <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: normal;">
-                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">F2</kbd> Item Search &bull;
-                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">Enter / Tab</kbd> Next Field &bull;
-                      <kbd style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">Ctrl+S</kbd> Save Invoice
-                    </span>
                   </div>
-                  <span style="font-size: 0.74rem; color: #fbbf24; font-weight: 600;">&#9889; High Speed Entry Mode</span>
                 </div>
 
                 <!-- Live Stock Position Indicator Strip (Desktop StockPositionBar Parity) -->
@@ -1255,14 +1305,15 @@
                   <span id="ws-stock-state-badge" class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 0.72rem; padding: 3px 10px; border-radius: 4px; font-weight: 700;">Available to sell</span>
                 </div>
 
-                <!-- High Speed Item Search Strip (Image 4) -->
-                <div class="item-entry-strip">
-                  <select id="ws-fast-item-select" class="form-select" onchange="window.SalesController.onFastItemSelect(this)" style="height: 34px; font-size: 0.78rem;">
-                    <option value="">Search Item Master... [F2 / Enter]</option>
+                <!-- Fast Item Search Strip -->
+                <div class="item-entry-strip" id="ws-item-entry-strip">
+                  <input type="text" id="ws-fast-item-search" class="form-input" placeholder="Type to filter items..." oninput="window.SalesController.filterFastItems(this.value)" style="height: 34px; font-size: 0.78rem; width: 150px;">
+                  <select id="ws-fast-item-select" class="form-select" onchange="window.SalesController.onFastItemSelect(this)" style="height: 34px; font-size: 0.78rem; flex: 2;">
+                    <option value="">Select Item Master...</option>
                   </select>
-                  <input type="number" id="ws-fast-qty" class="form-input" value="1" min="0.01" step="any" placeholder="Qty [Tab]" oninput="window.SalesController.updateStockPositionUi()" style="height: 34px; font-size: 0.78rem;">
-                  <input type="number" id="ws-fast-rate" step="0.01" class="form-input" value="100.00" placeholder="Rate (₹) [Tab]" style="height: 34px; font-size: 0.78rem;">
-                  <input type="number" id="ws-fast-disc" step="0.1" min="0" max="100" class="form-input" value="0" placeholder="Disc % [Tab]" style="height: 34px; font-size: 0.78rem;">
+                  <input type="number" id="ws-fast-qty" class="form-input" min="0.01" step="any" placeholder="Qty" oninput="window.SalesController.updateStockPositionUi()" style="height: 34px; font-size: 0.78rem; width: 80px;">
+                  <input type="number" id="ws-fast-rate" step="0.01" class="form-input" placeholder="Rate (₹)" style="height: 34px; font-size: 0.78rem; width: 95px;">
+                  <input type="number" id="ws-fast-disc" step="0.1" min="0" max="100" class="form-input" placeholder="Disc %" style="height: 34px; font-size: 0.78rem; width: 75px;">
                   <select id="ws-fast-tax" class="form-select" style="height: 34px; font-size: 0.78rem;">
                     <option value="18" selected>18%</option>
                     <option value="12">12%</option>
@@ -2074,13 +2125,27 @@
           </div>
 
           <!-- Pagination Footer matching desktop PurchaseList.fxml -->
-          <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+          <div class="app-footer-bar" style="margin-top:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(10, 18, 34, 0.85); flex-wrap:wrap; gap:10px;">
             <div class="footer-left">
-              <span id="pur-pagination-info">Showing 0 purchase bills</span>
+              <span id="pur-pagination-info" style="font-size:0.76rem; color:var(--text-muted);">Showing 0 purchase bills</span>
             </div>
-            <div class="footer-right" style="display:flex; gap:6px;">
-              <button class="btn btn-secondary btn-sm" id="pur-btn-prev" onclick="window.PurchaseController.prevPage()" disabled>&larr; Previous</button>
-              <button class="btn btn-secondary btn-sm" id="pur-btn-next" onclick="window.PurchaseController.nextPage()" disabled>Next &rarr;</button>
+            <div class="footer-right" style="display:flex; align-items:center; gap:14px;">
+              <div class="pagination-bar" id="pur-pagination-controls">
+                <button type="button" class="btn-page" id="pur-btn-first" onclick="window.PurchaseController.goToPage('first')" title="First Page">&laquo;</button>
+                <button type="button" class="btn-page" id="pur-btn-prev" onclick="window.PurchaseController.goToPage('prev')" title="Previous Page">&lsaquo;</button>
+                <span class="page-indicator" id="pur-page-display">Page 1 of 1</span>
+                <button type="button" class="btn-page" id="pur-btn-next" onclick="window.PurchaseController.goToPage('next')" title="Next Page">&rsaquo;</button>
+                <button type="button" class="btn-page" id="pur-btn-last" onclick="window.PurchaseController.goToPage('last')" title="Last Page">&raquo;</button>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; font-size:0.76rem; color:var(--text-muted);">
+                <span>Rows per page</span>
+                <select id="pur-page-size" class="form-select" onchange="window.PurchaseController.changePageSize(this.value)" style="height:28px; font-size:0.75rem; padding:2px 6px;">
+                  <option value="10">10</option>
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -2168,6 +2233,14 @@
             </div>
           </div>
 
+          <div id="pe-read-only-banner" class="read-only-banner" style="display: none; margin-bottom: 16px;">
+            <span class="read-only-icon">&#128274;</span>
+            <div class="read-only-content">
+              <h4>Read-Only Historical Document Inspection Mode</h4>
+              <p>You are viewing an approved purchase invoice. Field edits, fast-entry lines, and modifications are strictly locked to preserve audit trail integrity.</p>
+            </div>
+          </div>
+
           <div style="display:grid; grid-template-columns: 1fr 340px; gap:16px; align-items:start;">
             <!-- Left Main Column -->
             <div style="display:flex; flex-direction:column; gap:16px;">
@@ -2236,7 +2309,7 @@
               <!-- Card 2: Purchase Line Items Entry Grid -->
               <div class="editor-card">
                 <div class="editor-card-header">Purchase Items</div>
-                <div style="display:grid; grid-template-columns: 2fr 90px 105px 90px 90px 110px; gap:8px; align-items:flex-end; margin-bottom:12px;">
+                <div id="pe-item-entry-strip" style="display:grid; grid-template-columns: 2fr 90px 105px 90px 90px 110px; gap:8px; align-items:flex-end; margin-bottom:12px;">
                   <div class="form-group" style="position:relative;">
                     <label class="form-label">Search Item Master [F2 / Enter]</label>
                     <input type="text" id="pe-item-search" class="form-input" placeholder="Search SKU, name, HSN..." oninput="window.PurchaseController.searchEditorItems(this.value)">
@@ -7125,37 +7198,68 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
   </div>
 
-  <!-- MODAL: NOTIFICATIONS CENTER -->
+  <!-- MODAL: NOTIFICATIONS CENTER (100% DESKTOP NotificationCenter.fxml PARITY) -->
   <div class="modal-overlay" id="modal-notifications-center">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="modal-header">
-        <h3>🔔 System Alerts &amp; Activity Notifications</h3>
-        <button class="modal-close" onclick="closeModal('modal-notifications-center')">&times;</button>
+    <div class="modal-card notif-modal-card" style="width: 1100px; max-width: 96vw; height: 86vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+      <!-- Header -->
+      <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.95);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--cyan);">
+            🔔
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 800; color: var(--text-main);">Notification Center</h3>
+            <span style="font-size: 0.74rem; color: var(--text-muted);">Review alerts, take action and travel directly to the exact related ERP record.</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn btn-secondary" style="font-size: 0.75rem; padding: 5px 12px;" onclick="window.NotificationCenterController.markAllRead()">✔ Mark All Read</button>
+          <button type="button" class="btn btn-secondary" style="font-size: 0.75rem; padding: 5px 12px;" onclick="window.NotificationCenterController.loadNotifications()">↻ Refresh</button>
+          <button type="button" class="btn btn-secondary" style="font-size: 0.75rem; padding: 5px 12px; color: #f87171;" onclick="window.NotificationCenterController.clearHistory()">🗑 Clear History</button>
+          <button class="modal-close" style="font-size: 1.4rem; margin-left: 8px;" onclick="closeModal('modal-notifications-center')">&times;</button>
+        </div>
       </div>
-      <div class="modal-body" id="notifications-list-container">
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--cyan); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>INVOICE CREATED</span><span>10 mins ago</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Sales Invoice INV-2026-0891 posted to General Ledger</div>
+
+      <!-- Top Search & Summary Strip -->
+      <div style="padding: 12px 20px; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 10px;">
+        <div style="position: relative;">
+          <input type="text" id="txtNotificationSearch" class="form-input" placeholder="Search notification, reference, module or message…" oninput="window.NotificationCenterController.onSearch(this.value)" style="height: 36px; padding-left: 32px; font-size: 0.8rem;">
+          <span style="position: absolute; left: 10px; top: 9px; color: var(--text-dim); pointer-events: none;">🔍</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div class="dash-kpi-card" style="padding: 10px 14px; cursor: pointer;" onclick="window.NotificationCenterController.setFilter('All Notifications')">
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">All</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);" id="nc-summary-all">0</div>
           </div>
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-complete); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>PURCHASE MEMO</span><span>1 hour ago</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Inward Goods Receipt Memo BILL-9821 accepted from Tata Steel</div>
+          <div class="dash-kpi-card" style="padding: 10px 14px; cursor: pointer;" onclick="window.NotificationCenterController.setFilter('Unread')">
+            <div style="font-size: 0.72rem; color: var(--cyan); text-transform: uppercase; font-weight: 700;">Unread</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: var(--cyan);" id="nc-summary-unread">0</div>
           </div>
-          <div style="background: rgba(255,255,255,0.03); border-left: 3px solid var(--sem-warning); padding: 12px 16px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-              <span>PAYMENT DUE</span><span>Today</span>
-            </div>
-            <div style="font-size: 0.84rem; font-weight: 600;">Outstanding balance due from Maruti Precision Fasteners (₹ 97,232.00)</div>
+          <div class="dash-kpi-card" style="padding: 10px 14px; cursor: pointer;" onclick="window.NotificationCenterController.setFilter('Action Needed')">
+            <div style="font-size: 0.72rem; color: #fbbf24; text-transform: uppercase; font-weight: 700;">Action Needed</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;" id="nc-summary-action">0</div>
           </div>
         </div>
       </div>
-      <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 16px; background: transparent;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-notifications-center')">Close</button>
+
+      <!-- 3-Column Body Layout matching desktop NotificationCenter.fxml -->
+      <div class="notif-workspace-layout" style="flex: 1; overflow: hidden;">
+        <!-- Left Category Rail -->
+        <div class="notif-category-rail" id="nc-category-rail"></div>
+
+        <!-- Middle Notifications List -->
+        <div class="notif-list-pane" id="nc-notifications-list">
+          <div style="padding: 30px; text-align: center; color: var(--text-dim);">
+            Loading notifications from server...
+          </div>
+        </div>
+
+        <!-- Right Notification Detail Preview Pane -->
+        <div class="notif-detail-pane" id="nc-detail-pane">
+          <div style="padding: 40px; text-align: center; color: var(--text-dim); font-size: 0.84rem;">
+            Select a notification from the list to view full details and linked ERP actions.
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -7563,6 +7667,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
               <div style="font-size: 0.78rem; font-weight: 600; color: var(--cyan);" id="mei-attachment-name">Tax_Invoice.pdf</div>
               <div style="font-size: 0.70rem; color: var(--text-dim);">Official Jasvi Industries GST Tax Invoice attached automatically</div>
             </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.SalesController.previewAttachedPdf()" style="font-size: 0.72rem; padding: 3px 8px;">👁 Preview PDF</button>
             <span class="badge" style="background: rgba(52, 211, 153, 0.2); color: #34d399; font-size: 0.7rem;">ATTACHED</span>
           </div>
 
@@ -7571,6 +7676,65 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             <button type="submit" class="btn btn-primary" id="mei-send-btn">✈ Send Tax Invoice</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INVOICE PAYMENT DETAILS (EXACT InvoicePaymentDetailsDialog.java PARITY) -->
+  <div class="modal-overlay" id="modal-invoice-payments">
+    <div class="modal-card" style="width: 850px; max-width: 95vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); padding: 0; overflow: hidden;">
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">💳</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);" id="ipd-title">Payment History</h3>
+            <span style="font-size: 0.74rem; color: var(--text-muted);" id="ipd-subtitle">Party Details</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-invoice-payments')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <!-- 4 Summary KPI Cards matching InvoicePaymentDetailsDialog.java -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Invoice Total</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--cyan); margin-top: 4px;" id="ipd-kpi-total">₹ 0.00</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Paid</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="ipd-kpi-paid">₹ 0.00</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Outstanding</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 4px;" id="ipd-kpi-due">₹ 0.00</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Payment Status</div>
+            <div style="margin-top: 6px;"><span class="badge" id="ipd-kpi-status" style="font-size: 0.75rem; padding: 3px 8px;">PENDING</span></div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Recorded Payment Transactions</div>
+        <div style="border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; max-height: 280px; overflow-y: auto;">
+          <table class="sales-desktop-table" style="margin: 0;">
+            <thead>
+              <tr>
+                <th>Receipt / Txn No.</th>
+                <th>Payment Date</th>
+                <th>Payment Mode</th>
+                <th>Account / Bank</th>
+                <th style="text-align: right;">Amount (₹)</th>
+                <th>Reference / Cheque</th>
+              </tr>
+            </thead>
+            <tbody id="ipd-payments-tbody">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 20px;">No payment records found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px; background: rgba(15, 23, 42, 0.5);">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-invoice-payments')">Close</button>
       </div>
     </div>
   </div>
@@ -8520,6 +8684,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <script src="js/controllers/MasterDataController.js?v=10.0.32.3"></script>
   <script src="js/controllers/UserAccessController.js?v=10.0.32.3"></script>
   <script src="js/controllers/SettingsController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.32.3"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
   <script src="js/navigation/NavigationRouter.js?v=10.0.32.3"></script>

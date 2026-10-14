@@ -27,6 +27,10 @@ window.SalesController = {
   availableChargeTypes: ['Freight', 'Handling', 'Insurance', 'Packaging', 'Loading & Unloading', 'Other'],
   currentDrawerSale: null,
   selectedInvoiceNo: null,
+  selectedDrawerInvoiceNo: null,
+  lastFilteredSales: null,
+  currentPage: 1,
+  pageSize: 25,
   workspaceItems: [],
   editingItemIndex: -1,
   selectedWorkspaceItem: null,
@@ -37,14 +41,59 @@ window.SalesController = {
   attachmentRemovalPending: false,
   activeBarcodeData: null,
 
+  initDateFilters() {
+    const fromInput = document.getElementById('sr-filter-from-date');
+    const toInput = document.getElementById('sr-filter-to-date');
+    if (fromInput && !fromInput.value) {
+      const now = new Date();
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      fromInput.value = sixMonthsAgo.toISOString().split('T')[0];
+    }
+    if (toInput && !toInput.value) {
+      toInput.value = new Date().toISOString().split('T')[0];
+    }
+  },
+
+  changePageSize(newSize) {
+    this.pageSize = parseInt(newSize, 10) || 25;
+    this.currentPage = 1;
+    this.renderSalesTable(this.lastFilteredSales || this.salesCache);
+  },
+
+  goToPage(direction) {
+    const list = this.lastFilteredSales || this.salesCache || [];
+    const totalPages = Math.max(1, Math.ceil(list.length / this.pageSize));
+    if (direction === 'first') this.currentPage = 1;
+    else if (direction === 'prev') this.currentPage = Math.max(1, this.currentPage - 1);
+    else if (direction === 'next') this.currentPage = Math.min(totalPages, this.currentPage + 1);
+    else if (direction === 'last') this.currentPage = totalPages;
+    else if (typeof direction === 'number') this.currentPage = Math.max(1, Math.min(totalPages, direction));
+    this.renderSalesTable(list);
+  },
+
+  filterFastItems(filterText) {
+    const sel = document.getElementById('ws-fast-item-select');
+    if (!sel) return;
+    const query = (filterText || '').trim().toLowerCase();
+    const items = this.itemsCache || [];
+    const filtered = query ? items.filter(it => 
+      (it.name || it.itemName || '').toLowerCase().includes(query) ||
+      (it.code || it.itemCode || '').toLowerCase().includes(query)
+    ) : items;
+    sel.innerHTML = '<option value="">Select Item Master...</option>' + 
+      filtered.map(it => `<option value="${it.code || it.itemCode}">${it.name || it.itemName} (${it.code || it.itemCode})</option>`).join('');
+  },
+
   // =========================================================================
   // 1. LOAD SALES REGISTER
   // =========================================================================
   async loadSales() {
+    this.initDateFilters();
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
     try {
-      const res = await window.OperationsService.getSales(0, 100);
+      const res = await window.OperationsService.getSales(0, 500);
       const list = res.rows || res.content || (Array.isArray(res) ? res : []);
       this.salesCache = list;
 
@@ -109,6 +158,7 @@ window.SalesController = {
   // 2. RENDER 14-COLUMN SALES TABLE
   // =========================================================================
   renderSalesTable(list) {
+    this.lastFilteredSales = list || [];
     this.currentRenderedSales = list || [];
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
@@ -116,12 +166,53 @@ window.SalesController = {
     if (!list || list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">No matching sales invoices found.</td></tr>`;
       this.updateTableSummary(0, 0, 0, 0);
+      const counter = document.getElementById('sr-entries-counter');
+      if (counter) counter.innerText = 'Showing 0 entries';
+      const pageDisplay = document.getElementById('sr-page-display');
+      if (pageDisplay) pageDisplay.innerText = 'Page 1 of 1';
       return;
     }
 
+    const totalCount = list.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / this.pageSize));
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    if (this.currentPage < 1) this.currentPage = 1;
+
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = Math.min(startIndex + this.pageSize, totalCount);
+    const pageItems = list.slice(startIndex, endIndex);
+
+    const counter = document.getElementById('sr-entries-counter');
+    if (counter) counter.innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalCount} entries`;
+
+    const pageDisplay = document.getElementById('sr-page-display');
+    if (pageDisplay) pageDisplay.innerText = `Page ${this.currentPage} of ${totalPages}`;
+
+    const btnFirst = document.getElementById('sr-btn-first');
+    const btnPrev = document.getElementById('sr-btn-prev');
+    const btnNext = document.getElementById('sr-btn-next');
+    const btnLast = document.getElementById('sr-btn-last');
+    if (btnFirst) btnFirst.disabled = this.currentPage === 1;
+    if (btnPrev) btnPrev.disabled = this.currentPage === 1;
+    if (btnNext) btnNext.disabled = this.currentPage === totalPages;
+    if (btnLast) btnLast.disabled = this.currentPage === totalPages;
+
     let sumTotal = 0, sumPaid = 0, sumPending = 0;
 
-    tbody.innerHTML = list.map(s => {
+    list.forEach(s => {
+      const isCancelled = s.documentStatus === 'CANCELLED';
+      if (!isCancelled) {
+        const grandTotal = s.totalAmount != null ? s.totalAmount : (s.total || 0);
+        const isPaid = s.paymentStatus === 'PAID';
+        const paid = s.paidAmount != null ? s.paidAmount : (isPaid ? grandTotal : 0);
+        const pending = Math.max(0, grandTotal - paid);
+        sumTotal += grandTotal;
+        sumPaid += paid;
+        sumPending += pending;
+      }
+    });
+
+    tbody.innerHTML = pageItems.map(s => {
       const invNo = s.invoiceNo || s.number || '-';
       const cust = s.customer || {};
       const custName = cust.name || s.customerName || s.partyName || 'Walk-in Client';
@@ -132,12 +223,6 @@ window.SalesController = {
       const isCancelled = s.documentStatus === 'CANCELLED';
       const paid = isCancelled ? 0 : (s.paidAmount != null ? s.paidAmount : (isPaid ? grandTotal : 0));
       const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
-
-      if (!isCancelled) {
-        sumTotal += grandTotal;
-        sumPaid += paid;
-        sumPending += pending;
-      }
 
       const dueLabel = isCancelled ? '<span style="color:#f87171;">✕ Cancelled</span>' : (pending === 0 ? '<span style="color:#34d399;">✔ Settled</span>' : '<span style="color:#fbbf24;">Pending</span>');
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
@@ -169,16 +254,14 @@ window.SalesController = {
       `;
     }).join('');
 
-    this.updateTableSummary(list.length, sumTotal, sumPaid, sumPending);
+    this.updateTableSummary(totalCount, sumTotal, sumPaid, sumPending);
   },
 
   updateTableSummary(count, total, paid, pending) {
-    const elEntries = document.getElementById('sr-entries-counter');
     const elTot = document.getElementById('sr-sum-total');
     const elPaid = document.getElementById('sr-sum-paid');
     const elPend = document.getElementById('sr-sum-pending');
 
-    if (elEntries) elEntries.innerText = `Showing 1 to ${count} entries`;
     if (elTot) elTot.innerText = window.FormatUtil.formatRupees(total);
     if (elPaid) elPaid.innerText = window.FormatUtil.formatRupees(paid);
     if (elPend) elPend.innerText = window.FormatUtil.formatRupees(pending);
@@ -259,7 +342,17 @@ window.SalesController = {
         this.sendWhatsapp(invNo);
         break;
       case 'PAYMENT':
-        this.openRecordPaymentModal(invNo);
+        if (sale && window.openInvoicePaymentDetails) {
+          const grandTotal = sale.totalAmount != null ? sale.totalAmount : (sale.total || 0);
+          const isPaid = sale.paymentStatus === 'PAID';
+          const isCancelled = sale.documentStatus === 'CANCELLED';
+          const paid = isCancelled ? 0 : (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0));
+          const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
+          const custName = (sale.customer && sale.customer.name) || sale.customerName || sale.partyName || 'Customer';
+          window.openInvoicePaymentDetails('SALE', sale.id, invNo, custName, grandTotal, paid, pending);
+        } else {
+          this.openRecordPaymentModal(invNo);
+        }
         break;
       case 'RETURN':
         this.createSalesReturn(invNo);
@@ -611,6 +704,12 @@ window.SalesController = {
 
       // Read-only state toggling if in View mode
       const isReadOnly = !!isViewMode;
+      const banner = document.getElementById('ws-read-only-banner');
+      if (banner) banner.style.display = isReadOnly ? 'block' : 'none';
+
+      const entryStrip = document.getElementById('ws-item-entry-strip');
+      if (entryStrip) entryStrip.style.display = isReadOnly ? 'none' : 'flex';
+
       const pageTitle = document.getElementById('ws-page-title');
       const pageSub = document.getElementById('ws-page-subtitle');
       if (pageTitle) pageTitle.innerText = isReadOnly ? `View Sale Invoice • ${nextNo} (Read Only)` : 'Create Sale Invoice';
@@ -621,7 +720,7 @@ window.SalesController = {
       if (saveBtn) saveBtn.style.display = isReadOnly ? 'none' : 'inline-block';
       if (addLineBtn) addLineBtn.disabled = isReadOnly;
 
-      ['ws-customer', 'ws-inv-date', 'ws-billing-address', 'ws-delivery-address', 'ws-billing-gstin', 'ws-delivery-gstin', 'ws-same-address', 'ws-payment-terms', 'ws-po-date', 'ws-po-no', 'ws-gst-type', 'ws-transporter', 'ws-vehicle-no', 'ws-contact-person', 'ws-contact-mobile', 'ws-fast-item-select', 'ws-fast-qty', 'ws-fast-rate', 'ws-fast-disc', 'ws-fast-tax'].forEach(id => {
+      ['ws-customer', 'ws-inv-date', 'ws-billing-address', 'ws-delivery-address', 'ws-billing-gstin', 'ws-delivery-gstin', 'ws-same-address', 'ws-payment-terms', 'ws-po-date', 'ws-po-no', 'ws-gst-type', 'ws-transporter', 'ws-vehicle-no', 'ws-contact-person', 'ws-contact-mobile', 'ws-fast-item-search', 'ws-fast-item-select', 'ws-fast-qty', 'ws-fast-rate', 'ws-fast-disc', 'ws-fast-tax'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
           if (el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = isReadOnly;
@@ -1010,14 +1109,15 @@ window.SalesController = {
     if (!tbody) return;
 
     if (this.workspaceItems.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">No records to display. Use the fast entry bar above to add items.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">No records to display.${this.viewMode ? '' : ' Use the fast entry bar above to add items.'}</td></tr>`;
       return;
     }
 
+    const isReadOnly = !!this.viewMode;
     tbody.innerHTML = this.workspaceItems.map((item, idx) => {
       const isEditing = idx === this.editingItemIndex;
       return `
-        <tr class="${isEditing ? 'editing-row' : ''}" style="cursor: pointer;" onclick="window.SalesController.editWorkspaceRow(${idx})" title="Click row to edit">
+        <tr class="${isEditing ? 'editing-row' : ''}" style="${isReadOnly ? '' : 'cursor: pointer;'}" ${isReadOnly ? '' : `onclick="window.SalesController.editWorkspaceRow(${idx})" title="Click row to edit"`}>
           <td style="font-weight: 700; color: var(--cyan);">${item.code}</td>
           <td>${item.description}</td>
           <td style="color: var(--text-muted);">${item.category}</td>
@@ -1032,7 +1132,7 @@ window.SalesController = {
           <td>${window.FormatUtil.formatRupees(item.gstAmt)}</td>
           <td style="text-align: right; font-weight: 700;">${window.FormatUtil.formatRupees(item.amount)}</td>
           <td style="text-align: center;" onclick="event.stopPropagation()">
-            <button type="button" class="btn btn-danger" style="padding: 2px 7px; font-size: 0.7rem;" onclick="window.SalesController.removeWorkspaceRow(${idx}, event)" title="Remove Line">&times;</button>
+            ${isReadOnly ? '<span style="color: var(--text-dim); font-size: 0.8rem;">🔒</span>' : `<button type="button" class="btn btn-danger" style="padding: 2px 7px; font-size: 0.7rem;" onclick="window.SalesController.removeWorkspaceRow(${idx}, event)" title="Remove Line">&times;</button>`}
           </td>
         </tr>
       `;
@@ -1995,7 +2095,7 @@ window.SalesController = {
       try {
         const token = localStorage.getItem('dse_access_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const pdfRes = await fetch(`/api/documents/render?type=SALE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
+        const pdfRes = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
         if (pdfRes.ok) {
           const blob = await pdfRes.blob();
           const reader = new FileReader();
@@ -2073,6 +2173,25 @@ window.SalesController = {
     }
   },
 
+  async previewAttachedPdf() {
+    const invNo = (document.getElementById('mei-inv-no') || {}).value;
+    if (!invNo) {
+      window.AppDialogService.showToast('No invoice selected for preview', 'warning');
+      return;
+    }
+    const token = localStorage.getItem('dse_access_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+      const res = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    } catch (e) {
+      window.AppDialogService.showToast('Could not load PDF preview: ' + e.message, 'error');
+    }
+  },
+
   // =========================================================================
   // 14. WHATSAPP NOTIFICATION (REAL DESKTOP TEMPLATE OUTPUT)
   // =========================================================================
@@ -2131,43 +2250,79 @@ window.SalesController = {
   },
 
   // =========================================================================
-  // 15. EXCEL EXPORT (REAL FORMATTED SPREADSHEET OUTPUT)
+  // 15. CANONICAL PDF & EXCEL EXPORT (EXACT DESKTOP PARITY)
   // =========================================================================
+  async exportInvoicePdf(invoiceNo) {
+    try {
+      window.AppDialogService.showToast('Generating official PDF invoice...', 'info');
+      const token = localStorage.getItem('dse_access_token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invoiceNo)}&format=PDF`, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.warn('PDF download failed, printing:', e);
+      this.printTaxInvoice(invoiceNo);
+    }
+  },
+
   async exportInvoiceExcel(invoiceNo) {
     try {
-      const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
-      if (!sale) return;
-
-      const lines = sale.lines || [];
-      const cust = sale.customer || {};
-
-      let csv = `JASVI INDUSTRIES - TAX INVOICE STATEMENT\n`;
-      csv += `Invoice No:,${invoiceNo},Date:,${sale.invoiceDate}\n`;
-      csv += `Customer:,${cust.name || sale.customerName || 'Walk-in'},GSTIN:,${cust.gstin || sale.billingGstin || '-'}\n`;
-      csv += `Billing Address:,${(cust.address || sale.billingAddress || '').replace(/,/g, ' ')}\n\n`;
-      csv += `# ,Item Code,Description,HSN,Quantity,Unit,Rate,Discount %,Taxable Amount,GST %,GST Amount,Total Amount\n`;
-
-      lines.forEach((l, idx) => {
-        const taxable = ((l.quantity || 1) * (l.rate || 0)) - (l.discountAmount || 0);
-        csv += `${idx + 1},${l.itemCode},"${(l.itemDescription || l.description || '').replace(/"/g, '""')}",${l.itemHsn || '73063000'},${l.quantity || 1},${l.itemUnit || 'PCS'},${l.rate || 0},${l.discountPercent || 0},${taxable},${l.gstPercent || 18},${l.gstAmount || 0},${l.totalAmount || 0}\n`;
-      });
-
-      csv += `\nSubtotal (Taxable):,,${sale.subtotal || 0}\n`;
-      csv += `Total GST:,,${sale.gstAmount || 0}\n`;
-      csv += `Additional Charges:,,${sale.chargeAmount || 0}\n`;
-      csv += `Grand Total:,,${sale.totalAmount || 0}\n`;
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Tax_Invoice.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      window.AppDialogService.showToast(`Downloaded spreadsheet for ${invoiceNo}`, 'success');
+      window.AppDialogService.showToast('Downloading official Excel spreadsheet...', 'info');
+      const token = localStorage.getItem('dse_access_token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        window.AppDialogService.showToast(`Downloaded spreadsheet for ${invoiceNo}`, 'success');
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
     } catch (err) {
-      window.AppDialogService.showToast('Failed to export Excel: ' + err.message, 'error');
+      console.warn('Server XLSX render failed, falling back to client CSV:', err);
+      // Fallback to client CSV
+      try {
+        const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
+        if (!sale) return;
+        const lines = sale.lines || [];
+        const cust = sale.customer || {};
+        let csv = `JASVI INDUSTRIES - TAX INVOICE STATEMENT\n`;
+        csv += `Invoice No:,${invoiceNo},Date:,${sale.invoiceDate}\n`;
+        csv += `Customer:,${cust.name || sale.customerName || 'Walk-in'},GSTIN:,${cust.gstin || sale.billingGstin || '-'}\n`;
+        csv += `Billing Address:,${(cust.address || sale.billingAddress || '').replace(/,/g, ' ')}\n\n`;
+        csv += `# ,Item Code,Description,HSN,Quantity,Unit,Rate,Discount %,Taxable Amount,GST %,GST Amount,Total Amount\n`;
+        lines.forEach((l, idx) => {
+          const taxable = ((l.quantity || 1) * (l.rate || 0)) - (l.discountAmount || 0);
+          csv += `${idx + 1},${l.itemCode},"${(l.itemDescription || l.description || '').replace(/"/g, '""')}",${l.itemHsn || '73063000'},${l.quantity || 1},${l.itemUnit || 'PCS'},${l.rate || 0},${l.discountPercent || 0},${taxable},${l.gstPercent || 18},${l.gstAmount || 0},${l.totalAmount || 0}\n`;
+        });
+        csv += `\nSubtotal (Taxable):,,${sale.subtotal || 0}\nTotal GST:,,${sale.gstAmount || 0}\nAdditional Charges:,,${sale.chargeAmount || 0}\nGrand Total:,,${sale.totalAmount || 0}\n`;
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Tax_Invoice.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.AppDialogService.showToast(`Downloaded spreadsheet for ${invoiceNo}`, 'success');
+      } catch (e2) {
+        window.AppDialogService.showToast('Failed to export Excel: ' + e2.message, 'error');
+      }
     }
   },
 
@@ -2329,40 +2484,37 @@ window.SalesController = {
   },
 
   // =========================================================================
-  // 16. SALES RETURN PRELOADER
+  // 16. SALES RETURN PRELOADER (IN-PLACE MODAL PARITY)
   // =========================================================================
   async createSalesReturn(invoiceNo) {
     try {
-      const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
-      if (!sale) return;
-
-      if (window.NavigationRouter) {
+      if (window.ReturnsController) {
+        window.ReturnsController.setType('SALES RETURN');
+        await window.ReturnsController.openCreateReturnModal(invoiceNo);
+      } else if (window.NavigationRouter) {
         window.NavigationRouter.selectNav('view-sales-returns');
       }
-      window.AppDialogService.showToast(`Pre-loaded return editor with lines from ${invoiceNo}`, 'info');
     } catch (e) {
       window.AppDialogService.showToast('Could not initialize return: ' + e.message, 'error');
     }
   },
 
   // =========================================================================
-  // 17. DUPLICATE SALE
+  // 17. DUPLICATE SALE (SERVER ENDPOINT PARITY)
   // =========================================================================
   async duplicateSale(sale) {
     if (!sale) return;
     try {
-      const full = await window.OperationsService.getSaleByInvoice(sale.invoiceNo || sale.number);
-      if (full) {
-        // Clone without ID or invoice number, ready for next sequence
-        const clone = { ...full };
-        delete clone.id;
-        delete clone.invoiceNo;
-        delete clone.rowVersion;
-        await this.openSaleEditorTab(clone, false);
-        window.AppDialogService.showToast(`Cloned invoice details. Next sequence fetched.`, 'info');
-      }
+      const user = (window.AuthService && window.AuthService.getCurrentUser() && window.AuthService.getCurrentUser().username) || 'admin';
+      const id = sale.id;
+      if (!id) throw new Error('Invoice ID is missing');
+      window.AppDialogService.showToast('Duplicating invoice on server...', 'info');
+      const res = await window.ApiService.post(`/api/support/sales/${encodeURIComponent(id)}/duplicate?user=${encodeURIComponent(user)}`);
+      const newInvoiceNo = (res && (res.value || res.invoiceNo)) || res;
+      window.AppDialogService.showToast(`Invoice duplicated successfully! New Invoice No: ${newInvoiceNo}`, 'success');
+      await this.loadSales();
     } catch (e) {
-      window.AppDialogService.showToast('Could not clone sale: ' + e.message, 'error');
+      window.AppDialogService.showToast('Could not duplicate sale: ' + e.message, 'error');
     }
   },
 
@@ -2439,6 +2591,13 @@ window.SalesController = {
     const overlay = document.getElementById('side-drawer-overlay');
     if (!drawer) return;
 
+    if (drawer.classList.contains('open') && this.selectedDrawerInvoiceNo === invoiceNo) {
+      this.closeInvoiceDrawer();
+      this.selectedDrawerInvoiceNo = null;
+      return;
+    }
+    this.selectedDrawerInvoiceNo = invoiceNo;
+
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
@@ -2492,6 +2651,7 @@ window.SalesController = {
     if (drawer) drawer.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
     this.currentDrawerSale = null;
+    this.selectedDrawerInvoiceNo = null;
   },
 
   // =========================================================================

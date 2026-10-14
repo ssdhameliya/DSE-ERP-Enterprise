@@ -19,6 +19,36 @@ window.PurchaseController = (function() {
   let cachedSuppliers = [];
   let cachedItems = [];
   let selectedEditorItem = null;
+  let selectedDrawerBillNo = null;
+  let isReadOnlyView = false;
+
+  function initDateFilters() {
+    const fromInput = document.getElementById('pur-filter-from');
+    const toInput = document.getElementById('pur-filter-to');
+    if (fromInput && !fromInput.value) {
+      const now = new Date();
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      fromInput.value = sixMonthsAgo.toISOString().split('T')[0];
+    }
+    if (toInput && !toInput.value) {
+      toInput.value = new Date().toISOString().split('T')[0];
+    }
+  }
+
+  function changePageSize(newSize) {
+    pageSize = parseInt(newSize, 10) || 25;
+    currentPage = 0;
+    loadPurchases(0);
+  }
+
+  function goToPage(direction) {
+    if (direction === 'first') currentPage = 0;
+    else if (direction === 'prev') currentPage = Math.max(0, currentPage - 1);
+    else if (direction === 'next') currentPage = Math.min(totalPages - 1, currentPage + 1);
+    else if (direction === 'last') currentPage = Math.max(0, totalPages - 1);
+    loadPurchases(currentPage);
+  }
 
   function formatMoney(amount) {
     return '₹ ' + (parseFloat(amount) || 0).toLocaleString('en-IN', {
@@ -57,6 +87,7 @@ window.PurchaseController = (function() {
   // ==========================================
 
   async function loadPurchases(page = currentPage) {
+    initDateFilters();
     currentPage = page;
     const tbody = document.getElementById('purchases-table-tbody');
     if (tbody) {
@@ -184,8 +215,10 @@ window.PurchaseController = (function() {
               <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.toggleActionMenu('${invNo}', event)" style="padding:2px 8px; font-size:0.75rem; height:26px;">
                 Actions ▼
               </button>
-              <div id="pur-action-menu-${invNo.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:absolute; right:0; top:100%; z-index:999; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:190px; padding:6px 0; text-align:left;">
+              <div id="pur-action-menu-${invNo.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseView('${invNo}')"><span style="margin-right:8px;">📄</span> View Purchase (Read-Only)</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.showDetails('${invNo}')"><span style="margin-right:8px;">👁️</span> View Details</div>
+                <div class="action-menu-item" onclick="window.PurchaseController.openPayments('${invNo}')"><span style="margin-right:8px;">💳</span> View / Record Payments</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseEditor('${invNo}')"><span style="margin-right:8px;">✏️</span> Edit Purchase</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.downloadPdf('${invNo}')"><span style="margin-right:8px;">🖨️</span> Print / PDF</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.downloadExcel('${invNo}')"><span style="margin-right:8px;">📊</span> View / Download Excel</div>
@@ -209,15 +242,24 @@ window.PurchaseController = (function() {
 
   function updatePagination(filteredTotal) {
     const infoEl = document.getElementById('pur-pagination-info');
+    const pageDisplay = document.getElementById('pur-page-display');
+    const firstBtn = document.getElementById('pur-btn-first');
     const prevBtn = document.getElementById('pur-btn-prev');
     const nextBtn = document.getElementById('pur-btn-next');
+    const lastBtn = document.getElementById('pur-btn-last');
+
     if (infoEl) {
       const from = totalRows === 0 ? 0 : (currentPage * pageSize) + 1;
       const to = Math.min((currentPage + 1) * pageSize, totalRows);
-      infoEl.innerText = `Showing ${from}–${to} of ${totalRows} records • Total: ${formatMoney(filteredTotal)} • Page ${currentPage + 1} of ${Math.max(1, totalPages)}`;
+      infoEl.innerText = `Showing ${from} to ${to} of ${totalRows} entries • Total: ${formatMoney(filteredTotal)}`;
     }
+    if (pageDisplay) {
+      pageDisplay.innerText = `Page ${currentPage + 1} of ${Math.max(1, totalPages)}`;
+    }
+    if (firstBtn) firstBtn.disabled = currentPage <= 0;
     if (prevBtn) prevBtn.disabled = currentPage <= 0;
     if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+    if (lastBtn) lastBtn.disabled = currentPage >= totalPages - 1;
   }
 
   function onRowClick(invoiceNo, event) {
@@ -233,7 +275,31 @@ window.PurchaseController = (function() {
       if (m !== targetMenu) m.style.display = 'none';
     });
     if (targetMenu) {
-      targetMenu.style.display = targetMenu.style.display === 'block' ? 'none' : 'block';
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 220;
+        let left = rect.right - menuWidth;
+        let top = rect.bottom + 4;
+        if (left < 10) left = 10;
+        if (top + 400 > window.innerHeight) top = rect.top - 400;
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
     }
   }
 
@@ -244,6 +310,12 @@ window.PurchaseController = (function() {
   async function showDetails(invoiceNo) {
     const drawer = document.getElementById('drawer-purchase-details');
     if (!drawer) return;
+
+    if (drawer.classList.contains('open') && selectedDrawerBillNo === invoiceNo) {
+      closeDrawer();
+      return;
+    }
+    selectedDrawerBillNo = invoiceNo;
 
     try {
       const p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
@@ -320,6 +392,7 @@ window.PurchaseController = (function() {
       drawer.style.display = 'none';
     }
     selectedPurchase = null;
+    selectedDrawerBillNo = null;
   }
 
   // ==========================================
@@ -376,13 +449,35 @@ window.PurchaseController = (function() {
   }
 
   function downloadPdf(invoiceNo) {
-    const url = `/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=PDF`;
+    const url = `/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=PDF`;
     window.open(url, '_blank');
   }
 
   function downloadExcel(invoiceNo) {
-    const url = `/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=EXCEL`;
+    const url = `/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=XLSX`;
     window.open(url, '_blank');
+  }
+
+  async function openPayments(invoiceNo) {
+    let p = purchases.find(x => x.invoiceNo === invoiceNo);
+    if (!p) {
+      try {
+        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      } catch (e) {
+        console.warn('Could not fetch purchase for payments:', e);
+      }
+    }
+    const suppName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
+    const total = p ? (p.totalAmount || 0) : 0;
+    const paid = p ? (p.paidAmount || 0) : 0;
+    const pending = Math.max(0, total - paid);
+    const purchaseId = p ? (p.id || 0) : 0;
+
+    if (window.openInvoicePaymentDetails) {
+      window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending);
+    } else {
+      alert(`Payment drilldown for purchase ${invoiceNo}`);
+    }
   }
 
   function printInwardBarcode(invoiceNo) {
@@ -406,9 +501,11 @@ window.PurchaseController = (function() {
   }
 
   function openReturnPrompt(invoiceNo) {
-    window.NavigationRouter.selectNav('view-purchase-returns');
     if (window.ReturnsController) {
+      if (window.ReturnsController.setType) window.ReturnsController.setType('PURCHASE RETURN');
       window.ReturnsController.openCreateReturnModal(invoiceNo);
+    } else {
+      window.NavigationRouter.selectNav('view-purchase-returns');
     }
   }
 
@@ -486,18 +583,43 @@ window.PurchaseController = (function() {
   // 4. PURCHASE CREATION / EDITOR WORKSPACE (Purchase.fxml PARITY)
   // ==========================================
 
-  async function openPurchaseEditor(invoiceNo = null) {
+  async function openPurchaseView(invoiceNo) {
+    await openPurchaseEditor(invoiceNo, true);
+    if (window.AppDialogService && window.AppDialogService.toastInfo) {
+      window.AppDialogService.toastInfo(`Viewing Purchase ${invoiceNo} in Read-Only Mode`);
+    }
+  }
+
+  async function openPurchaseEditor(invoiceNo = null, isViewMode = false) {
     editingInvoiceNo = invoiceNo;
     editorLines = [];
     editorCharges = [];
     selectedEditorItem = null;
+    isReadOnlyView = !!isViewMode;
 
     window.NavigationRouter.selectNav('view-purchase-creation');
 
     const titleEl = document.getElementById('pe-title');
     const subEl = document.getElementById('pe-subtitle');
-    if (titleEl) titleEl.innerText = invoiceNo ? 'Edit Purchase Invoice' : 'Create Purchase Invoice';
-    if (subEl) subEl.innerText = invoiceNo ? `Editing inward purchase bill ${invoiceNo}` : 'Create a supplier purchase with the same validation and calculation flow as Sales';
+    if (titleEl) {
+      titleEl.innerText = isReadOnlyView 
+        ? `View Purchase Invoice • ${invoiceNo} (Read Only)` 
+        : (invoiceNo ? 'Edit Purchase Invoice' : 'Create Purchase Invoice');
+    }
+    if (subEl) {
+      subEl.innerText = isReadOnlyView 
+        ? 'Viewing historical supplier purchase in read-only mode' 
+        : (invoiceNo ? `Editing inward purchase bill ${invoiceNo}` : 'Create a supplier purchase with the same validation and calculation flow as Sales');
+    }
+
+    const banner = document.getElementById('pe-read-only-banner');
+    if (banner) banner.style.display = isReadOnlyView ? 'block' : 'none';
+
+    const entryStrip = document.getElementById('pe-item-entry-strip');
+    if (entryStrip) entryStrip.style.display = isReadOnlyView ? 'none' : 'grid';
+
+    const btnSave = document.getElementById('pe-btn-save');
+    if (btnSave) btnSave.style.display = isReadOnlyView ? 'none' : 'inline-block';
 
     // Set Default Dates
     const today = new Date().toISOString().substring(0, 10);
@@ -584,6 +706,15 @@ window.PurchaseController = (function() {
         document.getElementById('pe-invoice-no').value = 'BILL-2026-0001';
       }
     }
+
+    // Toggle disabled / readonly state on inputs for read-only view mode
+    ['pe-supplier-select', 'pe-invoice-date', 'pe-billing-address', 'pe-delivery-address', 'pe-same-as-billing', 'pe-billing-gstin', 'pe-delivery-gstin', 'pe-payment-terms', 'pe-order-no', 'pe-gst-type', 'pe-transporter', 'pe-transporter-gstin', 'pe-vehicle-number', 'pe-contact-person', 'pe-contact-mobile', 'pe-notes', 'pe-po-date'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.tagName === 'SELECT' || el.type === 'checkbox') el.disabled = isReadOnlyView;
+        else el.readOnly = isReadOnlyView;
+      }
+    });
 
     renderEditorLines();
     recalcEditorTotals();
@@ -774,7 +905,7 @@ window.PurchaseController = (function() {
           <td style="text-align:right; color:var(--yellow);">${formatMoney(gstAmt)}</td>
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(lineTotal)}</td>
           <td style="text-align:center;">
-            <button class="btn btn-danger btn-sm" onclick="window.PurchaseController.removeEditorLine(${idx})" style="padding:2px 6px;">&times;</button>
+            ${isReadOnlyView ? '<span style="color:var(--text-muted); font-size:1.1rem;" title="Locked in read-only mode">🔒</span>' : `<button class="btn btn-danger btn-sm" onclick="window.PurchaseController.removeEditorLine(${idx})" style="padding:2px 6px;">&times;</button>`}
           </td>
         </tr>
       `;
@@ -1011,6 +1142,10 @@ window.PurchaseController = (function() {
     resetFilters,
     prevPage() { if (currentPage > 0) loadPurchases(currentPage - 1); },
     nextPage() { if (currentPage < totalPages - 1) loadPurchases(currentPage + 1); },
+    changePageSize,
+    goToPage,
+    openPurchaseView,
+    openPayments,
     openPurchaseEditor,
     onEditorSupplierChange,
     onSameAsBillingToggle,
