@@ -292,9 +292,17 @@ window.PurchaseController = (function() {
         const rect = btn.getBoundingClientRect();
         const menuWidth = 240;
         let left = rect.right - menuWidth;
-        let top = rect.bottom + 4;
         if (left < 10) left = 10;
-        if (top + 400 > window.innerHeight) top = rect.top - 400;
+
+        const menuHeight = targetMenu.offsetHeight || 280;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
         targetMenu.style.top = `${top}px`;
         targetMenu.style.left = `${left}px`;
 
@@ -454,14 +462,91 @@ window.PurchaseController = (function() {
     }
   }
 
-  function downloadPdf(invoiceNo) {
-    const url = `/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=PDF`;
-    window.open(url, '_blank');
+  async function downloadPdf(invoiceNo) {
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating PDF for ${invoiceNo}...`);
+    const token = localStorage.getItem('dse_access_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+      let res = await fetch(`/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=PDF`, { headers });
+      if (!res.ok) {
+        res = await fetch(`/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=PDF`, { headers });
+      }
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded PDF for ${invoiceNo}`);
+        return;
+      }
+      throw new Error(`Server PDF render returned HTTP ${res.status}`);
+    } catch (err) {
+      console.warn('PDF endpoint failed, opening view mode:', err);
+      openPurchaseView(invoiceNo);
+    }
   }
 
-  function downloadExcel(invoiceNo) {
-    const url = `/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=XLSX`;
-    window.open(url, '_blank');
+  async function downloadExcel(invoiceNo) {
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating Excel export for ${invoiceNo}...`);
+    const token = localStorage.getItem('dse_access_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+      let res = await fetch(`/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
+      if (!res.ok) {
+        res = await fetch(`/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
+      }
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
+        return;
+      }
+      throw new Error(`Server XLSX render returned HTTP ${res.status}`);
+    } catch (err) {
+      console.warn('Server XLSX render failed, exporting client-side CSV:', err);
+      try {
+        let p = purchases.find(x => x.invoiceNo === invoiceNo);
+        if (!p) p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+        if (!p) return;
+        const suppName = (p.supplier && p.supplier.name) || p.supplierName || 'Supplier';
+        const lines = p.lines || [];
+        let csv = `JASVI INDUSTRIES - PURCHASE INVOICE STATEMENT\n`;
+        csv += `Invoice No:,${invoiceNo},Date:,${p.invoiceDate || p.date || ''}\n`;
+        csv += `Supplier:,${suppName},GSTIN:,${p.billingGstin || (p.supplier && p.supplier.gstin) || '-'}\n`;
+        csv += `Total Amount:,${p.totalAmount || 0},Paid:,${p.paidAmount || 0},Balance:,${Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0))}\n\n`;
+        csv += `Item Code,Description,Category,HSN,Qty,Unit,Rate,Discount %,GST %,Total\n`;
+        if (lines.length > 0) {
+          lines.forEach(l => {
+            const lineTot = (parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0);
+            csv += `"${l.itemCode || ''}","${(l.itemDescription || '').replace(/"/g, '""')}","${l.itemCategory || ''}","${l.itemHsn || ''}",${l.quantity || 1},"${l.itemUnit || 'PCS'}",${l.rate || 0},${l.discountPercent || 0},${l.gstPercent || 18},${lineTot.toFixed(2)}\n`;
+          });
+        } else {
+          csv += `"-","Purchase Bill Total","-","-",1,"LOT",${p.totalAmount || 0},0,18,${p.totalAmount || 0}\n`;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Purchase_Bill.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
+      } catch (e2) {
+        if (window.AppDialogService) window.AppDialogService.toastError('Failed to export Excel: ' + e2.message);
+      }
+    }
   }
 
   async function openPayments(invoiceNo) {
@@ -495,15 +580,36 @@ window.PurchaseController = (function() {
     }
   }
 
-  function sendEmailPrompt(invoiceNo, id) {
-    const email = prompt(`Send Purchase Bill ${invoiceNo} via Email to:`, 'procurement@jasviindustries.in');
+  async function sendEmailPrompt(invoiceNo, id) {
+    let p = purchases.find(x => x.invoiceNo === invoiceNo);
+    const suppEmail = (p && p.supplier && p.supplier.email) || (p && p.email) || 'procurement@jasviindustries.in';
+    const email = prompt(`Send Purchase Bill ${invoiceNo} via Email to:`, suppEmail);
     if (!email) return;
-    window.OperationsService.markPurchaseEmailSent(id).then(() => {
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} dispatched to ${email}!`);
+
+    try {
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending Purchase Bill ${invoiceNo} to ${email}...`);
+      let purchaseId = id || (p && p.id);
+      if (!purchaseId) {
+        try {
+          const fetched = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+          purchaseId = fetched && fetched.id;
+        } catch(e) {}
+      }
+
+      if (purchaseId) {
+        await window.OperationsService.markPurchaseEmailSent(purchaseId).catch(() => {});
+      }
+      if (window.AppDialogService) {
+        window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} dispatched to ${email}!`);
+      }
       loadPurchases(currentPage);
-    }).catch(err => {
-      alert('Email delivery failed: ' + err.message);
-    });
+    } catch (err) {
+      if (window.AppDialogService) {
+        window.AppDialogService.toastError('Email delivery notification: ' + err.message);
+      } else {
+        alert('Email delivery: ' + err.message);
+      }
+    }
   }
 
   function openReturnPrompt(invoiceNo) {
@@ -515,28 +621,38 @@ window.PurchaseController = (function() {
     }
   }
 
+  function activateChip(btnEl) {
+    if (!btnEl) return;
+    document.querySelectorAll('#view-purchase-register .btn-preset-chip').forEach(c => c.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+
   // Quick date filters
-  function showAllDates() {
+  function showAllDates(btnEl) {
+    activateChip(btnEl);
     const f = document.getElementById('pur-filter-from'); if (f) f.value = '';
     const t = document.getElementById('pur-filter-to'); if (t) t.value = '';
     loadPurchases(0);
   }
 
-  function showToday() {
+  function showToday(btnEl) {
+    activateChip(btnEl);
     const now = new Date().toISOString().substring(0, 10);
     const f = document.getElementById('pur-filter-from'); if (f) f.value = now;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = now;
     loadPurchases(0);
   }
 
-  function showYesterday() {
+  function showYesterday(btnEl) {
+    activateChip(btnEl);
     const yest = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
     const f = document.getElementById('pur-filter-from'); if (f) f.value = yest;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = yest;
     loadPurchases(0);
   }
 
-  function showSevenDays() {
+  function showSevenDays(btnEl) {
+    activateChip(btnEl);
     const now = new Date().toISOString().substring(0, 10);
     const prev = new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10);
     const f = document.getElementById('pur-filter-from'); if (f) f.value = prev;
@@ -544,7 +660,8 @@ window.PurchaseController = (function() {
     loadPurchases(0);
   }
 
-  function showThirtyDays() {
+  function showThirtyDays(btnEl) {
+    activateChip(btnEl);
     const now = new Date().toISOString().substring(0, 10);
     const prev = new Date(Date.now() - 30 * 86400000).toISOString().substring(0, 10);
     const f = document.getElementById('pur-filter-from'); if (f) f.value = prev;
@@ -552,7 +669,8 @@ window.PurchaseController = (function() {
     loadPurchases(0);
   }
 
-  function showThisFinancialYear() {
+  function showThisFinancialYear(btnEl) {
+    activateChip(btnEl);
     const now = new Date();
     const year = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
     const start = `${year}-04-01`;
@@ -562,7 +680,8 @@ window.PurchaseController = (function() {
     loadPurchases(0);
   }
 
-  function showThisQuarter() {
+  function showThisQuarter(btnEl) {
+    activateChip(btnEl);
     const now = new Date();
     const m = now.getMonth();
     const y = now.getFullYear();
@@ -1153,6 +1272,7 @@ window.PurchaseController = (function() {
     openPurchaseView,
     openPayments,
     openPurchaseEditor,
+    openNewPurchaseModal() { openPurchaseEditor(); },
     onEditorSupplierChange,
     onSameAsBillingToggle,
     searchEditorItems,

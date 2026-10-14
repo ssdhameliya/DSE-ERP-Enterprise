@@ -615,6 +615,8 @@ window.PartyController = (function() {
     loadSuppliers,
     filterSuppliers,
     openNewPartyModal,
+    openNewCustomerModal() { openNewPartyModal('CUSTOMER'); },
+    openNewSupplierModal() { openNewPartyModal('SUPPLIER'); },
     openEditPartyModal,
     submitSaveParty,
     deleteParty,

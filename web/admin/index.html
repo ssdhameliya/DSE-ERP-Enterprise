@@ -427,8 +427,8 @@
       </div>
 
       <div class="header-center">
-        <span class="omni-icon">&#128269;</span>
-        <input type="text" id="omni-input" class="omni-search" placeholder="Search invoices, parties, items, ledgers (Ctrl+K)..." autocomplete="off" onkeydown="if(event.key==='Enter') window.openGlobalSearch(this.value);">
+        <span class="omni-icon" style="cursor:pointer;" onclick="window.openGlobalSearch(document.getElementById('omni-input')?.value || '');">&#128269;</span>
+        <input type="text" id="omni-input" class="omni-search" placeholder="Search invoices, parties, items, ledgers (Ctrl+K)..." autocomplete="off" onclick="window.openGlobalSearch(this.value);" onkeydown="if(event.key==='Enter') window.openGlobalSearch(this.value);">
       </div>
 
       <div class="header-right">
@@ -1703,208 +1703,6 @@
           </div>
         </div>
 
-        <!-- VIEW: RECORD PAYMENT WORKSPACE (DESKTOP RecordPayment.fxml & PurchasePayment.fxml PARITY - IMAGE 4) -->
-        <div id="view-record-payment" class="module-view">
-          <!-- Page Header Strip (Image 4) -->
-          <div class="view-header" style="margin-bottom: 14px;">
-            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
-              <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
-                💳
-              </div>
-              <div>
-                <h1 style="font-size: 1.4rem; font-weight: 800; font-family: 'Space Grotesk';" id="rp-header-title">Invoice Payment</h1>
-                <p style="font-size: 0.8rem; color: var(--text-muted);" id="rp-header-subtitle">Record payment • review history • manage proof documents</p>
-              </div>
-            </div>
-            <div class="view-actions" style="display: flex; gap: 10px;">
-              <button type="button" class="btn btn-secondary" id="rp-btn-email" onclick="window.recordPaymentController.emailInvoice()" style="font-size: 0.78rem;">✉ Email Invoice</button>
-              <button type="button" class="btn btn-secondary" id="rp-btn-print" onclick="window.recordPaymentController.printInvoice()" style="font-size: 0.78rem;">🖨 Print</button>
-              <button type="button" class="btn btn-secondary" onclick="window.recordPaymentController.backToRegister()" style="font-size: 0.78rem;">🔙 Back to Register</button>
-            </div>
-          </div>
-
-          <!-- Top Overview Card: Invoice No, Customer/Supplier, Invoice Date, Due Date, Total Amount (Image 4) -->
-          <div class="card" style="padding: 16px 20px; margin-bottom: 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
-            <div style="display: grid; grid-template-columns: 240px 280px 150px 150px 1fr; gap: 16px; align-items: center;">
-              <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;" id="rp-doc-no-label">Invoice No.</div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="rp-doc-no" style="font-family: 'Space Grotesk', monospace; font-size: 1.15rem; font-weight: 800; color: var(--cyan);">-</span>
-                  <span id="rp-doc-status" class="pill-badge pill-success">PAID</span>
-                </div>
-              </div>
-              <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 4px;" id="rp-party-label">Customer</div>
-                <div id="rp-party-name" style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">-</div>
-                <div id="rp-party-phone" style="font-size: 0.76rem; color: var(--text-muted);">-</div>
-                <div id="rp-party-email" style="font-size: 0.74rem; color: var(--text-dim);">-</div>
-              </div>
-              <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #22d3ee; text-transform: uppercase; margin-bottom: 4px;">Invoice Date</div>
-                <div id="rp-invoice-date" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">-</div>
-              </div>
-              <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #fb923c; text-transform: uppercase; margin-bottom: 4px;">Due Date</div>
-                <div id="rp-due-date" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">-</div>
-              </div>
-              <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #4ade80; text-transform: uppercase; margin-bottom: 4px;">Total Amount</div>
-                <div id="rp-total-amount" style="font-family: 'Space Grotesk'; font-size: 1.45rem; font-weight: 800; color: var(--green);">₹ 0.00</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Middle Split: Left Form (Record New Payment) + Right Cards (Summary & Attachment) (Image 4) -->
-          <div style="display: grid; grid-template-columns: 1fr 390px; gap: 14px; margin-bottom: 14px;">
-            <!-- Left: Record New Payment Card -->
-            <div class="card" style="padding: 18px 22px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
-              <div style="font-family: 'Space Grotesk'; font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <span>💳</span> <span id="rp-form-title">Record New Payment</span>
-              </div>
-              <form id="rp-form" onsubmit="window.recordPaymentController.savePayment(event)">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px;">
-                  <div>
-                    <label class="form-label" style="color: #38bdf8; font-size: 0.74rem;">Payment Date *</label>
-                    <input type="date" id="rp-payment-date" class="form-input" required style="height: 36px; font-size: 0.8rem;">
-                  </div>
-                  <div>
-                    <label class="form-label" style="color: #c084fc; font-size: 0.74rem;">Payment Mode *</label>
-                    <select id="rp-payment-mode" class="form-select" required style="height: 36px; font-size: 0.8rem;" onchange="window.recordPaymentController.onModeChange(this.value)">
-                      <option value="Bank Transfer" selected>Bank Transfer</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="UPI">UPI</option>
-                      <option value="Card">Card</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="form-label" style="color: #fb923c; font-size: 0.74rem;" id="rp-ref-label"># Reference No.</label>
-                    <input type="text" id="rp-reference-no" class="form-input" placeholder="UTR, Cheque or Txn #" style="height: 36px; font-size: 0.8rem;">
-                  </div>
-                  <div>
-                    <label class="form-label" style="color: #22d3ee; font-size: 0.74rem;" id="rp-received-from-label">👤 Received From *</label>
-                    <input type="text" id="rp-received-from" class="form-input" required placeholder="Payer Name" style="height: 36px; font-size: 0.8rem;">
-                  </div>
-                  <div>
-                    <label class="form-label" style="color: #4ade80; font-size: 0.74rem;">🏛 Bank Account *</label>
-                    <select id="rp-bank-account" class="form-select" style="height: 36px; font-size: 0.8rem;">
-                      <option value="0745360171 - KOTAK MAHINDRA BANK LTD 1">0745360171 - KOTAK MAHINDRA BANK LTD 1</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="form-label" style="color: #f87171; font-size: 0.74rem;" id="rp-amount-label">₹ Amount Received *</label>
-                    <input type="number" step="0.01" min="0.01" id="rp-amount" class="form-input" required placeholder="0.00" oninput="window.recordPaymentController.updateBalancePreview()" style="height: 36px; font-size: 0.88rem; font-weight: 700; color: #4ade80;">
-                  </div>
-                </div>
-
-                <!-- Full vs Partial Payment Radios & Balance After Payment Strip (Image 4) -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 14px;">
-                  <div style="display: flex; gap: 16px; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #cbd5e1;">
-                      <input type="radio" name="rp-pay-type" id="rp-radio-full" value="FULL" checked onchange="window.recordPaymentController.selectFullPayment()"> FULL PAYMENT
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #cbd5e1;">
-                      <input type="radio" name="rp-pay-type" id="rp-radio-partial" value="PARTIAL" onchange="window.recordPaymentController.selectPartialPayment()"> PARTIAL PAYMENT
-                    </label>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 0.72rem; color: var(--text-muted);">Balance After Payment</div>
-                    <div id="rp-balance-after" style="font-family: 'Space Grotesk'; font-size: 1.15rem; font-weight: 800; color: #ffffff;">₹ 0.00</div>
-                  </div>
-                </div>
-
-                <!-- Notes & Action Buttons (Image 4) -->
-                <div style="display: flex; gap: 14px; align-items: flex-end;">
-                  <div style="flex: 1;">
-                    <label class="form-label" style="color: #c084fc; font-size: 0.74rem;">Notes</label>
-                    <textarea id="rp-notes" class="form-input" rows="2" placeholder="Payment notes (optional)" style="resize: none; font-size: 0.8rem; height: 58px;"></textarea>
-                  </div>
-                  <div style="display: flex; gap: 10px; align-items: center;">
-                    <button type="button" class="btn btn-secondary" onclick="window.recordPaymentController.resetForm()" style="height: 38px; padding: 0 16px; font-size: 0.8rem;">Reset</button>
-                    <button type="submit" id="rp-btn-save" class="btn-purple" style="height: 38px; padding: 0 20px; font-size: 0.82rem; font-weight: 700; border-radius: 6px;">Save Payment</button>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            <!-- Right Column: Summary Card & Attach Proof Card (Image 4) -->
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <!-- 1. Invoice Summary Card -->
-              <div class="card" style="padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
-                <div style="font-family: 'Space Grotesk'; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                  <span>📊</span> <span id="rp-summary-title">Invoice Summary</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Total Amount</span>
-                    <span style="font-weight: 700; color: var(--text-main);" id="rp-sum-total">₹ 0.00</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Paid Amount</span>
-                    <span style="font-weight: 700; color: #4ade80;" id="rp-sum-paid">₹ 0.00</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Balance Amount</span>
-                    <span style="font-weight: 700; color: #f87171;" id="rp-sum-balance">₹ 0.00</span>
-                  </div>
-                </div>
-                <div style="height: 1px; background: var(--border-subtle); margin: 12px 0;"></div>
-                <div style="background: rgba(255, 255, 255, 0.08); border-radius: 999px; height: 10px; overflow: hidden; margin-bottom: 6px;">
-                  <div id="rp-progress-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.3s;"></div>
-                </div>
-                <div id="rp-paid-percent" style="text-align: center; font-size: 0.82rem; font-weight: 700; color: #4ade80;">100% Paid</div>
-              </div>
-
-              <!-- 2. Attach Receipt / Bank Proof Card (Image 4) -->
-              <div class="card" style="padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
-                <div style="font-family: 'Space Grotesk'; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                  <span>📎</span> <span id="rp-attachment-title">Attach Receipt / Bank Proof</span>
-                </div>
-                <div id="rp-dropzone" class="proof-drop-zone" style="border: 2px dashed rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 16px; text-align: center; background: rgba(255, 255, 255, 0.01);" ondragover="event.preventDefault()" ondrop="window.recordPaymentController.onFileDrop(event)">
-                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Drag &amp; drop proof here</div>
-                  <input type="file" id="rp-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg" onchange="window.recordPaymentController.onFileSelected(this.files)">
-                  <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('rp-file-input').click()">+ Add / Replace</button>
-                    <button type="button" class="btn btn-secondary btn-sm" id="rp-btn-preview-proof" onclick="window.recordPaymentController.previewProof()">👁 Preview</button>
-                    <button type="button" class="btn btn-danger btn-sm" id="rp-btn-remove-proof" onclick="window.recordPaymentController.removeProof()">🗑 Remove</button>
-                  </div>
-                  <div id="rp-attachment-name" style="font-size: 0.74rem; font-weight: 600; color: var(--cyan); margin-bottom: 4px;">No file selected</div>
-                  <div style="font-size: 0.68rem; color: var(--text-dim);">JPG, PNG or PDF • Maximum 5 MB</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom Card: Payment History Table (Image 4) -->
-          <div class="card" style="padding: 18px 22px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <div style="font-family: 'Space Grotesk'; font-size: 1.05rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-                <span>⏱</span> <span id="rp-history-title">Payment History</span>
-                <span id="rp-history-badge" class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 0.72rem; padding: 2px 8px; border-radius: 4px;">0 Payments</span>
-              </div>
-            </div>
-            <div style="overflow-x: auto; min-height: 160px; max-height: 320px;">
-              <table class="data-table" style="font-size: 0.78rem; width: 100%;">
-                <thead>
-                  <tr>
-                    <th>Payment Mode</th>
-                    <th># Reference No.</th>
-                    <th id="rp-th-from">Received From</th>
-                    <th style="text-align: right;">Amount (₹)</th>
-                    <th>Status</th>
-                    <th>Notes</th>
-                    <th style="text-align: center;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="rp-history-tbody">
-                  <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">No payment history recorded yet.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
         <!-- VIEW: SALES RETURNS (DESKTOP SalesReturns.fxml PARITY) -->
         <div id="view-sales-returns" class="module-view">
           <div class="view-header">
@@ -2466,50 +2264,73 @@
             </div>
           </div>
 
-          <!-- FILTERS STRIP & QUICK DATE BUTTONS matching desktop PurchaseList.fxml -->
-          <div class="filter-toolbar-strip" style="flex-direction:column; align-items:stretch; gap:10px;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
-              <input type="text" id="pur-filter-search" class="form-input form-input-sm" placeholder="Search invoice, supplier, mobile..." oninput="window.PurchaseController.loadPurchases()">
-              <select id="pur-filter-supplier" class="form-select form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-                <option value="">All Suppliers</option>
-              </select>
-              <input type="date" id="pur-filter-from" class="form-input form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-              <input type="date" id="pur-filter-to" class="form-input form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-              <select id="pur-filter-doc-status" class="form-select form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-                <option value="">Document Status</option>
-                <option value="APPROVED">APPROVED</option>
-                <option value="PENDING APPROVAL">PENDING APPROVAL</option>
-                <option value="REJECTED">REJECTED</option>
-                <option value="CANCELLED">CANCELLED</option>
-              </select>
-              <select id="pur-filter-pay-status" class="form-select form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-                <option value="">Payment Status</option>
-                <option value="PAYABLES">PAYABLES</option>
-                <option value="PAID">PAID</option>
-                <option value="PARTIAL">PARTIAL</option>
-                <option value="UNPAID">UNPAID</option>
-                <option value="OVERDUE">OVERDUE</option>
-              </select>
-              <select id="pur-filter-ret-status" class="form-select form-input-sm" onchange="window.PurchaseController.loadPurchases()">
-                <option value="">Return Status</option>
-                <option value="NOT_RETURNED">NOT RETURNED</option>
-                <option value="PARTIAL_RETURN">PARTIAL RETURN</option>
-                <option value="FULL_RETURN">FULL RETURN</option>
-              </select>
+          <!-- 2-Row Filter Toolbar matching Sales Register & Desktop PurchaseList.fxml -->
+          <div class="sales-filter-box">
+            <div class="sales-filter-row-1" style="grid-template-columns: 1.5fr 1.2fr 1fr 1fr 1fr 1fr 1fr;">
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128269; Search</label>
+                <input type="text" id="pur-filter-search" class="form-input" placeholder="Search invoice, supplier, mobile..." oninput="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#127981; Supplier</label>
+                <select id="pur-filter-supplier" class="form-select" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All Suppliers</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; From Date</label>
+                <input type="date" id="pur-filter-from" class="form-input" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; To Date</label>
+                <input type="date" id="pur-filter-to" class="form-input" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128196; Document Status</label>
+                <select id="pur-filter-doc-status" class="form-select" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+                  <option value="REJECTED">REJECTED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128179; Payment Status</label>
+                <select id="pur-filter-pay-status" class="form-select" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="PAYABLES">PAYABLES</option>
+                  <option value="PAID">PAID</option>
+                  <option value="PARTIAL">PARTIAL</option>
+                  <option value="UNPAID">UNPAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#8634; Return Status</label>
+                <select id="pur-filter-ret-status" class="form-select" onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="NOT_RETURNED">NOT RETURNED</option>
+                  <option value="PARTIAL_RETURN">PARTIAL RETURN</option>
+                  <option value="FULL_RETURN">FULL RETURN</option>
+                </select>
+              </div>
             </div>
 
-            <!-- Quick Date Range Bar matching desktop PurchaseList.fxml -->
-            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; border-top:1px solid var(--border-subtle); padding-top:8px;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showAllDates()">All Date</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showToday()">Today</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showYesterday()">Yesterday</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showSevenDays()">7 Days</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showThirtyDays()">30 Days</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showThisFinancialYear()">This FY</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.showThisQuarter()">This Quarter</button>
-              <div style="flex:1;"></div>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.resetFilters()">Reset</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.loadPurchases()">&#8635; Refresh</button>
+            <div class="sales-filter-row-2">
+              <div class="date-preset-chips">
+                <button class="btn-preset-chip active" onclick="window.PurchaseController.showAllDates(this)">&#128197; All Date</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showToday(this)">&#128197; Today</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showYesterday(this)">&#128197; Yesterday</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showSevenDays(this)">&#128197; 7 Days</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showThirtyDays(this)">&#128197; 30 Days</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showThisFinancialYear(this)">&#128197; This FY</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showThisQuarter(this)">&#128197; This Quarter</button>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;" onclick="window.PurchaseController.resetFilters()">&#8635; Reset</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;" onclick="window.PurchaseController.loadPurchases()">&#8635; Refresh</button>
+              </div>
             </div>
           </div>
 

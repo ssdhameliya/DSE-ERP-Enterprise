@@ -432,16 +432,22 @@ window.GlobalSearchController = (function() {
 
     openGlobalSearch(query) {
       window.NavigationRouter.selectNav('view-global-search');
-      if (query) {
-        const inp = document.getElementById('gs-query-input');
-        if (inp) inp.value = query;
-        this.search(query);
-      } else {
-        setTimeout(() => {
-          const inp = document.getElementById('gs-query-input');
-          if (inp) inp.focus();
-        }, 100);
-      }
+      const q = (query || '').trim();
+      const inp = document.getElementById('gs-query-input');
+      if (inp) inp.value = q;
+      this.search(q);
+      setTimeout(() => {
+        const inp2 = document.getElementById('gs-query-input');
+        if (inp2) inp2.focus();
+      }, 100);
     }
   };
 })();
+
+window.openGlobalSearch = function(query) {
+  if (window.GlobalSearchController && window.GlobalSearchController.openGlobalSearch) {
+    window.GlobalSearchController.openGlobalSearch(query);
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-global-search');
+  }
+};

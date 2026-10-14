@@ -748,6 +748,7 @@ window.QuotationController = (function() {
     openFollowUpModal,
     submitFollowUp,
     openQuotationEditor,
+    openNewQuotationModal() { openQuotationEditor(); },
     onEditorItemSearchInput,
     selectEditorItem,
     addEditorLine,

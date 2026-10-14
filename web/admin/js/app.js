@@ -1368,13 +1368,64 @@ window.togglePasswordVisibility = function(fieldId, btnEl) {
   }
 };
 window.showMfaHelp = () => window.handleLoginGetHelp();
-window.openNewInvoiceModal = () => window.SalesController.openNewInvoiceModal();
-window.openNewPurchaseModal = () => window.PurchaseController.openNewPurchaseModal();
-window.openNewItemModal = () => window.ItemMasterController.openNewItemModal();
-window.openNewCustomerModal = () => window.PartyController.openNewCustomerModal();
-window.openNewSupplierModal = () => window.PartyController.openNewSupplierModal();
-window.openNewBankEntryModal = () => window.FinanceController.openNewBankEntryModal();
-window.openNewExpenseEntryModal = () => window.FinanceController.openNewExpenseEntryModal();
+window.openNewInvoiceModal = () => {
+  if (window.SalesController && window.SalesController.openSaleEditorTab) {
+    window.SalesController.openSaleEditorTab();
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-sale-create');
+  }
+};
+window.openNewPurchaseModal = () => {
+  if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+    window.PurchaseController.openPurchaseEditor();
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-purchase-creation');
+  }
+};
+window.openNewItemModal = () => {
+  if (window.ItemMasterController && window.ItemMasterController.openNewItemModal) {
+    window.ItemMasterController.openNewItemModal();
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-item-master');
+  }
+};
+window.openNewCustomerModal = () => {
+  if (window.PartyController && window.PartyController.openNewPartyModal) {
+    window.PartyController.openNewPartyModal('CUSTOMER');
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-customers');
+  }
+};
+window.openNewSupplierModal = () => {
+  if (window.PartyController && window.PartyController.openNewPartyModal) {
+    window.PartyController.openNewPartyModal('SUPPLIER');
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-suppliers');
+  }
+};
+window.openNewQuotationModal = () => {
+  if (window.QuotationController && window.QuotationController.openQuotationEditor) {
+    window.QuotationController.openQuotationEditor();
+  } else if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-quotations');
+  }
+};
+window.openNewBankEntryModal = () => {
+  if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-bank-entry');
+    if (window.FinanceController && window.FinanceController.loadBankMode) {
+      window.FinanceController.loadBankMode();
+    }
+  }
+};
+window.openNewExpenseEntryModal = () => {
+  if (window.NavigationRouter) {
+    window.NavigationRouter.selectNav('view-expense-entry');
+    if (window.FinanceController && window.FinanceController.loadExpenseMode) {
+      window.FinanceController.loadExpenseMode();
+    }
+  }
+};
 window.openNewUserModal = () => window.UserAccessController.openNewUserModal();
 window.openShortcutsHelpModal = () => window.AppDialogService.openModal('modal-shortcuts-help');
 window.triggerImmediateBackup = () => window.SettingsController.triggerImmediateBackup();

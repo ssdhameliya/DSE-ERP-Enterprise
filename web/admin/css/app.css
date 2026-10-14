@@ -416,7 +416,8 @@
       backdrop-filter: blur(8px); z-index: 100010; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.active, .modal.active, .modal-backdrop.active { display: flex; }
-    .modal-card {
+    .modal-card,
+    .modal-content {
       background: #0f172a; border: 1px solid var(--border-subtle); border-radius: 14px;
       width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
     }

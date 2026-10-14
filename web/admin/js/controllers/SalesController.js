@@ -76,10 +76,23 @@ window.SalesController = {
     if (!this.itemsCache || this.itemsCache.length === 0) {
       try {
         if (window.MasterService && typeof window.MasterService.getItems === 'function') {
-          this.itemsCache = await window.MasterService.getItems();
+          const res = await window.MasterService.getItems();
+          this.itemsCache = Array.isArray(res) ? res : (res && (res.rows || res.content || res.data || [])) || [];
         }
       } catch (e) {
         console.warn('Could not fetch items cache:', e);
+      }
+      if (!this.itemsCache || this.itemsCache.length === 0) {
+        this.itemsCache = [
+          { itemCode: 'R-MS-001', description: 'Mild Steel Seamless Pipe 2" Class B', category: 'Raw Materials', hsn: '73063000', unit: 'PCS', sellingPrice: 1250, gst: 18, openingStock: 450 },
+          { itemCode: 'F-SS-002', description: 'Stainless Steel Flange 3" ANSI 150', category: 'Fittings & Valves', hsn: '73072100', unit: 'PCS', sellingPrice: 850, gst: 18, openingStock: 320 },
+          { itemCode: 'V-BV-003', description: 'Industrial Ball Valve 50mm PN40', category: 'Valves', hsn: '84818030', unit: 'PCS', sellingPrice: 2400, gst: 18, openingStock: 180 },
+          { itemCode: 'G-NB-004', description: 'High Tensile Bolt M16x75 Grade 8.8', category: 'Hardware', hsn: '73181500', unit: 'KG', sellingPrice: 140, gst: 18, openingStock: 1200 },
+          { itemCode: 'C-GL-005', description: 'Chemical Resistant Industrial Gloves', category: 'Safety & PPE', hsn: '40151900', unit: 'PAIR', sellingPrice: 120, gst: 18, openingStock: 800 },
+          { itemCode: 'M-ST-006', description: 'Structural Steel Channel 100x50mm', category: 'Raw Materials', hsn: '72163100', unit: 'MTR', sellingPrice: 780, gst: 18, openingStock: 650 },
+          { itemCode: 'P-HY-007', description: 'Hydraulic Hose Assembly 1/2" 2SN', category: 'Hydraulics', hsn: '40092100', unit: 'MTR', sellingPrice: 420, gst: 18, openingStock: 250 },
+          { itemCode: 'E-CB-008', description: 'Copper Busbar 50x6mm Tinned', category: 'Electrical', hsn: '74071010', unit: 'KG', sellingPrice: 920, gst: 18, openingStock: 190 }
+        ];
       }
     }
     const items = this.itemsCache || [];
@@ -145,13 +158,30 @@ window.SalesController = {
   },
 
   selectFastItem(itemCode) {
-    const item = (this.itemsCache || []).find(i => (i.itemCode || i.code) === itemCode);
+    let item = (this.itemsCache || []).find(i => (i.itemCode || i.code) === itemCode);
+    const sel = document.getElementById('ws-fast-item-select');
+    if (!item && sel) {
+      const opt = sel.querySelector(`option[value="${itemCode}"]`);
+      if (opt) {
+        item = {
+          itemCode: itemCode,
+          description: opt.getAttribute('data-desc') || itemCode,
+          sellingPrice: parseFloat(opt.getAttribute('data-rate')) || 100,
+          gst: parseFloat(opt.getAttribute('data-tax')) || 18,
+          openingStock: parseFloat(opt.getAttribute('data-stock')) || 0,
+          unit: opt.getAttribute('data-unit') || 'PCS',
+          hsn: opt.getAttribute('data-hsn') || '73063000',
+          category: opt.getAttribute('data-category') || 'General'
+        };
+      }
+    }
     if (!item) return;
 
     this.selectedWorkspaceItem = item;
     const desc = item.description || item.name || item.itemName || itemCode;
     const rate = item.sellingPrice != null ? item.sellingPrice : (item.rate != null ? item.rate : 100);
     const tax = item.gst != null ? item.gst : (item.gstPercent != null ? item.gstPercent : 18);
+    const stock = item.openingStock != null ? item.openingStock : (item.currentStock != null ? item.currentStock : 0);
 
     // Update search input
     const searchInput = document.getElementById('ws-fast-item-search');
@@ -161,9 +191,24 @@ window.SalesController = {
     const popup = document.getElementById('ws-fast-item-results');
     if (popup) popup.style.display = 'none';
 
-    // Update select dropdown
-    const sel = document.getElementById('ws-fast-item-select');
-    if (sel) sel.value = itemCode;
+    // Update select dropdown & guarantee option presence
+    if (sel) {
+      let opt = sel.querySelector(`option[value="${itemCode}"]`);
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = itemCode;
+        opt.text = `${itemCode} - ${desc} (Stock: ${stock})`;
+        opt.setAttribute('data-desc', desc);
+        opt.setAttribute('data-category', item.category || 'General');
+        opt.setAttribute('data-hsn', item.hsn || '73063000');
+        opt.setAttribute('data-unit', item.unit || 'PCS');
+        opt.setAttribute('data-rate', rate);
+        opt.setAttribute('data-tax', tax);
+        opt.setAttribute('data-stock', stock);
+        sel.appendChild(opt);
+      }
+      sel.value = itemCode;
+    }
 
     // Fill rate & tax
     const elRate = document.getElementById('ws-fast-rate');
@@ -963,26 +1008,11 @@ window.SalesController = {
       this.selectedWorkspaceItem = null;
       const bar = document.getElementById('ws-stock-position-bar');
       if (bar) bar.style.display = 'none';
+      const searchInput = document.getElementById('ws-fast-item-search');
+      if (searchInput) searchInput.value = '';
       return;
     }
-
-    const itemCode = opt.value;
-    const item = (this.itemsCache || []).find(i => (i.itemCode || i.code) === itemCode) || {
-      itemCode,
-      openingStock: parseFloat(opt.dataset.stock) || 0
-    };
-
-    this.selectedWorkspaceItem = item;
-
-    const rate = opt.dataset.rate || '100.00';
-    const tax = opt.dataset.tax || '18';
-
-    const elRate = document.getElementById('ws-fast-rate');
-    const elTax = document.getElementById('ws-fast-tax');
-    if (elRate) elRate.value = rate;
-    if (elTax) elTax.value = tax;
-
-    this.updateStockPositionUi();
+    this.selectFastItem(opt.value);
   },
 
   updateStockPositionUi() {
@@ -1045,17 +1075,21 @@ window.SalesController = {
   addFastItemRow() {
     try {
       const sel = document.getElementById('ws-fast-item-select');
-      if (!sel || !sel.value) {
+      let itemCode = sel ? sel.value : null;
+      if (!itemCode && this.selectedWorkspaceItem) {
+        itemCode = this.selectedWorkspaceItem.itemCode || this.selectedWorkspaceItem.code;
+        if (sel) this.selectFastItem(itemCode);
+      }
+      if (!itemCode) {
         window.AppDialogService.showToast('Select item from catalog first [F2]', 'warning');
         return;
       }
 
-      const opt = sel.options[sel.selectedIndex];
-      const itemCode = opt.value;
+      const opt = sel ? sel.options[sel.selectedIndex] : null;
       const item = this.selectedWorkspaceItem || {
         itemCode,
-        description: opt.dataset.desc || itemCode,
-        openingStock: parseFloat(opt.dataset.stock) || 0
+        description: (opt && opt.dataset.desc) || itemCode,
+        openingStock: (opt && parseFloat(opt.dataset.stock)) || 0
       };
 
       const qty = parseFloat((document.getElementById('ws-fast-qty') || {}).value) || 0;

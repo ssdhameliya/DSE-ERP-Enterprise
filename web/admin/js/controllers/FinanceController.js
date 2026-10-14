@@ -800,5 +800,15 @@ window.FinanceController = {
         this.loadGeneralLedger();
       }
     }
+  },
+
+  openNewBankEntryModal() {
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
+    this.loadBankMode();
+  },
+
+  openNewExpenseEntryModal() {
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
+    this.loadExpenseMode();
   }
 };
