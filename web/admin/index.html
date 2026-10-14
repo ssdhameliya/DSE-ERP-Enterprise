@@ -142,7 +142,7 @@
         <div class="auth-brand-subtitle">Business Management Suite</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Industries</div>
         <div>
-          <span class="auth-brand-version-badge">Version 10.0.31</span>
+          <span class="auth-brand-version-badge">Version 10.0.32</span>
         </div>
       </div>
 
@@ -190,14 +190,14 @@
             </select>
           </div>
 
-          <!-- Dynamic MFA field (Shown when non-admin role selected or MFA active) -->
+          <!-- Dynamic MFA field (Shown when non-admin role selected or MFA active) matching LoginController.java -->
           <div id="login-mfa-group" class="form-group" style="display: none; margin-bottom: 12px;">
             <label class="form-label" style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
               <span>🛡️</span> Authenticator verification code
             </label>
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="login-mfa-code" class="form-input" placeholder="Authenticator code is required after password verification" style="height: 38px; flex: 1;">
-              <button type="button" class="btn btn-secondary" onclick="window.showMfaHelp()" style="height: 38px; font-size: 0.74rem; padding: 0 12px; white-space: nowrap;">✉ Get Help</button>
+              <input type="text" id="login-mfa-code" class="form-input" placeholder="Authenticator code is required after password verification" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" disabled style="height: 38px; flex: 1;">
+              <button type="button" id="btn-login-get-help" class="btn btn-secondary" onclick="window.handleLoginGetHelp()" style="height: 38px; font-size: 0.74rem; padding: 0 12px; white-space: nowrap;">✉ Get Help</button>
             </div>
           </div>
 
@@ -211,7 +211,7 @@
           </div>
 
           <button type="submit" id="btn-login-submit" class="auth-btn-purple">
-            <span>➜ LOGIN</span>
+            <span id="btn-login-submit-text">➜ LOGIN</span>
           </button>
 
           <div class="auth-divider-or">OR</div>
@@ -7175,15 +7175,90 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
   </div>
 
-  <!-- MODAL: AUTHENTICATOR SETUP (DESKTOP RegistrationController PARITY) -->
+  <!-- MODAL: MFA HELP INFO (NO ACTIVE CHALLENGE) (LoginController.java resendLoginOtp line 506-511) -->
+  <div class="modal-overlay" id="modal-mfa-help-info" style="display: none;">
+    <div class="modal-card" style="max-width: 440px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
+      <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#128737; Authenticator Help</h3>
+          <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a78bfa; font-weight: 600;">Get Help</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-mfa-help-info')">&times;</button>
+      </div>
+      <div style="margin: 12px 0; font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;">
+        Sign in with your username/email and password first. If an administrator reset your authenticator, the next step will show a new QR code and manual setup key. If you also cannot use your password, choose Forgot Password.
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mfa-help-info')">Got it</button>
+        <button type="button" class="btn btn-primary" onclick="closeModal('modal-mfa-help-info'); showAuthTab('forgot');">Forgot Password?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MFA HELP ACTION (LOST / CHANGED PHONE) (LoginController.java showAuthenticatorHelp line 515-543) -->
+  <div class="modal-overlay" id="modal-mfa-help-action" style="display: none;">
+    <div class="modal-card" style="max-width: 480px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
+      <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#128737; Authenticator Help</h3>
+          <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: #f59e0b; font-weight: 700;">Having trouble with Authenticator?</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-mfa-help-action')">&times;</button>
+      </div>
+      <div style="margin: 10px 0; font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;">
+        If you still have the enrolled phone, use its current 6-digit code. If the phone was lost, replaced, or the authenticator entry was deleted, verify your registered email to invalidate the old authenticator and create a new QR code.
+      </div>
+      <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; padding: 10px 12px; border-radius: 4px; margin: 12px 0; font-size: 0.74rem; color: #e2e8f0; line-height: 1.4;">
+        &#9888; The old authenticator is not reset until the registered-email verification succeeds. If no recovery email is available, an administrator must reset the authenticator from User Access.
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mfa-help-action'); const c = document.getElementById('login-mfa-code'); if (c) c.focus();">
+          Use Authenticator Code
+        </button>
+        <button type="button" class="btn btn-primary" style="background: #e11d48; border-color: #be123c;" onclick="startAuthenticatorRecovery()">
+          &#128241; Lost / Changed Phone
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MFA RECOVERY VIA EMAIL (RESET AUTHENTICATOR) (LoginController.java showAuthenticatorRecoveryEmail line 564-627) -->
+  <div class="modal-overlay" id="modal-mfa-recovery-email" style="display: none;">
+    <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
+      <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#9993; Reset Authenticator</h3>
+          <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #38bdf8; font-weight: 600;">Verify your registered email</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-mfa-recovery-email')">&times;</button>
+      </div>
+      <div id="mfa-recovery-help-text" style="margin: 8px 0 14px 0; font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">
+        A verification code was sent to your registered email. Enter that code below. You will then receive a new QR code and setup key.
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label" style="font-size: 0.74rem;">Email Verification Code *</label>
+        <input type="text" id="mfa-recovery-email-otp" class="form-input" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 1.2rem; letter-spacing: 4px; font-weight: 700; height: 42px;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitMfaEmailRecovery();}">
+      </div>
+      <div id="mfa-recovery-email-error" class="auth-alert error" style="display: none; margin-bottom: 12px;"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+        <a href="javascript:void(0)" onclick="startAuthenticatorRecovery()" style="font-size: 0.74rem; color: #a78bfa; text-decoration: none;">&#8634; Resend email code</a>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mfa-recovery-email')">Cancel</button>
+          <button type="button" id="btn-submit-mfa-recovery-email" class="btn btn-primary" onclick="submitMfaEmailRecovery()">Verify Email &amp; Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTHENTICATOR SETUP (DESKTOP LoginController & RegistrationController PARITY) -->
   <div class="modal-overlay" id="modal-authenticator-setup">
     <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
-          <h3 style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#128272; Set Up Authenticator</h3>
-          <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Scan with Google Authenticator or Microsoft Authenticator</p>
+          <h3 id="auth-setup-modal-title" style="margin: 0; font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">&#128272; Set Up Authenticator</h3>
+          <p id="auth-setup-modal-subtitle" style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Scan with Google Authenticator or Microsoft Authenticator</p>
         </div>
-        <button type="button" class="modal-close" onclick="closeModal('modal-authenticator-setup')">&times;</button>
+        <button type="button" class="modal-close" onclick="handleAuthenticatorSetupClose()">&times;</button>
       </div>
 
       <div style="text-align: center; margin: 12px 0;">
@@ -7202,13 +7277,13 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
 
         <div style="text-align: left; margin-bottom: 14px;">
           <label class="form-label" style="font-size: 0.74rem;">Current 6-Digit Authenticator Code *</label>
-          <input type="text" id="auth-setup-totp" class="form-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 1.1rem; letter-spacing: 4px; font-weight: 700;">
+          <input type="text" id="auth-setup-totp" class="form-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 1.1rem; letter-spacing: 4px; font-weight: 700;" onkeydown="if(event.key==='Enter'){event.preventDefault();const b=document.getElementById('btn-auth-setup-complete');if(b)b.click();}">
         </div>
 
         <div id="auth-setup-error" class="auth-alert error" style="display: none; margin-bottom: 12px;"></div>
 
-        <button type="button" id="btn-auth-setup-complete" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;" onclick="completeRegistrationAuthenticator()">
-          Verify &amp; Submit for Approval
+        <button type="button" id="btn-auth-setup-complete" class="btn btn-primary" style="width: 100%; justify-content: center; height: 42px;" onclick="submitLoginAuthenticatorSetup()">
+          Verify &amp; Continue Sign-In
         </button>
       </div>
     </div>
@@ -8388,47 +8463,47 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.31.9"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.31.9"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.31.9"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.31.9"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.31.9"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.32.1"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.32.1"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.32.1"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.32.1"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.32.1"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.31.9"></script>
-  <script src="js/services/AuthService.js?v=10.0.31.9"></script>
-  <script src="js/services/MasterService.js?v=10.0.31.9"></script>
-  <script src="js/services/OperationsService.js?v=10.0.31.9"></script>
-  <script src="js/services/ReportService.js?v=10.0.31.9"></script>
-  <script src="js/services/ReconService.js?v=10.0.31.9"></script>
-  <script src="js/services/AccountingService.js?v=10.0.31.9"></script>
-  <script src="js/services/ImportService.js?v=10.0.31.9"></script>
+  <script src="js/services/ApiService.js?v=10.0.32.1"></script>
+  <script src="js/services/AuthService.js?v=10.0.32.1"></script>
+  <script src="js/services/MasterService.js?v=10.0.32.1"></script>
+  <script src="js/services/OperationsService.js?v=10.0.32.1"></script>
+  <script src="js/services/ReportService.js?v=10.0.32.1"></script>
+  <script src="js/services/ReconService.js?v=10.0.32.1"></script>
+  <script src="js/services/AccountingService.js?v=10.0.32.1"></script>
+  <script src="js/services/ImportService.js?v=10.0.32.1"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/GstController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.31.9"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.31.9"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/GstController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.32.1"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.31.9"></script>
-  <script src="js/app.js?v=10.0.31.9"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.32.1"></script>
+  <script src="js/app.js?v=10.0.32.1"></script>
 </body>
 </html>

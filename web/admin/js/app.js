@@ -60,11 +60,24 @@ window.App = (function() {
   function setupAuthForms() {
     populateLoginRoles();
 
+    const identInput = document.getElementById('login-identity');
+    const passInput = document.getElementById('login-password');
     const loginRole = document.getElementById('login-role');
-    const mfaGroup = document.getElementById('login-mfa-group');
-    if (loginRole && mfaGroup) {
+
+    if (identInput) {
+      identInput.addEventListener('input', () => {
+        if (window.resetPendingLogin) window.resetPendingLogin();
+      });
+    }
+    if (passInput) {
+      passInput.addEventListener('input', () => {
+        if (window.resetPendingLogin) window.resetPendingLogin();
+      });
+    }
+    if (loginRole) {
       loginRole.addEventListener('change', () => {
-        mfaGroup.style.display = (loginRole.value !== 'ADMIN') ? 'block' : 'none';
+        if (window.resetPendingLogin) window.resetPendingLogin();
+        if (window.updateLoginMode) window.updateLoginMode();
       });
     }
 
@@ -78,6 +91,7 @@ window.App = (function() {
         }
         const savedRole = localStorage.getItem('dse_saved_role') || 'ADMIN';
         roleSelect.value = savedRole;
+        if (window.updateLoginMode) window.updateLoginMode();
       } catch (e) {
         console.warn('Could not load login roles:', e);
       }
@@ -87,6 +101,7 @@ window.App = (function() {
       if (savedIdentity && identityInput) {
         identityInput.value = savedIdentity;
       }
+      if (window.updateLoginMode) window.updateLoginMode();
     }
 
     // Audio toggle
@@ -223,13 +238,8 @@ window.App = (function() {
       const auth = document.getElementById('auth-overlay');
       if (auth) {
         auth.style.display = 'flex';
-        const formMfa = document.getElementById('form-mfa');
-        const hasPendingMfa = (window.AuthService && window.AuthService.getPendingMfaChallenge()) ||
-                              (formMfa && formMfa.style.display !== 'none');
         if (preferredTab) {
           this.showAuthTab(preferredTab);
-        } else if (hasPendingMfa) {
-          this.showAuthTab('mfa');
         } else {
           this.showAuthTab('login');
         }
@@ -257,18 +267,20 @@ window.App = (function() {
       const cardTitle = document.getElementById('auth-card-title');
       const cardSub = document.getElementById('auth-card-subtitle');
 
-      if (formLogin) formLogin.style.display = tab === 'login' ? 'block' : 'none';
+      // Desktop parity: MFA is an in-place field within form-login, not a separate full screen
+      if (formLogin) formLogin.style.display = (tab === 'login' || tab === 'mfa') ? 'block' : 'none';
       if (formRegister) formRegister.style.display = tab === 'register' ? 'block' : 'none';
       if (formForgot) formForgot.style.display = tab === 'forgot' ? 'block' : 'none';
-      if (formMfa) formMfa.style.display = tab === 'mfa' ? 'block' : 'none';
+      if (formMfa) formMfa.style.display = 'none';
       if (alertEl) alertEl.style.display = 'none';
 
       if (tab === 'login') {
         if (cardTitle) cardTitle.innerText = 'Sign in to your account';
         if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
         if (window.loadLoginRoles) window.loadLoginRoles();
+        if (window.updateLoginMode) window.updateLoginMode();
         const identInput = document.getElementById('login-identity');
-        if (identInput) identInput.focus();
+        if (identInput) setTimeout(() => identInput.focus(), 60);
       } else if (tab === 'register') {
         if (cardTitle) cardTitle.innerText = 'Create New Account';
         if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
@@ -279,17 +291,21 @@ window.App = (function() {
         if (otpGroup) otpGroup.style.display = 'none';
         if (submitBtn) submitBtn.style.display = 'block';
         const regName = document.getElementById('reg-name');
-        if (regName) regName.focus();
+        if (regName) setTimeout(() => regName.focus(), 60);
       } else if (tab === 'forgot') {
         if (cardTitle) cardTitle.innerText = 'Reset your password';
         if (cardSub) cardSub.innerText = 'Admin keeps the existing email-OTP recovery flow. Non-Admin users must also enter their current authenticator code.';
         const forgotIdent = document.getElementById('forgot-identity');
-        if (forgotIdent) forgotIdent.focus();
+        if (forgotIdent) setTimeout(() => forgotIdent.focus(), 60);
       } else if (tab === 'mfa') {
-        if (cardTitle) cardTitle.innerText = 'Two-Factor Authentication';
-        if (cardSub) cardSub.innerText = 'Enter your 6-digit Authenticator code to proceed';
-        const mfaIn = document.getElementById('mfa-otp');
-        if (mfaIn) { mfaIn.value = ''; mfaIn.focus(); }
+        if (cardTitle) cardTitle.innerText = 'Sign in to your account';
+        if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+        if (window.updateLoginMode) window.updateLoginMode();
+        const mfaCodeInput = document.getElementById('login-mfa-code');
+        if (mfaCodeInput) {
+          mfaCodeInput.disabled = false;
+          setTimeout(() => mfaCodeInput.focus(), 80);
+        }
       }
     },
 
@@ -317,6 +333,9 @@ let currentRegistrationCaptchaId = null;
 let currentRegistrationChallengeId = null;
 let currentRegistrationId = null;
 let currentRegistrationPending = null;
+let currentMfaRecoveryChallengeId = null;
+let pendingEnrollmentSetup = null;
+let currentAuthenticatorSetupMode = 'login';
 
 window.loadLoginRoles = async function() {
   const roleSelect = document.getElementById('login-role');
@@ -330,8 +349,78 @@ window.loadLoginRoles = async function() {
   } catch (e) {
     console.warn('Could not load login roles:', e);
   }
+  if (window.updateLoginMode) window.updateLoginMode();
 };
 
+/**
+ * Desktop LoginController.java updateLoginMode() parity (lines 684-704):
+ * Updates the visibility and enablement of the in-place Authenticator field and submit button text.
+ */
+window.updateLoginMode = function() {
+  const roleSelect = document.getElementById('login-role');
+  const role = ((roleSelect ? roleSelect.value : '') || '').toUpperCase();
+  const roleRequiresOtp = !!role && role !== 'ADMIN';
+  const mfaPending = !!(window.AuthService && window.AuthService.getPendingMfaChallenge());
+
+  const mfaGroup = document.getElementById('login-mfa-group');
+  const mfaCodeInput = document.getElementById('login-mfa-code');
+  const getHelpBtn = document.getElementById('btn-login-get-help');
+  const submitText = document.getElementById('btn-login-submit-text');
+  const submitBtn = document.getElementById('btn-login-submit');
+
+  if (mfaGroup) {
+    const show = roleRequiresOtp || mfaPending;
+    mfaGroup.style.display = show ? 'block' : 'none';
+  }
+
+  if (mfaCodeInput) {
+    mfaCodeInput.disabled = !mfaPending;
+    if (!mfaPending && roleRequiresOtp) {
+      mfaCodeInput.placeholder = 'Authenticator code is required after password verification';
+    } else {
+      mfaCodeInput.placeholder = 'Enter current 6-digit authenticator code';
+    }
+  }
+
+  if (getHelpBtn) {
+    const helpAvailable = !role || mfaPending || !!pendingEnrollmentSetup;
+    getHelpBtn.disabled = !helpAvailable;
+  }
+
+  if (submitText) {
+    submitText.innerText = mfaPending ? 'VERIFY MFA' : '➜ LOGIN';
+  } else if (submitBtn && !submitBtn.disabled) {
+    submitBtn.innerText = mfaPending ? 'VERIFY MFA' : '➜ LOGIN';
+  }
+};
+
+/**
+ * Desktop LoginController.java resetPendingLogin() parity (lines 675-682):
+ * Resets any active challenge and reverts the login form to initial credentials mode.
+ */
+window.resetPendingLogin = function() {
+  if (window.AuthService && window.AuthService.cancelMfa) {
+    window.AuthService.cancelMfa();
+  }
+  pendingEnrollmentSetup = null;
+  const mfaCodeInput = document.getElementById('login-mfa-code');
+  if (mfaCodeInput) {
+    mfaCodeInput.value = '';
+    mfaCodeInput.disabled = true;
+  }
+  const alertEl = document.getElementById('auth-alert');
+  if (alertEl) {
+    alertEl.style.display = 'none';
+    alertEl.innerText = '';
+  }
+  window.updateLoginMode();
+};
+
+/**
+ * Desktop LoginController.java login() parity (lines 273-346):
+ * If an MFA challenge is already pending, submits the in-place Authenticator code.
+ * Otherwise submits identity + password and activates the in-place MFA field without navigating away.
+ */
 window.handleLoginSubmit = async function(e) {
   if (e) e.preventDefault();
   const identity = ((document.getElementById('login-identity') || {}).value || '').trim();
@@ -340,7 +429,83 @@ window.handleLoginSubmit = async function(e) {
   const rememberCheck = document.getElementById('login-remember');
   const alertEl = document.getElementById('auth-alert');
   const submitBtn = document.getElementById('btn-login-submit');
+  const submitText = document.getElementById('btn-login-submit-text');
+  const mfaCodeInput = document.getElementById('login-mfa-code');
 
+  const pendingChallenge = window.AuthService && window.AuthService.getPendingMfaChallenge();
+
+  // 1. If MFA challenge is pending: verify in-place authenticator code (Desktop verifyLoginOtp lines 466-499)
+  if (pendingChallenge) {
+    const otp = ((mfaCodeInput || {}).value || '').trim();
+    if (!otp) {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = 'Verification code is required.';
+        alertEl.style.display = 'block';
+      }
+      if (mfaCodeInput) mfaCodeInput.focus();
+      return;
+    }
+    if (!otp.match(/^\d{6}$/)) {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = 'Enter the current 6-digit authenticator code.';
+        alertEl.style.display = 'block';
+      }
+      if (mfaCodeInput) mfaCodeInput.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    if (submitText) submitText.innerText = 'VERIFYING...';
+    try {
+      const res = await window.AuthService.completeMfa(otp);
+      if (res.success && res.user) {
+        if (rememberCheck && rememberCheck.checked) {
+          localStorage.setItem('dse_saved_identity', identity);
+          localStorage.setItem('dse_saved_role', selectedRole);
+        } else {
+          localStorage.removeItem('dse_saved_identity');
+          localStorage.removeItem('dse_saved_role');
+        }
+        pendingEnrollmentSetup = null;
+        applyUserToHeader(res.user);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.App.hideAuthOverlay();
+        window.AppDialogService.closeAllModals();
+        window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
+        if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+        if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
+        if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+      } else {
+        if (alertEl) {
+          alertEl.className = 'auth-alert error';
+          alertEl.innerText = res.message || 'MFA verification failed.';
+          alertEl.style.display = 'block';
+        }
+        if (mfaCodeInput) {
+          mfaCodeInput.value = '';
+          mfaCodeInput.focus();
+        }
+        if (res.message && res.message.toLowerCase().includes('locked')) {
+          window.resetPendingLogin();
+        }
+      }
+    } catch (err) {
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = err.message || 'MFA verification failed.';
+        alertEl.style.display = 'block';
+      }
+      if (mfaCodeInput) mfaCodeInput.focus();
+    } finally {
+      submitBtn.disabled = false;
+      window.updateLoginMode();
+    }
+    return;
+  }
+
+  // 2. Validate credentials
   if (!identity || !password) {
     if (alertEl) {
       alertEl.className = 'auth-alert error';
@@ -351,13 +516,13 @@ window.handleLoginSubmit = async function(e) {
   }
 
   submitBtn.disabled = true;
-  const origHtml = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<span>⏳ VERIFYING...</span>';
+  if (submitText) submitText.innerText = 'SIGNING IN...';
   if (alertEl) alertEl.style.display = 'none';
 
   try {
     const res = await window.AuthService.login(identity, password, selectedRole);
     if (res.roleMismatch) {
+      window.resetPendingLogin();
       if (alertEl) {
         alertEl.className = 'auth-alert error';
         alertEl.innerText = res.message || 'Selected role does not match this user account. Please select the role assigned to this account.';
@@ -367,16 +532,25 @@ window.handleLoginSubmit = async function(e) {
     }
 
     if (res.mfaRequired) {
+      window.AuthService.setPendingMfaChallenge(res.challengeId);
+      pendingEnrollmentSetup = res.enrollmentRequired ? res.enrollment : null;
+
       if (res.enrollmentRequired && res.enrollment) {
-        const secretEl = document.getElementById('auth-setup-secret');
-        const qrImgEl = document.getElementById('auth-setup-qr-img');
-        if (secretEl) secretEl.value = res.enrollment.manualSecret || '';
-        if (qrImgEl && res.enrollment.provisioningUri) {
-          qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.enrollment.provisioningUri)}`;
-        }
-        window.AppDialogService.openModal('modal-authenticator-setup');
+        window.openAuthenticatorSetupModal(res.enrollment, 'login');
       } else {
-        window.App.showAuthTab('mfa');
+        // Desktop parity: Stay in-place on the login form, activate the TOTP field, switch button to VERIFY MFA
+        window.updateLoginMode();
+        if (mfaCodeInput) {
+          mfaCodeInput.value = '';
+          mfaCodeInput.disabled = false;
+          setTimeout(() => mfaCodeInput.focus(), 100);
+        }
+        if (alertEl) {
+          const destination = res.maskedDestination || 'your authenticator app';
+          alertEl.className = 'auth-alert info';
+          alertEl.innerText = `Enter the current 6-digit code from ${destination}.`;
+          alertEl.style.display = 'block';
+        }
       }
       return;
     }
@@ -412,203 +586,242 @@ window.handleLoginSubmit = async function(e) {
     }
   } finally {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = origHtml;
+    window.updateLoginMode();
   }
 };
 
-let currentMfaRecoveryChallengeId = null;
+/**
+ * Desktop LoginController.java resendLoginOtp() parity (lines 501-513):
+ * 1. If enrollment setup is pending -> reopens QR/manual-key modal.
+ * 2. If no active challenge -> opens modal-mfa-help-info explaining to sign in first or use Forgot Password.
+ * 3. If challenge active -> opens modal-mfa-help-action with options to use code or Lost/Changed Phone.
+ */
+window.handleLoginGetHelp = function() {
+  const pendingChallenge = window.AuthService && window.AuthService.getPendingMfaChallenge();
+  if (pendingEnrollmentSetup && pendingChallenge) {
+    window.openAuthenticatorSetupModal(pendingEnrollmentSetup, 'login');
+    return;
+  }
+  if (!pendingChallenge) {
+    window.AppDialogService.openModal('modal-mfa-help-info');
+    return;
+  }
+  window.AppDialogService.openModal('modal-mfa-help-action');
+};
+window.showMfaHelp = window.handleLoginGetHelp;
 
-window.handleMfaSubmit = async function(e) {
-  if (e) e.preventDefault();
-  const otp = ((document.getElementById('mfa-otp') || {}).value || '').trim();
-  const alertEl = document.getElementById('auth-alert');
-  const btn = document.getElementById('btn-mfa-submit');
+/**
+ * Desktop LoginController.java requestAuthenticatorRecovery() parity (lines 545-562):
+ * Initiates registered-email recovery when user reports a lost or changed phone.
+ */
+window.startAuthenticatorRecovery = async function() {
+  window.AppDialogService.closeModal('modal-mfa-help-action');
+  const loginChallengeId = window.AuthService && window.AuthService.getPendingMfaChallenge();
+  if (!loginChallengeId) {
+    window.resetPendingLogin();
+    window.AppDialogService.showToast('Sign in with your username/email and password again before resetting Authenticator.', 'warning');
+    return;
+  }
+
+  window.AppDialogService.showToast('Sending verification code to registered email...', 'info');
+  try {
+    const res = await window.AuthService.requestLoginMfaRecovery();
+    if (res && res.challengeId) {
+      currentMfaRecoveryChallengeId = res.challengeId;
+      const destText = document.getElementById('mfa-recovery-help-text');
+      const destination = res.maskedDestination || 'your registered email';
+      if (destText) {
+        destText.innerText = (res.message || 'A verification code was sent') + ` (${destination}). Enter that code below. You will then receive a new QR code and setup key.`;
+      }
+      const otpIn = document.getElementById('mfa-recovery-email-otp');
+      const errEl = document.getElementById('mfa-recovery-email-error');
+      if (errEl) { errEl.style.display = 'none'; errEl.innerText = ''; }
+      if (otpIn) {
+        otpIn.value = '';
+        setTimeout(() => otpIn.focus(), 120);
+      }
+      window.AppDialogService.openModal('modal-mfa-recovery-email');
+    } else {
+      window.AppDialogService.showToast((res && res.message) ? res.message : 'Unable to send recovery code.', 'error');
+    }
+  } catch (err) {
+    window.AppDialogService.showToast('Authenticator recovery request failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+};
+
+/**
+ * Desktop LoginController.java showAuthenticatorRecoveryEmail verify action parity (lines 594-627):
+ * Submits the 6-digit email OTP to /api/auth/login/mfa/recovery/complete, resets the TOTP secret,
+ * and opens the Authenticator Setup dialog with the newly generated QR code and manual key.
+ */
+window.submitMfaEmailRecovery = async function() {
+  const otpIn = document.getElementById('mfa-recovery-email-otp');
+  const errEl = document.getElementById('mfa-recovery-email-error');
+  const btn = document.getElementById('btn-submit-mfa-recovery-email');
+  const otp = ((otpIn || {}).value || '').trim();
 
   if (!otp || !otp.match(/^\d{6}$/)) {
-    if (alertEl) {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = 'Enter the current 6-digit authenticator code.';
-      alertEl.style.display = 'block';
+    if (errEl) {
+      errEl.innerText = 'Enter the 6-digit verification code sent to your registered email.';
+      errEl.style.display = 'block';
     }
+    if (otpIn) otpIn.focus();
     return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.innerText = 'Verifying MFA Code...';
+    btn.innerText = 'Verifying Email...';
+  }
+
+  try {
+    const res = await window.AuthService.completeLoginMfaRecovery(currentMfaRecoveryChallengeId, otp);
+    if (res && (res.challengeId || res.manualSecret)) {
+      pendingEnrollmentSetup = res;
+      if (res.challengeId) {
+        window.AuthService.setPendingMfaChallenge(res.challengeId);
+      }
+      window.AppDialogService.closeModal('modal-mfa-recovery-email');
+      window.updateLoginMode();
+      window.openAuthenticatorSetupModal(res, 'login');
+      window.AppDialogService.showToast('Email verified! Scan the new QR code in your authenticator app.', 'success');
+    } else {
+      if (errEl) {
+        errEl.innerText = (res && res.message) ? res.message : 'Email verification failed.';
+        errEl.style.display = 'block';
+      }
+      if (otpIn) otpIn.focus();
+    }
+  } catch (err) {
+    if (errEl) {
+      errEl.innerText = err.message || 'Email verification failed.';
+      errEl.style.display = 'block';
+    }
+    if (otpIn) otpIn.focus();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Verify Email & Reset';
+    }
+  }
+};
+
+/**
+ * Modal opener for Authenticator Setup supporting both Login Re-enrollment and Registration.
+ */
+window.openAuthenticatorSetupModal = function(setup, mode = 'login') {
+  currentAuthenticatorSetupMode = mode;
+  const secretEl = document.getElementById('auth-setup-secret');
+  const qrImgEl = document.getElementById('auth-setup-qr-img');
+  const totpEl = document.getElementById('auth-setup-totp');
+  const errEl = document.getElementById('auth-setup-error');
+  const btnEl = document.getElementById('btn-auth-setup-complete');
+  const titleEl = document.getElementById('auth-setup-modal-title');
+  const subEl = document.getElementById('auth-setup-modal-subtitle');
+
+  if (secretEl) secretEl.value = setup.manualSecret || '';
+  if (qrImgEl && setup.provisioningUri) {
+    qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setup.provisioningUri)}`;
+  }
+  if (totpEl) {
+    totpEl.value = '';
+    setTimeout(() => totpEl.focus(), 150);
+  }
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.innerText = '';
+  }
+
+  if (mode === 'login') {
+    if (titleEl) titleEl.innerHTML = '&#128737; Secure this account with an authenticator';
+    if (subEl) subEl.innerText = setup.message || 'Scan the QR code with Google or Microsoft Authenticator, then enter the current 6-digit code.';
+    if (btnEl) {
+      btnEl.innerText = 'Verify & Continue Sign-In';
+      btnEl.onclick = () => window.submitLoginAuthenticatorSetup();
+    }
+  } else {
+    if (titleEl) titleEl.innerHTML = '&#128272; Set Up Authenticator';
+    if (subEl) subEl.innerText = 'Scan with Google Authenticator or Microsoft Authenticator';
+    if (btnEl) {
+      btnEl.innerText = 'Verify & Submit for Approval';
+      btnEl.onclick = () => window.completeRegistrationAuthenticator();
+    }
+  }
+  window.AppDialogService.openModal('modal-authenticator-setup');
+};
+
+/**
+ * Desktop LoginController.java showAuthenticatorEnrollment verify action parity (lines 426-453):
+ * Verifies the newly scanned TOTP code and logs the user in immediately.
+ */
+window.submitLoginAuthenticatorSetup = async function() {
+  const totpEl = document.getElementById('auth-setup-totp');
+  const errEl = document.getElementById('auth-setup-error');
+  const btnEl = document.getElementById('btn-auth-setup-complete');
+  const otp = (totpEl ? totpEl.value : '').trim();
+
+  if (!otp || !otp.match(/^\d{6}$/)) {
+    if (errEl) {
+      errEl.innerText = 'Enter the current 6-digit authenticator code.';
+      errEl.style.display = 'block';
+    }
+    if (totpEl) totpEl.focus();
+    return;
+  }
+
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerText = 'Verifying Authenticator...';
   }
 
   try {
     const res = await window.AuthService.completeMfa(otp);
     if (res.success && res.user) {
+      pendingEnrollmentSetup = null;
+      window.AppDialogService.closeModal('modal-authenticator-setup');
       applyUserToHeader(res.user);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
       window.App.hideAuthOverlay();
       window.AppDialogService.closeAllModals();
-      window.AppDialogService.showToast(`MFA Verified! Welcome, ${res.user.fullName || res.user.username}!`, 'success');
+      window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
       if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+      if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
+      if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
     } else {
-      if (alertEl) {
-        alertEl.className = 'auth-alert error';
-        alertEl.innerText = res.message || 'Invalid authenticator code. Please check your authenticator app.';
-        alertEl.style.display = 'block';
+      if (errEl) {
+        errEl.innerText = res.message || 'Authenticator verification failed.';
+        errEl.style.display = 'block';
       }
-      if (res.message && res.message.toLowerCase().includes('decrypt')) {
-        const recoveryPrompt = document.getElementById('btn-mfa-recovery-prompt');
-        if (recoveryPrompt) recoveryPrompt.style.display = 'inline-block';
-      }
+      if (totpEl) totpEl.focus();
     }
   } catch (err) {
-    if (alertEl) {
-      alertEl.className = 'auth-alert error';
-      if (err.message && err.message.toLowerCase().includes('decrypt')) {
-        alertEl.innerText = 'Authenticator secret is unreadable on the server. Please reset your authenticator using the Email Recovery option below.';
-        const recoveryGroup = document.getElementById('mfa-recovery-options');
-        if (recoveryGroup) recoveryGroup.style.display = 'block';
-      } else {
-        alertEl.innerText = err.message || 'MFA verification failed.';
-      }
-      alertEl.style.display = 'block';
+    if (errEl) {
+      errEl.innerText = err.message || 'Authenticator verification failed.';
+      errEl.style.display = 'block';
     }
+    if (totpEl) totpEl.focus();
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Verify MFA Code';
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerText = 'Verify & Continue Sign-In';
     }
   }
 };
 
-window.cancelMfa = function() {
-  if (window.AuthService && window.AuthService.cancelMfa) {
-    window.AuthService.cancelMfa();
-  }
-  currentMfaRecoveryChallengeId = null;
-  const mfaForm = document.getElementById('form-mfa');
-  const loginForm = document.getElementById('form-login');
-  const alertEl = document.getElementById('auth-alert');
-  const recoveryGroup = document.getElementById('mfa-recovery-group');
-  if (mfaForm) mfaForm.style.display = 'none';
-  if (loginForm) loginForm.style.display = 'block';
-  if (recoveryGroup) recoveryGroup.style.display = 'none';
-  if (alertEl) { alertEl.style.display = 'none'; alertEl.innerText = ''; }
-  const title = document.querySelector('.auth-modal-title');
-  const subtitle = document.querySelector('.auth-modal-subtitle');
-  if (title) title.innerText = 'Sign In to Studio';
-  if (subtitle) subtitle.innerText = 'Enter your enterprise credentials to access your ERP workspace.';
-};
-
-window.requestMfaRecovery = async function() {
-  const alertEl = document.getElementById('auth-alert');
-  const promptBtn = document.getElementById('btn-mfa-recovery-prompt');
-  const recoveryGroup = document.getElementById('mfa-recovery-group');
-  const destText = document.getElementById('mfa-recovery-dest-text');
-
-  if (promptBtn) {
-    promptBtn.disabled = true;
-    promptBtn.innerText = 'Sending email recovery code...';
-  }
-  if (alertEl) alertEl.style.display = 'none';
-
-  try {
-    const res = await window.AuthService.requestLoginMfaRecovery();
-    if (res && (res.success || res.challengeId)) {
-      currentMfaRecoveryChallengeId = res.challengeId;
-      if (recoveryGroup) recoveryGroup.style.display = 'block';
-      if (destText && res.maskedDestination) {
-        destText.innerText = `A 6-digit recovery code was sent to ${res.maskedDestination}. Enter the code below to reset your authenticator.`;
-      }
-      const otpIn = document.getElementById('mfa-recovery-otp');
-      if (otpIn) {
-        otpIn.value = '';
-        otpIn.focus();
-      }
-      window.AppDialogService.showToast('Recovery verification code sent to your registered email.', 'info');
-    } else {
-      if (alertEl) {
-        alertEl.className = 'auth-alert error';
-        alertEl.innerText = (res && res.message) ? res.message : 'Unable to start authenticator recovery.';
-        alertEl.style.display = 'block';
-      }
-    }
-  } catch (err) {
-    if (alertEl) {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = 'Recovery request failed: ' + (err.message || 'Unknown error');
-      alertEl.style.display = 'block';
-    }
-  } finally {
-    if (promptBtn) {
-      promptBtn.disabled = false;
-      promptBtn.innerText = '✉ Having Trouble? Reset Authenticator via Email';
-    }
+/**
+ * Desktop LoginController.java dlg.setOnHidden parity (lines 454-461):
+ * If setup modal is closed before completing verification, reminds user that Get Help can reopen it.
+ */
+window.handleAuthenticatorSetupClose = function() {
+  window.AppDialogService.closeModal('modal-authenticator-setup');
+  if (currentAuthenticatorSetupMode === 'login' && window.AuthService && window.AuthService.getPendingMfaChallenge()) {
+    window.updateLoginMode();
+    window.AppDialogService.showToast('Authenticator enrollment is not complete. Click Get Help to reopen the QR code and setup key.', 'info');
   }
 };
 
-window.completeMfaRecovery = async function() {
-  const otp = ((document.getElementById('mfa-recovery-otp') || {}).value || '').trim();
-  const alertEl = document.getElementById('auth-alert');
-  const verifyBtn = document.getElementById('btn-mfa-recovery-verify');
-
-  if (!otp || !otp.match(/^\d{6}$/)) {
-    if (alertEl) {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = 'Enter the 6-digit email recovery code received.';
-      alertEl.style.display = 'block';
-    }
-    const otpIn = document.getElementById('mfa-recovery-otp');
-    if (otpIn) otpIn.focus();
-    return;
-  }
-
-  if (verifyBtn) {
-    verifyBtn.disabled = true;
-    verifyBtn.innerText = 'Verifying email & resetting authenticator...';
-  }
-  if (alertEl) alertEl.style.display = 'none';
-
-  try {
-    const res = await window.AuthService.completeLoginMfaRecovery(currentMfaRecoveryChallengeId, otp);
-    if (res.success || res.manualSecret) {
-      if (res.challengeId && window.AuthService.setPendingMfaChallenge) {
-        window.AuthService.setPendingMfaChallenge(res.challengeId);
-      }
-      window.currentMfaEnrollmentMode = 'login';
-      const secretEl = document.getElementById('auth-setup-secret');
-      const qrImgEl = document.getElementById('auth-setup-qr-img');
-      const errEl = document.getElementById('auth-setup-error');
-      const completeBtn = document.getElementById('btn-auth-setup-complete');
-      if (secretEl) secretEl.value = res.manualSecret || '';
-      if (qrImgEl && res.provisioningUri) {
-        qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
-      }
-      if (errEl) errEl.style.display = 'none';
-      if (completeBtn) completeBtn.innerText = 'Verify Authenticator & Sign In';
-      window.AppDialogService.openModal('modal-authenticator-setup');
-      window.AppDialogService.showToast('Email verified! Scan the new QR code in your authenticator app.', 'success');
-      setTimeout(() => {
-        const totpIn = document.getElementById('auth-setup-totp');
-        if (totpIn) { totpIn.value = ''; totpIn.focus(); }
-      }, 100);
-    } else {
-      if (alertEl) {
-        alertEl.className = 'auth-alert error';
-        alertEl.innerText = res.message || 'Recovery email verification failed.';
-        alertEl.style.display = 'block';
-      }
-    }
-  } catch (err) {
-    if (alertEl) {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = 'Recovery verification error: ' + (err.message || 'Unknown error');
-      alertEl.style.display = 'block';
-    }
-  } finally {
-    if (verifyBtn) {
-      verifyBtn.disabled = false;
-      verifyBtn.innerText = '✓ Verify Email & Reconfigure Authenticator';
-    }
-  }
-};
+window.handleMfaSubmit = window.handleLoginSubmit;
+window.cancelMfa = window.resetPendingLogin;
 
 window.refreshRegistrationCaptcha = async function() {
   const qEl = document.getElementById('reg-captcha-question');
@@ -1099,12 +1312,7 @@ window.togglePasswordVisibility = function(fieldId, btnEl) {
     if (btnEl) btnEl.innerText = '👁';
   }
 };
-window.showMfaHelp = function() {
-  window.AppDialogService.showToast(
-    'MFA Help: Open Google Authenticator or Microsoft Authenticator and enter your 6-digit TOTP code. For lost authenticators, contact Admin (accounts@jasviindustries.in).',
-    'info'
-  );
-};
+window.showMfaHelp = () => window.handleLoginGetHelp();
 window.openNewInvoiceModal = () => window.SalesController.openNewInvoiceModal();
 window.openNewPurchaseModal = () => window.PurchaseController.openNewPurchaseModal();
 window.openNewItemModal = () => window.ItemMasterController.openNewItemModal();
