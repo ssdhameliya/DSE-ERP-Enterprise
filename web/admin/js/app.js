@@ -383,8 +383,7 @@ window.updateLoginMode = function() {
   }
 
   if (getHelpBtn) {
-    const helpAvailable = !role || mfaPending || !!pendingEnrollmentSetup;
-    getHelpBtn.disabled = !helpAvailable;
+    getHelpBtn.disabled = false;
   }
 
   if (submitText) {

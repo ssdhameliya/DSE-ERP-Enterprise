@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=10.0.31.8">
+    <link rel="stylesheet" href="css/app.css?v=10.0.32.3">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -39,9 +39,28 @@
         if (roleEl) roleEl.innerText = (user.role || 'USER').toUpperCase();
         if (avatarEl) avatarEl.innerText = (user.fullName || user.username || 'U')[0].toUpperCase();
       };
+      window.openModal = function(id) {
+        if (window.AppDialogService && window.AppDialogService.openModal) {
+          window.AppDialogService.openModal(id);
+        } else {
+          const m = document.getElementById(id);
+          if (m) {
+            m.style.display = 'flex';
+            m.style.zIndex = '100010';
+            m.classList.add('active');
+          }
+        }
+      };
       window.closeModal = function(id) {
-        const m = document.getElementById(id);
-        if (m) m.style.display = 'none';
+        if (window.AppDialogService && window.AppDialogService.closeModal) {
+          window.AppDialogService.closeModal(id);
+        } else {
+          const m = document.getElementById(id);
+          if (m) {
+            m.style.display = 'none';
+            m.classList.remove('active');
+          }
+        }
       };
       window.handleBankEntrySave = function(e) {
         if (window.FinanceController && window.FinanceController.handleBankEntrySave) {
@@ -197,7 +216,7 @@
             </label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="login-mfa-code" class="form-input" placeholder="Authenticator code is required after password verification" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" disabled style="height: 38px; flex: 1;">
-              <button type="button" id="btn-login-get-help" class="btn btn-secondary" onclick="window.handleLoginGetHelp()" style="height: 38px; font-size: 0.74rem; padding: 0 12px; white-space: nowrap;">✉ Get Help</button>
+              <button type="button" id="btn-login-get-help" class="btn btn-secondary" onclick="window.handleLoginGetHelp()" style="height: 38px; font-size: 0.74rem; padding: 0 12px; white-space: nowrap; cursor: pointer;">✉ Get Help</button>
             </div>
           </div>
 
@@ -7176,7 +7195,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   </div>
 
   <!-- MODAL: MFA HELP INFO (NO ACTIVE CHALLENGE) (LoginController.java resendLoginOtp line 506-511) -->
-  <div class="modal-overlay" id="modal-mfa-help-info" style="display: none;">
+  <div class="modal-overlay" id="modal-mfa-help-info" style="display: none; z-index: 100010;">
     <div class="modal-card" style="max-width: 440px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
@@ -7196,7 +7215,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   </div>
 
   <!-- MODAL: MFA HELP ACTION (LOST / CHANGED PHONE) (LoginController.java showAuthenticatorHelp line 515-543) -->
-  <div class="modal-overlay" id="modal-mfa-help-action" style="display: none;">
+  <div class="modal-overlay" id="modal-mfa-help-action" style="display: none; z-index: 100010;">
     <div class="modal-card" style="max-width: 480px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
@@ -7223,7 +7242,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   </div>
 
   <!-- MODAL: MFA RECOVERY VIA EMAIL (RESET AUTHENTICATOR) (LoginController.java showAuthenticatorRecoveryEmail line 564-627) -->
-  <div class="modal-overlay" id="modal-mfa-recovery-email" style="display: none;">
+  <div class="modal-overlay" id="modal-mfa-recovery-email" style="display: none; z-index: 100010;">
     <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
@@ -7251,7 +7270,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   </div>
 
   <!-- MODAL: AUTHENTICATOR SETUP (DESKTOP LoginController & RegistrationController PARITY) -->
-  <div class="modal-overlay" id="modal-authenticator-setup">
+  <div class="modal-overlay" id="modal-authenticator-setup" style="display: none; z-index: 100010;">
     <div class="modal-card" style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
         <div>
@@ -8463,47 +8482,47 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.32.1"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.32.1"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.32.1"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.32.1"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.32.1"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.32.3"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.32.3"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.32.3"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.32.3"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.32.3"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.32.1"></script>
-  <script src="js/services/AuthService.js?v=10.0.32.1"></script>
-  <script src="js/services/MasterService.js?v=10.0.32.1"></script>
-  <script src="js/services/OperationsService.js?v=10.0.32.1"></script>
-  <script src="js/services/ReportService.js?v=10.0.32.1"></script>
-  <script src="js/services/ReconService.js?v=10.0.32.1"></script>
-  <script src="js/services/AccountingService.js?v=10.0.32.1"></script>
-  <script src="js/services/ImportService.js?v=10.0.32.1"></script>
+  <script src="js/services/ApiService.js?v=10.0.32.3"></script>
+  <script src="js/services/AuthService.js?v=10.0.32.3"></script>
+  <script src="js/services/MasterService.js?v=10.0.32.3"></script>
+  <script src="js/services/OperationsService.js?v=10.0.32.3"></script>
+  <script src="js/services/ReportService.js?v=10.0.32.3"></script>
+  <script src="js/services/ReconService.js?v=10.0.32.3"></script>
+  <script src="js/services/AccountingService.js?v=10.0.32.3"></script>
+  <script src="js/services/ImportService.js?v=10.0.32.3"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/GstController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.32.1"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.32.1"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/GstController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.32.3"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.32.3"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.32.1"></script>
-  <script src="js/app.js?v=10.0.32.1"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.32.3"></script>
+  <script src="js/app.js?v=10.0.32.3"></script>
 </body>
 </html>

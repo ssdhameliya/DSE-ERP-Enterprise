@@ -23,6 +23,7 @@ window.AppDialogService = {
     if (!modal) return;
     if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
     modal.style.display = 'flex';
+    modal.style.zIndex = '100010';
     modal.classList.add('active');
     const firstInput = modal.querySelector('input:not([type=hidden]):not([readonly]), select');
     if (firstInput) setTimeout(() => firstInput.focus(), 80);

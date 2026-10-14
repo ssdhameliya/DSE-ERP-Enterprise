@@ -64,6 +64,7 @@ jobs:
             sudo cp /tmp/web_uat_public.html /srv/dse-erp/web/public/index.html &&
             sudo mkdir -p /srv/dse-erp/web/admin &&
             sudo tar -xzf /tmp/web_uat_admin.tar.gz --no-same-owner -C /srv/dse-erp/web/admin/ &&
+            sudo ln -sfn . /srv/dse-erp/web/admin/admin &&
             sudo chmod -R a+rX /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
             if command -v chcon >/dev/null 2>&1; then
               sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin 2>/dev/null || true
@@ -158,6 +159,7 @@ jobs:
             sudo cp /tmp/web_prod_public.html /srv/dse-erp/web/public/index.html &&
             sudo mkdir -p /srv/dse-erp/web/admin &&
             sudo tar -xzf /tmp/web_prod_admin.tar.gz --no-same-owner -C /srv/dse-erp/web/admin/ &&
+            sudo ln -sfn . /srv/dse-erp/web/admin/admin &&
             sudo chmod -R a+rX /srv/dse-erp/web/public /srv/dse-erp/web/admin &&
             if command -v chcon >/dev/null 2>&1; then
               sudo chcon -R -t httpd_sys_content_t /srv/dse-erp/web/public /srv/dse-erp/web/admin 2>/dev/null || true

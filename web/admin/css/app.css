@@ -413,7 +413,7 @@
     /* MODAL */
     .modal-overlay, .modal, .modal-backdrop {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(8px); z-index: 100010; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.active, .modal.active, .modal-backdrop.active { display: flex; }
     .modal-card {
@@ -427,7 +427,7 @@
     .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px; }
 
     /* TOAST */
-    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100020; display: flex; flex-direction: column; gap: 10px; }
     .toast { background: #1e293b; border-left: 4px solid var(--cyan); color: #fff; padding: 12px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 0.85rem; }
     .toast.success { border-left-color: var(--sem-complete); }
     .toast.error { border-left-color: var(--sem-error); }
