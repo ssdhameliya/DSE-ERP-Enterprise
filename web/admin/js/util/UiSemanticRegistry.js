@@ -252,8 +252,8 @@ window.UiSemanticRegistry = (function() {
         return { state: 'info', color: 'blue', icon: '🔄', text: v };
       }
 
-      // Default Neutral
-      return { state: 'neutral', color: 'neutral', icon: 'ℹ', text: v };
+      // Default: Not a recognized status string - do not decorate
+      return null;
     },
 
     /**

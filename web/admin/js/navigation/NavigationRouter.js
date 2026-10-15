@@ -310,7 +310,9 @@ window.NavigationRouter = (function() {
           if (window.PurchaseController) window.PurchaseController.loadPurchases();
           break;
         case 'view-purchase-creation':
-          if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+          if (window.PurchaseController && window.PurchaseController.isNavigatingToEditor) {
+            // Already inside openPurchaseEditor - skip re-entrant lifecycle dispatch
+          } else if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
             window.PurchaseController.openPurchaseEditor();
           }
           break;

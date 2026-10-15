@@ -173,10 +173,7 @@ window.TableUiEnhancer = (function() {
     table.querySelectorAll('tbody tr').forEach(r => r.classList.remove('row-selected'));
     row.classList.add('row-selected');
 
-    // 2. Play subtle UI navigation feedback
-    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-
-    // 3. Extract identifier
+    // 2. Extract identifier
     const id = extractRowIdentifier(row);
     if (!id) return;
 

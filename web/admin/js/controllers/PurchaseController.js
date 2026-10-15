@@ -821,14 +821,21 @@ window.PurchaseController = (function() {
     }
   }
 
-  async function openPurchaseEditor(invoiceNo = null, isViewMode = false) {
-    editingInvoiceNo = invoiceNo;
-    editorLines = [];
-    editorCharges = [];
-    selectedEditorItem = null;
-    isReadOnlyView = !!isViewMode;
+  let isNavigatingToPurchaseEditor = false;
 
-    window.NavigationRouter.selectNav('view-purchase-creation');
+  async function openPurchaseEditor(invoiceNo = null, isViewMode = false) {
+    if (isNavigatingToPurchaseEditor) return;
+    isNavigatingToPurchaseEditor = true;
+    try {
+      editingInvoiceNo = invoiceNo;
+      editorLines = [];
+      editorCharges = [];
+      selectedEditorItem = null;
+      isReadOnlyView = !!isViewMode;
+
+      if (window.NavigationRouter && window.NavigationRouter.getCurrentView() !== 'view-purchase-creation') {
+        window.NavigationRouter.selectNav('view-purchase-creation');
+      }
 
     const titleEl = document.getElementById('pe-title');
     const subEl = document.getElementById('pe-subtitle');
@@ -983,6 +990,9 @@ window.PurchaseController = (function() {
     updateChargeSummaryBadge();
     renderEditorLines();
     recalcEditorTotals();
+    } finally {
+      isNavigatingToPurchaseEditor = false;
+    }
   }
 
   function onTransporterChange(selectEl) {
@@ -1459,6 +1469,7 @@ window.PurchaseController = (function() {
     openPurchaseView,
     openPayments,
     openPurchaseEditor,
+    get isNavigatingToEditor() { return isNavigatingToPurchaseEditor; },
     openNewPurchaseModal() { openPurchaseEditor(); },
     openChargesDialog,
     setCharges,
