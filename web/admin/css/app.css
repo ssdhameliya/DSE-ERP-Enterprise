@@ -1699,11 +1699,121 @@
     .proof-drop-zone {
       transition: border-color 0.15s, background-color 0.15s;
     }
-    .proof-drop-zone.dragover {
-      border-color: var(--cyan) !important;
-      background: rgba(56, 189, 248, 0.08) !important;
+    /* ================================================================
+       CENTRALIZED DESKTOP UI ENHANCEMENT ENGINE (TABLES, BADGES, DIALOGS)
+       ================================================================ */
+    .erp-interactive-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .erp-interactive-table tbody tr:hover td {
+      background: rgba(56, 189, 248, 0.04) !important;
+    }
+    .erp-interactive-table tbody tr.row-selected,
+    table.data-table tbody tr.row-selected td,
+    table.sales-desktop-table tbody tr.row-selected td {
+      background: rgba(56, 189, 248, 0.09) !important;
+    }
+    .erp-interactive-table tbody tr.row-selected td:first-child,
+    table.data-table tbody tr.row-selected td:first-child {
+      border-left: 3px solid var(--primary-light) !important;
     }
 
+    /* Semantic Table Header Badges */
+    .erp-th-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+    .erp-th-icon {
+      font-size: 0.85rem;
+      opacity: 0.95;
+      display: inline-flex;
+      align-items: center;
+    }
+    .erp-th-blue, .erp-th-theme-blue .erp-th-badge { background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.28); }
+    .erp-th-purple, .erp-th-theme-purple .erp-th-badge { background: rgba(167, 139, 250, 0.14); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.28); }
+    .erp-th-green, .erp-th-theme-green .erp-th-badge { background: rgba(52, 211, 153, 0.14); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.28); }
+    .erp-th-indigo, .erp-th-theme-indigo .erp-th-badge { background: rgba(129, 140, 248, 0.14); color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.28); }
+    .erp-th-orange, .erp-th-theme-orange .erp-th-badge { background: rgba(251, 146, 60, 0.14); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.28); }
+    .erp-th-teal, .erp-th-theme-teal .erp-th-badge { background: rgba(45, 212, 191, 0.14); color: #2dd4bf; border: 1px solid rgba(45, 212, 191, 0.28); }
+    .erp-th-pink, .erp-th-theme-pink .erp-th-badge { background: rgba(244, 114, 182, 0.14); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.28); }
+    .erp-th-yellow, .erp-th-theme-yellow .erp-th-badge { background: rgba(251, 191, 36, 0.14); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.28); }
+    .erp-th-red, .erp-th-theme-red .erp-th-badge { background: rgba(248, 113, 113, 0.14); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.28); }
+    .erp-th-neutral, .erp-th-theme-neutral .erp-th-badge { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.22); }
 
+    /* Cell status badge */
+    .erp-cell-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-success { background: rgba(52, 211, 153, 0.18) !important; color: #34d399 !important; border: 1px solid rgba(52, 211, 153, 0.35) !important; }
+    .badge-danger { background: rgba(239, 68, 68, 0.18) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; }
+    .badge-warning { background: rgba(251, 191, 36, 0.18) !important; color: #fbbf24 !important; border: 1px solid rgba(251, 191, 36, 0.35) !important; }
+    .badge-info { background: rgba(56, 189, 248, 0.18) !important; color: #38bdf8 !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; }
+    .badge-neutral { background: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; }
 
+    /* Cell money */
+    .cell-money-green { color: #34d399 !important; font-weight: 700; }
 
+    /* App Dialog Modal (matching Desktop AppDialogRenderer.java) */
+    .app-dialog-overlay {
+      position: fixed; inset: 0; background: rgba(4, 9, 20, 0.82);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      z-index: 100020; display: flex; align-items: center; justify-content: center;
+      padding: 20px; animation: dialogFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes dialogFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .app-dialog-card {
+      width: 100%; max-width: 520px; background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(56, 189, 248, 0.12);
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .app-dialog-header {
+      padding: 20px 24px; display: flex; align-items: center; gap: 16px;
+      border-bottom: 1px solid var(--border-subtle); background: rgba(255, 255, 255, 0.02);
+    }
+    .app-dialog-icon-box {
+      width: 44px; height: 44px; border-radius: 12px; display: flex;
+      align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+    }
+    .app-dialog-icon-box.sem-blue { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .app-dialog-icon-box.sem-red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); }
+    .app-dialog-icon-box.sem-amber { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .app-dialog-header-text { flex: 1; }
+    .app-dialog-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 3px 0; font-family: 'Space Grotesk', sans-serif; }
+    .app-dialog-heading { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+    .app-dialog-close-btn {
+      background: none; border: none; font-size: 1.6rem; color: var(--text-dim);
+      cursor: pointer; padding: 4px; line-height: 1; border-radius: 6px; transition: color 0.15s;
+    }
+    .app-dialog-close-btn:hover { color: #fff; }
+    .app-dialog-body { padding: 22px 24px; font-size: 0.88rem; color: var(--text-main); line-height: 1.55; }
+    .app-dialog-detail {
+      margin: 0 24px 16px 24px; padding: 12px 14px; background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle); border-radius: 8px; font-family: monospace;
+      font-size: 0.78rem; color: #f87171; max-height: 140px; overflow-y: auto;
+    }
+    .app-dialog-footer {
+      padding: 16px 24px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-subtle);
+      display: flex; justify-content: flex-end; gap: 12px;
+    }

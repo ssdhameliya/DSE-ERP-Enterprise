@@ -233,6 +233,7 @@ window.App = (function() {
 
       if (window.ShortcutManager) window.ShortcutManager.init();
       if (window.NavigationRouter) window.NavigationRouter.init();
+      if (window.GlobalUiEnhancer) window.GlobalUiEnhancer.init();
 
       // Check current session
       const user = window.AuthService.getCurrentUser();

@@ -459,6 +459,12 @@ window.NavigationRouter = (function() {
           if (window.NotificationCenterController) window.NotificationCenterController.loadNotifications();
           break;
       }
+
+      // Master Desktop Parity UI Enhancement pass on the loaded view
+      if (window.GlobalUiEnhancer && window.GlobalUiEnhancer.enhance) {
+        const targetView = document.getElementById(viewId);
+        window.GlobalUiEnhancer.enhance(targetView || document.body);
+      }
     },
 
     init() {
