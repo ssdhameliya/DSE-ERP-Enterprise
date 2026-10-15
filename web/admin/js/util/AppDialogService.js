@@ -327,6 +327,26 @@ window.AppDialogService = (function() {
       }, 3500);
     },
 
+    toast(message, type = 'info') {
+      this.showToast(message, type);
+    },
+
+    toastSuccess(message) {
+      this.showToast(message, 'success');
+    },
+
+    toastError(message) {
+      this.showToast(message, 'error');
+    },
+
+    toastWarning(message) {
+      this.showToast(message, 'warning');
+    },
+
+    toastInfo(message) {
+      this.showToast(message, 'info');
+    },
+
     /**
      * Custom modal lifecycle helpers
      */

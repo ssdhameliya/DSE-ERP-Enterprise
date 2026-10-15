@@ -679,19 +679,7 @@
           <div class="nav-item-left"><span class="nav-icon">&#128172;</span><span>Communication</span></div>
         </div>
 
-        <!-- 20. DOCUMENT STUDIO (EXPANDABLE) -->
-        <div class="nav-group" id="grp-doc">
-          <div class="nav-parent-row" onclick="toggleNavGroup('grp-doc')">
-            <div class="nav-item-left"><span class="nav-icon">&#128196;</span><span>Document Studio</span></div>
-            <span class="nav-chevron">&#9654;</span>
-          </div>
-          <div class="nav-children">
-            <div class="nav-child-item" id="nav-pdf-studio" onclick="selectNav('view-pdf-studio')">PDF Studio</div>
-            <div class="nav-child-item" id="nav-excel-studio" onclick="selectNav('view-excel-studio')">Excel Studio</div>
-          </div>
-        </div>
-
-        <!-- 21. SETTINGS (EXPANDABLE) -->
+        <!-- 20. SETTINGS (EXPANDABLE) -->
         <div class="nav-group" id="grp-settings">
           <div class="nav-parent-row" onclick="toggleNavGroup('grp-settings')">
             <div class="nav-item-left"><span class="nav-icon">&#9881;&#65039;</span><span>Settings</span></div>
@@ -703,16 +691,6 @@
             <div class="nav-child-item" id="nav-settings-security" onclick="selectNav('view-settings-security')">Security &amp; Session</div>
             <div class="nav-child-item" id="nav-settings-shortcuts" onclick="selectNav('view-settings-shortcuts')">Keyboard Shortcuts</div>
           </div>
-        </div>
-
-        <!-- 22. SAFE ROLLBACK -->
-        <div class="nav-single-item" id="nav-safe-rollback" onclick="selectNav('view-safe-rollback')">
-          <div class="nav-item-left"><span class="nav-icon">&#9194;</span><span>Safe Rollback</span></div>
-        </div>
-
-        <!-- 23. BACKUP & RESTORE -->
-        <div class="nav-single-item" id="nav-backup" onclick="selectNav('view-backup')">
-          <div class="nav-item-left"><span class="nav-icon">&#128190;</span><span>Backup &amp; Restore</span></div>
         </div>
       </aside>
 
@@ -4181,17 +4159,227 @@
           </div>
         </div>
 
-        <!-- VIEW: AUTOMATION CENTER -->
+        <!-- VIEW: AUTOMATION CENTER (AutomationCenter.fxml Desktop Parity) -->
         <div id="view-automation" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#9889;</span> Automation Center</h1>
-              <p>Automated payment notifications, low stock re-order triggers, and ledger rules</p>
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; color:var(--yellow);">
+                &#9889;
+              </div>
+              <div>
+                <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Smart Operations &amp; Automation Center</h1>
+                <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Automated 3-way matching, dynamic stock reorder, and operational rule engine</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-primary" id="btn-auto-scan" onclick="window.AutomationCenterController.loadData()">
+                <span>&#128269;</span> Scan Inventory Reorder
+              </button>
+              <button class="btn btn-secondary" onclick="window.AutomationCenterController.loadData()">
+                <span>&#128260;</span> Refresh Engine
+              </button>
             </div>
           </div>
-          <div class="data-panel" style="padding: 24px; text-align: center;">
-            <p style="color: var(--text-muted); margin-bottom: 12px;">Active rules configured: 4 triggers monitoring sales, low stock, and automated email dispatches.</p>
-            <span class="badge badge-paid">Rules Daemon Active</span>
+
+          <!-- 5 KPIS ROW (EXACT AutomationCenter.fxml DESKTOP PARITY) -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:16px;">
+            <div class="kpi-card" style="border-left:4px solid var(--cyan); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">ACTIVE RULES</span>
+                <span class="pill-badge pill-success" style="font-size:0.65rem; padding:1px 6px;">Live</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-active-rules" style="font-size:1.35rem; color:var(--cyan); font-weight:700;">6</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Automations Enabled</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--green); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">3-WAY MATCH RATE</span>
+                <span class="pill-badge pill-success" style="font-size:0.65rem; padding:1px 6px;">Match</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-match-rate" style="font-size:1.35rem; color:var(--green); font-weight:700;">100.0%</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">PO vs GRN vs Bill</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--red); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">DISCREPANT BILLS</span>
+                <span class="pill-badge pill-danger" style="font-size:0.65rem; padding:1px 6px;">Action</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-discrepant" style="font-size:1.35rem; color:var(--red); font-weight:700;">0</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Pending Approval</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--yellow); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">REORDER ALERTS</span>
+                <span class="pill-badge pill-warning" style="font-size:0.65rem; padding:1px 6px;">Alert</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-reorders" style="font-size:1.35rem; color:var(--yellow); font-weight:700;">0</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Below Minimum Stock</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--purple); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">REPLENISHMENT</span>
+                <span class="pill-badge pill-purple" style="font-size:0.65rem; padding:1px 6px;">Reorder</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-replenish-value" style="font-size:1.35rem; color:var(--purple); font-weight:700;">₹ 0.00</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Suggested Reorder Value</div>
+            </div>
+          </div>
+
+          <!-- TAB CONTROLS -->
+          <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+            <button type="button" class="btn btn-secondary active" id="auto-tab-btn-match" onclick="window.AutomationCenterController.switchTab('MATCH')">
+              <span>&#129309;</span> Smart 3-Way Match Verification
+            </button>
+            <button type="button" class="btn btn-secondary" id="auto-tab-btn-reorder" onclick="window.AutomationCenterController.switchTab('REORDER')">
+              <span>&#128230;</span> Dynamic Stock Reorder Alerts
+            </button>
+            <button type="button" class="btn btn-secondary" id="auto-tab-btn-rules" onclick="window.AutomationCenterController.switchTab('RULES')">
+              <span>&#9881;&#65039;</span> Configured Automation Rules
+            </button>
+          </div>
+
+          <!-- TAB 1: 3-WAY MATCH -->
+          <div id="auto-panel-match" style="display:block;">
+            <div class="data-panel" style="padding:14px;">
+              <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <input type="text" id="auto-match-search" class="form-input" placeholder="Search vendor bill, supplier, PO..." oninput="window.AutomationCenterController.filterMatches()" style="flex:1;">
+                <select id="auto-match-filter" class="form-select" onchange="window.AutomationCenterController.filterMatches()" style="width:200px;">
+                  <option value="ALL">All Statuses</option>
+                  <option value="MATCHED">MATCHED</option>
+                  <option value="REVIEW_REQUIRED">REVIEW_REQUIRED</option>
+                  <option value="SHORT_SHIPMENT">SHORT_SHIPMENT</option>
+                </select>
+                <button type="button" class="btn btn-secondary" onclick="window.AutomationCenterController.loadData()">Refresh</button>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr auto; gap:14px; align-items:start;">
+                <div style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Vendor Bill No.</th>
+                        <th>PO Number</th>
+                        <th>Supplier Name</th>
+                        <th style="text-align:right;">PO Value (₹)</th>
+                        <th style="text-align:right;">GRN Received (₹)</th>
+                        <th style="text-align:right;">Billed Value (₹)</th>
+                        <th style="text-align:right;">Variance (₹)</th>
+                        <th style="text-align:center;">Match Status</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="auto-matches-tbody">
+                      <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading 3-way match records...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Match Detail Drawer -->
+                <div id="auto-match-drawer" style="display:none; width:340px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:8px; padding:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:0.95rem; color:var(--cyan);">3-Way Match Verification</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.AutomationCenterController.closeMatchDrawer()" style="padding:1px 6px;">&times;</button>
+                  </div>
+                  <div style="font-size:0.8rem; display:flex; flex-direction:column; gap:8px;">
+                    <div><span style="color:var(--text-dim);">Bill No:</span> <strong id="amd-bill-no">-</strong></div>
+                    <div><span style="color:var(--text-dim);">Supplier:</span> <strong id="amd-supplier">-</strong></div>
+                    <div><span style="color:var(--text-dim);">PO Ref:</span> <span id="amd-po-no" style="font-family:monospace;">-</span></div>
+                    <div style="border-top:1px solid var(--border-subtle); padding-top:8px;">
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>PO Value:</span> <strong id="amd-po-amt">₹ 0.00</strong></div>
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>GRN Value:</span> <strong id="amd-grn-amt">₹ 0.00</strong></div>
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Billed Value:</span> <strong id="amd-bill-amt">₹ 0.00</strong></div>
+                      <div style="display:flex; justify-content:space-between; color:var(--red);"><span>Variance:</span> <strong id="amd-variance">₹ 0.00</strong></div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-subtle); padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+                      <span>Status:</span> <span id="amd-status" class="pill-badge pill-success">MATCHED</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: REORDER ALERTS -->
+          <div id="auto-panel-reorder" style="display:none;">
+            <div class="data-panel" style="padding:14px;">
+              <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <input type="text" id="auto-reorder-search" class="form-input" placeholder="Search item code, description..." oninput="window.AutomationCenterController.filterReorders()" style="flex:1;">
+                <select id="auto-reorder-filter" class="form-select" onchange="window.AutomationCenterController.filterReorders()" style="width:200px;">
+                  <option value="ALL">All Stock Levels</option>
+                  <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
+                  <option value="LOW_STOCK">LOW_STOCK</option>
+                  <option value="HEALTHY">HEALTHY</option>
+                </select>
+                <button type="button" class="btn btn-secondary" onclick="window.AutomationCenterController.loadData()">Rescan Inventory</button>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr auto; gap:14px; align-items:start;">
+                <div style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Item Code</th>
+                        <th>Item Description</th>
+                        <th style="text-align:right;">Current Stock</th>
+                        <th style="text-align:right;">Min Stock</th>
+                        <th style="text-align:right;">Suggested Qty</th>
+                        <th style="text-align:center;">Unit</th>
+                        <th style="text-align:right;">Estimated Cost (₹)</th>
+                        <th style="text-align:center;">Stock Status</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="auto-reorders-tbody">
+                      <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading reorder suggestions...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Reorder Detail Drawer -->
+                <div id="auto-reorder-drawer" style="display:none; width:340px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:8px; padding:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:0.95rem; color:var(--yellow);">Safety Assessment</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.AutomationCenterController.closeReorderDrawer()" style="padding:1px 6px;">&times;</button>
+                  </div>
+                  <div style="font-size:0.8rem; display:flex; flex-direction:column; gap:8px;">
+                    <div><span style="color:var(--text-dim);">Item Code:</span> <strong id="ard-code" style="color:var(--cyan);">-</strong></div>
+                    <div><span style="color:var(--text-dim);">Description:</span> <strong id="ard-name">-</strong></div>
+                    <div style="border-top:1px solid var(--border-subtle); padding-top:8px;">
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Current Stock:</span> <strong id="ard-stock">0</strong></div>
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Minimum Stock:</span> <strong id="ard-min">0</strong></div>
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--purple);"><span>Suggested Reorder:</span> <strong id="ard-suggested">0</strong></div>
+                      <div style="display:flex; justify-content:space-between; color:var(--yellow);"><span>Estimated Cost:</span> <strong id="ard-est-cost">₹ 0.00</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: CONFIGURED RULES -->
+          <div id="auto-panel-rules" style="display:none;">
+            <div class="data-panel" style="padding:14px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px;">Rule Identifier</th>
+                    <th>Automation Feature</th>
+                    <th style="width:140px; text-align:center;">Category</th>
+                    <th style="width:120px; text-align:center;">Current State</th>
+                    <th style="width:130px;">Control Mode</th>
+                    <th>Settings Path</th>
+                    <th style="width:140px; text-align:center;">Toggle</th>
+                  </tr>
+                </thead>
+                <tbody id="auto-rules-tbody">
+                  <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Loading automation rules...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -5277,124 +5465,7 @@
           </div>
         </div>
 
-        <!-- VIEW: DOCUMENT STUDIO (PDF / EXCEL) -->
-        <!-- VIEW: DOCUMENT STUDIO - PDF TEMPLATE DESIGNER (EXACT DESKTOP PdfStudio.fxml PARITY) -->
-        <div id="view-pdf-studio" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128196;</span> PDF Studio &amp; Template Designer</h1>
-              <p>Configure tax invoice templates, company branding headers, thermal dispatch rolls, and print formats</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.AppDialogService.showToast('Template defaults saved to server.', 'success')">
-                <span>&#128190;</span> Save Template Defaults
-              </button>
-              <button class="btn btn-primary" onclick="window.AppDialogService.showToast('Generating sample PDF preview...', 'info')">
-                <span>&#11015;&#65039;</span> Download Sample PDF
-              </button>
-            </div>
-          </div>
 
-          <div style="display:grid; grid-template-columns: 320px 1fr; gap:16px;">
-            <!-- Left Column: Template Selection & Controls -->
-            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:16px;">
-              <h3 style="font-size:0.9rem; margin-top:0; margin-bottom:12px; color:var(--cyan);">Standard Templates</h3>
-              <div id="pdf-template-list" style="margin-bottom:16px;">
-                <!-- Populated dynamically by SettingsController.loadPdfStudio() -->
-              </div>
-
-              <h3 style="font-size:0.9rem; margin-top:16px; margin-bottom:12px; color:var(--cyan);">Layout Controls</h3>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Font Family</label>
-                <select class="form-select form-input-sm">
-                  <option value="Inter">Inter / Modern Sans</option>
-                  <option value="Roboto">Roboto</option>
-                  <option value="Courier">Courier Mono</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Accent Color</label>
-                <input type="color" class="form-input form-input-sm" value="#0284c7" style="height:32px; padding:2px;">
-              </div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px; font-size:0.8rem;">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Show Company Header &amp; Logo
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Print Dynamic UPI QR Code
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Include Bank &amp; Settlement Details
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Print Statutory GST Split (CGST/SGST/IGST)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Include Terms &amp; Conditions
-                </label>
-              </div>
-            </div>
-
-            <!-- Right Column: Live Interactive Preview Canvas -->
-            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); border-radius:8px; padding:20px; overflow-y:auto; max-height:700px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.8rem; color:var(--text-muted);">LIVE 10.0.25 PDF RENDERER PREVIEW</span>
-                <span class="badge badge-paid">A4 HIGH-RES 300 DPI</span>
-              </div>
-              <div id="pdf-preview-canvas">
-                <!-- Live PDF Template canvas rendered by SettingsController -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW: DOCUMENT STUDIO - EXCEL STUDIO -->
-        <div id="view-excel-studio" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128202;</span> Excel Studio &amp; Export Configurator</h1>
-              <p>Custom spreadsheet layouts, Apache POI pivot exports, formula bands, and audit workbooks</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-primary" onclick="window.AppDialogService.showToast('Exporting sample test workbook...', 'info')">
-                <span>&#11015;&#65039;</span> Generate Test XLSX
-              </button>
-            </div>
-          </div>
-
-          <div class="data-panel" style="padding:20px;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-              <div style="background:rgba(0,0,0,0.2); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
-                <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0;">Spreadsheet Typography &amp; Header</h3>
-                <div class="form-group" style="margin-bottom:10px;">
-                  <label class="form-label" style="font-size:0.75rem;">Header Fill Color</label>
-                  <input type="color" class="form-input form-input-sm" value="#0f172a" style="height:32px; padding:2px;">
-                </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                  <label class="form-label" style="font-size:0.75rem;">Header Text Color</label>
-                  <input type="color" class="form-input form-input-sm" value="#ffffff" style="height:32px; padding:2px;">
-                </div>
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:12px; cursor:pointer;">
-                  <input type="checkbox" checked> Auto-fit column widths based on contents
-                </label>
-              </div>
-
-              <div style="background:rgba(0,0,0,0.2); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
-                <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0;">Formulas &amp; Number Formats</h3>
-                <div class="form-group" style="margin-bottom:10px;">
-                  <label class="form-label" style="font-size:0.75rem;">Currency Format Pattern</label>
-                  <input type="text" class="form-input form-input-sm" value="&#8377; #,##,##0.00">
-                </div>
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:12px; cursor:pointer;">
-                  <input type="checkbox" checked> Embed native Excel SUM() formulas in total rows
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:8px; cursor:pointer;">
-                  <input type="checkbox" checked> Lock header rows (Freeze Panes at Row 1)
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- VIEW: UNIFIED SETTINGS STUDIO (Settings.fxml & SettingsController.java FULL PARITY) -->
         <div id="view-settings" class="module-view">
@@ -5438,12 +5509,6 @@
             </button>
             <button type="button" class="settings-tab-btn" data-section="SHORTCUTS" onclick="window.SettingsController.switchSection('SHORTCUTS')">
               <span>&#9000;&#65039;</span> Shortcuts
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="BACKUP" onclick="window.SettingsController.switchSection('BACKUP')">
-              <span>&#128452;&#65039;</span> Database Backup
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="ROLLBACK" onclick="window.SettingsController.switchSection('ROLLBACK')">
-              <span>&#128260;</span> Safe Rollback
             </button>
           </div>
 
@@ -5794,55 +5859,6 @@ Morbi, Gujarat | Phone: +91 90999 39193</textarea>
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            <!-- 9. BACKUP & RECOVERY PANEL -->
-            <div id="settings-panel-backup" class="settings-subpanel" data-section="BACKUP" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">PostgreSQL Hot Backup &amp; Point-in-time Recovery</h3>
-                    <p style="font-size:0.74rem; color:var(--text-dim); margin:2px 0 0 0;">Automated nightly database dumps and immediate point-in-time snapshot generator</p>
-                  </div>
-                  <button class="btn btn-primary" onclick="window.SettingsController.triggerImmediateBackup()">
-                    <span>&#128452;&#65039;</span> Trigger Immediate Full Backup
-                  </button>
-                </div>
-                <div style="background:rgba(2,132,199,0.08); border:1px solid rgba(2,132,199,0.25); border-radius:8px; padding:12px 16px; font-size:0.78rem; margin-bottom:14px;">
-                  <strong>Database Host:</strong> localhost:55432 &bull; <strong>Database Name:</strong> dse_production &bull; <strong>Engine:</strong> PostgreSQL 16 &bull; <strong>Backup Storage:</strong> D:\DSE Production\backups
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-dim);">
-                  Automated backups are executed every 24 hours via pg_dump to resilient cold storage.
-                </div>
-              </div>
-            </div>
-
-            <!-- 10. SAFE ROLLBACK PANEL -->
-            <div id="settings-panel-rollback" class="settings-subpanel" data-section="ROLLBACK" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Safe Release Rollback Studio</h3>
-                    <p style="font-size:0.74rem; color:var(--text-dim); margin:2px 0 0 0;">Verified binary releases with SHA256 checksums and automated pre-flight safety snapshots</p>
-                  </div>
-                  <button class="btn btn-secondary" onclick="window.SettingsController.loadSafeRollback()">
-                    <span>&#128260;</span> Refresh Releases
-                  </button>
-                </div>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Target Version</th>
-                      <th>Installer Package</th>
-                      <th>Compatibility</th>
-                      <th>SHA256 Status</th>
-                      <th style="text-align:right;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rollback-settings-tbody">
-                    <!-- Populated dynamically -->
-                  </tbody>
-                </table>
               </div>
             </div>
           </div>
@@ -6160,138 +6176,6 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </div>
         </div>
 
-        <!-- VIEW: SAFE RELEASE ROLLBACK (EXACT DESKTOP SafeRollback.fxml PARITY) -->
-        <div id="view-safe-rollback" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#9198;&#65039;</span> Safe Release Rollback Studio</h1>
-              <p>Zero-data-loss application rollback coordinator with automatic pre-flight safety snapshots</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.SettingsController.loadSafeRollback()">
-                <span>&#128260;</span> Refresh Releases
-              </button>
-            </div>
-          </div>
-
-          <!-- 4 KPIs matching SafeRollback.fxml -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">CURRENT APP VERSION</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--cyan);">v10.0.25</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Build: 2026.10 &bull; Windows x64</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE SCHEMA</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--green);">v10.0.25</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Active PostgreSQL Schema</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">SAFETY PROTOCOL</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--purple);">PROTECTED</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Automated Pre-Flight Snapshot</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">RETAINED INSTALLERS</span></div>
-              <div class="kpi-value" style="font-size: 1.25rem; color: var(--yellow);">4 Packages</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Verified fallback versions</div>
-            </div>
-          </div>
-
-          <!-- Safety Guarantee Alert Banner -->
-          <div style="background:rgba(2,132,199,0.1); border:1px solid rgba(2,132,199,0.3); border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:0.8rem; line-height:1.5;">
-            <strong style="color:var(--cyan);">&#128737;&#65039; PRODUCTION-SAFE ROLLBACK GUARANTEE:</strong><br>
-            Rollback replaces only the binary application package. It <em>never</em> automatically wipes or downgrades database tables. A verified PostgreSQL safety backup and configuration snapshot are created immediately prior to staging. Database restoration remains an explicit separate administrative action.
-          </div>
-
-          <!-- Rollback Candidates Table -->
-          <div class="data-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="width:110px;">Version</th>
-                  <th>Installer Package</th>
-                  <th style="width:120px;">Target Schema</th>
-                  <th style="width:140px;">Compatibility</th>
-                  <th style="width:180px;">SHA256 Checksum</th>
-                  <th style="width:100px;">Package Size</th>
-                  <th style="text-align: right; width: 190px;">Rollback Action</th>
-                </tr>
-              </thead>
-              <tbody id="rollback-candidates-tbody">
-                <!-- Dynamically populated by SettingsController.loadSafeRollback() -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- VIEW: DATABASE BACKUP & RECOVERY (EXACT DESKTOP BackupRestore.fxml PARITY) -->
-        <div id="view-backup" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128190;</span> Database Backup &amp; Recovery Studio</h1>
-              <p>PostgreSQL server snapshots, automated pg_dump archives, and emergency recovery packages</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.SettingsController.exportRecoveryPackage()">
-                <span>&#128230;</span> Export Recovery Package
-              </button>
-              <button class="btn btn-primary" onclick="window.SettingsController.triggerImmediateBackup()">
-                <span>+</span> Create Backup Now
-              </button>
-              <button class="btn btn-secondary" onclick="window.SettingsController.loadBackups()">
-                <span>&#128260;</span> Refresh
-              </button>
-            </div>
-          </div>
-
-          <!-- 4 KPIs matching BackupRestore.fxml -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE SIZE</span></div>
-              <div class="kpi-value" id="backup-kpi-size" style="font-size: 1.25rem;">48.2 MB</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">PostgreSQL 18 active storage</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DATABASE HEALTH</span></div>
-              <div class="kpi-value" id="backup-kpi-health" style="font-size: 1.25rem; color: var(--green);">100% HEALTHY</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">WAL consistency verified</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL ARCHIVES</span></div>
-              <div class="kpi-value" id="backup-kpi-count" style="font-size: 1.25rem; color: var(--purple);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Retained server pg_dump files</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LAST BACKUP TAKEN</span></div>
-              <div class="kpi-value" id="backup-kpi-last" style="font-size: 1.15rem; color: var(--yellow);">None</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Most recent verified snapshot</div>
-            </div>
-          </div>
-
-          <!-- Stored Backups Table -->
-          <div class="data-panel">
-            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border-subtle);">
-              <div class="panel-title" style="font-weight:700; font-size:0.85rem; color:var(--cyan);">&#128193; Stored PostgreSQL Server Backups (/Backups/Server)</div>
-              <span style="font-size:0.75rem; color:var(--text-dim);">Automated retention policy preserves last 14 daily snapshots</span>
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Archive Filename</th>
-                  <th style="width:160px;">Created Date &amp; Time</th>
-                  <th style="width:120px;">File Size</th>
-                  <th style="width:100px;">Integrity</th>
-                  <th style="width:110px;">Source</th>
-                  <th style="text-align: right; width: 220px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="backups-table-tbody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading server backups...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
 
       </main>
     </div>
@@ -8914,60 +8798,61 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.33.4"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.4"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.4"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.33.4"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.4"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.4"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.33.4"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.4"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.4"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.4"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.4"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.33.4"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.33.4"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.33.4"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.33.5"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.5"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.5"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.33.5"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.5"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.5"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.33.5"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.5"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.5"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.5"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.5"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.33.5"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.33.5"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.33.5"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.33.4"></script>
-  <script src="js/services/AuthService.js?v=10.0.33.4"></script>
-  <script src="js/services/MasterService.js?v=10.0.33.4"></script>
-  <script src="js/services/OperationsService.js?v=10.0.33.4"></script>
-  <script src="js/services/ReportService.js?v=10.0.33.4"></script>
-  <script src="js/services/ReconService.js?v=10.0.33.4"></script>
-  <script src="js/services/AccountingService.js?v=10.0.33.4"></script>
-  <script src="js/services/ImportService.js?v=10.0.33.4"></script>
+  <script src="js/services/ApiService.js?v=10.0.33.5"></script>
+  <script src="js/services/AuthService.js?v=10.0.33.5"></script>
+  <script src="js/services/MasterService.js?v=10.0.33.5"></script>
+  <script src="js/services/OperationsService.js?v=10.0.33.5"></script>
+  <script src="js/services/ReportService.js?v=10.0.33.5"></script>
+  <script src="js/services/ReconService.js?v=10.0.33.5"></script>
+  <script src="js/services/AccountingService.js?v=10.0.33.5"></script>
+  <script src="js/services/ImportService.js?v=10.0.33.5"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/GstController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.1"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.1"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/GstController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.5"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.33.1"></script>
-  <script src="js/app.js?v=10.0.33.1"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.33.5"></script>
+  <script src="js/app.js?v=10.0.33.5"></script>
 </body>
 </html>
 

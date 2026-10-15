@@ -75,9 +75,9 @@ window.EWayBillController = {
 
   updateKpis() {
     const totalBills = this.cachedBills.length;
-    const activeBills = this.cachedBills.filter(b => b.status === 'ACTIVE').length;
+    const activeBills = this.cachedBills.filter(b => b.status === 'ACTIVE' || b.status === 'GENERATED').length;
     const pendingSales = this.eligibleSales.length;
-    const totalVal = this.cachedBills.reduce((acc, b) => acc + (parseFloat(b.consignmentValue) || 0), 0);
+    const totalVal = this.cachedBills.reduce((acc, b) => acc + (parseFloat(b.totalValue != null ? b.totalValue : b.consignmentValue) || 0), 0);
 
     const tEl = document.getElementById('eway-kpi-total-bills');
     const aEl = document.getElementById('eway-kpi-active-bills');
@@ -121,25 +121,35 @@ window.EWayBillController = {
       return;
     }
 
-    tbody.innerHTML = this.cachedBills.map(b => `
-      <tr>
-        <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${b.ewayBillNo}</td>
-        <td>${this.formatDate(b.generatedDate)}</td>
-        <td style="font-weight:600;">${b.invoiceNo}</td>
-        <td style="font-weight:600; color:var(--text-main);">${b.consigneeName}</td>
-        <td><span class="pill-badge pill-neutral" style="font-family:monospace;">${b.vehicleNo || '-'}</span></td>
-        <td style="text-align:right;">${b.distanceKm} km</td>
-        <td style="text-align:right; font-weight:700;">${this.formatMoney(b.consignmentValue)}</td>
-        <td style="text-align:center;"><span class="pill-badge pill-success">${b.status}</span></td>
-        <td style="text-align:center; white-space:nowrap;">
-          <div style="display:flex; gap:4px; justify-content:center;">
-            <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.openUpdateVehicleModal('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">Vehicle</button>
-            <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.exportNicJson('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">NIC JSON</button>
-            <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.printEWaySlip('${b.ewayBillNo}', '${b.invoiceNo}')" style="padding:2px 6px; font-size:0.72rem;">Print</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = this.cachedBills.map(b => {
+      const invNo = b.docNo || b.invoiceNo || '-';
+      const genDate = b.docDate || b.ewayBillDate || b.generatedDate;
+      const party = b.toPartyName || b.consigneeName || (b.customer && b.customer.name) || b.customerName || '-';
+      const dist = b.actualDistKm != null ? b.actualDistKm : (b.distanceKm != null ? b.distanceKm : 0);
+      const val = b.totalValue != null ? b.totalValue : (b.consignmentValue != null ? b.consignmentValue : 0);
+      const status = b.status || 'GENERATED';
+      const statusClass = status === 'CANCELLED' ? 'pill-danger' : 'pill-success';
+
+      return `
+        <tr>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${b.ewayBillNo}</td>
+          <td>${this.formatDate(genDate)}</td>
+          <td style="font-weight:600;">${invNo}</td>
+          <td style="font-weight:600; color:var(--text-main);">${party}</td>
+          <td><span class="pill-badge pill-neutral" style="font-family:monospace;">${b.vehicleNo || '-'}</span></td>
+          <td style="text-align:right;">${dist} km</td>
+          <td style="text-align:right; font-weight:700;">${this.formatMoney(val)}</td>
+          <td style="text-align:center;"><span class="pill-badge ${statusClass}">${status}</span></td>
+          <td style="text-align:center; white-space:nowrap;">
+            <div style="display:flex; gap:4px; justify-content:center;">
+              <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.openUpdateVehicleModal('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">Vehicle</button>
+              <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.exportNicJson('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">NIC JSON</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.printEWaySlip('${b.ewayBillNo}', '${invNo}')" style="padding:2px 6px; font-size:0.72rem;">Print</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   },
 
   renderEligibleTable() {
@@ -152,17 +162,22 @@ window.EWayBillController = {
     }
 
     tbody.innerHTML = this.eligibleSales.map(s => {
+      const invNo = s.invoiceNumber || s.invoiceNo || '-';
+      const invDate = s.invoiceDate || s.date;
+      const custName = s.customerName || (s.customer && s.customer.name) || 'Client';
+      const gstin = s.customerGstin || s.billingGstin || 'Unregistered';
+      const city = s.destinationCity || s.billingCity || 'Surat, Gujarat';
       const amt = parseFloat(s.totalAmount != null ? s.totalAmount : (s.total || 0));
       return `
         <tr>
-          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${s.invoiceNo}</td>
-          <td>${this.formatDate(s.invoiceDate)}</td>
-          <td style="font-weight:600;">${(s.customer && s.customer.name) || s.customerName || 'Client'}</td>
-          <td style="font-family:monospace; color:var(--purple);">${s.billingGstin || 'Unregistered'}</td>
-          <td>${s.billingCity || 'Surat, Gujarat'}</td>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${invNo}</td>
+          <td>${this.formatDate(invDate)}</td>
+          <td style="font-weight:600;">${custName}</td>
+          <td style="font-family:monospace; color:var(--purple);">${gstin}</td>
+          <td>${city}</td>
           <td style="text-align:right; font-weight:700;">${this.formatMoney(amt)}</td>
           <td style="text-align:center;">
-            <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.openGenerateEWayModal('${s.invoiceNo}')" style="padding:3px 10px; font-size:0.75rem;">+ Generate E-Way Bill</button>
+            <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.openGenerateEWayModal('${invNo}')" style="padding:3px 10px; font-size:0.75rem;">+ Generate E-Way Bill</button>
           </td>
         </tr>
       `;

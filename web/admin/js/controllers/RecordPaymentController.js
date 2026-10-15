@@ -308,35 +308,59 @@ window.RecordPaymentController = (function() {
       const notes = document.getElementById('rp-pay-notes')?.value || '';
       const proofName = attachedProofFile ? attachedProofFile.name : '';
 
+      const docType = currentType === 'PURCHASE' ? 'PURCHASE' : 'SALE';
+      let docId = parseInt(currentInvoiceId) || 0;
+
+      // Ensure docId is a valid positive integer from caches if not set
+      if (docId <= 0 && currentInvoiceNo) {
+        if (docType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
+          const s = window.SalesController.salesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
+          if (s && s.id) docId = parseInt(s.id);
+        } else if (docType === 'PURCHASE' && window.PurchaseController && Array.isArray(window.PurchaseController.purchasesCache)) {
+          const p = window.PurchaseController.purchasesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
+          if (p && p.id) docId = parseInt(p.id);
+        }
+      }
+
+      const remainingAfter = Math.max(0, invoiceBalance - amount);
+      const paymentType = remainingAfter <= 0.01 ? 'FULL' : 'PARTIAL';
+      const currentUser = (window.AuthService && window.AuthService.getCurrentUsername()) || 'Admin';
+
       const payload = {
-        invoiceId: currentInvoiceId,
-        invoiceNo: currentInvoiceNo,
-        type: currentType,
-        paymentDate: date,
-        paymentMode: mode,
-        referenceNo: ref,
-        receivedFrom: from,
-        bankAccount: bank,
+        documentType: docType,
+        documentId: docId,
+        date: date,
         amount: amount,
-        notes: notes,
-        proofFileName: proofName
+        mode: mode,
+        reference: ref || ('TXN-' + Math.floor(100000 + Math.random() * 900000)),
+        notes: notes || `Payment recorded for ${currentInvoiceNo}`,
+        receivedFrom: from || currentPartyName,
+        paymentType: paymentType,
+        attachment: proofName || null,
+        createdBy: currentUser
       };
 
       try {
         await window.ApiService.post('/api/support/payments', payload);
       } catch (err) {
-        console.warn('Backend payment save fallback:', err);
+        console.error('Failed to post payment to backend:', err);
+        if (window.AppDialogService) {
+          window.AppDialogService.toastError('Server payment error: ' + (err.message || 'Validation failed'));
+        } else {
+          alert('Failed to save payment on server: ' + err.message);
+        }
+        return;
       }
 
       // Update local state
       invoicePaid += amount;
-      invoiceBalance = Math.max(0, invoiceTotal - invoicePaid);
+      invoiceBalance = remainingAfter;
 
       paymentHistory.unshift({
         id: Date.now(),
         date,
         mode,
-        referenceNo: ref || ('TXN-' + Math.floor(100000 + Math.random() * 900000)),
+        referenceNo: payload.reference,
         bankAccount: bank,
         receivedFrom: from,
         amount,
@@ -357,20 +381,27 @@ window.RecordPaymentController = (function() {
       this.resetProof();
 
       if (window.AppDialogService) {
-        window.AppDialogService.showToast(`Payment of ${formatMoney(amount)} successfully recorded!`, 'success');
+        window.AppDialogService.toastSuccess(`Payment of ${formatMoney(amount)} successfully recorded! Invoice status updated to ${invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL'}.`);
       } else {
         alert(`Payment of ${formatMoney(amount)} recorded successfully!`);
       }
 
-      // Update Sales or Purchase Controller caches
-      if (currentType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
-        const s = window.SalesController.salesCache.find(x => x.invoiceNo === currentInvoiceNo);
-        if (s) {
-          s.paidAmount = invoicePaid;
-          s.paymentStatus = invoiceBalance <= 0.01 ? 'PAID' : 'PARTIALLY PAID';
+      // Reload register from server so database changes immediately reflect
+      try {
+        if (docType === 'SALE') {
+          if (window.SalesController && typeof window.SalesController.loadSales === 'function') {
+            await window.SalesController.loadSales(0);
+          }
+        } else {
+          if (window.PurchaseController && typeof window.PurchaseController.loadPurchases === 'function') {
+            await window.PurchaseController.loadPurchases(0);
+          }
         }
-      } else if (currentType === 'PURCHASE' && window.PurchaseController && window.PurchaseController.loadPurchases) {
-        window.PurchaseController.loadPurchases(0);
+        if (window.DashboardController && typeof window.DashboardController.refresh === 'function') {
+          window.DashboardController.refresh();
+        }
+      } catch (e2) {
+        console.warn('Post-payment register reload warning:', e2);
       }
     },
 

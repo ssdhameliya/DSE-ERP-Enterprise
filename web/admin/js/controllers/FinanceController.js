@@ -680,9 +680,29 @@ window.FinanceController = {
     return Object.values(partyMap);
   },
 
-  renderAgingTable(rows) {
+  renderAgingTable(data) {
     const tbody = document.getElementById('aging-table-tbody');
     if (!tbody) return;
+
+    let rows = [];
+    let summaryTotal = null;
+    let summaryCount = null;
+
+    if (Array.isArray(data)) {
+      rows = data;
+    } else if (data && typeof data === 'object') {
+      if (Array.isArray(data.parties)) {
+        rows = data.parties;
+        if (data.totalOutstanding != null) summaryTotal = parseFloat(data.totalOutstanding);
+        if (data.totalCount != null) summaryCount = parseInt(data.totalCount);
+      } else if (Array.isArray(data.rows)) {
+        rows = data.rows;
+        if (data.grandTotal != null) summaryTotal = parseFloat(data.grandTotal);
+        if (data.totalParties != null) summaryCount = parseInt(data.totalParties);
+      } else if (Array.isArray(data.content)) {
+        rows = data.content;
+      }
+    }
 
     let tot = 0, cTot = 0, d60Tot = 0, d90Tot = 0, o90Tot = 0;
 
@@ -693,22 +713,35 @@ window.FinanceController = {
     }
 
     tbody.innerHTML = rows.map((r, idx) => {
-      const total = r.totalDue || (r.current + r.due31To60 + r.due61To90 + r.over90);
-      tot += total;
-      cTot += (r.current || 0);
-      d60Tot += (r.due31To60 || 0);
-      d90Tot += (r.due61To90 || 0);
-      o90Tot += (r.over90 || 0);
+      const current = parseFloat(r.current != null ? r.current : (r.bucket0To30 != null ? r.bucket0To30 : 0));
+      const due31To60 = parseFloat(r.due31To60 != null ? r.due31To60 : (r.bucket31To60 != null ? r.bucket31To60 : 0));
+      const due61To90 = parseFloat(r.due61To90 != null ? r.due61To90 : (r.bucket61To90 != null ? r.bucket61To90 : 0));
+      const over90 = parseFloat(r.over90 != null ? r.over90 : (r.bucket90Plus != null ? r.bucket90Plus : 0));
+      const total = parseFloat(r.totalDue != null ? r.totalDue : (r.totalOutstanding != null ? r.totalOutstanding : (current + due31To60 + due61To90 + over90)));
 
-      let risk = 'LOW';
+      // Store normalized fields on r so drawer inspection reads accurately
+      r.current = current;
+      r.due31To60 = due31To60;
+      r.due61To90 = due61To90;
+      r.over90 = over90;
+      r.totalDue = total;
+      r.partyName = r.partyName || r.name || 'Direct Account';
+
+      tot += total;
+      cTot += current;
+      d60Tot += due31To60;
+      d90Tot += due61To90;
+      o90Tot += over90;
+
+      let risk = r.riskLevel || 'LOW';
       let riskBadge = 'pill-success';
-      if ((r.over90 || 0) > 0) {
+      if (over90 > 0 || risk === 'CRITICAL') {
         risk = 'CRITICAL';
         riskBadge = 'pill-danger';
-      } else if ((r.due61To90 || 0) > 0) {
+      } else if (due61To90 > 0 || risk === 'HIGH') {
         risk = 'HIGH';
         riskBadge = 'pill-warning';
-      } else if ((r.due31To60 || 0) > 0) {
+      } else if (due31To60 > 0 || risk === 'MEDIUM') {
         risk = 'MEDIUM';
         riskBadge = 'pill-purple';
       }
@@ -717,10 +750,10 @@ window.FinanceController = {
         <tr>
           <td style="font-weight:600; color:var(--text-main);">${r.partyName}</td>
           <td style="text-align:right; font-weight:700; color:var(--cyan);">${this.formatMoney(total)}</td>
-          <td style="text-align:right;">${r.current > 0 ? this.formatMoney(r.current) : '-'}</td>
-          <td style="text-align:right;">${r.due31To60 > 0 ? this.formatMoney(r.due31To60) : '-'}</td>
-          <td style="text-align:right; color:var(--yellow);">${r.due61To90 > 0 ? this.formatMoney(r.due61To90) : '-'}</td>
-          <td style="text-align:right; color:var(--red); font-weight:700;">${r.over90 > 0 ? this.formatMoney(r.over90) : '-'}</td>
+          <td style="text-align:right;">${current > 0 ? this.formatMoney(current) : '-'}</td>
+          <td style="text-align:right;">${due31To60 > 0 ? this.formatMoney(due31To60) : '-'}</td>
+          <td style="text-align:right; color:var(--yellow);">${due61To90 > 0 ? this.formatMoney(due61To90) : '-'}</td>
+          <td style="text-align:right; color:var(--red); font-weight:700;">${over90 > 0 ? this.formatMoney(over90) : '-'}</td>
           <td style="text-align:center;"><span class="pill-badge ${riskBadge}">${risk}</span></td>
           <td style="text-align:center; white-space:nowrap;">
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.openAgingDrawer(${idx})" style="padding:2px 8px; font-size:0.75rem;">Inspect</button>
@@ -730,7 +763,7 @@ window.FinanceController = {
       `;
     }).join('');
 
-    this.updateAgingKpis(tot, rows.length, cTot, d60Tot, d90Tot, o90Tot);
+    this.updateAgingKpis(summaryTotal != null ? summaryTotal : tot, summaryCount != null ? summaryCount : rows.length, cTot, d60Tot, d90Tot, o90Tot);
     this.agingRowsCache = rows;
   },
 
