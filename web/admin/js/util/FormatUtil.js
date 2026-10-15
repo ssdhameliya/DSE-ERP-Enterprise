@@ -8,6 +8,13 @@ window.FormatUtil = {
     return '₹ ' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
+  amountInWords(amount) {
+    if (window.AmountInWordsConverter) {
+      return window.AmountInWordsConverter.indianRupees(amount);
+    }
+    return '';
+  },
+
   formatNumber(val) {
     const num = parseFloat(val) || 0;
     return num.toLocaleString('en-IN');

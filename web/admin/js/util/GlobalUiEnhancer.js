@@ -33,6 +33,9 @@ window.GlobalUiEnhancer = (function() {
       if (window.LabelIconEnhancer) {
         window.LabelIconEnhancer.enhance(root);
       }
+      if (window.WorkflowFocusManager) {
+        window.WorkflowFocusManager.autoEnhanceScreen(root);
+      }
     } finally {
       // Allow DOM mutations to settle before accepting new observation triggers
       setTimeout(() => {

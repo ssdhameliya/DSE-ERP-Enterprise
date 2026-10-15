@@ -180,19 +180,47 @@ window.TableUiEnhancer = (function() {
     // 4. Identify current view and dispatch to active controller
     const currentView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : '';
 
-    if (currentView === 'view-sales-register' && window.SalesController && window.SalesController.openInvoiceDrawer) {
-      window.SalesController.openInvoiceDrawer(id);
-    } else if (currentView === 'view-purchase-register' && window.PurchaseController && window.PurchaseController.openPurchaseDrawer) {
-      window.PurchaseController.openPurchaseDrawer(id);
-    } else if (currentView === 'view-quotations' && window.QuotationController && window.QuotationController.openDrawer) {
-      window.QuotationController.openDrawer(id);
-    } else if ((currentView === 'view-sales-returns' || currentView === 'view-purchase-returns') && window.ReturnsController && window.ReturnsController.openDrawer) {
-      window.ReturnsController.openDrawer(id);
-    } else if (currentView === 'view-item-master' && window.ItemMasterController && window.ItemMasterController.openItemDrawer) {
-      window.ItemMasterController.openItemDrawer(id);
-    } else if (currentView === 'view-customers' || currentView === 'view-suppliers') {
-      if (window.PartyController && window.PartyController.openPartyDrawer) {
-        window.PartyController.openPartyDrawer(id);
+    if (currentView === 'view-sales-register' && window.SalesController) {
+      if (typeof window.SalesController.openInvoiceDrawer === 'function') {
+        window.SalesController.openInvoiceDrawer(id);
+      } else if (typeof window.SalesController.showDetails === 'function') {
+        window.SalesController.showDetails(id);
+      }
+    } else if (currentView === 'view-purchase-register' && window.PurchaseController) {
+      if (typeof window.PurchaseController.showDetails === 'function') {
+        window.PurchaseController.showDetails(id);
+      } else if (typeof window.PurchaseController.openPurchaseDrawer === 'function') {
+        window.PurchaseController.openPurchaseDrawer(id);
+      }
+    } else if (currentView === 'view-quotations' && window.QuotationController) {
+      if (typeof window.QuotationController.showDetails === 'function') {
+        window.QuotationController.showDetails(id);
+      } else if (typeof window.QuotationController.openDrawer === 'function') {
+        window.QuotationController.openDrawer(id);
+      }
+    } else if ((currentView === 'view-sales-returns' || currentView === 'view-purchase-returns') && window.ReturnsController) {
+      if (typeof window.ReturnsController.showDetails === 'function') {
+        window.ReturnsController.showDetails(id);
+      } else if (typeof window.ReturnsController.openDrawer === 'function') {
+        window.ReturnsController.openDrawer(id);
+      }
+    } else if (currentView === 'view-item-master' && window.ItemMasterController) {
+      if (typeof window.ItemMasterController.openStockHistory === 'function') {
+        window.ItemMasterController.openStockHistory(id);
+      } else if (typeof window.ItemMasterController.openEditItemModal === 'function') {
+        window.ItemMasterController.openEditItemModal(id);
+      }
+    } else if (currentView === 'view-customers' && window.PartyController) {
+      if (typeof window.PartyController.openCustomer360 === 'function') {
+        window.PartyController.openCustomer360(id);
+      } else if (typeof window.PartyController.openEditPartyModal === 'function') {
+        window.PartyController.openEditPartyModal(id);
+      }
+    } else if (currentView === 'view-suppliers' && window.PartyController) {
+      if (typeof window.PartyController.openSupplier360 === 'function') {
+        window.PartyController.openSupplier360(id);
+      } else if (typeof window.PartyController.openEditPartyModal === 'function') {
+        window.PartyController.openEditPartyModal(id);
       }
     } else if (currentView === 'view-purchase-recon' && window.PurchaseReconController && window.PurchaseReconController.openDrawer) {
       window.PurchaseReconController.openDrawer(id);
@@ -214,27 +242,41 @@ window.TableUiEnhancer = (function() {
 
     const currentView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : '';
 
-    if (currentView === 'view-sales-register') {
-      if (window.SalesController && window.SalesController.openSaleEditor) {
+    if (currentView === 'view-sales-register' && window.SalesController) {
+      if (typeof window.SalesController.openSaleEditor === 'function') {
         window.SalesController.openSaleEditor(id);
-      } else if (window.SalesController && window.SalesController.printTaxInvoice) {
+      } else if (typeof window.SalesController.printTaxInvoice === 'function') {
         window.SalesController.printTaxInvoice(id);
       }
-    } else if (currentView === 'view-purchase-register') {
-      if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+    } else if (currentView === 'view-purchase-register' && window.PurchaseController) {
+      if (typeof window.PurchaseController.openPurchaseEditor === 'function') {
         window.PurchaseController.openPurchaseEditor(id);
+      } else if (typeof window.PurchaseController.openPurchaseView === 'function') {
+        window.PurchaseController.openPurchaseView(id);
       }
-    } else if (currentView === 'view-quotations') {
-      if (window.QuotationController && window.QuotationController.editQuotation) {
+    } else if (currentView === 'view-quotations' && window.QuotationController) {
+      if (typeof window.QuotationController.openQuotationEditor === 'function') {
+        window.QuotationController.openQuotationEditor(id);
+      } else if (typeof window.QuotationController.editQuotation === 'function') {
         window.QuotationController.editQuotation(id);
       }
-    } else if (currentView === 'view-item-master') {
-      if (window.ItemMasterController && window.ItemMasterController.editItem) {
+    } else if (currentView === 'view-item-master' && window.ItemMasterController) {
+      if (typeof window.ItemMasterController.openEditItemModal === 'function') {
+        window.ItemMasterController.openEditItemModal(id);
+      } else if (typeof window.ItemMasterController.editItem === 'function') {
         window.ItemMasterController.editItem(id);
       }
-    } else if (currentView === 'view-customers' || currentView === 'view-suppliers') {
-      if (window.PartyController && window.PartyController.editParty) {
+    } else if ((currentView === 'view-customers' || currentView === 'view-suppliers') && window.PartyController) {
+      if (typeof window.PartyController.openEditPartyModal === 'function') {
+        window.PartyController.openEditPartyModal(id);
+      } else if (typeof window.PartyController.editParty === 'function') {
         window.PartyController.editParty(id);
+      }
+    } else if ((currentView === 'view-sales-returns' || currentView === 'view-purchase-returns') && window.ReturnsController) {
+      if (typeof window.ReturnsController.viewOriginalDoc === 'function') {
+        window.ReturnsController.viewOriginalDoc(id);
+      } else if (typeof window.ReturnsController.showDetails === 'function') {
+        window.ReturnsController.showDetails(id);
       }
     }
   }
