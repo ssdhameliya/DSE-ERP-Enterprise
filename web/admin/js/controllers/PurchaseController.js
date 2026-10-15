@@ -20,7 +20,9 @@ window.PurchaseController = (function() {
   let cachedItems = [];
   let selectedEditorItem = null;
   let selectedDrawerBillNo = null;
+  let currentDrawerPurchase = null;
   let isReadOnlyView = false;
+  let availableChargeTypes = ['Freight', 'Loading / Packing', 'Insurance', 'Inspection', 'Miscellaneous'];
 
   function initDateFilters() {
     const fromInput = document.getElementById('pur-filter-from');
@@ -322,92 +324,115 @@ window.PurchaseController = (function() {
   // ==========================================
 
   async function showDetails(invoiceNo) {
-    const drawer = document.getElementById('drawer-purchase-details');
+    return openPurchaseDrawer(invoiceNo);
+  }
+
+  async function openPurchaseDrawer(invoiceNo) {
+    const drawer = document.getElementById('drawer-purchase-details-inspect') || document.getElementById('drawer-purchase-details');
+    const overlay = document.getElementById('side-drawer-overlay');
     if (!drawer) return;
 
     if (drawer.classList.contains('open') && selectedDrawerBillNo === invoiceNo) {
-      closeDrawer();
+      closePurchaseDrawer();
       return;
     }
     selectedDrawerBillNo = invoiceNo;
 
     try {
-      const p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+      let p = purchases.find(x => x.invoiceNo === invoiceNo);
+      if (!p || !p.lines) {
+        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      }
       selectedPurchase = p;
+      currentDrawerPurchase = p;
 
-      document.getElementById('pd-invoice-no').innerText = p.invoiceNo;
-      document.getElementById('pd-supplier-name').innerText = (p.supplier && p.supplier.name) || p.supplierName || '-';
-      document.getElementById('pd-date').innerText = formatDate(p.invoiceDate);
-      document.getElementById('pd-due-date').innerText = formatDate(p.dueDate);
-      document.getElementById('pd-doc-status').innerHTML = getStatusBadge(p.documentStatus || 'APPROVED');
-      document.getElementById('pd-pay-status').innerHTML = getStatusBadge(p.paymentStatus || 'UNPAID');
+      // Populate drawer-purchase-details-inspect (Primary drawer in index.html)
+      const purNo = document.getElementById('drawer-pur-no');
+      if (purNo) purNo.innerText = p.invoiceNo || invoiceNo;
 
-      document.getElementById('pd-amount').innerText = formatMoney(p.totalAmount);
-      document.getElementById('pd-paid').innerText = formatMoney(p.paidAmount);
-      const balance = Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0));
-      document.getElementById('pd-balance').innerText = formatMoney(balance);
-      document.getElementById('pd-taxable').innerText = formatMoney(p.subtotal);
-      document.getElementById('pd-gst').innerText = formatMoney(p.gstAmount);
-      document.getElementById('pd-gst-type').innerText = p.gstType || 'Intra-State GST';
-      document.getElementById('pd-payment-terms').innerText = p.paymentTerms || 'Net 30';
+      const purStatus = document.getElementById('drawer-pur-status');
+      if (purStatus) {
+        const docSt = (p.documentStatus || 'APPROVED').toUpperCase();
+        purStatus.innerText = docSt;
+        purStatus.className = `badge ${(p.paymentStatus || '').toUpperCase() === 'PAID' ? 'badge-paid' : 'badge-pending'}`;
+      }
+
+      const purDate = document.getElementById('drawer-pur-date');
+      if (purDate) purDate.innerText = formatDate(p.invoiceDate);
 
       const supp = p.supplier || {};
-      document.getElementById('pd-contact-person').innerText = p.contactPerson || supp.contactPerson || '-';
-      document.getElementById('pd-phone').innerText = supp.phone || p.contactPersonMobile || '-';
-      document.getElementById('pd-email').innerText = supp.email || '-';
-      document.getElementById('pd-gstin').innerText = p.billingGstin || supp.gstin || '-';
-      document.getElementById('pd-billing-address').innerText = p.billingAddress || supp.address || '-';
-      document.getElementById('pd-delivery-address').innerText = p.deliveryAddress || '-';
+      const purGstin = document.getElementById('drawer-pur-supp-gstin');
+      if (purGstin) purGstin.innerText = p.billingGstin || supp.gstin || '-';
 
-      document.getElementById('pd-transporter').innerText = p.transporter || '-';
-      document.getElementById('pd-vehicle').innerText = p.vehicleNumber || '-';
-      document.getElementById('pd-notes').innerText = p.notes || p.remarks || '-';
+      const purPhone = document.getElementById('drawer-pur-supp-phone');
+      if (purPhone) purPhone.innerText = supp.phone || p.contactPersonMobile || '-';
 
-      // Lines table
-      const tbody = document.getElementById('pd-lines-body');
-      if (tbody) {
+      const purSuppName = document.getElementById('drawer-pur-supp-name');
+      if (purSuppName) purSuppName.innerText = supp.name || p.supplierName || 'Walk-in Supplier';
+
+      const tbodyInspect = document.getElementById('drawer-pur-items-tbody');
+      if (tbodyInspect) {
         const lines = p.lines || [];
         if (lines.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">No line items.</td></tr>`;
+          tbodyInspect.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:14px;">No inward items recorded.</td></tr>`;
         } else {
-          tbody.innerHTML = lines.map((l, i) => `
+          tbodyInspect.innerHTML = lines.map((l, idx) => `
             <tr>
-              <td>${i + 1}</td>
-              <td style="font-weight:600; color:var(--cyan);">${l.itemCode}</td>
-              <td>${l.itemDescription}</td>
-              <td style="text-align:right;">${(l.quantity || 0).toFixed(2)} ${l.itemUnit || 'PCS'}</td>
-              <td style="text-align:right;">${formatMoney(l.rate)}</td>
-              <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(l.totalAmount)}</td>
+              <td style="color:var(--text-dim);">${idx + 1}</td>
+              <td style="font-weight:600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+              <td>${(parseFloat(l.quantity) || 1).toFixed(2)} ${l.itemUnit || 'PCS'}</td>
+              <td>${formatMoney(l.rate || 0)}</td>
+              <td style="text-align:right; font-weight:700;">${formatMoney(l.totalAmount || 0)}</td>
             </tr>
           `).join('');
         }
       }
 
-      // Admin approval card
-      const approvalBox = document.getElementById('pd-approval-box');
-      if (approvalBox) {
-        const isPending = (p.documentStatus || '').toUpperCase() === 'PENDING APPROVAL';
-        approvalBox.style.display = isPending ? 'block' : 'none';
-      }
+      const purTaxable = document.getElementById('drawer-pur-taxable');
+      if (purTaxable) purTaxable.innerText = formatMoney(p.subtotal || p.taxableAmount || 0);
+
+      const purGst = document.getElementById('drawer-pur-gst');
+      if (purGst) purGst.innerText = formatMoney(p.gstAmount || 0);
+
+      const purTotal = document.getElementById('drawer-pur-total');
+      if (purTotal) purTotal.innerText = formatMoney(p.totalAmount || 0);
+
+      // Also populate legacy #drawer-purchase-details if present
+      const pdInv = document.getElementById('pd-invoice-no');
+      if (pdInv) pdInv.innerText = p.invoiceNo;
+      const pdSupp = document.getElementById('pd-supplier-name');
+      if (pdSupp) pdSupp.innerText = supp.name || p.supplierName || '-';
 
       drawer.classList.add('open');
       drawer.style.display = 'block';
+      if (overlay) overlay.classList.add('open');
 
     } catch (err) {
       console.error('Failed to load purchase details:', err);
-      alert('Failed to load purchase details: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to load purchase details: ' + (err.message || 'Server error'));
     }
   }
 
-  function closeDrawer() {
-    const drawer = document.getElementById('drawer-purchase-details');
+  function closePurchaseDrawer() {
+    const drawer = document.getElementById('drawer-purchase-details-inspect') || document.getElementById('drawer-purchase-details');
+    const overlay = document.getElementById('side-drawer-overlay');
     if (drawer) {
       drawer.classList.remove('open');
-      drawer.style.display = 'none';
+      drawer.style.display = '';
     }
+    if (overlay) overlay.classList.remove('open');
     selectedPurchase = null;
+    currentDrawerPurchase = null;
     selectedDrawerBillNo = null;
   }
+
+  function closeDrawer() {
+    closePurchaseDrawer();
+  }
+
+  window.openPurchaseDrawer = openPurchaseDrawer;
+  window.closePurchaseDrawer = closePurchaseDrawer;
 
   // ==========================================
   // 3. ACTIONS (Approve, Reject, Cancel, Delete, Excel, PDF)
@@ -475,8 +500,9 @@ window.PurchaseController = (function() {
       const sgst = isInterstate ? 0 : (p.gstAmount || 0) / 2;
       const igst = isInterstate ? (p.gstAmount || 0) : 0;
 
-      const printContainer = document.getElementById('printable-invoice-modal');
-      if (!printContainer) return;
+      const printContainer = document.getElementById('printable-invoice-content') || document.getElementById('printable-invoice-modal');
+      const modal = document.getElementById('printable-invoice-modal');
+      if (!printContainer || !modal) return;
 
       printContainer.innerHTML = `
         <div class="tax-invoice-sheet" style="font-family: 'Inter', sans-serif; padding: 24px; color: #111827; background: #fff;">
@@ -575,10 +601,8 @@ window.PurchaseController = (function() {
         </div>
       `;
 
-      window.AppDialogService.openModal('modal-printable-invoice');
-      setTimeout(() => {
-        window.print();
-      }, 500);
+      if (modal) modal.classList.add('open');
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
 
     } catch (err) {
       console.error('Failed to print purchase bill:', err);
@@ -1442,6 +1466,9 @@ window.PurchaseController = (function() {
   return {
     loadPurchases,
     showDetails,
+    openPurchaseDrawer,
+    closePurchaseDrawer,
+    get currentDrawerPurchase() { return currentDrawerPurchase; },
     closeDrawer,
     onRowClick,
     toggleActionMenu,

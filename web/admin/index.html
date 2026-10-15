@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.33.4">
+    <link rel="stylesheet" href="css/app.css?v=10.0.33.6">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -4866,6 +4866,7 @@
             </div>
             <div class="view-actions">
               <input type="text" id="cust-search" class="filter-input" placeholder="Search customer, phone, GSTIN..." oninput="window.PartyController.filterCustomers(this.value)">
+              <button class="btn btn-secondary" onclick="window.PartyController.openSelectedCustomer360()">&#127760; Customer 360&deg;</button>
               <button class="btn btn-secondary" onclick="window.PartyController.loadCustomers()">&#8635; Refresh</button>
               <button class="btn btn-secondary" onclick="window.PartyController.exportCustomers()">&#128196; Export</button>
               <button class="btn btn-primary" onclick="window.PartyController.openNewPartyModal('CUSTOMER')">+ Add Customer</button>
@@ -4944,6 +4945,7 @@
             </div>
             <div class="view-actions">
               <input type="text" id="supp-search" class="filter-input" placeholder="Search supplier, phone, GSTIN..." oninput="window.PartyController.filterSuppliers(this.value)">
+              <button class="btn btn-secondary" onclick="window.PartyController.openSelectedSupplier360()">&#127760; Supplier 360&deg;</button>
               <button class="btn btn-secondary" onclick="window.PartyController.loadSuppliers()">&#8635; Refresh</button>
               <button class="btn btn-secondary" onclick="window.PartyController.exportSuppliers()">&#128196; Export</button>
               <button class="btn btn-primary" onclick="window.PartyController.openNewPartyModal('SUPPLIER')">+ Add Supplier</button>
@@ -6759,9 +6761,12 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <!-- Sub Tabs -->
-        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px;">
+        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px; flex-wrap: wrap;">
           <button id="c360-tab-invoices" class="btn btn-secondary btn-sm sub-tab-btn active" onclick="window.PartyController.switch360Tab('c360-tab-invoices', 'c360-pane-invoices')">&#128722; Sales Invoices</button>
+          <button id="c360-tab-quotes" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('c360-tab-quotes', 'c360-pane-quotes')">&#128221; Quotations</button>
           <button id="c360-tab-payments" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('c360-tab-payments', 'c360-pane-payments')">&#128179; Receipts &amp; Payments</button>
+          <button id="c360-tab-contacts" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('c360-tab-contacts', 'c360-pane-contacts')">&#128100; Contacts</button>
+          <button id="c360-tab-notes" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('c360-tab-notes', 'c360-pane-notes')">&#128172; Notes &amp; Activity</button>
         </div>
 
         <div id="c360-pane-invoices" class="sub-tab-pane" style="display: block;">
@@ -6770,9 +6775,9 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
               <tr>
                 <th>INVOICE #</th>
                 <th>DATE</th>
-                <th style="text-align: right;">TAXABLE (&#8377;)</th>
-                <th style="text-align: right;">GST (&#8377;)</th>
                 <th style="text-align: right;">TOTAL (&#8377;)</th>
+                <th style="text-align: right;">PAID (&#8377;)</th>
+                <th style="text-align: right;">OUTSTANDING (&#8377;)</th>
                 <th style="text-align: center;">PAYMENT</th>
               </tr>
             </thead>
@@ -6780,18 +6785,70 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           </table>
         </div>
 
+        <div id="c360-pane-quotes" class="sub-tab-pane" style="display: none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>QUOTATION #</th>
+                <th>DATE</th>
+                <th>VALID UNTIL</th>
+                <th>SALESPERSON</th>
+                <th style="text-align: right;">AMOUNT (&#8377;)</th>
+                <th style="text-align: center;">STATUS</th>
+                <th>FOLLOW-UP</th>
+              </tr>
+            </thead>
+            <tbody id="c360-quotes-tbody"></tbody>
+          </table>
+        </div>
+
         <div id="c360-pane-payments" class="sub-tab-pane" style="display: none;">
           <table class="data-table">
             <thead>
               <tr>
-                <th>RECEIPT #</th>
+                <th>RECEIPT / REF #</th>
                 <th>DATE</th>
                 <th>PAYMENT MODE</th>
-                <th>REFERENCE #</th>
+                <th>INVOICE #</th>
                 <th style="text-align: right;">AMOUNT (&#8377;)</th>
+                <th>NOTES</th>
               </tr>
             </thead>
             <tbody id="c360-payments-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="c360-pane-contacts" class="sub-tab-pane" style="display: none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>NAME</th>
+                <th>DESIGNATION</th>
+                <th>DEPARTMENT</th>
+                <th>MOBILE</th>
+                <th>EMAIL</th>
+                <th style="text-align: center;">TYPE</th>
+                <th>NOTES</th>
+              </tr>
+            </thead>
+            <tbody id="c360-contacts-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="c360-pane-notes" class="sub-tab-pane" style="display: none;">
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="c360-new-note" class="filter-input" placeholder="Add a client note, follow-up remark or meeting memo..." style="flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.PartyController.addCustomerNote()">+ Add Note</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>NOTE / REMARK</th>
+                <th>CREATED BY</th>
+                <th>DATE &amp; TIME</th>
+              </tr>
+            </thead>
+            <tbody id="c360-notes-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -6852,9 +6909,11 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <!-- Sub Tabs -->
-        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px;">
+        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px; flex-wrap: wrap;">
           <button id="s360-tab-bills" class="btn btn-secondary btn-sm sub-tab-btn active" onclick="window.PartyController.switch360Tab('s360-tab-bills', 's360-pane-bills')">&#128230; Purchase Bills</button>
           <button id="s360-tab-payments" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('s360-tab-payments', 's360-pane-payments')">&#128184; Payments Dispatched</button>
+          <button id="s360-tab-contacts" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('s360-tab-contacts', 's360-pane-contacts')">&#128100; Contacts</button>
+          <button id="s360-tab-notes" class="btn btn-secondary btn-sm sub-tab-btn" onclick="window.PartyController.switch360Tab('s360-tab-notes', 's360-pane-notes')">&#128172; Notes &amp; Activity</button>
         </div>
 
         <div id="s360-pane-bills" class="sub-tab-pane" style="display: block;">
@@ -6863,9 +6922,9 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
               <tr>
                 <th>BILL #</th>
                 <th>DATE</th>
-                <th style="text-align: right;">TAXABLE (&#8377;)</th>
-                <th style="text-align: right;">GST (&#8377;)</th>
                 <th style="text-align: right;">TOTAL (&#8377;)</th>
+                <th style="text-align: right;">PAID (&#8377;)</th>
+                <th style="text-align: right;">OUTSTANDING (&#8377;)</th>
                 <th style="text-align: center;">STATUS</th>
               </tr>
             </thead>
@@ -6877,14 +6936,49 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           <table class="data-table">
             <thead>
               <tr>
-                <th>VOUCHER #</th>
+                <th>VOUCHER / REF #</th>
                 <th>DATE</th>
                 <th>BANK / MODE</th>
-                <th>REFERENCE #</th>
+                <th>BILL #</th>
                 <th style="text-align: right;">AMOUNT (&#8377;)</th>
+                <th>NOTES</th>
               </tr>
             </thead>
             <tbody id="s360-payments-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="s360-pane-contacts" class="sub-tab-pane" style="display: none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>NAME</th>
+                <th>DESIGNATION</th>
+                <th>DEPARTMENT</th>
+                <th>MOBILE</th>
+                <th>EMAIL</th>
+                <th style="text-align: center;">TYPE</th>
+                <th>NOTES</th>
+              </tr>
+            </thead>
+            <tbody id="s360-contacts-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="s360-pane-notes" class="sub-tab-pane" style="display: none;">
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="s360-new-note" class="filter-input" placeholder="Add a vendor remark, negotiation note or follow-up memo..." style="flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.PartyController.addSupplierNote()">+ Add Note</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>NOTE / REMARK</th>
+                <th>CREATED BY</th>
+                <th>DATE &amp; TIME</th>
+              </tr>
+            </thead>
+            <tbody id="s360-notes-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -7034,6 +7128,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
+      <button class="btn btn-primary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196; Print Inward Bill</button>
     </div>
   </div>
 
@@ -8667,11 +8762,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
       <span class="actions-menu-icon">&#9999;</span> <span>Edit Lookup Entry</span>
     </div>
     <div class="actions-menu-item" onclick="window.MasterDataController.toggleLookupStatus()">
-      <span class="actions-menu-icon">&#128260;</span> <span>Toggle Active Status</span>
-    </div>
-    <div class="actions-menu-divider"></div>
-    <div class="actions-menu-item" style="color: #f87171;" onclick="window.MasterDataController.deleteLookup()">
-      <span class="actions-menu-icon">&#128465;</span> <span>Delete Lookup Entry</span>
+      <span class="actions-menu-icon" id="masters-menu-toggle-icon">&#128260;</span> <span id="masters-menu-toggle-label">Deactivate / Reactivate</span>
     </div>
   </div>
 
@@ -8686,8 +8777,11 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     <div class="actions-menu-item" onclick="window.UserAccessController.toggleSelectedUserLock()">
       <span class="actions-menu-icon">&#128274;</span> <span>Lock / Unlock Account</span>
     </div>
+    <div class="actions-menu-item" onclick="window.UserAccessController.resetSelectedUserAuthenticator()">
+      <span class="actions-menu-icon">&#128737;</span> <span>Reset Authenticator (2FA)</span>
+    </div>
     <div class="actions-menu-item" onclick="window.UserAccessController.toggleSelectedUserMfa()">
-      <span class="actions-menu-icon">&#128737;</span> <span>Reset / Toggle 2FA State</span>
+      <span class="actions-menu-icon">&#128260;</span> <span>Toggle MFA Enforced</span>
     </div>
     <div class="actions-menu-divider"></div>
     <div class="actions-menu-item" style="color: #f87171;" onclick="window.UserAccessController.deleteSelectedUser()">
@@ -8798,61 +8892,61 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.33.5"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.5"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.5"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.33.5"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.5"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.5"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.33.5"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.5"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.5"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.5"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.5"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.33.5"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.33.5"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.33.5"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.33.6"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.6"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.6"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.33.6"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.6"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.6"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.33.6"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.6"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.6"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.6"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.6"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.33.6"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.33.6"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.33.6"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.33.5"></script>
-  <script src="js/services/AuthService.js?v=10.0.33.5"></script>
-  <script src="js/services/MasterService.js?v=10.0.33.5"></script>
-  <script src="js/services/OperationsService.js?v=10.0.33.5"></script>
-  <script src="js/services/ReportService.js?v=10.0.33.5"></script>
-  <script src="js/services/ReconService.js?v=10.0.33.5"></script>
-  <script src="js/services/AccountingService.js?v=10.0.33.5"></script>
-  <script src="js/services/ImportService.js?v=10.0.33.5"></script>
+  <script src="js/services/ApiService.js?v=10.0.33.6"></script>
+  <script src="js/services/AuthService.js?v=10.0.33.6"></script>
+  <script src="js/services/MasterService.js?v=10.0.33.6"></script>
+  <script src="js/services/OperationsService.js?v=10.0.33.6"></script>
+  <script src="js/services/ReportService.js?v=10.0.33.6"></script>
+  <script src="js/services/ReconService.js?v=10.0.33.6"></script>
+  <script src="js/services/AccountingService.js?v=10.0.33.6"></script>
+  <script src="js/services/ImportService.js?v=10.0.33.6"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/GstController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.5"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.5"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/GstController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.6"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.6"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.33.5"></script>
-  <script src="js/app.js?v=10.0.33.5"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.33.6"></script>
+  <script src="js/app.js?v=10.0.33.6"></script>
 </body>
 </html>
 

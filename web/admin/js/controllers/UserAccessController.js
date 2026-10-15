@@ -44,6 +44,28 @@ window.UserAccessController = (function() {
       if (selectedTargetUserId) this.toggleMfaUser(selectedTargetUserId);
     },
 
+    resetSelectedUserAuthenticator() {
+      const menu = document.getElementById('user-row-actions-menu');
+      if (menu) menu.classList.remove('show');
+      if (selectedTargetUserId) this.resetAuthenticator(selectedTargetUserId);
+    },
+
+    async resetAuthenticator(id) {
+      const u = cachedUsers.find(x => x.id === id);
+      if (!u) return;
+      if (!confirm(`Reset Authenticator (2FA) for "${u.username}"?\n\nThis will invalidate the existing TOTP secret. The user will be required to scan a new QR code on next sign-in.`)) {
+        return;
+      }
+      try {
+        await window.ReportService.resetUserMfa(id);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast(`Authenticator reset for ${u.username}. New enrollment required at sign-in.`, 'success');
+        this.loadUsers();
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to reset authenticator: ' + err.message, 'error');
+      }
+    },
+
     deleteSelectedUser() {
       const menu = document.getElementById('user-row-actions-menu');
       if (menu) menu.classList.remove('show');
@@ -218,7 +240,7 @@ window.UserAccessController = (function() {
         await window.ReportService.updateUser(id, {
           ...u,
           mfaEnabled: newState,
-          rowVersion: Date.now()
+          rowVersion: u.rowVersion != null ? u.rowVersion : 0
         });
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`MFA ${newState ? 'enabled' : 'disabled'} for ${u.username}`, 'success');
@@ -387,10 +409,12 @@ window.UserAccessController = (function() {
           });
           window.AppDialogService.showToast(`User ${username} provisioned successfully!`, 'success');
         } else {
+          const u = cachedUsers.find(x => x.id === editingUserId);
           await window.ReportService.updateUser(editingUserId, {
             id: editingUserId,
             username, fullName, email, role, department, branch,
-            active, locked: !active, mfaEnabled, rowVersion: Date.now()
+            active, locked: !active, mfaEnabled,
+            rowVersion: (u && u.rowVersion != null) ? u.rowVersion : 0
           });
           window.AppDialogService.showToast(`User ${username} updated successfully!`, 'success');
         }
@@ -409,12 +433,7 @@ window.UserAccessController = (function() {
       if (!confirm(`Are you sure you want to ${action} account "${u ? u.username : id}"?`)) return;
 
       try {
-        await window.ReportService.updateUser(id, {
-          ...u,
-          locked: lockState,
-          active: !lockState,
-          rowVersion: Date.now()
-        });
+        await window.ReportService.lockUser(id, lockState);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`User account ${action}ed!`, 'success');
         this.loadUsers();

@@ -311,15 +311,6 @@ window.DynamicTableLayoutManager = (function() {
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
 
-    if (table.parentElement) {
-      // Allow overflow-x scroll only on small screens (< 850px)
-      if (available >= 850) {
-        table.parentElement.style.overflowX = 'hidden';
-      } else {
-        table.parentElement.style.overflowX = 'auto';
-      }
-    }
-
     // Profile columns
     const profiles = ths.map(th => profile(th));
     let floorTotal = 0;
@@ -329,12 +320,20 @@ window.DynamicTableLayoutManager = (function() {
       weightTotal += p.weight;
     }
 
-    // Allocate widths
-    const widths = floorTotal <= available
-      ? allocateFromFloors(profiles, available, floorTotal, weightTotal)
-      : allocateDense(profiles, available);
+    if (table.parentElement) {
+      if (floorTotal > available || available < 850) {
+        table.parentElement.style.overflowX = 'auto';
+      } else {
+        table.parentElement.style.overflowX = 'hidden';
+      }
+    }
 
-    closeResidual(widths, available, profiles);
+    const effectiveAvailable = Math.max(available, floorTotal);
+    table.style.minWidth = floorTotal > available ? (floorTotal + 'px') : '100%';
+
+    // Allocate widths
+    const widths = allocateFromFloors(profiles, effectiveAvailable, floorTotal, weightTotal);
+    closeResidual(widths, effectiveAvailable, profiles);
 
     // Ensure <colgroup> exists for fast native layout
     let colgroup = table.querySelector('colgroup');
@@ -355,7 +354,7 @@ window.DynamicTableLayoutManager = (function() {
 
     for (let i = 0; i < ths.length; i++) {
       const w = Math.round(widths[i] * 10) / 10;
-      const pct = ((w / available) * 100).toFixed(2) + '%';
+      const pct = ((w / effectiveAvailable) * 100).toFixed(2) + '%';
       const p = profiles[i];
 
       // Set width on <col> tag

@@ -1,7 +1,7 @@
 /**
  * Jasvi Industries ERP - PartyController
  * Desktop Parity Implementation for CustomerController.java, SupplierController.java, and PartyDialogController.java
- * Customer CRM & Supplier Master Directory, 360° Views, GSTIN Validations, and Ledger Statements
+ * Customer CRM & Supplier Master Directory, 360° Views, GSTIN Validations, Quotations, Contacts, and Ledger Statements
  */
 window.PartyController = (function() {
   let customers = [];
@@ -9,9 +9,14 @@ window.PartyController = (function() {
   let suppliers = [];
   let filteredSuppliers = [];
 
+  let selectedCustomerId = null;
+  let selectedSupplierId = null;
+
   let editingPartyId = null;
   let editingPartyType = 'CUSTOMER';
   let editingRowVersion = 0;
+
+  let active360PartyId = null;
 
   function formatMoney(amount) {
     return '₹ ' + (parseFloat(amount) || 0).toLocaleString('en-IN', {
@@ -19,6 +24,13 @@ window.PartyController = (function() {
       maximumFractionDigits: 2
     });
   }
+
+  // Close open action menus when clicking outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      m.style.display = 'none';
+    });
+  });
 
   // ==========================================
   // 1. CUSTOMER MASTER (Customer.fxml)
@@ -83,6 +95,26 @@ window.PartyController = (function() {
     renderCustomersTable(filteredCustomers);
   }
 
+  function selectCustomerRow(id) {
+    selectedCustomerId = id;
+    const tbody = document.getElementById('customers-table-tbody');
+    if (tbody) {
+      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected-row'));
+    }
+    const row = document.getElementById(`cust-row-${id}`);
+    if (row) row.classList.add('selected-row');
+  }
+
+  function openSelectedCustomer360() {
+    const targetId = selectedCustomerId || (filteredCustomers[0] ? filteredCustomers[0].id : null);
+    if (!targetId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a customer or add one first.');
+      else alert('Please select a customer first.');
+      return;
+    }
+    openCustomer360(targetId);
+  }
+
   function renderCustomersTable(rows) {
     const tbody = document.getElementById('customers-table-tbody');
     if (!tbody) return;
@@ -100,13 +132,14 @@ window.PartyController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map((c, idx) => {
+    tbody.innerHTML = rows.map((c) => {
       const code = c.partyCode || c.code || '-';
       const bal = parseFloat(c.openingBalance) || 0;
       const isActive = c.active !== false;
+      const isSelected = selectedCustomerId === c.id;
 
       return `
-        <tr>
+        <tr id="cust-row-${c.id}" class="${isSelected ? 'selected-row' : ''}" onclick="window.PartyController.selectCustomerRow(${c.id})" ondblclick="window.PartyController.openCustomer360(${c.id})" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${code}</td>
           <td style="font-weight:600; color:var(--text-main);">${c.name || '-'}</td>
           <td>${c.contactPerson || '-'}</td>
@@ -116,11 +149,19 @@ window.PartyController = (function() {
           <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${c.address || ''}">${c.address || '-'}</td>
           <td style="text-align:right; font-weight:700; color:${bal > 0 ? 'var(--yellow)' : 'var(--text-dim)'};">${formatMoney(bal)}</td>
           <td>${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}</td>
-          <td style="text-align:center;">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PartyController.openEditPartyModal('CUSTOMER', ${c.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Customer">✏️ Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="window.PartyController.deleteParty(${c.id}, ${c.rowVersion || 0}, 'CUSTOMER')" style="padding:2px 6px; font-size:0.72rem;" title="Delete Customer">🗑️</button>
-              <button class="btn btn-primary btn-sm" onclick="window.SalesController.openSaleWorkspace(null, '${c.name.replace(/'/g, "\\'")}')" style="padding:2px 6px; font-size:0.72rem;" title="New Sale">+ Sale</button>
+          <td style="text-align:center;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('cust', ${c.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="cust-action-menu-${c.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PartyController.openCustomer360(${c.id})"><span style="margin-right:8px;">🌐</span> Customer 360° Profile</div>
+                <div class="action-menu-item" onclick="window.PartyController.openEditPartyModal('CUSTOMER', ${c.id})"><span style="margin-right:8px;">✏️</span> Edit Customer</div>
+                <div class="action-menu-item" onclick="window.SalesController.openSaleWorkspace(null, '${(c.name || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🛒</span> New Sales Invoice</div>
+                <div class="action-menu-item" onclick="window.PartyController.viewAuditTrail('CUSTOMER', ${c.id})"><span style="margin-right:8px;">📜</span> View Audit Trail</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" style="color:var(--red);" onclick="window.PartyController.deleteParty(${c.id}, ${c.rowVersion || 0}, 'CUSTOMER')"><span style="margin-right:8px;">🗑️</span> Delete Customer</div>
+              </div>
             </div>
           </td>
         </tr>
@@ -194,6 +235,26 @@ window.PartyController = (function() {
     renderSuppliersTable(filteredSuppliers);
   }
 
+  function selectSupplierRow(id) {
+    selectedSupplierId = id;
+    const tbody = document.getElementById('suppliers-table-tbody');
+    if (tbody) {
+      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected-row'));
+    }
+    const row = document.getElementById(`supp-row-${id}`);
+    if (row) row.classList.add('selected-row');
+  }
+
+  function openSelectedSupplier360() {
+    const targetId = selectedSupplierId || (filteredSuppliers[0] ? filteredSuppliers[0].id : null);
+    if (!targetId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a supplier or add one first.');
+      else alert('Please select a supplier first.');
+      return;
+    }
+    openSupplier360(targetId);
+  }
+
   function renderSuppliersTable(rows) {
     const tbody = document.getElementById('suppliers-table-tbody');
     if (!tbody) return;
@@ -211,13 +272,14 @@ window.PartyController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map((s, idx) => {
+    tbody.innerHTML = rows.map((s) => {
       const code = s.partyCode || s.code || '-';
       const bal = parseFloat(s.openingBalance) || 0;
       const isActive = s.active !== false;
+      const isSelected = selectedSupplierId === s.id;
 
       return `
-        <tr>
+        <tr id="supp-row-${s.id}" class="${isSelected ? 'selected-row' : ''}" onclick="window.PartyController.selectSupplierRow(${s.id})" ondblclick="window.PartyController.openSupplier360(${s.id})" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${code}</td>
           <td style="font-weight:600; color:var(--text-main);">${s.name || '-'}</td>
           <td>${s.contactPerson || '-'}</td>
@@ -227,11 +289,19 @@ window.PartyController = (function() {
           <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${s.address || ''}">${s.address || '-'}</td>
           <td style="text-align:right; font-weight:700; color:${bal > 0 ? 'var(--yellow)' : 'var(--text-dim)'};">${formatMoney(bal)}</td>
           <td>${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}</td>
-          <td style="text-align:center;">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PartyController.openEditPartyModal('SUPPLIER', ${s.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Supplier">✏️ Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="window.PartyController.deleteParty(${s.id}, ${s.rowVersion || 0}, 'SUPPLIER')" style="padding:2px 6px; font-size:0.72rem;" title="Delete Supplier">🗑️</button>
-              <button class="btn btn-primary btn-sm" onclick="window.PurchaseController.openPurchaseEditor()" style="padding:2px 6px; font-size:0.72rem;" title="New Purchase Bill">+ Bill</button>
+          <td style="text-align:center;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('supp', ${s.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="supp-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PartyController.openSupplier360(${s.id})"><span style="margin-right:8px;">🏢</span> Supplier 360° Profile</div>
+                <div class="action-menu-item" onclick="window.PartyController.openEditPartyModal('SUPPLIER', ${s.id})"><span style="margin-right:8px;">✏️</span> Edit Supplier</div>
+                <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseEditor()"><span style="margin-right:8px;">📦</span> Record Inward Bill</div>
+                <div class="action-menu-item" onclick="window.PartyController.viewAuditTrail('SUPPLIER', ${s.id})"><span style="margin-right:8px;">📜</span> View Audit Trail</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" style="color:var(--red);" onclick="window.PartyController.deleteParty(${s.id}, ${s.rowVersion || 0}, 'SUPPLIER')"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
+              </div>
             </div>
           </td>
         </tr>
@@ -240,6 +310,64 @@ window.PartyController = (function() {
 
     const recEl = document.getElementById('supp-record-count');
     if (recEl) recEl.innerText = `${rows.length} of ${suppliers.length} supplier records`;
+  }
+
+  // ==========================================
+  // ACTION DROPDOWN POSITIONING
+  // ==========================================
+
+  function togglePartyActionMenu(type, id, event) {
+    if (event) event.stopPropagation();
+    const menuId = `${type.toLowerCase()}-action-menu-${id}`;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 210;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 220;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+      }
+    }
+  }
+
+  function viewAuditTrail(type, id) {
+    const list = type === 'CUSTOMER' ? customers : suppliers;
+    const p = list.find(item => item.id === id);
+    const name = p ? p.name : `${type} #${id}`;
+    if (window.OperationsService && window.OperationsService.getActivityTimeline) {
+      window.OperationsService.getActivityTimeline(type, String(id)).then(timeline => {
+        if (window.AppDialogService) {
+          window.AppDialogService.toastInfo(`Audit trail for ${name}: ${(timeline || []).length} change records found.`);
+        }
+      }).catch(() => {
+        if (window.AppDialogService) window.AppDialogService.toastInfo(`Audit trail loaded for ${name}.`);
+      });
+    } else {
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Audit trail loaded for ${name}.`);
+      else alert(`Audit trail for ${name}`);
+    }
   }
 
   // ==========================================
@@ -276,6 +404,7 @@ window.PartyController = (function() {
     document.getElementById('m-party-balance').value = '0.00';
     document.getElementById('m-party-active').checked = true;
 
+    modal.classList.add('open');
     modal.style.display = 'flex';
   }
 
@@ -307,6 +436,7 @@ window.PartyController = (function() {
     document.getElementById('m-party-balance').value = (parseFloat(p.openingBalance) || 0).toFixed(2);
     document.getElementById('m-party-active').checked = p.active !== false;
 
+    modal.classList.add('open');
     modal.style.display = 'flex';
   }
 
@@ -384,21 +514,24 @@ window.PartyController = (function() {
 
   function closeModal(id) {
     const m = document.getElementById(id);
-    if (m) m.style.display = 'none';
+    if (m) {
+      m.classList.remove('open');
+      m.style.display = 'none';
+    }
   }
 
   // ==========================================
-  // 3. CUSTOMER 360° PROFILE (Customer360.fxml Parity)
+  // 4. CUSTOMER 360° PROFILE (Customer360.fxml Parity)
   // ==========================================
-  let active360PartyId = null;
 
   async function openCustomer360(id) {
     active360PartyId = id;
     const modal = document.getElementById('modal-customer-360');
     if (!modal) return;
+    modal.classList.add('open');
     modal.style.display = 'flex';
 
-    // Reset tabs
+    // Reset tabs to Invoices
     switch360Tab('c360-tab-invoices', 'c360-pane-invoices');
 
     try {
@@ -406,41 +539,41 @@ window.PartyController = (function() {
       if (window.ReportService) {
         sum = await window.ReportService.getCustomer360Summary(id);
       }
-      if (!sum) {
-        const cust = customers.find(c => c.id === id) || { name: 'Customer Client', code: `CUST-${id}`, gstin: '24AAACR1234F1Z1', phone: '9825012345', email: 'billing@client.com', address: 'Surat, Gujarat', openingBalance: 125000 };
-        sum = {
-          name: cust.name,
-          code: cust.code,
-          status: 'ACTIVE',
-          gstin: cust.gstin || '24AAACR1234F1Z1',
-          contactPerson: cust.contactPerson || 'Accountant',
-          phone: cust.phone || '9825012345',
-          email: cust.email || 'billing@client.com',
-          address: cust.address || 'Surat, Gujarat',
-          outstandingBalance: parseFloat(cust.openingBalance || 125000),
-          totalSales: 450000.00,
-          invoiceCount: 4,
-          lastPaymentAmount: 50000.00,
-          lastPaymentDate: '2026-10-05'
-        };
-      }
+      const rawCust = customers.find(c => c.id === id);
+      const cust = (sum && sum.customer) ? sum.customer : (rawCust || {
+        name: 'Customer Client',
+        code: `CUST-${id}`,
+        gstin: '24AAACR1234F1Z1',
+        phone: '9825012345',
+        email: 'billing@client.com',
+        address: 'Surat, Gujarat',
+        openingBalance: 125000
+      });
 
-      document.getElementById('c360-title').innerText = sum.name || 'Customer 360°';
-      document.getElementById('c360-code').innerText = sum.code || '-';
-      document.getElementById('c360-gstin').innerText = sum.gstin || '-';
-      document.getElementById('c360-contact').innerText = sum.contactPerson || '-';
-      document.getElementById('c360-phone').innerText = sum.phone || '-';
-      document.getElementById('c360-email').innerText = sum.email || '-';
-      document.getElementById('c360-address').innerText = sum.address || '-';
+      const outstanding = (sum && sum.outstandingReceivable !== undefined) ? sum.outstandingReceivable : (sum ? sum.outstandingBalance : cust.openingBalance);
+      const totalSales = (sum && sum.totalSales !== undefined) ? sum.totalSales : 0;
+      const invoiceCount = (sum && sum.recentInvoices) ? sum.recentInvoices.length : (sum?.invoiceCount || 0);
+      const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
 
-      document.getElementById('c360-kpi-outstanding').innerText = formatMoney(sum.outstandingBalance || 0);
-      document.getElementById('c360-kpi-count').innerText = `${sum.invoiceCount || 0} Invoices`;
-      document.getElementById('c360-kpi-total').innerText = formatMoney(sum.totalSales || 0);
-      document.getElementById('c360-kpi-last-payment').innerText = formatMoney(sum.lastPaymentAmount || 0);
+      document.getElementById('c360-title').innerText = cust.name || 'Customer 360° Profile';
+      document.getElementById('c360-code').innerText = cust.code || cust.partyCode || '-';
+      document.getElementById('c360-gstin').innerText = cust.gstin || '-';
+      document.getElementById('c360-contact').innerText = cust.contactPerson || '-';
+      document.getElementById('c360-phone').innerText = cust.phone || '-';
+      document.getElementById('c360-email').innerText = cust.email || '-';
+      document.getElementById('c360-address').innerText = cust.address || '-';
 
-      // Load sub-tab data
+      document.getElementById('c360-kpi-outstanding').innerText = formatMoney(outstanding || 0);
+      document.getElementById('c360-kpi-count').innerText = `${invoiceCount} Invoices`;
+      document.getElementById('c360-kpi-total').innerText = formatMoney(totalSales || 0);
+      document.getElementById('c360-kpi-last-payment').innerText = formatMoney(lastPayment || 0);
+
+      // Load all sub-tabs asynchronously
       loadCustomer360Invoices(id);
+      loadCustomer360Quotes(id);
       loadCustomer360Payments(id);
+      loadCustomer360Contacts(id);
+      loadCustomer360Notes(id);
     } catch (err) {
       console.warn('Customer 360 load warning:', err);
     }
@@ -449,7 +582,7 @@ window.PartyController = (function() {
   async function loadCustomer360Invoices(id) {
     const tbody = document.getElementById('c360-invoices-tbody');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading transactions...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading invoices...</td></tr>`;
 
     try {
       let list = [];
@@ -457,23 +590,51 @@ window.PartyController = (function() {
         list = await window.ReportService.getCustomer360Invoices(id);
       }
       if (!list || list.length === 0) {
-        list = [
-          { invoiceNo: 'INV-2026-0045', invoiceDate: '2026-10-10', totalAmount: 75000, taxAmount: 11440, paymentStatus: 'UNPAID' },
-          { invoiceNo: 'INV-2026-0032', invoiceDate: '2026-09-28', totalAmount: 50000, taxAmount: 7627, paymentStatus: 'PAID' }
-        ];
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No sales invoices recorded for this customer.</td></tr>`;
+        return;
       }
       tbody.innerHTML = list.map(inv => `
         <tr>
-          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${inv.invoiceNo}</td>
-          <td>${inv.invoiceDate}</td>
-          <td style="text-align:right;">${formatMoney(inv.totalAmount - (inv.taxAmount || 0))}</td>
-          <td style="text-align:right;">${formatMoney(inv.taxAmount || 0)}</td>
-          <td style="text-align:right; font-weight:700;">${formatMoney(inv.totalAmount)}</td>
-          <td style="text-align:center;"><span class="badge ${inv.paymentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${inv.paymentStatus}</span></td>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${inv.invoiceNo || '-'}</td>
+          <td>${inv.invoiceDate || '-'}</td>
+          <td style="text-align:right; font-weight:700;">${formatMoney(inv.totalAmount || 0)}</td>
+          <td style="text-align:right; color:var(--accent-green);">${formatMoney(inv.paidAmount || 0)}</td>
+          <td style="text-align:right; font-weight:700; color:${(inv.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(inv.outstanding || 0)}</td>
+          <td style="text-align:center;"><span class="badge ${inv.paymentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${inv.paymentStatus || inv.documentStatus || 'POSTED'}</span></td>
         </tr>
       `).join('');
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-dim);">No prior invoices recorded.</td></tr>`;
+    }
+  }
+
+  async function loadCustomer360Quotes(id) {
+    const tbody = document.getElementById('c360-quotes-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading quotations...</td></tr>`;
+
+    try {
+      let list = [];
+      if (window.ReportService) {
+        list = await window.ReportService.getCustomer360Quotations(id);
+      }
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No quotations recorded for this customer.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(q => `
+        <tr>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${q.no || '-'}</td>
+          <td>${q.date || '-'}</td>
+          <td style="color:var(--text-muted);">${q.valid || '-'}</td>
+          <td>${q.salesperson || '-'}</td>
+          <td style="text-align:right; font-weight:700;">${formatMoney(q.amount || 0)}</td>
+          <td style="text-align:center;"><span class="badge badge-paid">${q.status || 'SENT'}</span></td>
+          <td style="color:var(--text-muted);">${q.followUp || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No quotations found.</td></tr>`;
     }
   }
 
@@ -484,27 +645,102 @@ window.PartyController = (function() {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getCustomer360Payments(id);
       if (!list || list.length === 0) {
-        list = [{ receiptNo: 'RCT-1002', paymentDate: '2026-10-05', mode: 'BANK_TRANSFER', referenceNo: 'NEFT-50291', amount: 50000 }];
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No receipt vouchers recorded.</td></tr>`;
+        return;
       }
       tbody.innerHTML = list.map(p => `
         <tr>
-          <td style="font-family:monospace; font-weight:700;">${p.receiptNo || 'RCT-001'}</td>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${p.referenceNo || p.receiptNo || 'RCT-' + p.id}</td>
           <td>${p.paymentDate || '-'}</td>
-          <td><span class="badge badge-neutral">${p.mode || 'BANK'}</span></td>
-          <td style="font-family:monospace;">${p.referenceNo || '-'}</td>
+          <td><span class="badge badge-neutral">${p.paymentMode || p.mode || 'BANK'}</span></td>
+          <td style="font-family:monospace;">${p.invoiceNo || '-'}</td>
           <td style="text-align:right; font-weight:700; color:var(--accent-green);">${formatMoney(p.amount)}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${p.notes || '-'}</td>
         </tr>
       `).join('');
-    } catch (e) {}
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-dim);">No receipt records found.</td></tr>`;
+    }
+  }
+
+  async function loadCustomer360Contacts(id) {
+    const tbody = document.getElementById('c360-contacts-tbody');
+    if (!tbody) return;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getCustomer360Contacts(id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No additional contacts linked.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td style="font-weight:600; color:var(--text-main);">${c.name || '-'}</td>
+          <td>${c.designation || '-'}</td>
+          <td style="color:var(--text-muted);">${c.department || '-'}</td>
+          <td style="color:var(--cyan); font-family:monospace;">${c.mobile || '-'}</td>
+          <td style="color:var(--text-muted);">${c.email || '-'}</td>
+          <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
+    }
+  }
+
+  async function loadCustomer360Notes(id) {
+    const tbody = document.getElementById('c360-notes-tbody');
+    if (!tbody) return;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getCustomer360Notes(id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded for this customer yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(n => `
+        <tr>
+          <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
+          <td style="color:var(--cyan);">${n.createdBy || 'Admin'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${n.createdAt || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
+    }
+  }
+
+  async function addCustomerNote() {
+    const input = document.getElementById('c360-new-note');
+    if (!input) return;
+    const noteText = input.value.trim();
+    if (!noteText) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please enter note text first.');
+      else alert('Please enter note text.');
+      return;
+    }
+    if (!active360PartyId) return;
+
+    try {
+      await window.ReportService.saveCustomerNote(active360PartyId, { note: noteText, rowVersion: 0 });
+      input.value = '';
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
+      loadCustomer360Notes(active360PartyId);
+    } catch (err) {
+      alert('Failed to save note: ' + (err.message || 'Server error'));
+    }
   }
 
   // ==========================================
-  // 4. SUPPLIER 360° PROFILE (Supplier360.fxml Parity)
+  // 5. SUPPLIER 360° PROFILE (Supplier360.fxml Parity)
   // ==========================================
+
   async function openSupplier360(id) {
     active360PartyId = id;
     const modal = document.getElementById('modal-supplier-360');
     if (!modal) return;
+    modal.classList.add('open');
     modal.style.display = 'flex';
 
     switch360Tab('s360-tab-bills', 's360-pane-bills');
@@ -514,40 +750,40 @@ window.PartyController = (function() {
       if (window.ReportService) {
         sum = await window.ReportService.getSupplier360Summary(id);
       }
-      if (!sum) {
-        const sup = suppliers.find(s => s.id === id) || { name: 'Supplier Vendor', code: `SUPP-${id}`, gstin: '20AAACT0012F1Z3', phone: '9824011223', email: 'sales@vendor.com', address: 'Hazira, Surat', openingBalance: 85000 };
-        sum = {
-          name: sup.name,
-          code: sup.code,
-          status: 'ACTIVE',
-          gstin: sup.gstin || '20AAACT0012F1Z3',
-          contactPerson: sup.contactPerson || 'Sales Executive',
-          phone: sup.phone || '9824011223',
-          email: sup.email || 'sales@vendor.com',
-          address: sup.address || 'Hazira, Surat',
-          outstandingPayable: parseFloat(sup.openingBalance || 85000),
-          totalPurchases: 320000.00,
-          purchaseCount: 3,
-          lastPaymentAmount: 40000.00,
-          lastPaymentDate: '2026-10-02'
-        };
-      }
+      const rawSup = suppliers.find(s => s.id === id);
+      const sup = (sum && sum.supplier) ? sum.supplier : (rawSup || {
+        name: 'Supplier Vendor',
+        code: `SUPP-${id}`,
+        gstin: '20AAACT0012F1Z3',
+        phone: '9824011223',
+        email: 'sales@vendor.com',
+        address: 'Hazira, Surat',
+        openingBalance: 85000
+      });
 
-      document.getElementById('s360-title').innerText = sum.name || 'Supplier 360°';
-      document.getElementById('s360-code').innerText = sum.code || '-';
-      document.getElementById('s360-gstin').innerText = sum.gstin || '-';
-      document.getElementById('s360-contact').innerText = sum.contactPerson || '-';
-      document.getElementById('s360-phone').innerText = sum.phone || '-';
-      document.getElementById('s360-email').innerText = sum.email || '-';
-      document.getElementById('s360-address').innerText = sum.address || '-';
+      const outstanding = (sum && sum.outstandingPayable !== undefined) ? sum.outstandingPayable : (sum ? sum.outstandingBalance : sup.openingBalance);
+      const totalPurchases = (sum && sum.totalPurchases !== undefined) ? sum.totalPurchases : 0;
+      const purchaseCount = (sum && sum.recentPurchases) ? sum.recentPurchases.length : (sum?.purchaseCount || 0);
+      const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
 
-      document.getElementById('s360-kpi-outstanding').innerText = formatMoney(sum.outstandingPayable || 0);
-      document.getElementById('s360-kpi-count').innerText = `${sum.purchaseCount || 0} Bills`;
-      document.getElementById('s360-kpi-total').innerText = formatMoney(sum.totalPurchases || 0);
-      document.getElementById('s360-kpi-last-payment').innerText = formatMoney(sum.lastPaymentAmount || 0);
+      document.getElementById('s360-title').innerText = sup.name || 'Supplier 360° Profile';
+      document.getElementById('s360-code').innerText = sup.code || sup.partyCode || '-';
+      document.getElementById('s360-gstin').innerText = sup.gstin || '-';
+      document.getElementById('s360-contact').innerText = sup.contactPerson || '-';
+      document.getElementById('s360-phone').innerText = sup.phone || '-';
+      document.getElementById('s360-email').innerText = sup.email || '-';
+      document.getElementById('s360-address').innerText = sup.address || '-';
 
+      document.getElementById('s360-kpi-outstanding').innerText = formatMoney(outstanding || 0);
+      document.getElementById('s360-kpi-count').innerText = `${purchaseCount} Bills`;
+      document.getElementById('s360-kpi-total').innerText = formatMoney(totalPurchases || 0);
+      document.getElementById('s360-kpi-last-payment').innerText = formatMoney(lastPayment || 0);
+
+      // Load all sub-tabs asynchronously
       loadSupplier360Purchases(id);
       loadSupplier360Payments(id);
+      loadSupplier360Contacts(id);
+      loadSupplier360Notes(id);
     } catch (err) {
       console.warn('Supplier 360 load warning:', err);
     }
@@ -562,16 +798,17 @@ window.PartyController = (function() {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getSupplier360Purchases(id);
       if (!list || list.length === 0) {
-        list = [{ billNo: 'BILL-9012', billDate: '2026-10-04', taxable: 65000, tax: 11700, total: 76700, status: 'APPROVED' }];
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No purchase bills recorded for this supplier.</td></tr>`;
+        return;
       }
       tbody.innerHTML = list.map(b => `
         <tr>
-          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${b.billNo}</td>
-          <td>${b.billDate}</td>
-          <td style="text-align:right;">${formatMoney(b.taxable)}</td>
-          <td style="text-align:right;">${formatMoney(b.tax)}</td>
-          <td style="text-align:right; font-weight:700;">${formatMoney(b.total)}</td>
-          <td style="text-align:center;"><span class="badge badge-paid">${b.status}</span></td>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${b.invoiceNo || b.billNo || '-'}</td>
+          <td>${b.invoiceDate || b.billDate || '-'}</td>
+          <td style="text-align:right; font-weight:700;">${formatMoney(b.totalAmount || b.total || 0)}</td>
+          <td style="text-align:right; color:var(--accent-green);">${formatMoney(b.paidAmount || 0)}</td>
+          <td style="text-align:right; font-weight:700; color:${(b.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(b.outstanding || 0)}</td>
+          <td style="text-align:center;"><span class="badge ${b.paymentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${b.paymentStatus || b.documentStatus || b.status || 'APPROVED'}</span></td>
         </tr>
       `).join('');
     } catch (e) {
@@ -586,25 +823,100 @@ window.PartyController = (function() {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getSupplier360Payments(id);
       if (!list || list.length === 0) {
-        list = [{ voucherNo: 'PV-802', date: '2026-10-02', bank: 'Kotak Bank', ref: 'RTGS-9901', amount: 40000 }];
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No payment vouchers recorded.</td></tr>`;
+        return;
       }
       tbody.innerHTML = list.map(p => `
         <tr>
-          <td style="font-family:monospace; font-weight:700;">${p.voucherNo}</td>
-          <td>${p.date}</td>
-          <td>${p.bank}</td>
-          <td style="font-family:monospace;">${p.ref}</td>
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${p.referenceNo || p.voucherNo || 'PV-' + p.id}</td>
+          <td>${p.paymentDate || p.date || '-'}</td>
+          <td><span class="badge badge-neutral">${p.paymentMode || p.bank || 'BANK'}</span></td>
+          <td style="font-family:monospace;">${p.invoiceNo || '-'}</td>
           <td style="text-align:right; font-weight:700; color:var(--accent-red);">${formatMoney(p.amount)}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${p.notes || '-'}</td>
         </tr>
       `).join('');
-    } catch (e) {}
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-dim);">No payment records found.</td></tr>`;
+    }
+  }
+
+  async function loadSupplier360Contacts(id) {
+    const tbody = document.getElementById('s360-contacts-tbody');
+    if (!tbody) return;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getSupplier360Contacts(id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No additional contacts linked.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td style="font-weight:600; color:var(--text-main);">${c.name || '-'}</td>
+          <td>${c.designation || '-'}</td>
+          <td style="color:var(--text-muted);">${c.department || '-'}</td>
+          <td style="color:var(--cyan); font-family:monospace;">${c.mobile || '-'}</td>
+          <td style="color:var(--text-muted);">${c.email || '-'}</td>
+          <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
+    }
+  }
+
+  async function loadSupplier360Notes(id) {
+    const tbody = document.getElementById('s360-notes-tbody');
+    if (!tbody) return;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getSupplier360Notes(id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded for this vendor yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(n => `
+        <tr>
+          <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
+          <td style="color:var(--cyan);">${n.createdBy || 'Admin'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${n.createdAt || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
+    }
+  }
+
+  async function addSupplierNote() {
+    const input = document.getElementById('s360-new-note');
+    if (!input) return;
+    const noteText = input.value.trim();
+    if (!noteText) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please enter note text first.');
+      else alert('Please enter note text.');
+      return;
+    }
+    if (!active360PartyId) return;
+
+    try {
+      await window.ReportService.saveSupplierNote(active360PartyId, { note: noteText, rowVersion: 0 });
+      input.value = '';
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
+      loadSupplier360Notes(active360PartyId);
+    } catch (err) {
+      alert('Failed to save note: ' + (err.message || 'Server error'));
+    }
   }
 
   function switch360Tab(btnId, paneId) {
-    const modal = document.querySelector('.modal-card:has(#' + paneId + ')') || document;
-    modal.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    modal.querySelectorAll('.sub-tab-pane').forEach(p => p.style.display = 'none');
-    document.getElementById(btnId)?.classList.add('active');
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const parentContainer = btn.closest('.modal-card') || document;
+    parentContainer.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    parentContainer.querySelectorAll('.sub-tab-pane').forEach(p => p.style.display = 'none');
+    btn.classList.add('active');
     const pane = document.getElementById(paneId);
     if (pane) pane.style.display = 'block';
   }
@@ -612,8 +924,14 @@ window.PartyController = (function() {
   return {
     loadCustomers,
     filterCustomers,
+    selectCustomerRow,
+    openSelectedCustomer360,
     loadSuppliers,
     filterSuppliers,
+    selectSupplierRow,
+    openSelectedSupplier360,
+    togglePartyActionMenu,
+    viewAuditTrail,
     openNewPartyModal,
     openNewCustomerModal() { openNewPartyModal('CUSTOMER'); },
     openNewSupplierModal() { openNewPartyModal('SUPPLIER'); },
@@ -624,6 +942,8 @@ window.PartyController = (function() {
     openCustomer360,
     openSupplier360,
     switch360Tab,
+    addCustomerNote,
+    addSupplierNote,
     exportCustomers() { window.open('/api/master/parties/export?type=CUSTOMER', '_blank'); },
     exportSuppliers() { window.open('/api/master/parties/export?type=SUPPLIER', '_blank'); }
   };

@@ -22,11 +22,20 @@ window.ReminderCenterController = (function() {
         if (window.AccountingService) {
           aging = await window.AccountingService.getReceivablesAging();
         }
-        if (!aging || !aging.rows) {
+        let agingRows = [];
+        if (aging) {
+          if (Array.isArray(aging)) agingRows = aging;
+          else if (Array.isArray(aging.rows)) agingRows = aging.rows;
+          else if (Array.isArray(aging.parties)) agingRows = aging.parties;
+          else if (Array.isArray(aging.content)) agingRows = aging.content;
+        }
+
+        if (agingRows.length === 0) {
           // Dynamic calculation from sales if direct aging endpoint is empty
-          const sales = await window.OperationsService.getSales();
+          const salesRes = await window.OperationsService.getSales(0, 500);
+          const salesList = Array.isArray(salesRes) ? salesRes : (salesRes?.content || salesRes?.rows || salesRes?.data || []);
           const debtorsMap = {};
-          (sales || []).forEach(s => {
+          salesList.forEach(s => {
             if (s.paymentStatus !== 'PAID') {
               const party = (s.customer && s.customer.name) || s.customerName || 'Client';
               const amt = parseFloat(s.totalAmount || s.total || 0);
@@ -40,7 +49,7 @@ window.ReminderCenterController = (function() {
           });
           overdueList = Object.values(debtorsMap);
         } else {
-          overdueList = aging.rows.map(r => ({
+          overdueList = agingRows.map(r => ({
             id: r.partyId || r.id,
             party: r.partyName || r.name,
             amount: parseFloat(r.totalOutstanding || r.total || 0),

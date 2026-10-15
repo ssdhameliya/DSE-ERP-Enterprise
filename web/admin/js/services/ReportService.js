@@ -78,6 +78,18 @@ window.ReportService = {
   async updateUser(id, userPayload) {
     return await window.ApiService.put(`/api/admin/users/${id}`, userPayload);
   },
+  async resetUserMfa(id) {
+    return await window.ApiService.post(`/api/admin/users/${id}/mfa/reset`, {});
+  },
+  async getUserMfaState(id) {
+    return await window.ApiService.get(`/api/admin/users/${id}/mfa`);
+  },
+  async lockUser(id, locked) {
+    return await window.ApiService.post(`/api/admin/users/${id}/lock`, { locked });
+  },
+  async resetUserPassword(id, password) {
+    return await window.ApiService.post(`/api/admin/users/${id}/password`, { password });
+  },
   async deleteUser(id) {
     return await window.ApiService.delete(`/api/admin/users/${id}`);
   },

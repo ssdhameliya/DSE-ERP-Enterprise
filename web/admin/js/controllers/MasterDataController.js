@@ -208,6 +208,17 @@ window.MasterDataController = (function() {
         return;
       }
 
+      const item = currentLookups.find(l => String(l.id) === String(lookupId));
+      const isActive = item ? (item.active !== false) : true;
+      const toggleLabelEl = document.getElementById('masters-menu-toggle-label');
+      const toggleIconEl = document.getElementById('masters-menu-toggle-icon');
+      if (toggleLabelEl) {
+        toggleLabelEl.textContent = isActive ? 'Deactivate Entry' : 'Reactivate Entry';
+      }
+      if (toggleIconEl) {
+        toggleIconEl.innerHTML = isActive ? '&#9940;' : '&#9989;';
+      }
+
       const rect = btnEl.getBoundingClientRect();
       const menuWidth = 200;
       let left = rect.right - menuWidth;
@@ -430,6 +441,15 @@ window.MasterDataController = (function() {
       } catch (err) {
         window.AppDialogService.showToast(`Status change failed: ${err.message}`, 'error');
       }
+    },
+
+    toggleLookupStatus() {
+      return this.toggleSelectedLookupActive();
+    },
+
+    deleteLookup() {
+      window.AppDialogService.showToast('Master lookups with business transaction history cannot be deleted. Deactivating record instead.', 'warning');
+      return this.toggleSelectedLookupActive();
     },
 
     async deleteSelectedLookup() {

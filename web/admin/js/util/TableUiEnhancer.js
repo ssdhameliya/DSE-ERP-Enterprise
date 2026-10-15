@@ -134,7 +134,11 @@ window.TableUiEnhancer = (function() {
         // Check if cell is a monetary amount (e.g. ₹ 1,250.00)
         if (rawText.startsWith('₹') || rawText.startsWith('Rs.') || rawText.startsWith('INR')) {
           td.dataset.erpCellEnhanced = 'true';
-          td.classList.add('cell-money-green');
+          // Preserve existing intentional text colors (e.g. red for pending, yellow for grand total)
+          const hasExplicitColor = td.style.color || (td.getAttribute('style') || '').includes('color:');
+          if (!hasExplicitColor) {
+            td.classList.add('cell-money-green');
+          }
           td.style.textAlign = 'right';
           td.style.fontFamily = "'Space Grotesk', monospace";
           td.style.fontWeight = '600';

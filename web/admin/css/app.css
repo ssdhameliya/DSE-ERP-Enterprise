@@ -1838,7 +1838,7 @@
     .badge-neutral { background: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; }
 
     /* Cell money */
-    .cell-money-green { color: #34d399 !important; font-weight: 700; }
+    .cell-money-green { color: #34d399; font-weight: 700; }
 
     /* App Dialog Modal (matching Desktop AppDialogRenderer.java) */
     .app-dialog-overlay {

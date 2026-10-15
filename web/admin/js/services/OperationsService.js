@@ -243,6 +243,9 @@ window.OperationsService = {
   async markSaleEmailSent(id) {
     return await window.ApiService.post(`/api/operations/sales/email-sent/${id}`, {});
   },
+  async markPurchaseEmailSent(id) {
+    return await window.ApiService.post(`/api/operations/purchases/email-sent/${id}`, {});
+  },
   async markDocumentWhatsapp(type, id, rowVersion = 0) {
     return await window.ApiService.post(`/api/support/documents/${encodeURIComponent(type)}/${encodeURIComponent(id)}/whatsapp?rowVersion=${rowVersion}`, {});
   },

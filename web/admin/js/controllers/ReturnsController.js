@@ -154,10 +154,10 @@ window.ReturnsController = (function() {
           <td>${getStatusBadge(r.refundStatus)}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.toggleActionMenu('${r.no}', event)" style="padding:2px 8px; font-size:0.75rem; height:26px;">
-                Actions ▼
+              <button class="btn-purple" onclick="window.ReturnsController.toggleActionMenu('${r.no}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
               </button>
-              <div id="action-menu-${r.no.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:absolute; right:0; top:100%; z-index:999; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:190px; padding:6px 0; text-align:left;">
+              <div id="action-menu-${r.no.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.ReturnsController.showDetails('${r.no}')"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.ReturnsController.showAudit('${r.no}')"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-item" onclick="window.ReturnsController.editReasonPrompt('${r.no}', '${(r.reason || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">✏️</span> Edit Reason</div>
@@ -206,14 +206,41 @@ window.ReturnsController = (function() {
       if (m !== targetMenu) m.style.display = 'none';
     });
     if (targetMenu) {
-      targetMenu.style.display = targetMenu.style.display === 'block' ? 'none' : 'block';
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 210;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 260;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
     }
   }
-
-  // Close menus when clicking outside
-  document.addEventListener('click', function() {
-    document.querySelectorAll('.action-dropdown-menu').forEach(m => m.style.display = 'none');
-  });
 
   // 2. SIDE DRAWER DETAILS
   async function showDetails(no) {

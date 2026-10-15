@@ -157,9 +157,10 @@ window.ReportsController = (function() {
     async generateFallbackReport(reportId) {
       // Dynamic computation from cached live endpoints if report engine microservice is in transition
       if (reportId === 'sales-register' && window.OperationsService) {
-        const sales = await window.OperationsService.getSales();
+        const salesRes = await window.OperationsService.getSales(0, 500);
+        const salesList = Array.isArray(salesRes) ? salesRes : (salesRes?.content || salesRes?.rows || salesRes?.data || []);
         let totalVal = 0, totalTax = 0;
-        const rows = (sales || []).map(s => {
+        const rows = salesList.map(s => {
           const amt = parseFloat(s.totalAmount || s.total || 0);
           const tax = parseFloat(s.taxAmount || 0);
           totalVal += amt;

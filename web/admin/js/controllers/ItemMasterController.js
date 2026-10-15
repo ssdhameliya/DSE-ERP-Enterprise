@@ -130,11 +130,22 @@ window.ItemMasterController = (function() {
           <td style="text-align:right; color:var(--text-muted);">${minStock.toFixed(2)}</td>
           <td>${i.location || '-'}</td>
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${i.remarks || ''}">${i.remarks || '-'}</td>
-          <td style="text-align:center;">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openEditItemModal('${i.itemCode}')" style="padding:2px 6px; font-size:0.72rem;" title="Edit Item">✏️ Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="window.ItemMasterController.deleteSingleItem('${i.itemCode}', ${i.rowVersion || 0})" style="padding:2px 6px; font-size:0.72rem;" title="Delete Item">🗑️</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.printBarcode('${i.itemCode}')" style="padding:2px 6px; font-size:0.72rem;" title="Print Barcode">🏷️</button>
+          <td style="text-align:center;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.ItemMasterController.toggleActionMenu('${(i.itemCode || '').replace(/'/g, "\\'")}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="item-action-menu-${(i.itemCode || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.ItemMasterController.viewItemDetails('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">👁️</span> View Item Details</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openEditItemModal('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">✏️</span> Edit Item</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.printBarcode('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🏷️</span> Print Barcode</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.viewAuditTrail('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📜</span> Audit Trail</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.createSale('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🛒</span> Create Sale</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.createPurchase('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📦</span> Create Purchase</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" style="color:var(--red);" onclick="window.ItemMasterController.deleteSingleItem('${(i.itemCode || '').replace(/'/g, "\\'")}', ${i.rowVersion || 0})"><span style="margin-right:8px;">🗑️</span> Delete Item</div>
+              </div>
             </div>
           </td>
         </tr>
@@ -142,6 +153,88 @@ window.ItemMasterController = (function() {
     }).join('');
 
     updateSelectionFooter();
+  }
+
+  function toggleActionMenu(itemCode, event) {
+    if (event) event.stopPropagation();
+    const menuId = 'item-action-menu-' + (itemCode || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 210;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 260;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
+    }
+  }
+
+  function viewItemDetails(code) {
+    openEditItemModal(code);
+  }
+
+  function viewAuditTrail(code) {
+    if (window.OperationsService && window.OperationsService.getActivityTimeline) {
+      window.OperationsService.getActivityTimeline('ITEM', code).then(timeline => {
+        if (window.AppDialogService) {
+          window.AppDialogService.toastInfo(`Audit trail for ${code}: ${(timeline || []).length} change records found.`);
+        }
+      }).catch(() => {
+        if (window.AppDialogService) window.AppDialogService.toastInfo(`Audit trail for item ${code}`);
+      });
+    } else {
+      alert(`Audit trail for item ${code}`);
+    }
+  }
+
+  function createSale(code) {
+    if (window.SalesController && window.SalesController.openNewSaleModal) {
+      window.NavigationRouter.selectNav('view-sales-register');
+      window.SalesController.openNewSaleModal();
+      setTimeout(() => {
+        if (window.SalesController.selectEditorItem) window.SalesController.selectEditorItem(code);
+      }, 350);
+    }
+  }
+
+  function createPurchase(code) {
+    if (window.PurchaseController && window.PurchaseController.openNewPurchaseModal) {
+      window.NavigationRouter.selectNav('view-purchase-register');
+      window.PurchaseController.openNewPurchaseModal();
+      setTimeout(() => {
+        if (window.PurchaseController.selectEditorItem) window.PurchaseController.selectEditorItem(code);
+      }, 350);
+    }
   }
 
   function toggleSelectItem(code, checked) {
@@ -175,6 +268,58 @@ window.ItemMasterController = (function() {
   // 2. ITEM DIALOG MODAL (Itemdialog.fxml)
   // ==========================================
 
+  async function populateItemLookups() {
+    try {
+      const [categories, units, gstList, discounts] = await Promise.all([
+        window.MasterService.getLookupValuesByCategoryCode('CATEGORY').catch(() => []),
+        window.MasterService.getLookupValuesByCategoryCode('UNIT').catch(() => []),
+        window.MasterService.getLookupValuesByCategoryCode('GST').catch(() => []),
+        window.MasterService.getLookupValuesByCategoryCode('DISCOUNT').catch(() => [])
+      ]);
+
+      const catSel = document.getElementById('m-item-category');
+      if (catSel) {
+        const catVals = (categories && categories.length > 0) ? categories : ['PIPE', 'FLANGE', 'FITTING', 'VALVE', 'FASTENER', 'GASKET'];
+        catSel.innerHTML = `<option value="">Select category *</option>` +
+          catVals.map(c => {
+            const val = typeof c === 'string' ? c : (c.value || c.name || c.lookupValue);
+            return `<option value="${val}">${val}</option>`;
+          }).join('');
+      }
+
+      const unitSel = document.getElementById('m-item-unit');
+      if (unitSel) {
+        const unitVals = (units && units.length > 0) ? units : ['PCS', 'NOS', 'MTR', 'KGS', 'SET', 'BOX', 'PKT', 'ROLL', 'TON'];
+        unitSel.innerHTML = unitVals.map(u => {
+          const val = typeof u === 'string' ? u : (u.value || u.name || u.lookupValue);
+          return `<option value="${val}">${val}</option>`;
+        }).join('');
+      }
+
+      const gstSel = document.getElementById('m-item-gst');
+      if (gstSel) {
+        const gstVals = (gstList && gstList.length > 0) ? gstList : ['0', '5', '12', '18', '28'];
+        gstSel.innerHTML = gstVals.map(g => {
+          const val = typeof g === 'string' ? g : (g.value || g.name || g.lookupValue);
+          const num = parseFloat(val) || 0;
+          return `<option value="${num}">${num}%</option>`;
+        }).join('');
+      }
+
+      const discSel = document.getElementById('m-item-discount');
+      if (discSel && discSel.tagName === 'SELECT') {
+        const discVals = (discounts && discounts.length > 0) ? discounts : ['0', '5', '10', '15', '20'];
+        discSel.innerHTML = discVals.map(d => {
+          const val = typeof d === 'string' ? d : (d.value || d.name || d.lookupValue);
+          const num = parseFloat(val) || 0;
+          return `<option value="${num}">${num}%</option>`;
+        }).join('');
+      }
+    } catch (e) {
+      console.warn('Failed to load item lookups:', e);
+    }
+  }
+
   async function openNewItemModal() {
     editingItemCode = null;
     editingRowVersion = 0;
@@ -193,8 +338,8 @@ window.ItemMasterController = (function() {
       document.getElementById('m-item-code').value = 'ITEM' + Date.now().toString().slice(-4);
     }
 
-    // Populate categories
-    await loadCategoriesDropdown();
+    // Dynamically populate categories, units, gst, discounts from server lookups
+    await populateItemLookups();
 
     document.getElementById('m-item-desc').value = '';
     document.getElementById('m-item-category').value = '';
@@ -225,7 +370,8 @@ window.ItemMasterController = (function() {
     document.getElementById('item-dialog-title').innerText = 'Edit Item';
     document.getElementById('item-dialog-subtitle').innerText = `Modify inventory details for item ${code}`;
 
-    await loadCategoriesDropdown();
+    // Dynamically populate categories, units, gst, discounts from server lookups
+    await populateItemLookups();
 
     document.getElementById('m-item-code').value = item.itemCode;
     document.getElementById('m-item-desc').value = item.description || '';
@@ -245,17 +391,7 @@ window.ItemMasterController = (function() {
   }
 
   async function loadCategoriesDropdown() {
-    try {
-      const catList = await window.MasterService.getCategories();
-      cachedCategories = catList || [];
-      const catSel = document.getElementById('m-item-category');
-      if (catSel) {
-        catSel.innerHTML = `<option value="">Select category *</option>` +
-          cachedCategories.map(c => `<option value="${c.categoryName || c.name}">${c.categoryName || c.name}</option>`).join('');
-      }
-    } catch (e) {
-      console.warn('Failed to load categories:', e);
-    }
+    await populateItemLookups();
   }
 
   async function submitSaveItem() {
@@ -685,6 +821,12 @@ window.ItemMasterController = (function() {
     deleteSelectedItems,
     printBarcode,
     closeModal,
+    toggleActionMenu,
+    viewItemDetails,
+    viewAuditTrail,
+    createSale,
+    createPurchase,
+    populateItemLookups,
     loadCategories() { loadCategoriesDropdown(); },
 
     // Inventory Ledger Parity
