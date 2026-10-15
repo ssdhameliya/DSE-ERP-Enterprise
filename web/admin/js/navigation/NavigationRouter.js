@@ -134,6 +134,14 @@ window.NavigationRouter = (function() {
       }
       renderTabs();
 
+      // Auto-hide hover peek drawer once a navigation destination is selected
+      const sb = document.querySelector('aside.app-sidebar');
+      if (sb && sb.classList.contains('hover-peek')) {
+        sb.classList.remove('hover-peek');
+        isHoverPeekActive = false;
+        if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
+      }
+
       // Update URL hash without polluting history
       if (window.location.hash !== `#${navKey}`) {
         if (window.history && window.history.pushState) {
@@ -164,10 +172,6 @@ window.NavigationRouter = (function() {
 
     toggleNavGroup(groupId) {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      const sb = document.querySelector('aside.app-sidebar');
-      if (sb && sb.classList.contains('collapsed')) {
-        sb.classList.remove('collapsed');
-      }
 
       const groupEl = document.getElementById(groupId);
       if (!groupEl) return;
@@ -200,74 +204,76 @@ window.NavigationRouter = (function() {
 
     toggleSidebar() {
       const sb = document.querySelector('aside.app-sidebar');
-      if (sb) {
+      if (!sb) return;
+      if (sb.classList.contains('hover-peek')) {
         sb.classList.remove('hover-peek');
-        if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
         isHoverPeekActive = false;
-        sb.classList.toggle('collapsed');
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-        try { localStorage.setItem('dse_sidebar_collapsed', sb.classList.contains('collapsed')); } catch(e) {}
+        if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
+      } else {
+        this.showSidebarDrawer();
       }
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    },
+
+    showSidebarDrawer() {
+      const sb = document.querySelector('aside.app-sidebar');
+      if (!sb) return;
+      if (hoverHideTimeout) {
+        clearTimeout(hoverHideTimeout);
+        hoverHideTimeout = null;
+      }
+      sb.classList.add('collapsed');
+      sb.classList.add('hover-peek');
+      isHoverPeekActive = true;
+    },
+
+    hideSidebarDrawer(delay = 180) {
+      if (!isHoverPeekActive) return;
+      if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
+      hoverHideTimeout = setTimeout(() => {
+        const sb = document.querySelector('aside.app-sidebar');
+        const toggleBtn = document.getElementById('btn-sidebar-toggle') || document.querySelector('.header-left .header-badge-btn');
+        if (sb && !sb.matches(':hover') && (!toggleBtn || !toggleBtn.matches(':hover'))) {
+          sb.classList.remove('hover-peek');
+          isHoverPeekActive = false;
+          hoverHideTimeout = null;
+        }
+      }, delay);
     },
 
     installSidebarHoverPeek() {
       const sb = document.querySelector('aside.app-sidebar');
       if (!sb) return;
 
-      const showPeek = () => {
-        if (!sb.classList.contains('collapsed')) return;
+      // Keep open while hovering over the sidebar
+      sb.addEventListener('mouseenter', () => {
         if (hoverHideTimeout) {
           clearTimeout(hoverHideTimeout);
           hoverHideTimeout = null;
         }
-        if (!sb.classList.contains('hover-peek')) {
-          sb.classList.add('hover-peek');
-          isHoverPeekActive = true;
-        }
-      };
-
-      const scheduleHide = () => {
-        if (!isHoverPeekActive) return;
-        if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
-        hoverHideTimeout = setTimeout(() => {
-          sb.classList.remove('hover-peek');
-          isHoverPeekActive = false;
-          hoverHideTimeout = null;
-        }, 280);
-      };
-
-      // Hover on sidebar
-      sb.addEventListener('mouseenter', () => {
-        if (sb.classList.contains('collapsed')) showPeek();
-        else if (isHoverPeekActive && hoverHideTimeout) {
-          clearTimeout(hoverHideTimeout);
-          hoverHideTimeout = null;
-        }
       });
+
+      // Automatically hide once mouse moves away from the sidebar drawer
       sb.addEventListener('mouseleave', () => {
-        scheduleHide();
+        this.hideSidebarDrawer(180);
       });
 
-      // Hover on toggle buttons
-      document.querySelectorAll('.header-badge-btn, #btn-sidebar-toggle').forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-          if (sb.classList.contains('collapsed')) showPeek();
+      // Top toggle button (hamburger icon): Hover or click un-hides full menu
+      const toggleBtn = document.getElementById('btn-sidebar-toggle') || document.querySelector('.header-left .header-badge-btn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('mouseenter', () => {
+          this.showSidebarDrawer();
         });
-        btn.addEventListener('mouseleave', () => {
-          scheduleHide();
+        toggleBtn.addEventListener('mouseleave', () => {
+          setTimeout(() => {
+            if (!sb.matches(':hover')) {
+              this.hideSidebarDrawer(180);
+            }
+          }, 120);
         });
-      });
+      }
 
-      // Left edge hover peek trigger (moving mouse near left screen edge <= 12px)
-      window.addEventListener('mousemove', (e) => {
-        if (sb.classList.contains('collapsed') && !isHoverPeekActive) {
-          if (e.clientX <= 12 && e.clientY >= 50 && e.clientY <= window.innerHeight - 30) {
-            showPeek();
-          }
-        }
-      });
-
-      // Close peek on Escape or click outside
+      // Close on Escape or click outside
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && isHoverPeekActive) {
           sb.classList.remove('hover-peek');
@@ -277,7 +283,7 @@ window.NavigationRouter = (function() {
       });
 
       document.addEventListener('click', (e) => {
-        if (isHoverPeekActive && !sb.contains(e.target) && !e.target.closest('.header-badge-btn')) {
+        if (isHoverPeekActive && !sb.contains(e.target) && !e.target.closest('#btn-sidebar-toggle, .header-badge-btn')) {
           sb.classList.remove('hover-peek');
           isHoverPeekActive = false;
           if (hoverHideTimeout) clearTimeout(hoverHideTimeout);
@@ -486,14 +492,11 @@ window.NavigationRouter = (function() {
         }
       });
 
-      // Restore saved sidebar collapsed state
-      try {
-        const savedCollapsed = localStorage.getItem('dse_sidebar_collapsed');
-        const sb = document.querySelector('aside.app-sidebar');
-        if (sb && savedCollapsed === 'true') {
-          sb.classList.add('collapsed');
-        }
-      } catch (e) {}
+      // Ensure sidebar starts fully collapsed so no menu icons are visible on the left
+      const sb = document.querySelector('aside.app-sidebar');
+      if (sb) {
+        sb.classList.add('collapsed');
+      }
 
       this.installSidebarHoverPeek();
     }
