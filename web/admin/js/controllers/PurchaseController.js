@@ -462,6 +462,130 @@ window.PurchaseController = (function() {
     }
   }
 
+  async function printPurchaseBill(invoiceNo) {
+    try {
+      let p = purchases.find(x => x.invoiceNo === invoiceNo);
+      if (!p) p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      if (!p) return;
+
+      const supp = p.supplier || {};
+      const lines = p.lines || [];
+      const isInterstate = (p.gstType || '').toUpperCase().includes('INTER');
+      const cgst = isInterstate ? 0 : (p.gstAmount || 0) / 2;
+      const sgst = isInterstate ? 0 : (p.gstAmount || 0) / 2;
+      const igst = isInterstate ? (p.gstAmount || 0) : 0;
+
+      const printContainer = document.getElementById('printable-invoice-modal');
+      if (!printContainer) return;
+
+      printContainer.innerHTML = `
+        <div class="tax-invoice-sheet" style="font-family: 'Inter', sans-serif; padding: 24px; color: #111827; background: #fff;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 16px;">
+            <div>
+              <div style="font-size: 20px; font-weight: 800; color: #047857; letter-spacing: 0.5px;">JASVI INDUSTRIES</div>
+              <div style="font-size: 11px; color: #4b5563; margin-top: 2px;">Precision Fasteners, High-Tensile Bolts &amp; Industrial Stainless Steel Piping</div>
+              <div style="font-size: 11px; color: #4b5563;">H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat</div>
+              <div style="font-size: 11px; font-weight: 700; margin-top: 2px;">GSTIN: <span style="font-family: monospace;">24AAACJ1234F1Z1</span> | State: Gujarat (24)</div>
+            </div>
+            <div style="text-align: right;">
+              <span style="background: #059669; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">PURCHASE INWARD VOUCHER</span>
+              <div style="font-size: 14px; font-weight: 800; margin-top: 6px; color: #065f46;">PURCHASE BILL</div>
+              <div style="font-size: 12px; font-weight: 700;">Bill #: ${p.invoiceNo}</div>
+              <div style="font-size: 11px; color: #4b5563;">Date: ${window.FormatUtil.formatDate(p.invoiceDate || p.date)}</div>
+              <div style="font-size: 11px; color: #4b5563;">Due Date: ${window.FormatUtil.formatDate(p.dueDate || p.invoiceDate)}</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+              <div style="font-size: 10px; font-weight: 700; color: #047857; text-transform: uppercase; margin-bottom: 4px;">SUPPLIER / VENDOR DETAILS</div>
+              <div style="font-size: 12px; font-weight: 700; color: #111827;">${supp.name || p.supplierName || 'Vendor'}</div>
+              <div style="font-size: 11px; color: #4b5563;">${supp.address || p.billingAddress || '-'}</div>
+              <div style="font-size: 11px; margin-top: 4px;"><strong>GSTIN:</strong> ${supp.gstin || p.billingGstin || 'Unregistered'}</div>
+              <div style="font-size: 11px;"><strong>Phone:</strong> ${supp.phone || '-'}</div>
+            </div>
+            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+              <div style="font-size: 10px; font-weight: 700; color: #047857; text-transform: uppercase; margin-bottom: 4px;">DISPATCH &amp; INWARD LOGISTICS</div>
+              <div style="font-size: 11px; color: #4b5563;"><strong>Delivery:</strong> ${p.deliveryAddress || supp.address || 'Main Warehouse'}</div>
+              <div style="font-size: 11px; margin-top: 4px;"><strong>Transporter:</strong> ${p.transporter || 'Direct Handover'}</div>
+              <div style="font-size: 11px;"><strong>Vehicle Number:</strong> ${p.vehicleNumber || 'Not Specified'}</div>
+              <div style="font-size: 11px;"><strong>Payment Terms:</strong> ${p.paymentTerms || 'Immediate'}</div>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;">
+            <thead>
+              <tr style="background: #f3f4f6; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">
+                <th style="padding: 6px 8px; text-align: left; width: 30px;">#</th>
+                <th style="padding: 6px 8px; text-align: left;">Item Description / Specification</th>
+                <th style="padding: 6px 8px; text-align: left; width: 80px;">HSN/SAC</th>
+                <th style="padding: 6px 8px; text-align: right; width: 60px;">Qty</th>
+                <th style="padding: 6px 8px; text-align: left; width: 45px;">Unit</th>
+                <th style="padding: 6px 8px; text-align: right; width: 80px;">Rate (₹)</th>
+                <th style="padding: 6px 8px; text-align: right; width: 85px;">Taxable (₹)</th>
+                <th style="padding: 6px 8px; text-align: right; width: 60px;">GST%</th>
+                <th style="padding: 6px 8px; text-align: right; width: 95px;">Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lines.map((l, i) => `
+                <tr style="border-bottom: 1px solid #f3f4f6;">
+                  <td style="padding: 6px 8px;">${i + 1}</td>
+                  <td style="padding: 6px 8px; font-weight: 600;">${l.itemDescription || l.description || l.itemCode}</td>
+                  <td style="padding: 6px 8px; font-family: monospace;">${l.itemHsn || '73063000'}</td>
+                  <td style="padding: 6px 8px; text-align: right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+                  <td style="padding: 6px 8px;">${l.itemUnit || 'PCS'}</td>
+                  <td style="padding: 6px 8px; text-align: right;">${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+                  <td style="padding: 6px 8px; text-align: right;">${window.FormatUtil.formatRupees(((parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0)) - (parseFloat(l.discountAmount) || 0))}</td>
+                  <td style="padding: 6px 8px; text-align: right;">${l.gstPercent || 18}%</td>
+                  <td style="padding: 6px 8px; text-align: right; font-weight: 600;">${window.FormatUtil.formatRupees(l.totalAmount || ((parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0)))}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div style="font-size: 11px; padding: 10px; background: #f9fafb; border-radius: 6px;">
+              <strong>Amount in Words:</strong><br>
+              ${window.FormatUtil.numberToWords(p.totalAmount || 0)} Only
+            </div>
+            <div style="font-size: 11px;">
+              <div style="display: flex; justify-content: space-between; padding: 3px 0;"><span>Sub Total (Taxable):</span><span>${window.FormatUtil.formatRupees(p.subtotal || 0)}</span></div>
+              <div style="display: flex; justify-content: space-between; padding: 3px 0;"><span>Additional Charges:</span><span>${window.FormatUtil.formatRupees(p.charges ? p.charges.reduce((s,c)=>s+(parseFloat(c.amount)||0), 0) : 0)}</span></div>
+              ${!isInterstate ? `
+                <div style="display: flex; justify-content: space-between; padding: 3px 0;"><span>CGST:</span><span>${window.FormatUtil.formatRupees(cgst)}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 3px 0;"><span>SGST:</span><span>${window.FormatUtil.formatRupees(sgst)}</span></div>
+              ` : `
+                <div style="display: flex; justify-content: space-between; padding: 3px 0;"><span>IGST:</span><span>${window.FormatUtil.formatRupees(igst)}</span></div>
+              `}
+              <div style="display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid #111827; font-size: 13px; font-weight: 800; color: #047857;"><span>Total Inward Value:</span><span>${window.FormatUtil.formatRupees(p.totalAmount || 0)}</span></div>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="font-size: 10px; color: #6b7280;">
+              Received by Store Officer: ___________________<br>
+              Goods Inspected &amp; Accepted in Full
+            </div>
+            <div style="text-align: center; width: 180px;">
+              <div style="font-size: 11px; font-weight: 700; margin-bottom: 35px;">For JASVI INDUSTRIES</div>
+              <div style="border-top: 1px dashed #374151; font-size: 11px; padding-top: 2px;">Authorized Signatory</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      window.AppDialogService.openModal('modal-printable-invoice');
+      setTimeout(() => {
+        window.print();
+      }, 500);
+
+    } catch (err) {
+      console.error('Failed to print purchase bill:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Print generation failed: ' + err.message);
+    }
+  }
+
   async function downloadPdf(invoiceNo) {
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating PDF for ${invoiceNo}...`);
     const token = localStorage.getItem('dse_access_token');
@@ -486,136 +610,29 @@ window.PurchaseController = (function() {
       }
       throw new Error(`Server PDF render returned HTTP ${res.status}`);
     } catch (err) {
-      console.warn('PDF endpoint failed, opening view mode:', err);
-      openPurchaseView(invoiceNo);
-    }
-  }
-
-  async function downloadExcel(invoiceNo) {
-    if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating Excel export for ${invoiceNo}...`);
-    const token = localStorage.getItem('dse_access_token');
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    try {
-      let res = await fetch(`/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
-      if (!res.ok) {
-        res = await fetch(`/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
-      }
-      if (res.ok) {
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
-        return;
-      }
-      throw new Error(`Server XLSX render returned HTTP ${res.status}`);
-    } catch (err) {
-      console.warn('Server XLSX render failed, exporting client-side CSV:', err);
-      try {
-        let p = purchases.find(x => x.invoiceNo === invoiceNo);
-        if (!p) p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
-        if (!p) return;
-        const suppName = (p.supplier && p.supplier.name) || p.supplierName || 'Supplier';
-        const lines = p.lines || [];
-        let csv = `JASVI INDUSTRIES - PURCHASE INVOICE STATEMENT\n`;
-        csv += `Invoice No:,${invoiceNo},Date:,${p.invoiceDate || p.date || ''}\n`;
-        csv += `Supplier:,${suppName},GSTIN:,${p.billingGstin || (p.supplier && p.supplier.gstin) || '-'}\n`;
-        csv += `Total Amount:,${p.totalAmount || 0},Paid:,${p.paidAmount || 0},Balance:,${Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0))}\n\n`;
-        csv += `Item Code,Description,Category,HSN,Qty,Unit,Rate,Discount %,GST %,Total\n`;
-        if (lines.length > 0) {
-          lines.forEach(l => {
-            const lineTot = (parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0);
-            csv += `"${l.itemCode || ''}","${(l.itemDescription || '').replace(/"/g, '""')}","${l.itemCategory || ''}","${l.itemHsn || ''}",${l.quantity || 1},"${l.itemUnit || 'PCS'}",${l.rate || 0},${l.discountPercent || 0},${l.gstPercent || 18},${lineTot.toFixed(2)}\n`;
-          });
-        } else {
-          csv += `"-","Purchase Bill Total","-","-",1,"LOT",${p.totalAmount || 0},0,18,${p.totalAmount || 0}\n`;
-        }
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Purchase_Bill.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
-      } catch (e2) {
-        if (window.AppDialogService) window.AppDialogService.toastError('Failed to export Excel: ' + e2.message);
-      }
-    }
-  }
-
-  async function openPayments(invoiceNo) {
-    let p = purchases.find(x => x.invoiceNo === invoiceNo);
-    if (!p) {
-      try {
-        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
-      } catch (e) {
-        console.warn('Could not fetch purchase for payments:', e);
-      }
-    }
-    const suppName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
-    const total = p ? (p.totalAmount || 0) : 0;
-    const paid = p ? (p.paidAmount || 0) : 0;
-    const pending = Math.max(0, total - paid);
-    const purchaseId = p ? (p.id || 0) : 0;
-
-    if (window.openInvoicePaymentDetails) {
-      window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending, p);
-    } else {
-      alert(`Payment drilldown for purchase ${invoiceNo}`);
-    }
-  }
-
-  function printInwardBarcode(invoiceNo) {
-    if (window.BarcodeStudioController) {
-      window.NavigationRouter.selectNav('view-barcode-studio');
-      window.BarcodeStudioController.quickGenerate(invoiceNo);
-    } else {
-      alert(`Print Inward Barcodes for Purchase ${invoiceNo}`);
+      console.warn('Server PDF endpoint unavailable, opening printable bill:', err);
+      printPurchaseBill(invoiceNo);
     }
   }
 
   async function sendEmailPrompt(invoiceNo, id) {
     let p = purchases.find(x => x.invoiceNo === invoiceNo);
-    const suppEmail = (p && p.supplier && p.supplier.email) || (p && p.email) || 'procurement@jasviindustries.in';
-    const email = prompt(`Send Purchase Bill ${invoiceNo} via Email to:`, suppEmail);
-    if (!email) return;
-
-    try {
-      if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending Purchase Bill ${invoiceNo} to ${email}...`);
-      let purchaseId = id || (p && p.id);
-      if (!purchaseId) {
-        try {
-          const fetched = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
-          purchaseId = fetched && fetched.id;
-        } catch(e) {}
-      }
-
-      if (purchaseId) {
-        await window.OperationsService.markPurchaseEmailSent(purchaseId).catch(() => {});
-      }
-      if (window.AppDialogService) {
-        window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} dispatched to ${email}!`);
-      }
-      loadPurchases(currentPage);
-    } catch (err) {
-      if (window.AppDialogService) {
-        window.AppDialogService.toastError('Email delivery notification: ' + err.message);
-      } else {
-        alert('Email delivery: ' + err.message);
-      }
+    if (!p) {
+      try {
+        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      } catch (e) {}
+    }
+    if (window.SalesController && window.SalesController.openEmailModal) {
+      window.SalesController.openEmailModal(invoiceNo, true, p);
+    } else {
+      alert(`Send Email for purchase ${invoiceNo}`);
     }
   }
 
   function openReturnPrompt(invoiceNo) {
     if (window.ReturnsController) {
       if (window.ReturnsController.setType) window.ReturnsController.setType('PURCHASE RETURN');
-      window.ReturnsController.openCreateReturnModal(invoiceNo);
+      window.ReturnsController.openCreateReturnModal(invoiceNo, 'PURCHASE RETURN');
     } else {
       window.NavigationRouter.selectNav('view-purchase-returns');
     }
@@ -751,27 +768,48 @@ window.PurchaseController = (function() {
     document.getElementById('pe-invoice-date').value = today;
     document.getElementById('pe-po-date').value = today;
 
-    // Load Suppliers Bootstrap
+    let cachedTransporters = [];
+    let availableChargeTypes = ['Freight', 'Loading / Packaging', 'Insurance', 'Installation', 'Miscellaneous'];
+
+    // Load Master Bootstrap & Lookups (Payment Terms, GST Types, Transporters, Charges)
     try {
+      const bootstrap = await window.MasterService.getSalesEntryBootstrap().catch(() => null);
+      if (bootstrap) {
+        // GST Types
+        if (bootstrap.gstTypes && bootstrap.gstTypes.length > 0) {
+          const gstSel = document.getElementById('pe-gst-type');
+          if (gstSel) gstSel.innerHTML = bootstrap.gstTypes.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
+
+        // Payment Terms
+        if (bootstrap.paymentTerms && bootstrap.paymentTerms.length > 0) {
+          const paySel = document.getElementById('pe-payment-terms');
+          if (paySel) paySel.innerHTML = bootstrap.paymentTerms.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
+
+        // Transporters
+        if (bootstrap.transporters && bootstrap.transporters.length > 0) {
+          cachedTransporters = bootstrap.transporters;
+          const transSel = document.getElementById('pe-transporter');
+          if (transSel) {
+            transSel.innerHTML = `<option value="">Select transporter...</option>` +
+              cachedTransporters.map(t => `<option value="${t.lookupValue || t.lookupCode}" data-gstin="${t.description || ''}">${t.lookupValue || t.lookupCode}</option>`).join('');
+          }
+        }
+
+        // Charge Types
+        if (bootstrap.chargeTypes && bootstrap.chargeTypes.length > 0) {
+          availableChargeTypes = bootstrap.chargeTypes;
+        }
+      }
+
+      // Suppliers Bootstrap
       const suppliers = await window.MasterService.getParties('SUPPLIER');
       cachedSuppliers = suppliers || [];
       const suppSelect = document.getElementById('pe-supplier-select');
       if (suppSelect) {
         suppSelect.innerHTML = `<option value="">Select supplier... *</option>` +
           cachedSuppliers.map(s => `<option value="${s.id}">${s.partyCode ? s.partyCode + ' - ' : ''}${s.name}</option>`).join('');
-      }
-
-      // Load Lookup Types (GST Types & Payment Terms)
-      const gstTypes = await window.MasterService.getLookupValues('GST_TYPE').catch(() => ({ values: ['Intra-State GST', 'Inter-State IGST'] }));
-      const gstSel = document.getElementById('pe-gst-type');
-      if (gstSel && gstTypes?.values) {
-        gstSel.innerHTML = gstTypes.values.map(v => `<option value="${v}">${v}</option>`).join('');
-      }
-
-      const payTerms = await window.MasterService.getLookupValues('PAYMENT_TERMS').catch(() => ({ values: ['Net 30', 'Net 15', 'Immediate', 'Advance', 'Net 60'] }));
-      const paySel = document.getElementById('pe-payment-terms');
-      if (paySel && payTerms?.values) {
-        paySel.innerHTML = payTerms.values.map(v => `<option value="${v}">${v}</option>`).join('');
       }
 
     } catch (e) {
@@ -826,7 +864,8 @@ window.PurchaseController = (function() {
       // Preview Next Purchase Bill No
       try {
         const nextRes = await window.OperationsService.getNextPurchaseInvoice();
-        document.getElementById('pe-invoice-no').value = nextRes?.value || 'BILL-2026-0001';
+        const nextVal = (typeof nextRes === 'string' ? nextRes : (nextRes?.value || nextRes?.invoiceNo)) || 'BILL-2026-0001';
+        document.getElementById('pe-invoice-no').value = nextVal;
       } catch {
         document.getElementById('pe-invoice-no').value = 'BILL-2026-0001';
       }
@@ -841,8 +880,67 @@ window.PurchaseController = (function() {
       }
     });
 
+    // Lock Additional Charges in read-only view mode
+    const chargesPill = document.getElementById('pe-charges-summary-display');
+    if (chargesPill) {
+      chargesPill.style.pointerEvents = isReadOnlyView ? 'none' : 'auto';
+      chargesPill.style.cursor = isReadOnlyView ? 'not-allowed' : 'pointer';
+      chargesPill.style.opacity = isReadOnlyView ? '0.65' : '1';
+      chargesPill.title = isReadOnlyView ? 'Charges cannot be modified in read-only mode' : 'Click to manage additional charges';
+    }
+    const btnManage = document.getElementById('pe-btn-manage-charges');
+    if (btnManage) btnManage.disabled = isReadOnlyView;
+
+    updateChargeSummaryBadge();
     renderEditorLines();
     recalcEditorTotals();
+  }
+
+  function onTransporterChange(selectEl) {
+    const val = selectEl ? selectEl.value : '';
+    const gstinEl = document.getElementById('pe-transporter-gstin');
+    if (!gstinEl) return;
+    const opt = selectEl && selectEl.selectedOptions && selectEl.selectedOptions[0];
+    if (opt && opt.dataset && opt.dataset.gstin) {
+      gstinEl.value = opt.dataset.gstin;
+    }
+  }
+
+  function openChargesDialog() {
+    if (isReadOnlyView) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Charges cannot be modified on approved invoices in view mode.');
+      return;
+    }
+    if (window.SalesController && window.SalesController.openChargesDialogForPurchase) {
+      window.SalesController.openChargesDialogForPurchase(editorCharges, availableChargeTypes);
+    }
+  }
+
+  function setCharges(charges) {
+    editorCharges = (charges || []).map(c => ({ ...c }));
+    updateChargeSummaryBadge();
+    recalcEditorTotals();
+  }
+
+  function updateChargeSummaryBadge() {
+    const pill = document.getElementById('pe-charges-summary-display');
+    const inp = document.getElementById('pe-charges-input');
+    const count = (editorCharges || []).length;
+    let total = 0;
+    (editorCharges || []).forEach(c => total += (parseFloat(c.amount) || 0));
+    if (pill) {
+      if (count === 0 || total === 0) {
+        pill.innerText = 'No additional charges';
+        pill.classList.remove('has-charges');
+        if (inp) inp.value = '0.00';
+      } else {
+        pill.innerText = `${count} Charge(s) • ₹ ${total.toFixed(2)}`;
+        pill.classList.add('has-charges');
+        if (inp) inp.value = total.toFixed(2);
+      }
+    }
+    const summaryCharges = document.getElementById('pe-summary-charges');
+    if (summaryCharges) summaryCharges.innerText = `₹ ${total.toFixed(2)}`;
   }
 
   function onEditorSupplierChange() {
@@ -1273,6 +1371,12 @@ window.PurchaseController = (function() {
     openPayments,
     openPurchaseEditor,
     openNewPurchaseModal() { openPurchaseEditor(); },
+    openChargesDialog,
+    setCharges,
+    updateChargeSummaryBadge,
+    onTransporterChange,
+    printPurchaseBill,
+    getPurchasesCache() { return purchases; },
     onEditorSupplierChange,
     onSameAsBillingToggle,
     searchEditorItems,

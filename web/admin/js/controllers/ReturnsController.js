@@ -412,8 +412,11 @@ window.ReturnsController = (function() {
     }
   }
 
+  let currentInvoicePartyId = 0;
+
   // 4. CREATE RETURN MODAL (DESKTOP ReturnEditorService.java PARITY)
-  async function openCreateReturnModal(prefillInvoice = null) {
+  async function openCreateReturnModal(prefillInvoice = null, typeOverride = null) {
+    if (typeOverride) currentType = typeOverride;
     const modal = document.getElementById('modal-create-return');
     if (!modal) return;
 
@@ -442,8 +445,70 @@ window.ReturnsController = (function() {
     const tbody = document.getElementById('cr-lines-body');
     if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading returnable items from invoice ${inv}...</td></tr>`;
 
+    const isSales = currentType === 'SALES RETURN';
     try {
-      const lines = await window.OperationsService.getReturnableLines(currentType, inv);
+      // 1. Resolve exact source party ID so that backend validation (d.partyId() == expectedParty) succeeds
+      currentInvoicePartyId = 0;
+      if (isSales) {
+        try {
+          const sale = await window.OperationsService.getSaleByInvoice(inv);
+          if (sale) {
+            currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
+          }
+        } catch (_) {}
+      } else {
+        try {
+          const pur = await window.OperationsService.getPurchaseByInvoice(inv);
+          if (pur) {
+            currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
+          }
+        } catch (_) {}
+      }
+
+      let lines = [];
+      try {
+        lines = await window.OperationsService.getReturnableLines(currentType, inv);
+      } catch (e) {
+        console.warn('API getReturnableLines failed, falling back to source document:', e);
+      }
+
+      // Fallback: If returnable lines endpoint returned empty or failed, extract lines from source invoice
+      if (!lines || lines.length === 0) {
+        if (isSales) {
+          const sale = await window.OperationsService.getSaleByInvoice(inv).catch(() => null);
+          if (sale && sale.lines) {
+            lines = sale.lines.map((l, i) => ({
+              sourceLineId: l.id || i + 1,
+              code: l.itemCode,
+              description: l.itemDescription || l.description || l.itemCode,
+              quantity: l.quantity,
+              rate: l.rate,
+              discountPercent: l.discountPercent || 0,
+              taxPercent: l.gstPercent || 18,
+              lineTotal: l.totalAmount || (l.quantity * l.rate),
+              returnedQuantity: 0,
+              returnedAmount: 0
+            }));
+          }
+        } else {
+          const pur = await window.OperationsService.getPurchaseByInvoice(inv).catch(() => null);
+          if (pur && pur.lines) {
+            lines = pur.lines.map((l, i) => ({
+              sourceLineId: l.id || i + 1,
+              code: l.itemCode,
+              description: l.itemDescription || l.description || l.itemCode,
+              quantity: l.quantity,
+              rate: l.rate,
+              discountPercent: l.discountPercent || 0,
+              taxPercent: l.gstPercent || 18,
+              lineTotal: l.totalAmount || (l.quantity * l.rate),
+              returnedQuantity: 0,
+              returnedAmount: 0
+            }));
+          }
+        }
+      }
+
       selectedReturnableLines = (lines || []).map(l => ({
         sourceLineId: l.sourceLineId,
         code: l.code,
@@ -590,7 +655,7 @@ window.ReturnsController = (function() {
     const payload = {
       type: currentType,
       invoiceNo: invoiceNo,
-      partyId: 0, // Auto-resolved by backend from invoice
+      partyId: currentInvoicePartyId || 0,
       returnDate: returnDate,
       lines: selectedLines.map(l => ({
         code: l.code,

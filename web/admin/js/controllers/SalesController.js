@@ -771,6 +771,13 @@ window.SalesController = {
           selTerms.innerHTML = bootstrap.paymentTerms.map(t => `<option value="${t}" ${t === '15 Days' ? 'selected' : ''}>${t}</option>`).join('');
           if (existingSale && existingSale.paymentTerms) selTerms.value = existingSale.paymentTerms;
         }
+
+        // GST types dropdown
+        const selGst = document.getElementById('ws-gst-type');
+        if (selGst && bootstrap.gstTypes && bootstrap.gstTypes.length > 0) {
+          selGst.innerHTML = bootstrap.gstTypes.map(g => `<option value="${g}">${g}</option>`).join('');
+          if (existingSale && existingSale.gstType) selGst.value = existingSale.gstType;
+        }
       } else {
         const customers = await window.MasterService.getParties('CUSTOMER');
         this.customersCache = customers || [];
@@ -899,6 +906,17 @@ window.SalesController = {
           else el.readOnly = isReadOnly;
         }
       });
+
+      // Strict lock on Additional Charges in read-only view
+      const chargesDisp = document.getElementById('ws-charges-summary-display');
+      if (chargesDisp) {
+        chargesDisp.style.pointerEvents = isReadOnly ? 'none' : 'auto';
+        chargesDisp.style.cursor = isReadOnly ? 'not-allowed' : 'pointer';
+        chargesDisp.style.opacity = isReadOnly ? '0.65' : '1';
+        chargesDisp.title = isReadOnly ? 'Charges cannot be modified on approved invoices (Read Only)' : 'Click to manage additional charges';
+      }
+      const btnManageCharges = document.getElementById('ws-btn-manage-charges');
+      if (btnManageCharges) btnManageCharges.disabled = isReadOnly;
 
     } catch (e) {
       console.warn('initSaleWorkspace error:', e);
@@ -1368,7 +1386,30 @@ window.SalesController = {
   // 7. ADDITIONAL CHARGES DIALOG
   // =========================================================================
   openChargesDialog() {
+    if (this.viewMode) {
+      window.AppDialogService.showToast('Charges cannot be modified on approved invoices in view mode.', 'warning');
+      return;
+    }
+    this.activeChargesContext = 'SALES';
     this.draftCharges = (this.invoiceCharges || []).map(c => ({ ...c }));
+    if (this.draftCharges.length === 0) {
+      this.draftCharges.push({
+        chargeType: this.availableChargeTypes[0] || 'Freight',
+        amount: 0,
+        taxable: true,
+        gstPercent: 18
+      });
+    }
+    this.renderChargesDialogRows();
+    window.AppDialogService.openModal('modal-manage-charges');
+  },
+
+  openChargesDialogForPurchase(purchaseCharges = [], availableTypes = []) {
+    this.activeChargesContext = 'PURCHASE';
+    if (availableTypes && availableTypes.length > 0) {
+      this.availableChargeTypes = availableTypes;
+    }
+    this.draftCharges = (purchaseCharges || []).map(c => ({ ...c }));
     if (this.draftCharges.length === 0) {
       this.draftCharges.push({
         chargeType: this.availableChargeTypes[0] || 'Freight',
@@ -1508,6 +1549,16 @@ window.SalesController = {
         }
         types.add(norm);
       }
+    }
+
+    if (this.activeChargesContext === 'PURCHASE') {
+      if (window.PurchaseController && window.PurchaseController.setCharges) {
+        window.PurchaseController.setCharges(this.draftCharges.map(c => ({ ...c })));
+      }
+      this.closeChargesDialog();
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      window.AppDialogService.showToast(`Applied ${this.draftCharges.length} additional purchase charges`, 'success');
+      return;
     }
 
     this.invoiceCharges = this.draftCharges.map(c => ({ ...c }));
@@ -2200,31 +2251,63 @@ window.SalesController = {
   // =========================================================================
   // 13. EMAIL INVOICE (REAL MODAL & SMTP OUTPUT)
   // =========================================================================
-  openEmailModal(invoiceNo) {
-    const sale = this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
-    if (!sale) return;
+  openEmailModal(invoiceNo, isPurchase = false, customDetails = null) {
+    let docId = 0;
+    let recipientEmail = '';
+    let partyName = 'Valued Partner';
+    let amountStr = '₹ 0.00';
+    let docType = isPurchase ? 'PURCHASE' : 'SALE';
 
-    const cust = sale.customer || {};
-    const custEmail = cust.email || '';
-    const custName = cust.name || sale.customerName || 'Valued Customer';
-    const amountStr = window.FormatUtil.formatRupees(sale.totalAmount || 0);
+    if (isPurchase) {
+      const p = customDetails || (window.PurchaseController && window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache().find(x => x.invoiceNo === invoiceNo));
+      docId = (p && p.id) || 0;
+      recipientEmail = (p && p.supplier && p.supplier.email) || (p && p.email) || '';
+      partyName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
+      amountStr = window.FormatUtil.formatRupees((p && p.totalAmount) || 0);
+    } else {
+      const sale = this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
+      if (!sale) return;
+      docId = sale.id;
+      const cust = sale.customer || {};
+      recipientEmail = cust.email || '';
+      partyName = cust.name || sale.customerName || 'Valued Customer';
+      amountStr = window.FormatUtil.formatRupees(sale.totalAmount || 0);
+    }
 
     const modal = document.getElementById('modal-email-invoice');
     const inpSaleId = document.getElementById('mei-sale-id');
     const inpInvNo = document.getElementById('mei-inv-no');
+    const inpDocType = document.getElementById('mei-doc-type');
     const inpRecipient = document.getElementById('mei-recipient');
     const inpSubject = document.getElementById('mei-subject');
     const inpBody = document.getElementById('mei-body');
     const lblAttach = document.getElementById('mei-attachment-name');
+    const subTitle = document.getElementById('mei-subtitle');
 
     if (!modal) return;
-    if (inpSaleId) inpSaleId.value = sale.id;
+    if (inpSaleId) inpSaleId.value = docId;
     if (inpInvNo) inpInvNo.value = invoiceNo;
-    if (inpRecipient) inpRecipient.value = custEmail || '';
-    if (inpSubject) inpSubject.value = `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
-    if (lblAttach) lblAttach.innerText = `Tax_Invoice_${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`;
+    if (inpDocType) inpDocType.value = docType;
+    if (inpRecipient) inpRecipient.value = recipientEmail || '';
+    if (inpSubject) {
+      inpSubject.value = isPurchase 
+        ? `Purchase Inward Bill - ${invoiceNo} | Jasvi Industries`
+        : `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
+    }
+    if (lblAttach) {
+      lblAttach.innerText = isPurchase 
+        ? `Purchase_Bill_${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`
+        : `Tax_Invoice_${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`;
+    }
+    if (subTitle) {
+      subTitle.innerText = isPurchase 
+        ? 'Direct SMTP transmission to supplier billing contact'
+        : 'Direct SMTP delivery to customer billing contact';
+    }
     if (inpBody) {
-      inpBody.value = `Dear ${custName},\n\nPlease find attached the official GST Tax Invoice #${invoiceNo} for ${amountStr}.\n\nKindly process the remittance as per the agreed credit terms.\n\nThank you for your business.\n\nBest regards,\nAccounts & Dispatch Division\nJasvi Industries`;
+      inpBody.value = isPurchase
+        ? `Dear ${partyName},\n\nPlease find attached the official Purchase Inward Bill #${invoiceNo} for ${amountStr}.\n\nThis inward entry has been recorded in our Jasvi Industries ERP system.\n\nThank you for your partnership.\n\nBest regards,\nProcurement & Inventory Division\nJasvi Industries`
+        : `Dear ${partyName},\n\nPlease find attached the official GST Tax Invoice #${invoiceNo} for ${amountStr}.\n\nKindly process the remittance as per the agreed credit terms.\n\nThank you for your business.\n\nBest regards,\nAccounts & Dispatch Division\nJasvi Industries`;
     }
 
     window.AppDialogService.openModal('modal-email-invoice');
@@ -2233,8 +2316,10 @@ window.SalesController = {
   async submitEmailInvoice(event) {
     if (event) event.preventDefault();
 
-    const saleId = parseInt((document.getElementById('mei-sale-id') || {}).value);
+    const saleId = parseInt((document.getElementById('mei-sale-id') || {}).value) || 0;
     const invNo = (document.getElementById('mei-inv-no') || {}).value;
+    const docType = (document.getElementById('mei-doc-type') || {}).value || 'SALE';
+    const isPurchase = docType === 'PURCHASE';
     const recipient = (document.getElementById('mei-recipient') || {}).value;
     const subject = (document.getElementById('mei-subject') || {}).value;
     const body = (document.getElementById('mei-body') || {}).value;
@@ -2253,10 +2338,12 @@ window.SalesController = {
     try {
       // 1. Fetch real canonical PDF bytes from backend document service
       let attachmentBase64 = null;
+      const docTypeParam = isPurchase ? 'PURCHASE' : 'SALES_INVOICE';
+      const filePrefix = isPurchase ? 'Purchase_Bill' : 'Tax_Invoice';
       try {
         const token = localStorage.getItem('dse_access_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const pdfRes = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
+        const pdfRes = await fetch(`/api/documents/render?type=${docTypeParam}&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
         if (pdfRes.ok) {
           const blob = await pdfRes.blob();
           const reader = new FileReader();
@@ -2271,11 +2358,11 @@ window.SalesController = {
           });
         }
       } catch (pdfErr) {
-        console.warn('Could not fetch server PDF, attempting client jsPDF fallback:', pdfErr);
+        console.warn('Could not fetch server PDF:', pdfErr);
       }
 
-      // 2. Client jsPDF fallback if server PDF was unreachable
-      if (!attachmentBase64 && window.jspdf) {
+      // 2. Client jsPDF fallback for sales if server PDF unreachable
+      if (!attachmentBase64 && !isPurchase && window.jspdf) {
         try {
           const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
           if (saleObj) {
@@ -2295,41 +2382,51 @@ window.SalesController = {
         recipient,
         subject,
         body,
-        attachmentName: `Tax_Invoice_${invNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
+        attachmentName: `${filePrefix}_${invNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
         attachmentBase64
       };
 
       const result = await window.OperationsService.sendAuthorityEmail(emailPayload);
 
-      if (saleId > 0) {
-        try {
-          await window.OperationsService.markSaleEmailSent(saleId);
-          await window.OperationsService.recordCommunication({
-            entityType: 'SALE',
-            entityId: saleId,
-            channel: 'EMAIL',
-            recipient,
-            subject,
-            status: 'SENT'
-          });
-        } catch (_) {}
+      if (isPurchase) {
+        if (saleId > 0) {
+          try {
+            await window.OperationsService.markPurchaseEmailSent(saleId);
+          } catch (_) {}
+        }
+        if (window.PurchaseController && window.PurchaseController.loadPurchases) {
+          window.PurchaseController.loadPurchases();
+        }
+      } else {
+        if (saleId > 0) {
+          try {
+            await window.OperationsService.markSaleEmailSent(saleId);
+            await window.OperationsService.recordCommunication({
+              entityType: 'SALE',
+              entityId: saleId,
+              channel: 'EMAIL',
+              recipient,
+              subject,
+              status: 'SENT'
+            });
+          } catch (_) {}
 
-        // Update local status in table
-        const s = (this.salesCache || []).find(item => item.id === saleId || (item.invoiceNo || item.number) === invNo);
-        if (s) s.emailSent = true;
-        this.renderSalesTable(this.salesCache);
+          const s = (this.salesCache || []).find(item => item.id === saleId || (item.invoiceNo || item.number) === invNo);
+          if (s) s.emailSent = true;
+          this.renderSalesTable(this.salesCache);
+        }
       }
 
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
       window.AppDialogService.closeModal('modal-email-invoice');
-      window.AppDialogService.showToast(result?.message || `Tax invoice ${invNo} emailed successfully to ${recipient}!`, 'success');
+      window.AppDialogService.showToast(result?.message || `Document ${invNo} emailed successfully to ${recipient}!`, 'success');
     } catch (err) {
       console.error('Email gateway error:', err);
       window.AppDialogService.showToast(`Failed to send email to ${recipient}: ${err.message}`, 'error');
     } finally {
       if (sendBtn) {
         sendBtn.disabled = false;
-        sendBtn.innerText = '✈ Send Tax Invoice';
+        sendBtn.innerText = '✈ Send Email';
       }
     }
   },
