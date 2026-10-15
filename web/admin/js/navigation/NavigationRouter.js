@@ -47,6 +47,8 @@ window.NavigationRouter = (function() {
     'view-users': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
     'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
     'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' },
+    'view-global-search': { title: 'Global Search', breadcrumb: 'Cross-Module Enterprise Intelligence', icon: '🔍' },
+    'view-record-payment': { title: 'Invoice Payment', breadcrumb: 'Record Payment & History', icon: '💳' },
     'view-pdf-studio': { title: 'PDF Studio', breadcrumb: 'Visual Document Template Designer', icon: '📄' },
     'view-excel-studio': { title: 'Excel Studio', breadcrumb: 'Custom Spreadsheet Exporter', icon: '📊' },
     'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
@@ -308,7 +310,9 @@ window.NavigationRouter = (function() {
           if (window.PurchaseController) window.PurchaseController.loadPurchases();
           break;
         case 'view-purchase-creation':
-          // Managed by PurchaseController.openPurchaseEditor
+          if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+            window.PurchaseController.openPurchaseEditor();
+          }
           break;
         case 'view-item-master':
           if (window.ItemMasterController) window.ItemMasterController.loadItems();
@@ -446,6 +450,13 @@ window.NavigationRouter = (function() {
           break;
         case 'view-excel-studio':
           if (window.SettingsController) window.SettingsController.loadExcelStudio();
+          break;
+        case 'view-global-search':
+          if (window.GlobalSearchController) window.GlobalSearchController.search('');
+          break;
+        case 'view-notifications':
+        case 'view-notifications-center':
+          if (window.NotificationCenterController) window.NotificationCenterController.loadNotifications();
           break;
       }
     },

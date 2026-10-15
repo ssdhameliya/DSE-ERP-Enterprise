@@ -615,6 +615,95 @@ window.PurchaseController = (function() {
     }
   }
 
+  async function downloadExcel(invoiceNo) {
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating Excel export for ${invoiceNo}...`);
+    const token = localStorage.getItem('dse_access_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+      let res = await fetch(`/api/documents/render?type=PURCHASE&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
+      if (!res.ok) {
+        res = await fetch(`/api/documents/render?type=PURCHASE_ORDER&number=${encodeURIComponent(invoiceNo)}&format=XLSX`, { headers });
+      }
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${invoiceNo.replace(/[\/\\:]/g, '_')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
+        return;
+      }
+      throw new Error(`Server XLSX render returned HTTP ${res.status}`);
+    } catch (err) {
+      console.warn('Server XLSX render failed, exporting client-side CSV:', err);
+      try {
+        let p = purchases.find(x => x.invoiceNo === invoiceNo);
+        if (!p) p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+        if (!p) return;
+        const suppName = (p.supplier && p.supplier.name) || p.supplierName || 'Supplier';
+        const lines = p.lines || [];
+        let csv = `JASVI INDUSTRIES - PURCHASE INVOICE STATEMENT\n`;
+        csv += `Invoice No:,${invoiceNo},Date:,${p.invoiceDate || p.date || ''}\n`;
+        csv += `Supplier:,${suppName},GSTIN:,${p.billingGstin || (p.supplier && p.supplier.gstin) || '-'}\n`;
+        csv += `Total Amount:,${p.totalAmount || 0},Paid:,${p.paidAmount || 0},Balance:,${Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0))}\n\n`;
+        csv += `Item Code,Description,Category,HSN,Qty,Unit,Rate,Discount %,GST %,Total\n`;
+        if (lines.length > 0) {
+          lines.forEach(l => {
+            const lineTot = (parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0);
+            csv += `"${l.itemCode || ''}","${(l.itemDescription || '').replace(/"/g, '""')}","${l.itemCategory || ''}","${l.itemHsn || ''}",${l.quantity || 1},"${l.itemUnit || 'PCS'}",${l.rate || 0},${l.discountPercent || 0},${l.gstPercent || 18},${lineTot.toFixed(2)}\n`;
+          });
+        } else {
+          csv += `"-","Purchase Bill Total","-","-",1,"LOT",${p.totalAmount || 0},0,18,${p.totalAmount || 0}\n`;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Purchase_Bill.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
+      } catch (e2) {
+        if (window.AppDialogService) window.AppDialogService.toastError('Failed to export Excel: ' + e2.message);
+      }
+    }
+  }
+
+  async function openPayments(invoiceNo) {
+    let p = purchases.find(x => x.invoiceNo === invoiceNo);
+    if (!p) {
+      try {
+        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+      } catch (e) {
+        console.warn('Could not fetch purchase for payments:', e);
+      }
+    }
+    const suppName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
+    const total = p ? (p.totalAmount || 0) : 0;
+    const paid = p ? (p.paidAmount || 0) : 0;
+    const pending = Math.max(0, total - paid);
+    const purchaseId = p ? (p.id || 0) : 0;
+
+    if (window.openInvoicePaymentDetails) {
+      window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending, p);
+    } else {
+      alert(`Payment drilldown for purchase ${invoiceNo}`);
+    }
+  }
+
+  function printInwardBarcode(invoiceNo) {
+    if (window.BarcodeStudioController) {
+      window.NavigationRouter.selectNav('view-barcode-studio');
+      window.BarcodeStudioController.quickGenerate(invoiceNo);
+    } else {
+      alert(`Print Inward Barcodes for Purchase ${invoiceNo}`);
+    }
+  }
+
   async function sendEmailPrompt(invoiceNo, id) {
     let p = purchases.find(x => x.invoiceNo === invoiceNo);
     if (!p) {
