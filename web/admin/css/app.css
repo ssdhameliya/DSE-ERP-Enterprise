@@ -813,19 +813,78 @@
       background: rgba(56, 189, 248, 0.15); border-color: var(--cyan); color: var(--cyan);
     }
 
-    /* SALES REGISTER 14-COL TABLE */
-    .sales-table-scroll { overflow-x: auto; max-height: calc(100vh - 420px); min-height: 380px; }
-    .sales-desktop-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left; }
-    .sales-desktop-table th {
+    /* SALES REGISTER 14-COL TABLE (DESKTOP DYNAMIC PARITY) */
+    .sales-table-scroll,
+    .table-responsive,
+    .data-table-wrap {
+      overflow-x: hidden;
+      max-height: calc(100vh - 420px);
+      min-height: 380px;
+      width: 100%;
+    }
+    @media (max-width: 850px) {
+      .sales-table-scroll,
+      .table-responsive,
+      .data-table-wrap {
+        overflow-x: auto;
+      }
+    }
+    .sales-desktop-table,
+    table.data-table {
+      table-layout: fixed !important;
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 0.75rem !important;
+      text-align: left;
+    }
+    .sales-desktop-table th,
+    table.data-table th,
+    table.erp-table th {
       background: #0b1324; position: sticky; top: 0; z-index: 5;
-      padding: 10px 8px; border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-muted); font-weight: 700; white-space: nowrap; font-size: 0.74rem; text-transform: uppercase;
+      padding: 7px 6px !important; border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-muted); font-weight: 700; font-size: 0.72rem;
+      white-space: normal !important; word-break: normal !important; overflow: visible !important;
+      text-overflow: clip !important; line-height: 1.25 !important; vertical-align: middle !important;
     }
-    .sales-desktop-table td {
-      padding: 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);
+
+    /* Semantic Header Badges matching Desktop ProfessionalUiEnhancer */
+    .erp-th-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 100%;
+      white-space: normal;
+      word-break: normal;
+      line-height: 1.25;
+    }
+    .erp-th-icon {
+      flex-shrink: 0;
+      font-size: 0.82rem;
+      display: inline-block;
+    }
+    .erp-th-label {
+      white-space: normal;
+      word-break: normal;
+      overflow: visible;
+      text-overflow: clip;
+      line-height: 1.25;
+    }
+    .sales-desktop-table td,
+    table.data-table td {
+      padding: 5px 6px !important; border-bottom: 1px solid rgba(255,255,255,0.04);
       white-space: nowrap; vertical-align: middle;
+      overflow: hidden; text-overflow: ellipsis; font-size: 0.74rem;
     }
-    .sales-desktop-table tbody tr:hover { background: rgba(56, 189, 248, 0.04); }
+    .sales-desktop-table tbody tr:hover,
+    table.data-table tbody tr:hover { background: rgba(56, 189, 248, 0.04); }
+
+    .sales-desktop-table .action-btn,
+    .sales-desktop-table .btn-action,
+    table.data-table .action-btn {
+      padding: 2px 6px !important; font-size: 0.70rem !important; height: 24px !important;
+      border-radius: 4px !important; display: inline-flex !important; align-items: center !important;
+      justify-content: center !important; gap: 4px !important; width: auto !important;
+    }
 
     /* FLOATING ACTIONS CONTEXT MENU (IMAGE 3 & IMAGE 5) */
     .actions-dropdown-menu,
@@ -1719,25 +1778,33 @@
       border-left: 3px solid var(--primary-light) !important;
     }
 
-    /* Semantic Table Header Badges */
+    /* Semantic Table Header Badges (Desktop Parity Compact) */
     .erp-th-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.72rem;
+      gap: 3px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.69rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
       white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
     .erp-th-icon {
-      font-size: 0.85rem;
+      font-size: 0.76rem;
       opacity: 0.95;
       display: inline-flex;
       align-items: center;
+      flex-shrink: 0;
+    }
+    .erp-th-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .erp-th-blue, .erp-th-theme-blue .erp-th-badge { background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.28); }
     .erp-th-purple, .erp-th-theme-purple .erp-th-badge { background: rgba(167, 139, 250, 0.14); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.28); }
@@ -1754,13 +1821,15 @@
     .erp-cell-status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.72rem;
+      gap: 3px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.67rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      line-height: 1.2;
     }
     .badge-success { background: rgba(52, 211, 153, 0.18) !important; color: #34d399 !important; border: 1px solid rgba(52, 211, 153, 0.35) !important; }
     .badge-danger { background: rgba(239, 68, 68, 0.18) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; }

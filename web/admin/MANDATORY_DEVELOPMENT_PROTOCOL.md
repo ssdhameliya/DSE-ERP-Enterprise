@@ -3,6 +3,8 @@
 > **CRITICAL ENFORCEMENT FOR ANTIGRAVITY AGENT**:
 > You MUST read this protocol and execute all verification steps **FIRST** before touching any code or responding to any feature request.
 > The user will NOT remind you to check this note. By default, you must execute this protocol automatically for EVERY request.
+> UI should be alway attractive, 3d, all table header should be colourful and meaninging full icon based on values.. lets whats should have whatsapp icon, email should have email icon etc
+>user always centerlized functionlaity which we have in desktop app in web app same like this.. we dont want any differecne between desktop and web app
 
 ---
 

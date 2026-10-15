@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.33.1">
+    <link rel="stylesheet" href="css/app.css?v=10.0.33.3">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -717,7 +717,7 @@
       </aside>
 
       <!-- MAIN CONTENT STAGE -->
-      <main class="app-stage">
+      <main class="app-stage" id="main-content-stage">
         
         <!-- VIEW 1: DASHBOARD (EXACT DESKTOP PARITY - IMAGE 1) -->
         <div id="view-dashboard" class="module-view active">
@@ -8916,8 +8916,9 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- 1. Utilities matching org.example.util -->
   <script src="js/util/FormatUtil.js?v=10.0.33.1"></script>
   <script src="js/util/AudioSynthesizer.js?v=10.0.33.1"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.1"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.33.1"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.2"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.3"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.33.3"></script>
   <script src="js/util/KpiCardEnhancer.js?v=10.0.33.1"></script>
   <script src="js/util/LabelIconEnhancer.js?v=10.0.33.1"></script>
   <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.1"></script>

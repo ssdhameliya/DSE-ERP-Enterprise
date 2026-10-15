@@ -286,6 +286,9 @@ window.TableUiEnhancer = (function() {
       enhanceHeaders(table);
       enhanceCells(table);
       attachTableInteractions(table);
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.install(table);
+      }
     },
 
     /**
@@ -293,8 +296,11 @@ window.TableUiEnhancer = (function() {
      */
     enhanceAll(container = document) {
       if (!container) return;
-      const tables = container.querySelectorAll('table.data-table, table.sales-desktop-table, table.erp-table, .data-panel table');
+      const tables = container.querySelectorAll('table.data-table, table.sales-desktop-table, table.erp-table, .data-panel table, .sales-table-scroll table');
       tables.forEach(tbl => this.enhanceTable(tbl));
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.installAll(container);
+      }
     }
   };
 })();

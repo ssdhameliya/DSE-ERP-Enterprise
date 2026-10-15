@@ -24,6 +24,9 @@ window.GlobalUiEnhancer = (function() {
       if (window.TableUiEnhancer) {
         window.TableUiEnhancer.enhanceAll(root);
       }
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.installAll(root);
+      }
       if (window.KpiCardEnhancer) {
         window.KpiCardEnhancer.enhance(root);
       }
@@ -91,6 +94,13 @@ window.GlobalUiEnhancer = (function() {
     init() {
       runEnhancements(document.body);
       installObserver();
+
+      // Window resize listener to reflow all tables dynamically
+      window.addEventListener('resize', () => {
+        if (window.DynamicTableLayoutManager) {
+          window.DynamicTableLayoutManager.requestLayoutIn(document.body);
+        }
+      });
     },
 
     enhance(container) {
