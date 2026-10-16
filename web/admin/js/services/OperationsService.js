@@ -4,13 +4,28 @@
  */
 window.OperationsService = {
   // Sales
-  async getSales(page = 0, size = 50, q = '', from = '', to = '', paymentStatus = '') {
-    let url = `/api/operations/sales/page?page=${page}&size=${size}`;
+  // Sales (Desktop SalesListController & SalesController Parity)
+  async getSalesPage(page = 0, size = 25, q = '', invoice = '', customer = '', from = '', to = '', paymentStatus = '', due = '', mail = '', whatsapp = '', invoiceType = '', documentStatus = '', returnStatus = '', minAmount = null, maxAmount = null, includeSummary = true, includeCharts = true, includeOptions = true) {
+    let url = `/api/operations/sales/page?page=${Math.max(0, page)}&size=${Math.max(10, Math.min(size, 500))}`;
     if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (invoice) url += `&invoice=${encodeURIComponent(invoice)}`;
+    if (customer && customer !== 'All customers' && customer !== 'All') url += `&customer=${encodeURIComponent(customer)}`;
     if (from) url += `&from=${encodeURIComponent(from)}`;
     if (to) url += `&to=${encodeURIComponent(to)}`;
-    if (paymentStatus && paymentStatus !== 'ALL') url += `&paymentStatus=${encodeURIComponent(paymentStatus)}`;
+    if (paymentStatus && paymentStatus !== 'All' && paymentStatus !== 'ALL') url += `&paymentStatus=${encodeURIComponent(paymentStatus)}`;
+    if (due && due !== 'All') url += `&due=${encodeURIComponent(due)}`;
+    if (mail && mail !== 'All') url += `&mail=${encodeURIComponent(mail)}`;
+    if (whatsapp && whatsapp !== 'All') url += `&whatsapp=${encodeURIComponent(whatsapp)}`;
+    if (invoiceType && invoiceType !== 'All') url += `&invoiceType=${encodeURIComponent(invoiceType)}`;
+    if (documentStatus && documentStatus !== 'All') url += `&documentStatus=${encodeURIComponent(documentStatus)}`;
+    if (returnStatus && returnStatus !== 'All') url += `&returnStatus=${encodeURIComponent(returnStatus)}`;
+    if (minAmount != null && minAmount !== '') url += `&minAmount=${encodeURIComponent(minAmount)}`;
+    if (maxAmount != null && maxAmount !== '') url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
+    url += `&includeSummary=${includeSummary}&includeCharts=${includeCharts}&includeOptions=${includeOptions}`;
     return await window.ApiService.get(url);
+  },
+  async getSales(page = 0, size = 50, q = '', from = '', to = '', paymentStatus = '') {
+    return await this.getSalesPage(page, size, q, '', '', from, to, paymentStatus, '', '', '', '', '', '', null, null, true, true, true);
   },
   async getNextSaleInvoice() {
     return await window.ApiService.get('/api/operations/sales/next-invoice');
@@ -257,5 +272,21 @@ window.OperationsService = {
   },
   async deleteDocumentPayment(paymentId) {
     return await window.ApiService.delete(`/api/support/payments/${paymentId}`);
+  },
+
+  // Returns & Refunds
+  async getReturnDetails(no) {
+    return await window.ApiService.get(`/api/returns/${encodeURIComponent(no)}`);
+  },
+  async getReturnRefunds(no) {
+    return await window.ApiService.get(`/api/returns/${encodeURIComponent(no)}/refunds`);
+  },
+  async recordReturnRefund(no, data) {
+    return await window.ApiService.post(`/api/returns/${encodeURIComponent(no)}/refunds`, data);
+  },
+
+  // Quotation Convert to Sale
+  async convertQuotationToSale(id, user = 'Admin', rowVersion = 0) {
+    return await window.ApiService.post(`/api/quotations/${id}/convert?user=${encodeURIComponent(user)}&rowVersion=${rowVersion}`, {});
   }
 };

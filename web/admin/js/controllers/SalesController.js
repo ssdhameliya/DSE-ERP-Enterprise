@@ -265,12 +265,22 @@ window.SalesController = {
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
     try {
-      const res = await window.OperationsService.getSales(0, 500);
+      const from = document.getElementById('sr-filter-from-date')?.value || '';
+      const to = document.getElementById('sr-filter-to-date')?.value || '';
+      const docStatus = document.getElementById('sr-filter-doc-status')?.value || '';
+      const payStatus = document.getElementById('sr-filter-pay-status')?.value || '';
+      const retStatus = document.getElementById('sr-filter-ret-status')?.value || '';
+      const cust = document.getElementById('sr-filter-customer')?.value || '';
+      const q = document.getElementById('sr-search-input')?.value || '';
+
+      const res = await window.OperationsService.getSalesPage(0, 500, q, '', cust, from, to, payStatus, '', '', '', '', docStatus, retStatus, null, null, true, true, true);
       const list = res.rows || res.content || (Array.isArray(res) ? res : []);
       this.salesCache = list;
+      this.serverMetrics = res.metrics || null;
+      this.serverFilteredTotals = res.filteredTotals || null;
 
       // Update Register 6-Card KPI Summary Strip
-      this.updateRegisterKpis(list);
+      this.updateRegisterKpis(list, this.serverMetrics);
 
       // Populate Customer Filter dropdown if empty
       this.populateCustomerFilter();
@@ -284,7 +294,30 @@ window.SalesController = {
     }
   },
 
-  updateRegisterKpis(list) {
+  updateRegisterKpis(list, metrics) {
+    if (metrics) {
+      const elActiveAmt = document.getElementById('sr-kpi-active-sales');
+      const elActiveSub = document.getElementById('sr-kpi-active-sub');
+      if (elActiveAmt) elActiveAmt.innerText = window.FormatUtil.formatRupees(metrics.totalSales || 0);
+      if (elActiveSub) elActiveSub.innerText = `${metrics.invoiceCount || list.length} invoices`;
+
+      const elTodayAmt = document.getElementById('sr-kpi-today-sales');
+      if (elTodayAmt) elTodayAmt.innerText = window.FormatUtil.formatRupees(metrics.todaySales || 0);
+
+      const elPendingAmt = document.getElementById('sr-kpi-pending-sales');
+      if (elPendingAmt) elPendingAmt.innerText = window.FormatUtil.formatRupees(metrics.pendingBalance || 0);
+
+      const elOverdueAmt = document.getElementById('sr-kpi-overdue-sales');
+      if (elOverdueAmt) elOverdueAmt.innerText = window.FormatUtil.formatRupees(metrics.overdueBalance || 0);
+
+      const elDue7Amt = document.getElementById('sr-kpi-due-7-sales');
+      if (elDue7Amt) elDue7Amt.innerText = window.FormatUtil.formatRupees(metrics.dueSoonBalance || 0);
+
+      const elEmailPct = document.getElementById('sr-kpi-email-pct');
+      if (elEmailPct) elEmailPct.innerText = `${Math.round(metrics.emailRate != null ? metrics.emailRate : 100)}%`;
+      return;
+    }
+
     const active = list.filter(s => s.documentStatus !== 'CANCELLED');
     const totalAmount = active.reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0);
     const paidAmount = active.reduce((sum, s) => sum + (s.paidAmount || (s.paymentStatus === 'PAID' ? (s.totalAmount || 0) : 0) || 0), 0);
@@ -295,20 +328,8 @@ window.SalesController = {
     if (elActiveAmt) elActiveAmt.innerText = window.FormatUtil.formatRupees(totalAmount);
     if (elActiveSub) elActiveSub.innerText = `${active.length} active • ${list.length} records`;
 
-    const elTodayAmt = document.getElementById('sr-kpi-today-sales');
-    if (elTodayAmt) elTodayAmt.innerText = '₹ 0.00';
-
     const elPendingAmt = document.getElementById('sr-kpi-pending-sales');
     if (elPendingAmt) elPendingAmt.innerText = window.FormatUtil.formatRupees(pendingAmount);
-
-    const elOverdueAmt = document.getElementById('sr-kpi-overdue-sales');
-    if (elOverdueAmt) elOverdueAmt.innerText = '₹ 0.00';
-
-    const elDue7Amt = document.getElementById('sr-kpi-due-7-sales');
-    if (elDue7Amt) elDue7Amt.innerText = '₹ 0.00';
-
-    const elEmailPct = document.getElementById('sr-kpi-email-pct');
-    if (elEmailPct) elEmailPct.innerText = '100%';
   },
 
   async populateCustomerFilter() {
@@ -430,6 +451,11 @@ window.SalesController = {
   },
 
   updateTableSummary(count, total, paid, pending) {
+    if (this.serverFilteredTotals) {
+      total = this.serverFilteredTotals.total != null ? this.serverFilteredTotals.total : total;
+      paid = this.serverFilteredTotals.paid != null ? this.serverFilteredTotals.paid : paid;
+      pending = this.serverFilteredTotals.balance != null ? this.serverFilteredTotals.balance : pending;
+    }
     const elTot = document.getElementById('sr-sum-total');
     const elPaid = document.getElementById('sr-sum-paid');
     const elPend = document.getElementById('sr-sum-pending');
@@ -2871,45 +2897,282 @@ window.SalesController = {
       const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
       this.currentDrawerSale = sale;
 
-      document.getElementById('drawer-inv-no').innerText = sale.invoiceNo || invoiceNo;
-      document.getElementById('drawer-inv-date').innerText = window.FormatUtil.formatDate(sale.invoiceDate);
-      document.getElementById('drawer-inv-status').innerText = sale.documentStatus || 'APPROVED';
-      document.getElementById('drawer-inv-status').className = `badge ${sale.paymentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}`;
+      // Header info
+      const elInvNo = document.getElementById('drawer-inv-no');
+      if (elInvNo) elInvNo.innerText = sale.invoiceNo || invoiceNo;
 
-      const cust = sale.customer || {};
-      document.getElementById('drawer-cust-name').innerText = cust.name || sale.customerName || 'Walk-in Client';
-      document.getElementById('drawer-cust-gstin').innerText = cust.gstin || sale.billingGstin || 'Unregistered / Consumer';
-      document.getElementById('drawer-cust-phone').innerText = cust.phone || '-';
-      document.getElementById('drawer-cust-address').innerText = cust.address || sale.billingAddress || '-';
-      document.getElementById('drawer-transporter').innerText = sale.transporter || 'Self / By Hand';
-      document.getElementById('drawer-vehicle').innerText = sale.vehicleNumber || '-';
+      const elInvDate = document.getElementById('drawer-inv-date');
+      if (elInvDate) elInvDate.innerText = window.FormatUtil.formatDate(sale.invoiceDate);
 
-      const tbody = document.getElementById('drawer-items-tbody');
-      const lines = sale.lines || [];
-      if (lines.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 12px;">No line item records.</td></tr>`;
-      } else {
-        tbody.innerHTML = lines.map((l, idx) => `
-          <tr>
-            <td style="color: var(--text-dim);">${idx + 1}</td>
-            <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
-            <td>${l.quantity || 1} ${l.itemUnit || 'PCS'}</td>
-            <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
-            <td>${l.gstPercent || l.taxRate || 18}%</td>
-            <td style="font-weight: 700;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
-          </tr>
-        `).join('');
+      const elInvDue = document.getElementById('drawer-inv-due');
+      if (elInvDue) elInvDue.innerText = sale.dueDate ? window.FormatUtil.formatDate(sale.dueDate) : 'Not set';
+
+      const elInvTerms = document.getElementById('drawer-inv-terms');
+      if (elInvTerms) elInvTerms.innerText = sale.paymentTerms || '15 Days';
+
+      const elInvRef = document.getElementById('drawer-inv-ref');
+      if (elInvRef) elInvRef.innerText = sale.referenceNo || '—';
+
+      const elStatus = document.getElementById('drawer-inv-status');
+      if (elStatus) {
+        const docSt = (sale.documentStatus || 'APPROVED').toUpperCase();
+        elStatus.innerText = docSt;
+        elStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : (docSt === 'PENDING APPROVAL' ? 'badge-pending' : 'badge-danger')}`;
       }
 
-      document.getElementById('drawer-taxable-amt').innerText = window.FormatUtil.formatRupees(sale.subtotal || sale.taxableAmount || 0);
-      document.getElementById('drawer-gst-amt').innerText = window.FormatUtil.formatRupees(sale.gstAmount || 0);
-      document.getElementById('drawer-charges-amt').innerText = window.FormatUtil.formatRupees(sale.chargeAmount || 0);
-      document.getElementById('drawer-grand-total').innerText = window.FormatUtil.formatRupees(sale.totalAmount || 0);
+      const elPayStatus = document.getElementById('drawer-inv-pay-status');
+      if (elPayStatus) {
+        const paySt = (sale.paymentStatus || 'UNPAID').toUpperCase();
+        elPayStatus.innerText = paySt;
+        elPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
+      }
+
+      // Customer profile
+      const cust = sale.customer || {};
+      const elCustName = document.getElementById('drawer-cust-name');
+      if (elCustName) elCustName.innerText = cust.name || sale.customerName || 'Walk-in Client';
+
+      const elCustGstin = document.getElementById('drawer-cust-gstin');
+      if (elCustGstin) elCustGstin.innerText = cust.gstin || sale.billingGstin || 'Unregistered / Consumer';
+
+      const elCustPhone = document.getElementById('drawer-cust-phone');
+      if (elCustPhone) elCustPhone.innerText = cust.phone || '-';
+
+      const elCustEmail = document.getElementById('drawer-cust-email');
+      if (elCustEmail) elCustEmail.innerText = cust.email || '-';
+
+      const elCustAddr = document.getElementById('drawer-cust-address');
+      if (elCustAddr) elCustAddr.innerText = cust.address || sale.billingAddress || '-';
+
+      // Logistics
+      const elTransp = document.getElementById('drawer-transporter');
+      if (elTransp) elTransp.innerText = sale.transporter || 'Self / By Hand';
+
+      const elVehicle = document.getElementById('drawer-vehicle');
+      if (elVehicle) elVehicle.innerText = sale.vehicleNumber || '-';
+
+      const elDoor = document.getElementById('drawer-door-delivery');
+      if (elDoor) elDoor.innerText = sale.doorDelivery || 'Standard Delivery';
+
+      const elDeliveryAddr = document.getElementById('drawer-delivery-address');
+      if (elDeliveryAddr) elDeliveryAddr.innerText = sale.deliveryAddress || sale.billingAddress || cust.address || '-';
+
+      // Financials
+      const taxable = sale.subtotal != null ? sale.subtotal : (sale.taxableAmount || 0);
+      const gst = sale.gstAmount || 0;
+      const charges = sale.chargeAmount != null ? sale.chargeAmount : (sale.chargesAmount || 0);
+      const total = sale.totalAmount != null ? sale.totalAmount : 0;
+      const paid = sale.paidAmount != null ? sale.paidAmount : (sale.paymentStatus === 'PAID' ? total : 0);
+      const balance = Math.max(0, total - paid);
+
+      const elTaxable = document.getElementById('drawer-taxable-amt');
+      if (elTaxable) elTaxable.innerText = window.FormatUtil.formatRupees(taxable);
+
+      const elGst = document.getElementById('drawer-gst-amt');
+      if (elGst) elGst.innerText = window.FormatUtil.formatRupees(gst);
+
+      const elCharges = document.getElementById('drawer-charges-amt');
+      if (elCharges) elCharges.innerText = window.FormatUtil.formatRupees(charges);
+
+      const elGrand = document.getElementById('drawer-grand-total');
+      if (elGrand) elGrand.innerText = window.FormatUtil.formatRupees(total);
+
+      const elPaid = document.getElementById('drawer-paid-amt');
+      if (elPaid) elPaid.innerText = window.FormatUtil.formatRupees(paid);
+
+      const elBalance = document.getElementById('drawer-balance-amt');
+      if (elBalance) elBalance.innerText = window.FormatUtil.formatRupees(balance);
+
+      const elPayPaid = document.getElementById('drawer-pay-paid-display');
+      if (elPayPaid) elPayPaid.innerText = window.FormatUtil.formatRupees(paid);
+
+      const elPayTotal = document.getElementById('drawer-pay-total-display');
+      if (elPayTotal) elPayTotal.innerText = window.FormatUtil.formatRupees(total);
+
+      // Line items table
+      const tbody = document.getElementById('drawer-items-tbody');
+      const lines = sale.lines || [];
+      const countBadge = document.getElementById('drawer-items-count-badge');
+      if (countBadge) countBadge.innerText = `${lines.length} Items`;
+
+      if (tbody) {
+        if (lines.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No line item records.</td></tr>`;
+        } else {
+          tbody.innerHTML = lines.map((l, idx) => `
+            <tr>
+              <td style="color: var(--text-dim);">${idx + 1}</td>
+              <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+              <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
+              <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+              <td>${l.itemUnit || l.unit || 'PCS'}</td>
+              <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+              <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+              <td>${l.gstPercent || l.taxRate || 18}%</td>
+              <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // Admin approval actions box
+      const approvalBox = document.getElementById('drawer-sale-approval-box');
+      if (approvalBox) {
+        const isPending = (sale.documentStatus || '').toUpperCase() === 'PENDING APPROVAL';
+        approvalBox.style.display = isPending ? 'flex' : 'none';
+      }
+
+      // Default to summary tab
+      this.switchDrawerTab('summary');
 
       drawer.classList.add('open');
       if (overlay) overlay.classList.add('open');
     } catch (err) {
       window.AppDialogService.showToast('Unable to load invoice details: ' + err.message, 'error');
+    }
+  },
+
+  switchDrawerTab(tabName) {
+    const tabs = ['summary', 'items', 'payments', 'audit', 'docs'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-sale-${t}`);
+      const pane = document.getElementById(`pane-sale-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) pane.classList.toggle('active', t === tabName);
+    });
+
+    if (tabName === 'payments' && this.currentDrawerSale) {
+      this.loadDrawerPayments(this.currentDrawerSale);
+    } else if (tabName === 'audit' && this.currentDrawerSale) {
+      this.loadDrawerAudit(this.currentDrawerSale);
+    }
+  },
+
+  async loadDrawerPayments(sale) {
+    const tbody = document.getElementById('drawer-payments-tbody');
+    if (!tbody || !sale || !sale.id) return;
+    try {
+      const rows = await window.ApiService.get(`/api/support/payments?type=SALE&id=${sale.id}`);
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">No payment records found for this invoice.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${window.FormatUtil.formatDate(r.paymentDate || r.date)}</td>
+          <td style="font-weight: 600;">#${r.id || r.paymentId || '—'}</td>
+          <td><span class="badge badge-paid">${r.mode || 'CASH'}</span></td>
+          <td>${r.referenceNumber || r.reference || '—'}</td>
+          <td style="color: var(--text-dim);">${r.notes || '—'}</td>
+          <td style="font-weight: 700; color: var(--green);">${window.FormatUtil.formatRupees(r.amount || 0)}</td>
+          <td>
+            ${r.attachmentName ? `
+              <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem;" onclick="window.RecordPaymentController.downloadProof(${r.id}, '${r.attachmentName}')">📎 Proof</button>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red); padding:14px;">Failed to load payment history: ${err.message}</td></tr>`;
+    }
+  },
+
+  async loadDrawerAudit(sale) {
+    const container = document.getElementById('drawer-sale-audit-timeline');
+    if (!container || !sale || !sale.id) return;
+    try {
+      const rows = await window.ApiService.get(`/api/support/activity?type=SALE&id=${sale.id}`);
+      if (!rows || rows.length === 0) {
+        container.innerHTML = `
+          <div style="background: rgba(255,255,255,0.02); border-radius: 6px; padding: 12px; border: 1px solid var(--border-subtle); font-size: 0.8rem;">
+            <div style="font-weight: 700; color: var(--cyan);">Record Registered</div>
+            <div style="color: var(--text-dim); font-size: 0.75rem; margin-top: 2px;">Initial creation entry for Invoice ${sale.invoiceNo}</div>
+          </div>
+        `;
+        return;
+      }
+      container.innerHTML = rows.map(r => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span class="badge badge-paid" style="font-size: 0.7rem;">${r.action || 'ACTIVITY'}</span>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">${window.FormatUtil.formatDate(r.createdAt || r.timestamp)}</span>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">${r.detail || r.description || 'System action executed'}</div>
+          <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Actor: <span style="color: var(--cyan);">${r.user || r.actor || 'System'}</span></div>
+        </div>
+      `).join('');
+    } catch (err) {
+      container.innerHTML = `<div style="text-align:center; color:var(--red); padding:14px;">Failed to load audit history: ${err.message}</div>`;
+    }
+  },
+
+  auditCurrentInvoice() {
+    if (!this.currentDrawerSale) return;
+    window.AppDialogService.showActivityTimeline('SALE', this.currentDrawerSale.id, this.currentDrawerSale.invoiceNo);
+  },
+
+  async approveSelectedSale() {
+    if (!this.currentDrawerSale) return;
+    try {
+      await window.ApiService.post(`/api/sales/${this.currentDrawerSale.id}/approve`, {});
+      window.AppDialogService.toastSuccess(`Sale ${this.currentDrawerSale.invoiceNo} approved.`);
+      this.closeInvoiceDrawer();
+      this.loadSales();
+    } catch (err) {
+      window.AppDialogService.toastError(err.message || 'Failed to approve sale');
+    }
+  },
+
+  async rejectSelectedSale() {
+    if (!this.currentDrawerSale) return;
+    const reason = prompt(`Enter rejection reason for ${this.currentDrawerSale.invoiceNo}:`);
+    if (!reason || !reason.trim()) return;
+    try {
+      await window.ApiService.post(`/api/sales/${this.currentDrawerSale.id}/reject`, { reason: reason.trim() });
+      window.AppDialogService.toastSuccess(`Sale ${this.currentDrawerSale.invoiceNo} rejected.`);
+      this.closeInvoiceDrawer();
+      this.loadSales();
+    } catch (err) {
+      window.AppDialogService.toastError(err.message || 'Failed to reject sale');
+    }
+  },
+
+  printDispatchBarcode(sale) {
+    if (!sale) return;
+    const invNo = sale.invoiceNo || 'INV';
+    window.AppDialogService.showToast(`Generating dispatch barcode for ${invNo}...`, 'info');
+    // Open printable barcode window
+    const printWin = window.open('', '_blank', 'width=450,height=300');
+    if (printWin) {
+      printWin.document.write(`
+        <html>
+          <head><title>Dispatch Barcode - ${invNo}</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 20px;">
+            <h3>JASVI INDUSTRIES</h3>
+            <p>Dispatch Tracking Label</p>
+            <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; font-family: monospace; border: 2px dashed #000; padding: 10px; margin: 10px 0;">*${invNo}*</div>
+            <p>Invoice: <b>${invNo}</b> | Client: <b>${sale.customer ? sale.customer.name : 'Client'}</b></p>
+            <button onclick="window.print()" style="padding: 8px 16px; margin-top: 10px;">Print Label</button>
+          </body>
+        </html>
+      `);
+      printWin.document.close();
+    }
+  },
+
+  async handleAttachmentUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !this.currentDrawerSale) return;
+    try {
+      window.AppDialogService.toastInfo(`Uploading ${file.name}...`);
+      await window.ApiService.uploadBinary(`/api/support/documents/SALE/${this.currentDrawerSale.id}/attachment-file`, file.name, file);
+      window.AppDialogService.toastSuccess(`Attachment ${file.name} saved.`);
+      const listEl = document.getElementById('drawer-sale-attachments-list');
+      if (listEl) {
+        listEl.innerHTML = `<div style="color:var(--green); font-weight:600;">📎 ${file.name} (Uploaded)</div>`;
+      }
+    } catch (err) {
+      window.AppDialogService.toastError(`Failed to upload attachment: ${err.message}`);
     }
   },
 
@@ -2957,6 +3220,16 @@ window.SalesController = {
   // 20. PRINTABLE TAX INVOICE
   // =========================================================================
   async printTaxInvoice(invoiceNo) {
+    try {
+      if (window.ApiService && window.ApiService.openPdfPreview) {
+        window.AppDialogService.toastInfo(`Generating official Tax Invoice PDF for ${invoiceNo}...`);
+        await window.ApiService.openPdfPreview('SALE', invoiceNo);
+        return;
+      }
+    } catch (pdfErr) {
+      console.warn('[SalesController] Direct canonical PDF render fallback to HTML:', pdfErr);
+    }
+
     try {
       const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
       if (!sale) return;

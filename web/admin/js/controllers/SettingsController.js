@@ -404,13 +404,13 @@ window.SettingsController = (function() {
     // 4. KEYBOARD SHORTCUTS
     // ==========================================
     loadShortcutsSettings() {
-      const tbody = document.getElementById('shortcuts-table-tbody');
+      const tbody = document.getElementById('shortcuts-settings-tbody') || document.getElementById('shortcuts-table-tbody');
       if (!tbody) return;
       this.filterShortcuts('');
     },
 
     filterShortcuts(query) {
-      const tbody = document.getElementById('shortcuts-table-tbody');
+      const tbody = document.getElementById('shortcuts-settings-tbody') || document.getElementById('shortcuts-table-tbody');
       if (!tbody) return;
       const clean = (query || '').toLowerCase().trim();
 

@@ -724,31 +724,67 @@ window.ReturnsController = (function() {
   }
 
   // 5. RECORD REFUND MODAL (DESKTOP ReturnRefundController.java PARITY)
+  let activeRefundDetails = null;
+
   async function openRefundModal(returnNo) {
-    const modal = document.getElementById('modal-record-refund');
+    const modal = document.getElementById('modal-return-refund');
     if (!modal) return;
 
     try {
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const details = await window.OperationsService.getReturnDetails(returnNo);
-      const refunds = await window.OperationsService.getReturnRefunds(returnNo);
+      activeRefundDetails = details;
+      const isSales = (details.type || currentType) === 'SALES RETURN';
 
-      document.getElementById('rf-return-no').value = details.no;
-      document.getElementById('rf-party-name').value = details.party || '';
-      document.getElementById('rf-invoice-no').innerText = details.invoice || '-';
-      document.getElementById('rf-total-amount').innerText = formatMoney(details.total);
-      document.getElementById('rf-already-refunded').innerText = formatMoney(details.refund);
-      
-      const balance = Math.max(0, (details.total || 0) - (details.refund || 0));
-      document.getElementById('rf-balance-remaining').innerText = formatMoney(balance);
-      document.getElementById('rf-amount').value = balance.toFixed(2);
-      document.getElementById('rf-date').value = new Date().toISOString().substring(0, 10);
-      document.getElementById('rf-reference').value = '';
-      document.getElementById('rf-notes').value = '';
+      // Set titles according to Return type
+      const titleEl = document.getElementById('rr-modal-title');
+      const subEl = document.getElementById('rr-modal-subtitle');
+      const partyLabel = document.getElementById('rr-label-party');
+      const amtLabel = document.getElementById('rr-label-amount');
 
-      // Populate Refund History Table
-      renderRefundHistory(refunds);
+      if (titleEl) titleEl.innerText = isSales ? 'Sales Return Refund Voucher' : 'Purchase Return Settlement Voucher';
+      if (subEl) subEl.innerText = isSales ? 'Record outbound cash/bank refund paid to customer' : 'Record inward settlement receipt from supplier';
+      if (partyLabel) partyLabel.innerText = isSales ? 'Refunded To (Customer) *' : 'Received From (Supplier) *';
+      if (amtLabel) amtLabel.innerText = isSales ? 'Refund Amount Outflow (₹) *' : 'Settlement Amount Inflow (₹) *';
 
-      modal.style.display = 'flex';
+      // Metadata card
+      const elNo = document.getElementById('rr-no'); if (elNo) elNo.innerText = details.no || returnNo;
+      const elInv = document.getElementById('rr-invoice'); if (elInv) elInv.innerText = details.invoice || '-';
+      const elParty = document.getElementById('rr-party-name'); if (elParty) elParty.innerText = details.party || '-';
+      const elDate = document.getElementById('rr-date-display'); if (elDate) elDate.innerText = formatDate(details.date);
+
+      // Amount progress
+      const total = details.total || 0;
+      const refunded = details.refund || 0;
+      const balance = Math.max(0, total - refunded);
+
+      const elTotal = document.getElementById('rr-total'); if (elTotal) elTotal.innerText = formatMoney(total);
+      const elRefunded = document.getElementById('rr-refunded'); if (elRefunded) elRefunded.innerText = formatMoney(refunded);
+      const elBalance = document.getElementById('rr-balance'); if (elBalance) elBalance.innerText = formatMoney(balance);
+
+      // Default form values
+      const dateInp = document.getElementById('rr-date'); if (dateInp) dateInp.value = new Date().toISOString().substring(0, 10);
+      const partyInp = document.getElementById('rr-refunded-party'); if (partyInp) partyInp.value = details.party || '';
+      const refInp = document.getElementById('rr-reference'); if (refInp) refInp.value = '';
+      const notesInp = document.getElementById('rr-notes'); if (notesInp) notesInp.value = '';
+      const proofInp = document.getElementById('rr-proof-file'); if (proofInp) proofInp.value = '';
+
+      const scopeFull = document.getElementById('rr-scope-full');
+      if (scopeFull) scopeFull.checked = true;
+
+      const amtInp = document.getElementById('rr-amount');
+      if (amtInp) {
+        amtInp.value = balance.toFixed(2);
+        amtInp.max = balance.toFixed(2);
+      }
+
+      updateRefundPreview();
+      onRefundModeChange();
+
+      // Load refund history
+      await loadRefundHistory(returnNo);
+
+      window.AppDialogService.openModal('modal-return-refund');
 
     } catch (err) {
       console.error('Failed to open refund modal:', err);
@@ -756,41 +792,121 @@ window.ReturnsController = (function() {
     }
   }
 
-  function renderRefundHistory(refunds) {
-    const tbody = document.getElementById('rf-history-body');
-    if (!tbody) return;
-
-    if (!refunds || refunds.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">No prior refunds recorded for this return.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = refunds.map(r => `
-      <tr>
-        <td>${formatDate(r.date)}</td>
-        <td style="font-weight:600; color:var(--cyan);">${r.mode || 'Bank Transfer'}</td>
-        <td>${r.reference || '-'}</td>
-        <td>${r.bankAccount || '-'}</td>
-        <td style="text-align:right; font-weight:700; color:var(--green);">${formatMoney(r.amount)}</td>
-        <td>${getStatusBadge(r.status || 'RECORDED')}</td>
-      </tr>
-    `).join('');
+  function onRefundModeChange() {
+    const mode = document.getElementById('rr-mode')?.value || '';
+    const bankSelect = document.getElementById('rr-bank-account');
+    if (!bankSelect) return;
+    const isBank = mode.toLowerCase().includes('bank') || mode === 'UPI' || mode === 'NEFT' || mode === 'RTGS';
+    bankSelect.disabled = !isBank;
+    if (!isBank) bankSelect.value = '';
   }
 
-  async function submitRefund() {
-    const returnNo = document.getElementById('rf-return-no')?.value;
-    const amount = parseFloat(document.getElementById('rf-amount')?.value) || 0;
-    const date = document.getElementById('rf-date')?.value;
-    const mode = document.getElementById('rf-mode')?.value || 'Bank Transfer';
-    const bankAccount = document.getElementById('rf-bank-account')?.value || '';
-    const reference = document.getElementById('rf-reference')?.value?.trim() || '';
-    const refundedParty = document.getElementById('rf-party-name')?.value?.trim() || '';
-    const notes = document.getElementById('rf-notes')?.value?.trim() || '';
-    const refundType = document.getElementById('rf-full-toggle')?.checked ? 'FULL' : 'PARTIAL';
+  function selectFullRefund() {
+    if (!activeRefundDetails) return;
+    const balance = Math.max(0, (activeRefundDetails.total || 0) - (activeRefundDetails.refund || 0));
+    const amtInp = document.getElementById('rr-amount');
+    if (amtInp) amtInp.value = balance.toFixed(2);
+    updateRefundPreview();
+  }
+
+  function selectPartialRefund() {
+    const amtInp = document.getElementById('rr-amount');
+    if (amtInp) {
+      amtInp.value = '';
+      amtInp.focus();
+    }
+    updateRefundPreview();
+  }
+
+  function updateRefundPreview() {
+    if (!activeRefundDetails) return;
+    const balance = Math.max(0, (activeRefundDetails.total || 0) - (activeRefundDetails.refund || 0));
+    const entered = parseFloat(document.getElementById('rr-amount')?.value) || 0;
+    const after = Math.max(0, balance - entered);
+    const afterEl = document.getElementById('rr-after-balance');
+    if (afterEl) afterEl.innerText = formatMoney(after);
+  }
+
+  function resetRefundForm() {
+    selectFullRefund();
+    const refInp = document.getElementById('rr-reference'); if (refInp) refInp.value = '';
+    const notesInp = document.getElementById('rr-notes'); if (notesInp) notesInp.value = '';
+    const proofInp = document.getElementById('rr-proof-file'); if (proofInp) proofInp.value = '';
+    onRefundModeChange();
+  }
+
+  async function loadRefundHistory(returnNo) {
+    const tbody = document.getElementById('rr-history-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:12px; color:var(--text-muted);">Loading past settlements...</td></tr>`;
+
+    try {
+      const refunds = await window.OperationsService.getReturnRefunds(returnNo);
+      if (!refunds || refunds.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:12px; color:var(--text-dim);">No previous refund vouchers recorded for this return.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = refunds.map(r => `
+        <tr>
+          <td>${formatDate(r.date)}</td>
+          <td style="font-weight:600; color:var(--cyan);">#${r.id || '-'}</td>
+          <td><span class="badge badge-paid">${r.mode || 'Bank'}</span></td>
+          <td>${r.reference || '-'}</td>
+          <td>${r.refundedParty || '-'}</td>
+          <td style="text-align:right; font-weight:700; color:var(--green);">${formatMoney(r.amount)}</td>
+          <td>
+            ${r.attachment ? `
+              <button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.72rem;" onclick="window.ReturnsController.downloadRefundProof(${r.id})">📎 Proof</button>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:12px; color:var(--red);">Failed to load history: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function downloadRefundProof(refundId) {
+    try {
+      window.AppDialogService.toastInfo('Downloading settlement proof...');
+      const blob = await window.ApiService.request(`/api/support/return-refunds/${refundId}/attachment-file`, { method: 'GET' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `refund-proof-${refundId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (err) {
+      window.AppDialogService.toastError('Failed to open proof: ' + err.message);
+    }
+  }
+
+  async function saveRefund(event) {
+    if (event) event.preventDefault();
+    if (!activeRefundDetails) return;
+
+    const returnNo = activeRefundDetails.no;
+    const amount = parseFloat(document.getElementById('rr-amount')?.value) || 0;
+    const date = document.getElementById('rr-date')?.value;
+    const mode = document.getElementById('rr-mode')?.value || 'Bank Transfer';
+    const bankAccount = document.getElementById('rr-bank-account')?.value || '';
+    const reference = document.getElementById('rr-reference')?.value?.trim() || '';
+    const refundedParty = document.getElementById('rr-refunded-party')?.value?.trim() || '';
+    const notes = document.getElementById('rr-notes')?.value?.trim() || '';
+    const refundType = document.getElementById('rr-scope-full')?.checked ? 'FULL' : 'PARTIAL';
+    const proofFile = document.getElementById('rr-proof-file')?.files?.[0];
 
     if (!returnNo) { alert('Return number is missing.'); return; }
     if (amount <= 0) { alert('Refund amount must be greater than zero.'); return; }
     if (!date) { alert('Refund date is required.'); return; }
+
+    const remaining = Math.max(0, (activeRefundDetails.total || 0) - (activeRefundDetails.refund || 0));
+    if (amount > remaining + 0.01) {
+      alert(`Refund amount (${formatMoney(amount)}) cannot exceed remaining balance of ${formatMoney(remaining)}.`);
+      return;
+    }
 
     const payload = {
       date: date,
@@ -804,20 +920,32 @@ window.ReturnsController = (function() {
       createdBy: 'Admin'
     };
 
-    const btn = document.getElementById('btn-submit-refund');
-    if (btn) { btn.disabled = true; btn.innerText = 'Saving Refund...'; }
+    const btn = document.getElementById('btn-save-return-refund');
+    if (btn) { btn.disabled = true; btn.innerText = 'Saving Voucher...'; }
 
     try {
-      await window.OperationsService.recordReturnRefund(returnNo, payload);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Refund of ${formatMoney(amount)} recorded for ${returnNo}!`);
-      closeModal('modal-record-refund');
+      const res = await window.OperationsService.recordReturnRefund(returnNo, payload);
+      const refundId = res && res.id ? res.id : null;
+
+      // Dual-step binary proof upload if attached
+      if (proofFile && refundId) {
+        window.AppDialogService.toastInfo(`Uploading proof file ${proofFile.name}...`);
+        try {
+          await window.ApiService.uploadBinary(`/api/support/return-refunds/${refundId}/attachment-file`, proofFile.name, proofFile);
+        } catch (upErr) {
+          console.warn('Proof upload failed, but refund was saved:', upErr);
+        }
+      }
+
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Refund voucher of ${formatMoney(amount)} recorded for ${returnNo}!`);
+      window.AppDialogService.closeModal('modal-return-refund');
       loadReturns(currentType, currentPage);
       if (selectedReturn && selectedReturn.no === returnNo) showDetails(returnNo);
     } catch (err) {
       console.error('Failed to record refund:', err);
       alert('Failed to record refund: ' + (err.message || 'Server error'));
     } finally {
-      if (btn) { btn.disabled = false; btn.innerText = 'Record Refund'; }
+      if (btn) { btn.disabled = false; btn.innerText = '💾 Save & Record Refund'; }
     }
   }
 
@@ -851,6 +979,13 @@ window.ReturnsController = (function() {
     submitCreateReturn,
     openRefundModal,
     submitRefund,
+    saveRefund,
+    onRefundModeChange,
+    selectFullRefund,
+    selectPartialRefund,
+    updateRefundPreview,
+    resetRefundForm,
+    downloadRefundProof,
     closeModal,
     setType(type) { currentType = type; },
     getType() { return currentType; },

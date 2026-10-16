@@ -358,7 +358,14 @@ window.PurchaseController = (function() {
       if (purStatus) {
         const docSt = (p.documentStatus || 'APPROVED').toUpperCase();
         purStatus.innerText = docSt;
-        purStatus.className = `badge ${(p.paymentStatus || '').toUpperCase() === 'PAID' ? 'badge-paid' : 'badge-pending'}`;
+        purStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : 'badge-pending'}`;
+      }
+
+      const purPayStatus = document.getElementById('drawer-pur-pay-status');
+      if (purPayStatus) {
+        const paySt = (p.paymentStatus || 'UNPAID').toUpperCase();
+        purPayStatus.innerText = paySt;
+        purPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
       }
 
       const purDate = document.getElementById('drawer-pur-date');
@@ -398,14 +405,27 @@ window.PurchaseController = (function() {
       const purGst = document.getElementById('drawer-pur-gst');
       if (purGst) purGst.innerText = formatMoney(p.gstAmount || 0);
 
-      const purTotal = document.getElementById('drawer-pur-total');
-      if (purTotal) purTotal.innerText = formatMoney(p.totalAmount || 0);
+      const total = p.totalAmount != null ? p.totalAmount : 0;
+      const paid = p.paidAmount != null ? p.paidAmount : (p.paymentStatus === 'PAID' ? total : 0);
+      const balance = Math.max(0, total - paid);
 
-      // Also populate legacy #drawer-purchase-details if present
-      const pdInv = document.getElementById('pd-invoice-no');
-      if (pdInv) pdInv.innerText = p.invoiceNo;
-      const pdSupp = document.getElementById('pd-supplier-name');
-      if (pdSupp) pdSupp.innerText = supp.name || p.supplierName || '-';
+      const purTotal = document.getElementById('drawer-pur-total');
+      if (purTotal) purTotal.innerText = formatMoney(total);
+
+      const purPaid = document.getElementById('drawer-pur-paid');
+      if (purPaid) purPaid.innerText = formatMoney(paid);
+
+      const purBalance = document.getElementById('drawer-pur-balance');
+      if (purBalance) purBalance.innerText = formatMoney(balance);
+
+      const purPayPaidDisp = document.getElementById('drawer-pur-pay-paid-disp');
+      if (purPayPaidDisp) purPayPaidDisp.innerText = formatMoney(paid);
+
+      const purPayTotalDisp = document.getElementById('drawer-pur-pay-total-disp');
+      if (purPayTotalDisp) purPayTotalDisp.innerText = formatMoney(total);
+
+      // Default to summary tab
+      switchPurchaseDrawerTab('summary');
 
       drawer.classList.add('open');
       drawer.style.display = 'block';
@@ -414,6 +434,95 @@ window.PurchaseController = (function() {
     } catch (err) {
       console.error('Failed to load purchase details:', err);
       if (window.AppDialogService) window.AppDialogService.toastError('Failed to load purchase details: ' + (err.message || 'Server error'));
+    }
+  }
+
+  function switchPurchaseDrawerTab(tabName) {
+    const tabs = ['summary', 'items', 'payments', 'audit', 'docs'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-pur-${t}`);
+      const pane = document.getElementById(`pane-pur-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) pane.classList.toggle('active', t === tabName);
+    });
+
+    if (tabName === 'payments' && currentDrawerPurchase) {
+      loadPurchaseDrawerPayments(currentDrawerPurchase);
+    } else if (tabName === 'audit' && currentDrawerPurchase) {
+      loadPurchaseDrawerAudit(currentDrawerPurchase);
+    }
+  }
+
+  async function loadPurchaseDrawerPayments(p) {
+    const tbody = document.getElementById('drawer-pur-payments-tbody');
+    if (!tbody || !p || !p.id) return;
+    try {
+      const rows = await window.ApiService.get(`/api/support/payments?type=PURCHASE&id=${p.id}`);
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">No outflow payment vouchers recorded.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${formatDate(r.paymentDate || r.date)}</td>
+          <td style="font-weight: 600;">#${r.id || r.paymentId || '—'}</td>
+          <td><span class="badge badge-paid">${r.mode || 'BANK'}</span></td>
+          <td>${r.referenceNumber || r.reference || '—'}</td>
+          <td style="color: var(--text-dim);">${r.notes || '—'}</td>
+          <td style="font-weight: 700; color: var(--green);">${formatMoney(r.amount || 0)}</td>
+          <td>
+            ${r.attachmentName ? `
+              <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem;" onclick="window.RecordPaymentController.downloadProof(${r.id}, '${r.attachmentName}')">📎 Proof</button>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red); padding:14px;">Failed to load outflow history: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function loadPurchaseDrawerAudit(p) {
+    const container = document.getElementById('drawer-pur-audit-timeline');
+    if (!container || !p || !p.id) return;
+    try {
+      const rows = await window.ApiService.get(`/api/support/activity?type=PURCHASE&id=${p.id}`);
+      if (!rows || rows.length === 0) {
+        container.innerHTML = `
+          <div style="background: rgba(255,255,255,0.02); border-radius: 6px; padding: 12px; border: 1px solid var(--border-subtle); font-size: 0.8rem;">
+            <div style="font-weight: 700; color: var(--cyan);">Inward Bill Registered</div>
+            <div style="color: var(--text-dim); font-size: 0.75rem; margin-top: 2px;">Initial creation entry for Bill ${p.invoiceNo}</div>
+          </div>
+        `;
+        return;
+      }
+      container.innerHTML = rows.map(r => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span class="badge badge-paid" style="font-size: 0.7rem;">${r.action || 'ACTIVITY'}</span>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">${formatDate(r.createdAt || r.timestamp)}</span>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">${r.detail || r.description || 'System action executed'}</div>
+          <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Actor: <span style="color: var(--cyan);">${r.user || r.actor || 'System'}</span></div>
+        </div>
+      `).join('');
+    } catch (err) {
+      container.innerHTML = `<div style="text-align:center; color:var(--red); padding:14px;">Failed to load audit history: ${err.message}</div>`;
+    }
+  }
+
+  function auditCurrentPurchase() {
+    if (!currentDrawerPurchase) return;
+    window.AppDialogService.showActivityTimeline('PURCHASE', currentDrawerPurchase.id, currentDrawerPurchase.invoiceNo);
+  }
+
+  async function printPurchaseBill(invoiceNo) {
+    if (!invoiceNo) return;
+    try {
+      window.AppDialogService.toastInfo(`Generating official Inward Bill PDF for ${invoiceNo}...`);
+      await window.ApiService.openPdfPreview('PURCHASE', invoiceNo);
+    } catch (err) {
+      window.AppDialogService.toastError(err.message || 'Failed to open Purchase Bill PDF');
     }
   }
 
@@ -1584,6 +1693,8 @@ window.PurchaseController = (function() {
     updateChargeSummaryBadge,
     onTransporterChange,
     printPurchaseBill,
+    switchPurchaseDrawerTab,
+    auditCurrentPurchase,
     getPurchasesCache() { return purchases; },
     onEditorSupplierChange,
     onSameAsBillingToggle,

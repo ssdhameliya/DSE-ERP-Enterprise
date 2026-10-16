@@ -80,7 +80,22 @@ window.RecordPaymentController = (function() {
       // Extract details
       const invDate = (extraDetails && (extraDetails.invoiceDate || extraDetails.date)) || new Date().toISOString().split('T')[0];
       const dueDate = (extraDetails && (extraDetails.dueDate || extraDetails.paymentDueDate)) || invDate;
+      const docStatus = (extraDetails && (extraDetails.documentStatus || extraDetails.status || '')).toUpperCase();
       const status = (extraDetails && extraDetails.paymentStatus) || (invoiceBalance <= 0.01 ? 'PAID' : (invoicePaid > 0 ? 'PARTIAL' : 'UNPAID'));
+
+      // Status guards matching Desktop
+      if (currentType === 'SALE' && (docStatus === 'PENDING APPROVAL' || docStatus === 'REJECTED')) {
+        const msg = 'Admin approval is required before recording payments.';
+        if (window.AppDialogService) window.AppDialogService.toastWarning(msg);
+        else alert(msg);
+        return;
+      }
+      if (currentType === 'PURCHASE' && docStatus === 'DRAFT') {
+        const msg = 'Draft purchases cannot receive ordinary payments. Post or approve the purchase first.';
+        if (window.AppDialogService) window.AppDialogService.toastWarning(msg);
+        else alert(msg);
+        return;
+      }
 
       // 1. Populate Overview Strip
       const elInvNo = document.getElementById('rp-inv-no');
@@ -319,7 +334,7 @@ window.RecordPaymentController = (function() {
             <td style="font-weight: 600; color: var(--text-main);">${p.receivedFrom || p.payer || currentPartyName}</td>
             <td style="text-align: right; font-weight: 700; color: #34d399;">${formatMoney(amt)}</td>
             <td>
-              ${proof ? `<span class="pill-badge pill-success" style="cursor: pointer;" onclick="alert('Viewing attached proof: ${proof}')">📎 ${proof}</span>` : '<span style="color: var(--text-dim);">No proof</span>'}
+              ${proof ? `<span class="pill-badge pill-success" style="cursor: pointer;" onclick="window.RecordPaymentController.downloadProof(${p.id || 0}, '${proof}')" title="Click to download proof">📎 ${proof}</span>` : '<span style="color: var(--text-dim);">No proof</span>'}
             </td>
             <td style="color: var(--text-muted); font-size: 0.74rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.notes || '-'}</td>
             <td style="text-align: center;">
@@ -431,20 +446,37 @@ window.RecordPaymentController = (function() {
           btnSave.innerText = 'Saving...';
         }
 
+        let paymentId = null;
         try {
-          await window.ApiService.post('/api/support/payments', payload);
+          const res = await window.ApiService.post('/api/support/payments/with-id', payload);
+          paymentId = (res && (res.id != null ? res.id : res.paymentId)) || null;
         } catch (err) {
-          console.error('Failed to post payment to backend:', err);
-          if (btnSave) {
-            btnSave.disabled = false;
-            btnSave.innerText = '💾 Save Payment';
+          console.warn('POST /api/support/payments/with-id failed, attempting standard POST:', err);
+          try {
+            await window.ApiService.post('/api/support/payments', payload);
+          } catch (err2) {
+            console.error('Failed to post payment to backend:', err2);
+            if (btnSave) {
+              btnSave.disabled = false;
+              btnSave.innerText = '💾 Save Payment';
+            }
+            const msg = 'Server payment error: ' + (err2.message || 'Validation failed');
+            if (window.AppDialogService) window.AppDialogService.toastError(msg);
+            else alert(msg);
+            return;
           }
-          if (window.AppDialogService) {
-            window.AppDialogService.toastError('Server payment error: ' + (err.message || 'Validation failed'));
-          } else {
-            alert('Failed to save payment on server: ' + err.message);
+        }
+
+        // Upload binary proof file matching Desktop SupportApiClient
+        if (attachedProofFile && paymentId) {
+          try {
+            await window.ApiService.uploadBinary(`/api/support/payments/${paymentId}/attachment-file`, attachedProofFile.name, attachedProofFile);
+          } catch (proofErr) {
+            console.warn('Payment recorded, but binary proof upload failed:', proofErr);
+            if (window.AppDialogService) {
+              window.AppDialogService.toastWarning('Payment saved, but receipt attachment upload failed: ' + proofErr.message);
+            }
           }
-          return;
         }
 
         if (btnSave) {
@@ -457,7 +489,7 @@ window.RecordPaymentController = (function() {
         invoiceBalance = remainingAfter;
 
         paymentHistory.unshift({
-          id: Date.now(),
+          id: paymentId || Date.now(),
           date,
           mode,
           referenceNo: payload.reference,
@@ -549,6 +581,29 @@ window.RecordPaymentController = (function() {
 
     printReceipt() {
       window.print();
+    },
+
+    async downloadProof(paymentId, fileName) {
+      if (!paymentId) return;
+      try {
+        const blob = await window.ApiService.get(`/api/support/payments/${paymentId}/attachment-file`);
+        if (!blob || !(blob instanceof Blob)) {
+          throw new Error('No attachment data returned from server');
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || `payment_proof_${paymentId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Download proof error:', err);
+        const msg = 'Could not download proof: ' + (err.message || 'File not found');
+        if (window.AppDialogService) window.AppDialogService.toastError(msg);
+        else alert(msg);
+      }
     }
   };
 })();

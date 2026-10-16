@@ -280,17 +280,34 @@ window.QuotationController = (function() {
 
   // 3. WORKFLOW ACTIONS
   async function convertToSale(id, no, rowVersion) {
-    if (!confirm(`Convert Quotation ${no} to a sales invoice and adjust inventory stock?`)) return;
+    if (!confirm(`Convert Quotation ${no} to an active Sales Invoice and update inventory stock?`)) return;
     try {
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const res = await window.OperationsService.convertQuotation(id, 'Admin', rowVersion);
       const invoiceNo = res?.value || 'Sales Invoice';
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Sales invoice ${invoiceNo} created successfully!`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} converted to Sale ${invoiceNo}!`);
       loadQuotations(currentPage);
       closeDrawer();
-      if (window.SalesController) window.SalesController.loadSales();
+
+      // Navigate to Sales Register and highlight the new sale
+      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+        window.NavigationRouter.selectNav('view-sales-register');
+        if (window.SalesController) {
+          setTimeout(() => {
+            window.SalesController.loadSales(0);
+            if (window.SalesController.openInvoiceDrawer) {
+              window.SalesController.openInvoiceDrawer(invoiceNo);
+            }
+          }, 350);
+        }
+      }
     } catch (err) {
       console.error('Convert failed:', err);
-      alert('Failed to convert quotation: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) {
+        window.AppDialogService.toastError('Failed to convert quotation: ' + (err.message || 'Server error'));
+      } else {
+        alert('Failed to convert quotation: ' + (err.message || 'Server error'));
+      }
     }
   }
 
@@ -319,9 +336,14 @@ window.QuotationController = (function() {
     }
   }
 
-  function printPdf(no) {
-    const url = `/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=PDF`;
-    window.open(url, '_blank');
+  async function printPdf(no) {
+    if (!no) return;
+    try {
+      window.AppDialogService.toastInfo(`Generating official Quotation PDF for ${no}...`);
+      await window.ApiService.openPdfPreview('QUOTATION', no);
+    } catch (err) {
+      window.AppDialogService.toastError(err.message || 'Failed to open Quotation PDF');
+    }
   }
 
   function downloadExcel(no) {

@@ -106,6 +106,9 @@ window.AccountingService = {
   async getGstr1GovtJson(period = '2026-03') {
     return await window.ApiService.get(`/api/gst/gstr1/${encodeURIComponent(period)}/json`);
   },
+  async getSupplierNotice(id) {
+    return await window.ApiService.get(`/api/gst/reconciliation/${encodeURIComponent(id)}/notice`);
+  },
 
   // ==========================================
   // 5. E-WAY BILL GATEWAY (/api/eway-bill)

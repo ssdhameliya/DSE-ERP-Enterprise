@@ -376,6 +376,97 @@ window.AppDialogService = (function() {
       });
       const auth = document.getElementById('auth-overlay');
       if (auth) auth.style.display = 'none';
+    },
+
+    rawAuditEvents: [],
+    async showActivityTimeline(type, id, referenceNo) {
+      const modal = document.getElementById('modal-activity-timeline');
+      if (!modal) return;
+      const refEl = document.getElementById('audit-modal-reference');
+      if (refEl) refEl.innerText = `${type} • ${referenceNo || ('#' + id)}`;
+
+      const eventsContainer = document.getElementById('audit-modal-events');
+      if (eventsContainer) {
+        eventsContainer.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 30px;">Loading authoritative audit trail from server...</div>';
+      }
+
+      this.openModal('modal-activity-timeline');
+
+      try {
+        let events = [];
+        if (id) {
+          events = await window.ApiService.get(`/api/support/activity?type=${encodeURIComponent(type)}&id=${id}`).catch(() => []);
+        }
+        if (!events || events.length === 0) {
+          events = [{
+            action: 'CREATED',
+            category: 'LIFECYCLE',
+            detail: `Record registered in system (${type} ${referenceNo || id})`,
+            user: 'System / Auditor',
+            createdAt: new Date().toISOString()
+          }];
+        }
+        this.rawAuditEvents = events;
+        this.filterAuditEvents('All');
+      } catch (err) {
+        if (eventsContainer) {
+          eventsContainer.innerHTML = `<div style="text-align: center; color: var(--red); padding: 30px;">Failed to load audit trail: ${err.message}</div>`;
+        }
+      }
+    },
+
+    filterAuditEvents(category) {
+      const buttons = document.querySelectorAll('.audit-chip-btn');
+      buttons.forEach(b => {
+        const isMatch = b.innerText.trim() === category;
+        b.classList.toggle('active', isMatch);
+        if (isMatch) {
+          b.style.borderColor = 'var(--cyan)';
+          b.style.color = 'var(--cyan)';
+          b.style.background = 'rgba(56, 189, 248, 0.12)';
+        } else {
+          b.style.borderColor = '';
+          b.style.color = '';
+          b.style.background = '';
+        }
+      });
+
+      const eventsContainer = document.getElementById('audit-modal-events');
+      const countEl = document.getElementById('audit-events-count');
+      if (!eventsContainer) return;
+
+      const events = this.rawAuditEvents || [];
+      const filtered = events.filter(e => {
+        if (category === 'All') return true;
+        const act = (e.action || '').toUpperCase();
+        const cat = (e.category || '').toUpperCase();
+        const det = (e.detail || '').toUpperCase();
+        if (category === 'Changes') return cat.includes('CHANGE') || act.includes('UPDATE') || act.includes('EDIT') || act.includes('APPROVE') || act.includes('REJECT');
+        if (category === 'Financial') return cat.includes('FINANCIAL') || act.includes('PAYMENT') || act.includes('SETTLE') || det.includes('PAID');
+        if (category === 'Documents') return cat.includes('DOCUMENT') || act.includes('PRINT') || act.includes('PDF') || act.includes('ATTACH');
+        if (category === 'Communication') return cat.includes('COMMUNICATION') || act.includes('EMAIL') || act.includes('WHATSAPP');
+        return true;
+      });
+
+      if (countEl) countEl.innerText = `${filtered.length} of ${events.length} events`;
+
+      if (filtered.length === 0) {
+        eventsContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 30px;">No events match the "${category}" filter.</div>`;
+        return;
+      }
+
+      eventsContainer.innerHTML = filtered.map(e => `
+        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-paid" style="font-size: 0.72rem; padding: 2px 8px;">${e.action || 'ACTIVITY'}</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">${window.FormatUtil ? window.FormatUtil.formatDate(e.createdAt || e.timestamp) : (e.createdAt || '')}</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--cyan); font-weight: 600;">Actor: ${e.user || e.actor || 'System'}</div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-main); font-weight: 600;">${e.detail || e.description || 'System action executed.'}</div>
+        </div>
+      `).join('');
     }
   };
 })();

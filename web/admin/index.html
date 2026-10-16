@@ -3997,78 +3997,98 @@
         <div id="view-gst-compliance" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#9878;&#65039;</span> GST Compliance Center</h1>
-              <p>GSTR-1 outward filing, GSTR-2B inward reconciliation, ITC risk management, and government portal JSON export</p>
+              <h1><span>⚖️</span> GST Compliance &amp; 2B Reconciliation Center</h1>
+              <p>Automated GSTR-2B fuzzy ITC matching, GSTR-1 government schema export, and statutory tax set-off</p>
             </div>
             <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Return Period:</label>
                 <input type="text" id="gst-period-input" class="form-input" value="2026-03" style="width:105px; font-weight:700; text-align:center;" placeholder="YYYY-MM">
               </div>
+              <input type="file" id="gst-2b-file-input" accept=".json" style="display:none;" onchange="window.GstController.handle2bFileSelected(event)">
+              <button class="btn btn-secondary" onclick="document.getElementById('gst-2b-file-input').click()">
+                <span>📥</span> Import GSTR-2B JSON
+              </button>
               <button class="btn btn-secondary" onclick="window.GstController.loadGstData()">
-                <span>&#128260;</span> Compute Period
+                <span>🔄</span> Compute Period
               </button>
               <button class="btn btn-primary" onclick="window.GstController.exportGstr1Json()">
-                <span>&#128229;</span> Export GSTR-1 JSON
+                <span>📤</span> Export GSTR-1 JSON
               </button>
             </div>
           </div>
 
-          <!-- 5 KPI Summary Cards -->
+          <!-- 5 KPI Summary Cards matching GstComplianceCenter.fxml -->
           <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
             <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
               <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--green);">ELIGIBLE ITC</span></div>
               <div class="kpi-value" id="gst-kpi-eligible-itc" style="font-size:1.25rem; color:var(--green);">&#8377; 0.00</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">GSTR-2B matched</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">GSTR-2B matched (Input Tax Credit)</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--red); padding: 12px 14px;">
               <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--red);">ITC AT RISK</span></div>
               <div class="kpi-value" id="gst-kpi-itc-risk" style="font-size:1.25rem; color:var(--red);">&#8377; 0.00</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Supplier unfiled / missing</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">GSTIN Unverified / Supplier unfiled</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--yellow);">VALUE DIFFERENCE</span></div>
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--yellow);">DISCREPANCIES</span></div>
               <div class="kpi-value" id="gst-kpi-diff-count" style="font-size:1.25rem; color:var(--yellow);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Amount variance detected</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Roundoff / Rate Diff detected</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--purple-accent);">MISSING IN BOOKS</span></div>
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--purple-accent);">PENDING BILLS</span></div>
               <div class="kpi-value" id="gst-kpi-missing-count" style="font-size:1.25rem; color:var(--purple-accent);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">In 2B but not in ERP</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">In 2B but missing in books</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--cyan);">NET CASH DUE</span></div>
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--cyan);">NET CASH TAX</span></div>
               <div class="kpi-value" id="gst-kpi-net-due" style="font-size:1.25rem; color:var(--cyan);">&#8377; 0.00</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">GSTR-3B Cash Ledger</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Challan PMT-06 / GSTR-3B</div>
             </div>
           </div>
 
-          <!-- Dual Main Tabs: GSTR-2B vs GSTR-1 -->
+          <!-- Triple Main Tabs matching desktop GstComplianceCenter.fxml -->
           <div style="display:flex; border-bottom:1px solid var(--border-subtle); margin-bottom:14px; gap:8px;">
             <button id="gst-tab-btn-2b" class="tab-btn active" onclick="window.GstController.switchTab('GSTR2B')">
-              &#128229; GSTR-2B Inward Match Reconciliation
+              📥 GSTR-2B ITC Reconciliation
+            </button>
+            <button id="gst-tab-btn-3b" class="tab-btn" onclick="window.GstController.switchTab('GSTR3B')">
+              ⚖️ GSTR-3B Tax Set-Off Summary
             </button>
             <button id="gst-tab-btn-1" class="tab-btn" onclick="window.GstController.switchTab('GSTR1')">
-              &#128228; GSTR-1 Outward Filing Statements
+              📤 GSTR-1 Statutory Return Center
             </button>
           </div>
 
-          <!-- Tab Panel 1: GSTR-2B Inward Match -->
+          <!-- Tab Panel 1: GSTR-2B Inward Match Reconciliation -->
           <div id="gst-panel-2b" style="display:block;">
+            <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
+              <input type="text" id="gst-2b-search" class="form-input" placeholder="Search GSTIN, supplier, invoice number..." style="flex:1;" oninput="window.GstController.filter2bRecords()">
+              <select id="gst-2b-filter" class="form-select" style="width:190px;" onchange="window.GstController.filter2bRecords()">
+                <option value="ALL">All Statuses</option>
+                <option value="MATCHED">MATCHED</option>
+                <option value="GSTIN_PENDING">GSTIN_PENDING</option>
+                <option value="ROUNDING_DIFF">ROUNDING_DIFF</option>
+                <option value="MISSING_IN_BOOKS">MISSING_IN_BOOKS</option>
+                <option value="UNFILED_SUPPLIER">UNFILED_SUPPLIER</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="window.GstController.loadGstr2bReconciliation()">Refresh</button>
+            </div>
+
             <div class="data-panel" style="overflow-x:auto;">
               <table class="data-table">
                 <thead>
                   <tr>
+                    <th>SUPPLIER GSTIN</th>
+                    <th>SUPPLIER NAME</th>
                     <th>INVOICE NO.</th>
                     <th style="width:110px;">DATE</th>
-                    <th>SUPPLIER NAME</th>
-                    <th style="width:150px;">SUPPLIER GSTIN</th>
                     <th style="width:120px; text-align:right;">TAXABLE (&#8377;)</th>
+                    <th style="width:100px; text-align:right;">IGST (&#8377;)</th>
                     <th style="width:100px; text-align:right;">CGST (&#8377;)</th>
                     <th style="width:100px; text-align:right;">SGST (&#8377;)</th>
-                    <th style="width:100px; text-align:right;">IGST (&#8377;)</th>
-                    <th style="width:120px; text-align:center;">STATUS</th>
-                    <th style="width:80px; text-align:center;">ACTION</th>
+                    <th style="width:130px; text-align:center;">RECON STATUS</th>
+                    <th style="width:90px; text-align:center;">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody id="gst-2b-tbody">
@@ -4084,15 +4104,18 @@
                   <h3 style="margin:0;">Invoice Verification: <span id="rd-invoice-no" style="color:var(--cyan);">-</span></h3>
                   <span id="rd-supplier" style="font-size:0.75rem; color:var(--text-muted);">-</span> (<span id="rd-gstin" style="color:var(--purple); font-family:monospace;">-</span>)
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.GstController.closeReconDrawer()">&times; Close</button>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.auditSelected()">Audit Trail</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.closeReconDrawer()">&times; Close</button>
+                </div>
               </div>
-              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:14px; font-size:0.85rem;">
+              <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-bottom:14px; font-size:0.85rem;">
                 <div style="padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                   <div style="color:var(--text-muted); font-size:0.7rem;">Date:</div>
                   <div id="rd-date" style="font-weight:700;">-</div>
                 </div>
                 <div style="padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                  <div style="color:var(--text-muted); font-size:0.7rem;">Taxable:</div>
+                  <div style="color:var(--text-muted); font-size:0.7rem;">Taxable Value:</div>
                   <div id="rd-taxable" style="font-weight:700; color:var(--cyan);">&#8377; 0.00</div>
                 </div>
                 <div style="padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
@@ -4103,31 +4126,69 @@
                   <div style="color:var(--text-muted); font-size:0.7rem;">IGST:</div>
                   <div id="rd-igst" style="font-weight:700; color:var(--green);">&#8377; 0.00</div>
                 </div>
+                <div style="padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.7rem;">Eligibility:</div>
+                  <div id="rd-eligibility" style="font-weight:700; color:var(--yellow);">Pending Verification</div>
+                </div>
               </div>
               <div style="display:flex; justify-content:flex-end; gap:10px;">
-                <button class="btn btn-primary" onclick="window.GstController.notifySupplier()">&#128172; Send Discrepancy Notice</button>
+                <button class="btn btn-secondary" onclick="window.GstController.openLinkedBill()">📖 Open Purchase Bill</button>
+                <button class="btn btn-primary" onclick="window.GstController.notifySupplier()">💬 Send Discrepancy Notice</button>
               </div>
             </div>
           </div>
 
-          <!-- Tab Panel 2: GSTR-1 Outward Filing -->
+          <!-- Tab Panel 2: GSTR-3B Tax Set-Off Summary -->
+          <div id="gst-panel-3b" style="display:none;">
+            <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600; font-size:0.9rem; color:var(--text-main);">Section 49 / 49A / 49B Statutory Credit Consumption &amp; Cash Liability</span>
+              <button class="btn btn-secondary btn-sm" onclick="window.GstController.loadGstr3bData()">🔄 Recalculate 3B</button>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>TAX HEAD</th>
+                    <th style="text-align:right;">OUTWARD TAX LIABILITY (&#8377;)</th>
+                    <th style="text-align:right;">ELIGIBLE ITC AVAILABLE (&#8377;)</th>
+                    <th style="text-align:right;">ITC CONSUMED (&#8377;)</th>
+                    <th style="text-align:right;">NET CASH PAYABLE (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="gst-3b-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading GSTR-3B tax calculation...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Panel 3: GSTR-1 Statutory Return Center -->
           <div id="gst-panel-1" style="display:none;">
-            <div style="display:flex; gap:8px; margin-bottom:12px;">
-              <button id="btn-gstr1-b2b" class="btn btn-secondary btn-sm gstr1-subtab-btn active" onclick="window.GstController.switchGstr1Subtab('B2B')">4A - B2B Invoices</button>
-              <button id="btn-gstr1-b2cs" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('B2CS')">7 - B2CS Consumer Supplies</button>
-              <button id="btn-gstr1-hsn" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('HSN')">12 - HSN/SAC Summary</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; gap:6px;">
+                <button id="btn-gstr1-b2b" class="btn btn-secondary btn-sm gstr1-subtab-btn active" onclick="window.GstController.switchGstr1Subtab('B2B')">Table 4: B2B Invoices</button>
+                <button id="btn-gstr1-b2cs" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('B2CS')">Table 7: B2C Small</button>
+                <button id="btn-gstr1-cdnr" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('CDNR')">Table 9B: CDNR (Credit/Debit Notes)</button>
+                <button id="btn-gstr1-hsn" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('HSN')">Table 12: HSN Summary</button>
+                <button id="btn-gstr1-docs" class="btn btn-secondary btn-sm gstr1-subtab-btn" onclick="window.GstController.switchGstr1Subtab('DOCS')">Table 13: Documents Issued</button>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="txtSearchGstr1" class="form-input" placeholder="Search customer, invoice, HSN..." style="width:220px;" oninput="window.GstController.filterGstr1Records()">
+                <button class="btn btn-secondary btn-sm" onclick="window.GstController.loadGstr1Data()">Refresh</button>
+              </div>
             </div>
 
             <div id="panel-gstr1-b2b" class="gstr1-subpanel data-panel" style="overflow-x:auto;">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>PARTY GSTIN</th>
+                    <th>CUSTOMER GSTIN</th>
                     <th>PARTY NAME</th>
                     <th>INVOICE NO.</th>
-                    <th>DATE</th>
-                    <th style="text-align:right;">VALUE (&#8377;)</th>
+                    <th style="width:105px;">DATE</th>
+                    <th style="text-align:right;">INVOICE VALUE (&#8377;)</th>
                     <th>POS</th>
+                    <th style="text-align:right;">RATE (%)</th>
                     <th style="text-align:right;">TAXABLE (&#8377;)</th>
                     <th style="text-align:right;">IGST (&#8377;)</th>
                     <th style="text-align:right;">CGST (&#8377;)</th>
@@ -4135,7 +4196,7 @@
                   </tr>
                 </thead>
                 <tbody id="gstr1-b2b-tbody">
-                  <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading B2B registered invoices...</td></tr>
+                  <tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-dim);">Loading B2B registered invoices...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -4146,7 +4207,7 @@
                   <tr>
                     <th>SUPPLY TYPE</th>
                     <th>PLACE OF SUPPLY (POS)</th>
-                    <th>RATE (%)</th>
+                    <th style="text-align:right;">RATE (%)</th>
                     <th style="text-align:right;">TAXABLE VALUE (&#8377;)</th>
                     <th style="text-align:right;">IGST (&#8377;)</th>
                     <th style="text-align:right;">CGST (&#8377;)</th>
@@ -4155,6 +4216,27 @@
                 </thead>
                 <tbody id="gstr1-b2cs-tbody">
                   <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">Loading B2CS consumer supplies...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="panel-gstr1-cdnr" class="gstr1-subpanel data-panel" style="display:none; overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>PARTY GSTIN</th>
+                    <th>PARTY NAME</th>
+                    <th>NOTE NO.</th>
+                    <th style="width:105px;">DATE</th>
+                    <th>NOTE TYPE</th>
+                    <th>ORIGINAL INVOICE</th>
+                    <th style="text-align:right;">NOTE VALUE (&#8377;)</th>
+                    <th style="text-align:right;">TAXABLE (&#8377;)</th>
+                    <th style="text-align:right;">TOTAL TAX (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="gstr1-cdnr-tbody">
+                  <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);">Loading Credit/Debit Notes (CDNR)...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -4169,7 +4251,7 @@
                     <th style="text-align:right;">TOTAL QTY</th>
                     <th style="text-align:right;">TOTAL VALUE (&#8377;)</th>
                     <th style="text-align:right;">TAXABLE (&#8377;)</th>
-                    <th>RATE (%)</th>
+                    <th style="text-align:right;">RATE (%)</th>
                     <th style="text-align:right;">IGST (&#8377;)</th>
                     <th style="text-align:right;">CGST (&#8377;)</th>
                     <th style="text-align:right;">SGST (&#8377;)</th>
@@ -4179,6 +4261,51 @@
                   <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading HSN summary...</td></tr>
                 </tbody>
               </table>
+            </div>
+
+            <div id="panel-gstr1-docs" class="gstr1-subpanel data-panel" style="display:none; overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>NATURE OF DOCUMENT</th>
+                    <th>SERIAL FROM</th>
+                    <th>SERIAL TO</th>
+                    <th style="text-align:right;">TOTAL NUMBER</th>
+                    <th style="text-align:right;">CANCELLED</th>
+                    <th style="text-align:right;">NET ISSUED</th>
+                  </tr>
+                </thead>
+                <tbody id="gstr1-docs-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-dim);">Loading Documents Issued summary...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rule 36(4) Statutory Discrepancy Notice Modal -->
+        <div id="modal-supplier-notice" class="modal-overlay" style="display:none;">
+          <div class="modal-card" style="max-width:680px; width:95%;">
+            <div class="modal-header">
+              <div>
+                <h3 class="modal-title">Supplier ITC Compliance Notice (Rule 36(4))</h3>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Statutory Notice Demand for ITC Verification — <span id="sn-party-name" style="color:var(--cyan); font-weight:700;">-</span></p>
+              </div>
+              <button class="modal-close-btn" onclick="window.GstController.closeSupplierNotice()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+              <div style="margin-bottom:12px;">
+                <label class="form-label" style="font-size:0.75rem;">Statutory Compliance Demand Text</label>
+                <textarea id="sn-notice-text" class="form-input" style="height:210px; font-family:monospace; font-size:0.8rem; line-height:1.4; resize:vertical;" readonly></textarea>
+              </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+              <button class="btn btn-secondary btn-sm" onclick="window.GstController.copyNoticeText()">📋 Copy Text</button>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" onclick="window.GstController.sendNoticeEmail()">✉️ Send Email</button>
+                <button class="btn btn-primary" onclick="window.GstController.sendNoticeWhatsapp()">💬 Open WhatsApp</button>
+                <button class="btn btn-secondary" onclick="window.GstController.closeSupplierNotice()">Close</button>
+              </div>
             </div>
           </div>
         </div>
@@ -5625,6 +5752,12 @@
             <button type="button" class="settings-tab-btn" data-section="SHORTCUTS" onclick="window.SettingsController.switchSection('SHORTCUTS')">
               <span>&#9000;&#65039;</span> Shortcuts
             </button>
+            <button type="button" class="settings-tab-btn" data-section="BACKUP" onclick="window.SettingsController.switchSection('BACKUP')">
+              <span>💾</span> Database Backups
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="ROLLBACK" onclick="window.SettingsController.switchSection('ROLLBACK')">
+              <span>🛡️</span> Safe Rollback
+            </button>
           </div>
 
           <!-- PANEL HOST -->
@@ -5974,6 +6107,103 @@ Morbi, Gujarat | Phone: +91 90999 39193</textarea>
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- 9. DATABASE BACKUP & RECOVERY PANEL (BackupRestore.fxml Parity) -->
+            <div id="settings-panel-backup" class="settings-subpanel" data-section="BACKUP" style="display:none;">
+              <div class="data-panel" style="padding:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">PostgreSQL Disaster Recovery &amp; Backup Catalog</h3>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Automated pg_dump snapshots, SHA256 integrity validation, and staged rollback points</p>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.loadBackups()">🔄 Refresh Catalog</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.exportRecoveryPackage()">📦 Export Recovery Package</button>
+                    <button class="btn btn-primary btn-sm" onclick="window.SettingsController.triggerImmediateBackup()">💾 Create Backup Now</button>
+                  </div>
+                </div>
+
+                <!-- 4 KPI Metrics matching BackupRestore.fxml -->
+                <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
+                  <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 10px 14px;">
+                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem;">DATABASE SIZE</span></div>
+                    <div class="kpi-value" id="backup-kpi-size" style="font-size:1.15rem; color:var(--cyan);">--</div>
+                    <div class="kpi-meta" id="backup-kpi-health" style="font-size:0.65rem; color:var(--green);">HEALTHY (READY)</div>
+                  </div>
+                  <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 10px 14px;">
+                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--purple-accent);">AVAILABLE BACKUPS</span></div>
+                    <div class="kpi-value" id="backup-kpi-count" style="font-size:1.15rem; color:var(--purple-accent);">0</div>
+                    <div class="kpi-meta" style="font-size:0.65rem;">Archived Snapshots</div>
+                  </div>
+                  <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 10px 14px;">
+                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--green);">LATEST BACKUP</span></div>
+                    <div class="kpi-value" id="backup-kpi-last" style="font-size:1.05rem; color:var(--green); font-weight:700;">Never</div>
+                    <div class="kpi-meta" style="font-size:0.65rem;">Snapshot verified</div>
+                  </div>
+                  <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 10px 14px;">
+                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--yellow);">DATA RETENTION</span></div>
+                    <div class="kpi-value" style="font-size:1.05rem; color:var(--yellow); font-weight:700;">Active 7 Days</div>
+                    <div class="kpi-meta" style="font-size:0.65rem;">Manual + Auto policy</div>
+                  </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>ARCHIVE FILE NAME</th>
+                        <th style="width:160px;">CREATED TIMESTAMP</th>
+                        <th style="width:110px;">SIZE</th>
+                        <th style="width:110px; text-align:center;">STATUS</th>
+                        <th style="width:110px; text-align:center;">TRIGGER</th>
+                        <th style="width:200px; text-align:right;">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody id="backups-table-tbody">
+                      <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No backup archives found. Click "Create Backup Now" to capture an immediate snapshot.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. SAFE ROLLBACK PANEL (SafeRollback.fxml Parity) -->
+            <div id="settings-panel-rollback" class="settings-subpanel" data-section="ROLLBACK" style="display:none;">
+              <div class="data-panel" style="padding:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Safe Application Rollback Studio</h3>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Return to a previous application version while preserving all production database records and attachments</p>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.loadSafeRollback()">🔄 Refresh Candidates</button>
+                </div>
+
+                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px;">
+                  <span style="font-size:1.5rem;">🛡️</span>
+                  <div style="font-size:0.8rem; color:var(--text-main); line-height:1.4;">
+                    <strong>Zero-Data-Loss Guarantee:</strong> A rollback switches the application package only. Sales invoices, purchase bills, general ledger, payment vouchers, and customer balances are preserved. A safety snapshot is created automatically before execution.
+                  </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:110px;">TARGET RELEASE</th>
+                        <th>INSTALLER PACKAGE</th>
+                        <th style="width:120px;">SCHEMA VER</th>
+                        <th style="width:140px; text-align:center;">COMPATIBILITY</th>
+                        <th>SHA256 CHECKSUM</th>
+                        <th style="width:90px;">SIZE</th>
+                        <th style="width:200px; text-align:right;">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rollback-candidates-tbody">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -7126,63 +7356,215 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <div class="side-drawer" id="drawer-invoice-details">
     <div class="drawer-header">
       <div>
-        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sales Tax Invoice</div>
+        <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sales Tax Invoice</div>
         <h3 id="drawer-inv-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
         <span id="drawer-inv-status" class="badge badge-paid">APPROVED</span>
+        <span id="drawer-inv-pay-status" class="badge badge-pending">UNPAID</span>
         <button class="modal-close" onclick="closeInvoiceDrawer()">&times;</button>
       </div>
     </div>
+
+    <!-- 5 TABS NAVIGATION BAR -->
+    <div class="drawer-tabs-bar">
+      <button class="drawer-tab-btn active" id="tab-btn-sale-summary" onclick="window.SalesController.switchDrawerTab('summary')">📌 Summary</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-items" onclick="window.SalesController.switchDrawerTab('items')">📦 Consignment Items</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-payments" onclick="window.SalesController.switchDrawerTab('payments')">💳 Payments &amp; Allocations</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">◷ Audit Trail</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">📑 Documents &amp; Actions</button>
+    </div>
+
     <div class="drawer-body">
-      <div class="drawer-section">
-        <div class="drawer-grid">
-          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-inv-date">-</div></div>
-          <div><div class="drawer-grid-label">Transporter</div><div class="drawer-grid-val" id="drawer-transporter">-</div></div>
-          <div><div class="drawer-grid-label">Vehicle #</div><div class="drawer-grid-val" id="drawer-vehicle">-</div></div>
-          <div><div class="drawer-grid-label">Payment Terms</div><div class="drawer-grid-val">15 Days</div></div>
+      <!-- TAB 1: SUMMARY -->
+      <div class="drawer-tab-pane active" id="pane-sale-summary">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Invoice Key Metadata</div>
+          <div class="drawer-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div><div class="drawer-label">Invoice Date</div><div class="drawer-value" id="drawer-inv-date">-</div></div>
+            <div><div class="drawer-label">Due Date</div><div class="drawer-value" id="drawer-inv-due">-</div></div>
+            <div><div class="drawer-label">Payment Terms</div><div class="drawer-value" id="drawer-inv-terms">15 Days</div></div>
+            <div><div class="drawer-label">Reference No</div><div class="drawer-value" id="drawer-inv-ref">-</div></div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Customer Profile</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="drawer-cust-name">-</div>
+              <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;">GSTIN: <span id="drawer-cust-gstin" style="font-family: monospace;">-</span></div>
+              <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Contact: <span id="drawer-cust-phone">-</span> • <span id="drawer-cust-email">-</span></div>
+            </div>
+            <div>
+              <div class="drawer-label">Billing Address</div>
+              <div style="font-size: 0.8rem; color: var(--text-main); margin-top: 2px;" id="drawer-cust-address">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Logistics &amp; Transport Details</div>
+          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div><div class="drawer-label">Transporter</div><div class="drawer-value" id="drawer-transporter">-</div></div>
+            <div><div class="drawer-label">Vehicle #</div><div class="drawer-value" id="drawer-vehicle">-</div></div>
+            <div><div class="drawer-label">Door Delivery</div><div class="drawer-value" id="drawer-door-delivery">-</div></div>
+            <div style="grid-column: span 3;"><div class="drawer-label">Shipping / Delivery Address</div><div class="drawer-value" id="drawer-delivery-address">-</div></div>
+          </div>
+        </div>
+
+        <div class="drawer-section" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <div class="drawer-section-title" style="color: var(--cyan);">Tax &amp; Financial Breakdown</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Taxable Subtotal:</span>
+                <span id="drawer-taxable-amt" style="font-weight: 600;">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">GST Tax Amount:</span>
+                <span id="drawer-gst-amt" style="font-weight: 600;">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Extra Charges &amp; Freight:</span>
+                <span id="drawer-charges-amt" style="font-weight: 600;">&#8377; 0.00</span>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">
+                <span style="color: var(--cyan);">Grand Total:</span>
+                <span id="drawer-grand-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                <span style="color: var(--green);">Total Paid:</span>
+                <span id="drawer-paid-amt" style="color: var(--green); font-weight: 700;">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700;">
+                <span style="color: var(--red);">Remaining Balance:</span>
+                <span id="drawer-balance-amt" style="color: var(--red); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Customer Profile</div>
-        <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;" id="drawer-cust-name">-</div>
-        <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 2px;">GSTIN: <span id="drawer-cust-gstin" style="font-family: monospace;">-</span></div>
-        <div style="font-size: 0.8rem; color: var(--text-dim);" id="drawer-cust-address">-</div>
-        <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Phone: <span id="drawer-cust-phone">-</span></div>
+      <!-- TAB 2: CONSIGNMENT ITEMS -->
+      <div class="drawer-tab-pane" id="pane-sale-items">
+        <div class="drawer-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div class="drawer-section-title" style="margin-bottom:0;">Line Items Consignment</div>
+            <span id="drawer-items-count-badge" class="badge badge-paid" style="font-size:0.75rem;">0 Items</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item Code / Description</th>
+                  <th>HSN/SAC</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Rate</th>
+                  <th>Taxable</th>
+                  <th>GST %</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="drawer-items-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Line Items Consignment</div>
-        <table class="data-table" style="font-size: 0.78rem;">
-          <thead>
-            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th style="text-align: right;">Total</th></tr>
-          </thead>
-          <tbody id="drawer-items-tbody"></tbody>
-        </table>
+      <!-- TAB 3: PAYMENTS & ALLOCATIONS -->
+      <div class="drawer-tab-pane" id="pane-sale-payments">
+        <div class="drawer-section" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Payment Status</div>
+              <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                <span id="drawer-pay-paid-display">&#8377; 0.00</span> paid of <span id="drawer-pay-total-display">&#8377; 0.00</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="background: var(--green); border-color: var(--green);" onclick="window.SalesController.recordPaymentForCurrentDrawer()">+ Record Payment</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Payment Transaction History</div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Payment ID</th>
+                  <th>Mode</th>
+                  <th>Reference</th>
+                  <th>Notes</th>
+                  <th>Amount</th>
+                  <th>Proof</th>
+                </tr>
+              </thead>
+              <tbody id="drawer-payments-tbody">
+                <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:14px;">Loading payment history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Taxable Subtotal:</span>
-          <span id="drawer-taxable-amt" style="font-weight: 600;">&#8377; 0.00</span>
+      <!-- TAB 4: AUDIT TRAIL -->
+      <div class="drawer-tab-pane" id="pane-sale-audit">
+        <div class="drawer-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div class="drawer-section-title" style="margin-bottom:0;">Authoritative Audit Log</div>
+            <span class="badge badge-paid" style="font-size:0.72rem;">Server Backed</span>
+          </div>
+          <div id="drawer-sale-audit-timeline" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align:center; color:var(--text-dim); padding: 16px;">Loading activity history...</div>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">GST Tax Amount:</span>
-          <span id="drawer-gst-amt" style="font-weight: 600;">&#8377; 0.00</span>
+      </div>
+
+      <!-- TAB 5: DOCUMENTS & ACTIONS -->
+      <div class="drawer-tab-pane" id="pane-sale-docs">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="drawer-section">
+            <div class="drawer-section-title">Official Tax Invoice (PDF)</div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate and print official GST-compliant Tax Invoice formatted via canonical desktop engine.</p>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">👁️ View / Print PDF</button>
+              <button class="btn btn-secondary" onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">⬇️ Download</button>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <div class="drawer-section-title">Order Dispatch Barcode</div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate Code-128 dispatch label barcode for carton tracking and delivery logistics.</p>
+            <button class="btn btn-secondary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">📦 Print Dispatch Barcode</button>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Freight &amp; Charges:</span>
-          <span id="drawer-charges-amt" style="font-weight: 600;">&#8377; 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
-          <span style="color: var(--cyan);">Grand Total:</span>
-          <span id="drawer-grand-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Document Attachments</div>
+          <div id="drawer-sale-attachments-list" style="margin-bottom: 12px; font-size: 0.82rem; color: var(--text-dim);">No extra files attached.</div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" id="drawer-sale-attachment-input" style="display:none;" onchange="window.SalesController.handleAttachmentUpload(event)" />
+            <button class="btn btn-secondary" onclick="document.getElementById('drawer-sale-attachment-input').click()">📎 Attach File (PDF / Images)</button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- DRAWER ACTION FOOTER -->
     <div class="drawer-footer">
+      <div id="drawer-sale-approval-box" style="display:none; margin-right: auto; gap: 8px; align-items: center;">
+        <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING APPROVAL:</span>
+        <button class="btn btn-primary" style="background:var(--green); border-color:var(--green); font-size:0.78rem; padding:6px 12px;" onclick="window.SalesController.approveSelectedSale()">✔ Approve</button>
+        <button class="btn btn-danger" style="font-size:0.78rem; padding:6px 12px;" onclick="window.SalesController.rejectSelectedSale()">✖ Reject</button>
+      </div>
       <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
+      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">◷ Full Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="window.SalesController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196; Print Tax Invoice</button>
     </div>
@@ -7192,57 +7574,343 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <div class="side-drawer" id="drawer-purchase-details-inspect">
     <div class="drawer-header">
       <div>
-        <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Purchase Inward Bill</div>
+        <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Purchase Inward Bill</div>
         <h3 id="drawer-pur-no" style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</h3>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
         <span id="drawer-pur-status" class="badge badge-paid">ACCEPTED</span>
+        <span id="drawer-pur-pay-status" class="badge badge-pending">UNPAID</span>
         <button class="modal-close" onclick="closePurchaseDrawer()">&times;</button>
       </div>
     </div>
+
+    <!-- 5 TABS NAVIGATION BAR -->
+    <div class="drawer-tabs-bar">
+      <button class="drawer-tab-btn active" id="tab-btn-pur-summary" onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">📌 Summary</button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-items" onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">📦 Inward Items</button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-payments" onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">💳 Outflow Payments</button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-audit" onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">◷ Audit Trail</button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-docs" onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">📑 Documents &amp; Proof</button>
+    </div>
+
     <div class="drawer-body">
-      <div class="drawer-section">
-        <div class="drawer-grid">
-          <div><div class="drawer-grid-label">Date</div><div class="drawer-grid-val" id="drawer-pur-date">-</div></div>
-          <div><div class="drawer-grid-label">Supplier GSTIN</div><div class="drawer-grid-val" id="drawer-pur-supp-gstin" style="font-family: monospace;">-</div></div>
-          <div><div class="drawer-grid-label">Contact</div><div class="drawer-grid-val" id="drawer-pur-supp-phone">-</div></div>
+      <!-- TAB 1: SUMMARY -->
+      <div class="drawer-tab-pane active" id="pane-pur-summary">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Bill Key Metadata</div>
+          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div><div class="drawer-label">Bill Date</div><div class="drawer-value" id="drawer-pur-date">-</div></div>
+            <div><div class="drawer-label">Supplier GSTIN</div><div class="drawer-value" id="drawer-pur-supp-gstin" style="font-family: monospace;">-</div></div>
+            <div><div class="drawer-label">Supplier Contact</div><div class="drawer-value" id="drawer-pur-supp-phone">-</div></div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Supplier Profile</div>
+          <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="drawer-pur-supp-name">-</div>
+        </div>
+
+        <div class="drawer-section" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <div class="drawer-section-title" style="color: var(--cyan);">Taxable Inward &amp; Payable Total</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Taxable Inward:</span>
+                <span id="drawer-pur-taxable" style="font-weight: 600;">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Input Tax Credit (ITC):</span>
+                <span id="drawer-pur-gst" style="font-weight: 600;">&#8377; 0.00</span>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">
+                <span style="color: var(--cyan);">Total Bill Payable:</span>
+                <span id="drawer-pur-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                <span style="color: var(--green);">Paid Outflow:</span>
+                <span id="drawer-pur-paid" style="color: var(--green); font-weight: 700;">&#8377; 0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700;">
+                <span style="color: var(--red);">Remaining Due:</span>
+                <span id="drawer-pur-balance" style="color: var(--red); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Supplier Profile</div>
-        <div style="font-size: 0.95rem; font-weight: 700;" id="drawer-pur-supp-name">-</div>
+      <!-- TAB 2: INWARD ITEMS -->
+      <div class="drawer-tab-pane" id="pane-pur-items">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Inward Material Line Items</div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Material / Description</th>
+                  <th>Qty</th>
+                  <th>Cost Rate</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="drawer-pur-items-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div class="drawer-section">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Inward Item Lines</div>
-        <table class="data-table" style="font-size: 0.78rem;">
-          <thead>
-            <tr><th>#</th><th>Material / Description</th><th>Qty</th><th>Cost Rate</th><th style="text-align: right;">Total</th></tr>
-          </thead>
-          <tbody id="drawer-pur-items-tbody"></tbody>
-        </table>
+      <!-- TAB 3: PAYMENTS & OUTFLOW -->
+      <div class="drawer-tab-pane" id="pane-pur-payments">
+        <div class="drawer-section" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Settlement Status</div>
+              <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                <span id="drawer-pur-pay-paid-disp">&#8377; 0.00</span> paid of <span id="drawer-pur-pay-total-disp">&#8377; 0.00</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="background: var(--green); border-color: var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">+ Record Outflow</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Outflow Voucher History</div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Voucher ID</th>
+                  <th>Mode</th>
+                  <th>Reference</th>
+                  <th>Notes</th>
+                  <th>Amount</th>
+                  <th>Proof</th>
+                </tr>
+              </thead>
+              <tbody id="drawer-pur-payments-tbody">
+                <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:14px;">Loading payment history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div class="drawer-section" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Taxable Inward:</span>
-          <span id="drawer-pur-taxable" style="font-weight: 600;">&#8377; 0.00</span>
+      <!-- TAB 4: AUDIT TRAIL -->
+      <div class="drawer-tab-pane" id="pane-pur-audit">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Authoritative Inward Audit Trail</div>
+          <div id="drawer-pur-audit-timeline" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align:center; color:var(--text-dim); padding: 16px;">Loading activity history...</div>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">Input Tax Credit (ITC):</span>
-          <span id="drawer-pur-gst" style="font-weight: 600;">&#8377; 0.00</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 6px;">
-          <span style="color: var(--cyan);">Total Bill Payable:</span>
-          <span id="drawer-pur-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+      </div>
+
+      <!-- TAB 5: DOCUMENTS & PROOF -->
+      <div class="drawer-tab-pane" id="pane-pur-docs">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Inward Bill Document</div>
+          <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Print official purchase inward bill voucher generated directly from the canonical desktop engine.</p>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">👁️ View / Print Bill</button>
+            <button class="btn btn-secondary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">⬇️ Download</button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- DRAWER ACTION FOOTER -->
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
+      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">◷ Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196; Print Inward Bill</button>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTHORITATIVE AUDIT TRAIL -->
+  <div class="modal-overlay" id="modal-activity-timeline" style="display: none;">
+    <div class="modal-card" style="max-width: 900px; width: 92vw; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem; color: var(--cyan);">◷</span>
+            <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;">Audit Trail &amp; Activity History</h3>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="audit-modal-reference">Record Reference</div>
+        </div>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-activity-timeline')">&times;</button>
+      </div>
+
+      <div style="padding: 12px 20px; background: rgba(10, 18, 34, 0.75); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 6px; align-items: center;" id="audit-filter-chips">
+          <button class="btn btn-secondary audit-chip-btn active" style="padding: 4px 10px; font-size: 0.75rem;" onclick="window.AppDialogService.filterAuditEvents('All')">All</button>
+          <button class="btn btn-secondary audit-chip-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="window.AppDialogService.filterAuditEvents('Changes')">Changes</button>
+          <button class="btn btn-secondary audit-chip-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="window.AppDialogService.filterAuditEvents('Financial')">Financial</button>
+          <button class="btn btn-secondary audit-chip-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="window.AppDialogService.filterAuditEvents('Documents')">Documents</button>
+          <button class="btn btn-secondary audit-chip-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="window.AppDialogService.filterAuditEvents('Communication')">Communication</button>
+        </div>
+        <div style="font-size: 0.76rem; color: var(--text-dim);" id="audit-events-count">0 events recorded</div>
+      </div>
+
+      <div class="modal-body" id="audit-modal-events" style="flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="text-align: center; color: var(--text-dim); padding: 30px;">Loading audit trail from server...</div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.72rem; color: var(--text-dim);">Historical audit events show authoritative server logs.</div>
+        <button class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-activity-timeline')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RETURN REFUND & SETTLEMENT -->
+  <div class="modal-overlay" id="modal-return-refund" style="display: none;">
+    <div class="modal-card" style="max-width: 860px; width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem; color: var(--green);">💸</span>
+            <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;" id="rr-modal-title">Record Return Refund / Settlement</h3>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="rr-modal-subtitle">Record outbound refund voucher or inward settlement matching desktop ReturnRefund.fxml</div>
+        </div>
+        <button class="modal-close" onclick="window.AppDialogService.closeModal('modal-return-refund')">&times;</button>
+      </div>
+
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- METADATA & AMOUNTS SUMMARY -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--cyan); margin-bottom: 8px;">Return Record Reference</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;">
+              <div><span style="color:var(--text-dim);">Return No:</span> <b id="rr-no" style="color:var(--cyan);">-</b></div>
+              <div><span style="color:var(--text-dim);">Original Doc:</span> <b id="rr-invoice">-</b></div>
+              <div style="grid-column: span 2;"><span style="color:var(--text-dim);">Party:</span> <b id="rr-party-name">-</b></div>
+              <div><span style="color:var(--text-dim);">Return Date:</span> <span id="rr-date-display">-</span></div>
+            </div>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--green); margin-bottom: 8px;">Settlement Position</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+              <span style="color:var(--text-muted);">Total Return:</span>
+              <span id="rr-total" style="font-weight:700;">&#8377; 0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
+              <span style="color:var(--green);">Already Refunded:</span>
+              <span id="rr-refunded" style="font-weight:700; color:var(--green);">&#8377; 0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 800; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 6px; margin-top: 4px;">
+              <span style="color:var(--red);">Remaining Due:</span>
+              <span id="rr-balance" style="color:var(--red); font-family:'Space Grotesk';">&#8377; 0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- REFUND FORM -->
+        <form id="form-return-refund" onsubmit="window.ReturnsController.saveRefund(event)">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Refund Date *</label>
+              <input type="date" id="rr-date" class="form-input" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Payment Mode *</label>
+              <select id="rr-mode" class="form-select" onchange="window.ReturnsController.onRefundModeChange()" required>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Card">Card</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Bank Account</label>
+              <select id="rr-bank-account" class="form-select">
+                <option value="">Default Operating Bank</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Reference / UTR #</label>
+              <input type="text" id="rr-reference" class="form-input" placeholder="e.g. UTR / Cheque / TXN #" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;" id="rr-label-party">Refunded To *</label>
+              <input type="text" id="rr-refunded-party" class="form-input" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Settlement Scope</label>
+              <div style="display: flex; gap: 14px; align-items: center; height: 38px;">
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="rr-scope" id="rr-scope-full" checked onchange="window.ReturnsController.selectFullRefund()" /> Full
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="rr-scope" id="rr-scope-partial" onchange="window.ReturnsController.selectPartialRefund()" /> Partial
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;" id="rr-label-amount">Refund Amount (₹) *</label>
+              <input type="number" id="rr-amount" class="form-input" step="0.01" min="0.01" required oninput="window.ReturnsController.updateRefundPreview()" style="font-size: 1.1rem; font-weight: 700; color: var(--green);" />
+              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">
+                Balance after voucher: <b id="rr-after-balance" style="color: var(--cyan);">&#8377; 0.00</b>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.78rem;">Proof / Bank Slip (Optional, max 25MB)</label>
+              <input type="file" id="rr-proof-file" class="form-input" accept=".pdf,.png,.jpg,.jpeg" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size:0.78rem;">Settlement Remarks / Notes</label>
+            <input type="text" id="rr-notes" class="form-input" placeholder="e.g. Return settlement recorded against goods receipt" />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-return-refund')">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="window.ReturnsController.resetRefundForm()">Reset</button>
+            <button type="submit" id="btn-save-return-refund" class="btn btn-primary" style="background: var(--green); border-color: var(--green);">💾 Save &amp; Record Refund</button>
+          </div>
+        </form>
+
+        <!-- HISTORY OF PREVIOUS REFUNDS ON THIS RETURN -->
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 6px;">
+          <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">Previous Settlement History for this Return</div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.76rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>ID</th>
+                  <th>Mode</th>
+                  <th>Reference</th>
+                  <th>Party</th>
+                  <th>Amount</th>
+                  <th>Proof</th>
+                </tr>
+              </thead>
+              <tbody id="rr-history-tbody">
+                <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:12px;">No previous settlements.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
