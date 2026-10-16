@@ -117,16 +117,22 @@ window.RecordPaymentController = (function() {
       // 2. Populate Summary Card
       this.updateSummaryCard();
 
-      // 3. Populate Form Defaults
+      // 3. Load dynamic master lookups for Payment Mode and Bank Account
+      await this.loadPaymentLookups();
+
+      // 4. Populate Form Defaults
       this.resetForm();
 
-      // 4. Reset Proof Attachment
+      // 5. Reset Proof Attachment
       this.resetProof();
 
       // 5. Dismiss any open drawers and overlays so clicks are never blocked
-      ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
+      if (window.SalesController && typeof window.SalesController.closeInvoiceDrawer === 'function') {
+        window.SalesController.closeInvoiceDrawer();
+      }
+      ['sales-inline-drawer', 'drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) { el.classList.remove('open'); el.style.display = ''; }
+        if (el) { el.classList.remove('open'); el.style.display = 'none'; }
       });
       const ov = document.getElementById('side-drawer-overlay');
       if (ov) ov.classList.remove('open');
@@ -272,6 +278,49 @@ window.RecordPaymentController = (function() {
       if (btnRem) btnRem.disabled = true;
     },
 
+    async loadPaymentLookups() {
+      const modeSelect = document.getElementById('rp-pay-mode');
+      const bankSelect = document.getElementById('rp-bank-account');
+
+      try {
+        let modeList = [];
+        if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+          const res = await window.MasterService.getLookupsByCategoryCode('PAYMENT_MODE').catch(() => []);
+          if (Array.isArray(res)) {
+            modeList = res.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+          }
+        }
+        if (modeList.length === 0) {
+          modeList = ['Bank Transfer', 'Cash', 'Cheque', 'UPI', 'Card', 'Other'];
+        }
+        if (modeSelect) {
+          modeSelect.innerHTML = modeList.map(m => `<option value="${m}" ${m === 'Bank Transfer' ? 'selected' : ''}>${m}</option>`).join('');
+        }
+
+        let accountList = [];
+        if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+          const res = await window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(() => []);
+          if (Array.isArray(res)) {
+            res.forEach(l => {
+              if (l.active !== false && l.lookupValue) {
+                const desc = l.description ? l.description.trim() : '';
+                accountList.push(desc ? `${l.lookupValue.trim()} - ${desc}` : l.lookupValue.trim());
+              }
+            });
+          }
+        }
+        if (bankSelect) {
+          if (accountList.length === 0) {
+            bankSelect.innerHTML = '<option value="">No bank accounts configured in Master Data</option>';
+          } else {
+            bankSelect.innerHTML = accountList.map((a, i) => `<option value="${a}" ${i === 0 ? 'selected' : ''}>${a}</option>`).join('');
+          }
+        }
+      } catch (err) {
+        console.warn('[RecordPaymentController] Failed to load payment lookups:', err);
+      }
+    },
+
     async refreshPayments() {
       const tbody = document.getElementById('rp-history-tbody');
       if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading payment history...</td></tr>`;
@@ -281,24 +330,7 @@ window.RecordPaymentController = (function() {
         paymentHistory = Array.isArray(res) ? res : (res && Array.isArray(res.content) ? res.content : []);
       } catch (e) {
         console.warn('Could not fetch server payments:', e);
-        // Fallback default history if existing invoice was already marked paid
-        if (invoicePaid > 0) {
-          paymentHistory = [
-            {
-              id: 1,
-              date: new Date().toISOString().split('T')[0],
-              mode: 'NEFT/RTGS',
-              referenceNo: 'RTGS-' + Math.floor(100000 + Math.random() * 900000),
-              bankAccount: 'HDFC Bank Primary (XXXX4502)',
-              receivedFrom: currentPartyName,
-              amount: invoicePaid,
-              proofFileName: 'bank_receipt_' + currentInvoiceNo.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf',
-              notes: 'Full settlement for invoice ' + currentInvoiceNo
-            }
-          ];
-        } else {
-          paymentHistory = [];
-        }
+        paymentHistory = [];
       }
 
       this.renderHistoryTable();
@@ -308,13 +340,14 @@ window.RecordPaymentController = (function() {
       const tbody = document.getElementById('rp-history-tbody');
       if (!tbody) return;
 
+      const badge = document.getElementById('rp-history-badge');
+      if (badge) badge.innerText = `${paymentHistory.length} Payments`;
+
       if (!paymentHistory || paymentHistory.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px;">
-              <div style="font-size: 1.6rem; margin-bottom: 6px;">💳</div>
-              <div style="font-weight: 600;">No payment history recorded yet</div>
-              <div style="font-size: 0.74rem;">Use the form above to record the initial payment.</div>
+            <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 36px; font-size: 0.84rem;">
+              No payment records
             </td>
           </tr>
         `;

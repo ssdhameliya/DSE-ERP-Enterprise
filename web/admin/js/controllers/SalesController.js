@@ -251,6 +251,7 @@ window.SalesController = {
   // =========================================================================
   async loadSales() {
     this.initDateFilters();
+    this.installKeyboardShortcuts();
     const tbody = document.getElementById('sales-table-tbody');
     if (!tbody) return;
     try {
@@ -418,7 +419,7 @@ window.SalesController = {
         : `<button class="btn-whatsapp-send" onclick="event.stopPropagation(); window.SalesController.sendWhatsapp('${invNo}')" title="Click to send invoice by WhatsApp">💬 Send</button>`;
 
       return `
-        <tr style="cursor: pointer;" onclick="window.SalesController.openInvoiceDrawer('${invNo}')">
+        <tr style="cursor: pointer;" class="${this.selectedDrawerInvoiceNo === invNo ? 'active-selected-row' : ''}" onclick="window.SalesController.handleRowClick('${invNo}', this)">
           <td style="font-weight: 700; color: var(--cyan);">${invNo}</td>
           <td>${window.FormatUtil.formatDate(s.invoiceDate || s.date)}</td>
           <td style="font-weight: 600;">${custName}</td>
@@ -2920,154 +2921,283 @@ window.SalesController = {
   // =========================================================================
   // 19. SIDE INSPECTION DRAWER
   // =========================================================================
-  async openInvoiceDrawer(invoiceNo) {
-    const drawer = document.getElementById('drawer-invoice-details');
-    const overlay = document.getElementById('side-drawer-overlay');
-    if (!drawer) return;
+  handleRowClick(invoiceNo, trEl) {
+    const inlineDrawer = document.getElementById('sales-inline-drawer');
+    const isInlineOpen = inlineDrawer && inlineDrawer.style.display !== 'none' && inlineDrawer.style.display !== '';
 
-    if (drawer.classList.contains('open') && this.selectedDrawerInvoiceNo === invoiceNo) {
+    // Desktop parity: if drawer is visible and user clicks the same row again -> close drawer and deselect
+    if (isInlineOpen && this.selectedDrawerInvoiceNo === invoiceNo) {
       this.closeInvoiceDrawer();
-      this.selectedDrawerInvoiceNo = null;
       return;
     }
+
+    // First click or clicking a different row -> open details and highlight row
+    this.openInvoiceDrawer(invoiceNo, trEl);
+  },
+
+  async openInvoiceDrawer(invoiceNo, trEl = null) {
+    const inlineDrawer = document.getElementById('sales-inline-drawer');
+    const modalDrawer = document.getElementById('drawer-invoice-details');
+    const overlay = document.getElementById('side-drawer-overlay');
+
+    // Toggle check if modalDrawer is open and same invoice
+    if (modalDrawer && modalDrawer.classList.contains('open') && this.selectedDrawerInvoiceNo === invoiceNo) {
+      this.closeInvoiceDrawer();
+      return;
+    }
+
     this.selectedDrawerInvoiceNo = invoiceNo;
+
+    // Highlight the row in the table
+    document.querySelectorAll('#sales-main-table tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    if (trEl) {
+      trEl.classList.add('active-selected-row');
+    } else {
+      const rows = document.querySelectorAll('#sales-table-tbody tr');
+      rows.forEach(r => {
+        const firstTd = r.querySelector('td');
+        if (firstTd && firstTd.innerText.trim() === invoiceNo) {
+          r.classList.add('active-selected-row');
+        }
+      });
+    }
 
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      const sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
-      this.currentDrawerSale = sale;
-
-      // Header info
-      const elInvNo = document.getElementById('drawer-inv-no');
-      if (elInvNo) elInvNo.innerText = sale.invoiceNo || invoiceNo;
-
-      const elInvDate = document.getElementById('drawer-inv-date');
-      if (elInvDate) elInvDate.innerText = window.FormatUtil.formatDate(sale.invoiceDate);
-
-      const elInvDue = document.getElementById('drawer-inv-due');
-      if (elInvDue) elInvDue.innerText = sale.dueDate ? window.FormatUtil.formatDate(sale.dueDate) : 'Not set';
-
-      const elInvTerms = document.getElementById('drawer-inv-terms');
-      if (elInvTerms) elInvTerms.innerText = sale.paymentTerms || '15 Days';
-
-      const elInvRef = document.getElementById('drawer-inv-ref');
-      if (elInvRef) elInvRef.innerText = sale.referenceNo || '—';
-
-      const elStatus = document.getElementById('drawer-inv-status');
-      if (elStatus) {
-        const docSt = (sale.documentStatus || 'APPROVED').toUpperCase();
-        elStatus.innerText = docSt;
-        elStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : (docSt === 'PENDING APPROVAL' ? 'badge-pending' : 'badge-danger')}`;
-      }
-
-      const elPayStatus = document.getElementById('drawer-inv-pay-status');
-      if (elPayStatus) {
-        const paySt = (sale.paymentStatus || 'UNPAID').toUpperCase();
-        elPayStatus.innerText = paySt;
-        elPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
-      }
-
-      // Customer profile
-      const cust = sale.customer || {};
-      const elCustName = document.getElementById('drawer-cust-name');
-      if (elCustName) elCustName.innerText = cust.name || sale.customerName || 'Walk-in Client';
-
-      const elCustGstin = document.getElementById('drawer-cust-gstin');
-      if (elCustGstin) elCustGstin.innerText = cust.gstin || sale.billingGstin || 'Unregistered / Consumer';
-
-      const elCustPhone = document.getElementById('drawer-cust-phone');
-      if (elCustPhone) elCustPhone.innerText = cust.phone || '-';
-
-      const elCustEmail = document.getElementById('drawer-cust-email');
-      if (elCustEmail) elCustEmail.innerText = cust.email || '-';
-
-      const elCustAddr = document.getElementById('drawer-cust-address');
-      if (elCustAddr) elCustAddr.innerText = cust.address || sale.billingAddress || '-';
-
-      // Logistics
-      const elTransp = document.getElementById('drawer-transporter');
-      if (elTransp) elTransp.innerText = sale.transporter || 'Self / By Hand';
-
-      const elVehicle = document.getElementById('drawer-vehicle');
-      if (elVehicle) elVehicle.innerText = sale.vehicleNumber || '-';
-
-      const elDoor = document.getElementById('drawer-door-delivery');
-      if (elDoor) elDoor.innerText = sale.doorDelivery || 'Standard Delivery';
-
-      const elDeliveryAddr = document.getElementById('drawer-delivery-address');
-      if (elDeliveryAddr) elDeliveryAddr.innerText = sale.deliveryAddress || sale.billingAddress || cust.address || '-';
-
-      // Financials
-      const taxable = sale.subtotal != null ? sale.subtotal : (sale.taxableAmount || 0);
-      const gst = sale.gstAmount || 0;
-      const charges = sale.chargeAmount != null ? sale.chargeAmount : (sale.chargesAmount || 0);
-      const total = sale.totalAmount != null ? sale.totalAmount : 0;
-      const paid = sale.paidAmount != null ? sale.paidAmount : (sale.paymentStatus === 'PAID' ? total : 0);
-      const balance = Math.max(0, total - paid);
-
-      const elTaxable = document.getElementById('drawer-taxable-amt');
-      if (elTaxable) elTaxable.innerText = window.FormatUtil.formatRupees(taxable);
-
-      const elGst = document.getElementById('drawer-gst-amt');
-      if (elGst) elGst.innerText = window.FormatUtil.formatRupees(gst);
-
-      const elCharges = document.getElementById('drawer-charges-amt');
-      if (elCharges) elCharges.innerText = window.FormatUtil.formatRupees(charges);
-
-      const elGrand = document.getElementById('drawer-grand-total');
-      if (elGrand) elGrand.innerText = window.FormatUtil.formatRupees(total);
-
-      const elPaid = document.getElementById('drawer-paid-amt');
-      if (elPaid) elPaid.innerText = window.FormatUtil.formatRupees(paid);
-
-      const elBalance = document.getElementById('drawer-balance-amt');
-      if (elBalance) elBalance.innerText = window.FormatUtil.formatRupees(balance);
-
-      const elPayPaid = document.getElementById('drawer-pay-paid-display');
-      if (elPayPaid) elPayPaid.innerText = window.FormatUtil.formatRupees(paid);
-
-      const elPayTotal = document.getElementById('drawer-pay-total-display');
-      if (elPayTotal) elPayTotal.innerText = window.FormatUtil.formatRupees(total);
-
-      // Line items table
-      const tbody = document.getElementById('drawer-items-tbody');
-      const lines = sale.lines || [];
-      const countBadge = document.getElementById('drawer-items-count-badge');
-      if (countBadge) countBadge.innerText = `${lines.length} Items`;
-
-      if (tbody) {
-        if (lines.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No line item records.</td></tr>`;
-        } else {
-          tbody.innerHTML = lines.map((l, idx) => `
-            <tr>
-              <td style="color: var(--text-dim);">${idx + 1}</td>
-              <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
-              <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
-              <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
-              <td>${l.itemUnit || l.unit || 'PCS'}</td>
-              <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
-              <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
-              <td>${l.gstPercent || l.taxRate || 18}%</td>
-              <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
-            </tr>
-          `).join('');
+      let sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invoiceNo);
+      if (!sale || !sale.lines || sale.lines.length === 0) {
+        try {
+          sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
+        } catch (e) {
+          console.warn('Could not fetch full sale from API:', e);
         }
       }
+      this.currentDrawerSale = sale || { invoiceNo };
 
-      // Admin approval actions box
-      const approvalBox = document.getElementById('drawer-sale-approval-box');
-      if (approvalBox) {
-        const isPending = (sale.documentStatus || '').toUpperCase() === 'PENDING APPROVAL';
-        approvalBox.style.display = isPending ? 'flex' : 'none';
+      const s = this.currentDrawerSale;
+      const cust = s.customer || {};
+      const custName = cust.name || s.customerName || s.partyName || 'Unknown Customer';
+      const custPhone = cust.phone || s.mobile || s.customerPhone || '';
+      const custEmail = cust.email || '';
+      const contactDisp = custPhone + (custPhone && custEmail ? ' • ' : '') + custEmail;
+
+      const grandTotal = s.totalAmount != null ? s.totalAmount : (s.total || 0);
+      const isPaid = s.paymentStatus === 'PAID';
+      const isCancelled = s.documentStatus === 'CANCELLED';
+      const paid = isCancelled ? 0 : (s.paidAmount != null ? s.paidAmount : (isPaid ? grandTotal : 0));
+      const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
+      const gstAmount = s.gstAmount || 0;
+      const charges = s.chargesAmount != null ? s.chargesAmount : (s.chargeAmount || 0);
+      const chargesTax = s.chargesTaxAmount || 0;
+      const docSt = (s.documentStatus || 'APPROVED').toUpperCase();
+
+      // --- POPULATE INLINE DOCKED DRAWER (Screenshots 3 & 4) ---
+      if (inlineDrawer) {
+        const elSideInvNo = document.getElementById('side-inv-no');
+        if (elSideInvNo) elSideInvNo.innerText = s.invoiceNo || invoiceNo;
+
+        const elSideDate = document.getElementById('side-inv-date');
+        if (elSideDate) elSideDate.innerText = window.FormatUtil.formatDate(s.invoiceDate || s.date);
+
+        const elSideCust = document.getElementById('side-cust-name');
+        if (elSideCust) elSideCust.innerText = custName;
+
+        const elSidePhone = document.getElementById('side-cust-phone');
+        if (elSidePhone) elSidePhone.innerText = contactDisp || '-';
+
+        const elSideDoc = document.getElementById('side-doc-status');
+        if (elSideDoc) {
+          elSideDoc.innerText = docSt;
+          elSideDoc.className = `badge ${isCancelled ? 'badge-danger' : (docSt === 'PENDING APPROVAL' ? 'badge-pending' : 'badge-paid')}`;
+        }
+
+        const elSideTotal = document.getElementById('side-amt-total');
+        if (elSideTotal) elSideTotal.innerText = window.FormatUtil.formatRupees(grandTotal);
+
+        const elSidePaid = document.getElementById('side-amt-paid');
+        if (elSidePaid) elSidePaid.innerText = window.FormatUtil.formatRupees(paid);
+
+        const elSidePending = document.getElementById('side-amt-pending');
+        if (elSidePending) elSidePending.innerText = window.FormatUtil.formatRupees(pending);
+
+        const elSideDue = document.getElementById('side-amt-due');
+        if (elSideDue) {
+          const dueStr = s.dueDate ? window.FormatUtil.formatDate(s.dueDate) : 'Not set';
+          const dueStatus = isCancelled ? 'Cancelled' : (pending <= 0.01 ? 'Settled' : 'Pending');
+          elSideDue.innerText = `${dueStr} • ${dueStatus}`;
+        }
+
+        const elSideGst = document.getElementById('side-amt-gst');
+        if (elSideGst) elSideGst.innerText = window.FormatUtil.formatRupees(gstAmount);
+
+        const elSideCharges = document.getElementById('side-amt-charges');
+        if (elSideCharges) elSideCharges.innerText = window.FormatUtil.formatRupees(charges);
+
+        const elSideChgTax = document.getElementById('side-amt-chg-tax');
+        if (elSideChgTax) elSideChgTax.innerText = window.FormatUtil.formatRupees(chargesTax);
+
+        const elSideChgList = document.getElementById('side-amt-chg-list');
+        if (elSideChgList) {
+          const chgArr = s.charges || [];
+          if (chgArr.length > 0) {
+            elSideChgList.innerHTML = chgArr.map(c => `${c.chargeType || 'Charge'} — ${window.FormatUtil.formatRupees(c.amount || 0)}`).join('<br>');
+          } else {
+            elSideChgList.innerText = 'Not Applicable';
+          }
+        }
+
+        const elSideBilling = document.getElementById('side-addr-billing');
+        if (elSideBilling) elSideBilling.innerText = s.billingAddress || cust.address || 'Not set';
+
+        const elSideShipping = document.getElementById('side-addr-shipping');
+        if (elSideShipping) {
+          const ship = s.deliveryAddress || (s.sameAsBilling ? (s.billingAddress || cust.address) : '') || 'Not set';
+          elSideShipping.innerText = ship;
+        }
+
+        const elSideGstType = document.getElementById('side-tax-type');
+        if (elSideGstType) elSideGstType.innerText = s.gstType || 'GST';
+
+        const elSideGstin = document.getElementById('side-tax-gstin');
+        if (elSideGstin) elSideGstin.innerText = s.gstin || cust.gstin || s.billingGstin || 'Not Applicable';
+
+        const elSideTrans = document.getElementById('side-trans-name');
+        if (elSideTrans) elSideTrans.innerText = s.transporter || 'Not Applicable';
+
+        const elSideDoor = document.getElementById('side-trans-door');
+        if (elSideDoor) elSideDoor.innerText = s.doorDelivery || 'Not Applicable';
+
+        const elSideVehicle = document.getElementById('side-trans-vehicle');
+        if (elSideVehicle) elSideVehicle.innerText = s.vehicleNumber || 'Not Applicable';
+
+        const elSidePerson = document.getElementById('side-trans-person');
+        if (elSidePerson) {
+          const person = s.contactPerson || '';
+          const pMobile = s.contactPersonMobile || '';
+          elSidePerson.innerText = person ? `${person}${pMobile ? ' (' + pMobile + ')' : ''}` : 'Not Applicable';
+        }
+
+        // Display the inline drawer docked beside table (Screenshots 3 & 4)
+        inlineDrawer.style.display = 'flex';
       }
 
-      // Default to summary tab
-      this.switchDrawerTab('summary');
+      // Also populate the modal drawer elements if present
+      if (modalDrawer) {
+        const elInvNo = document.getElementById('drawer-inv-no');
+        if (elInvNo) elInvNo.innerText = s.invoiceNo || invoiceNo;
 
-      drawer.classList.add('open');
-      if (overlay) overlay.classList.add('open');
+        const elInvDate = document.getElementById('drawer-inv-date');
+        if (elInvDate) elInvDate.innerText = window.FormatUtil.formatDate(s.invoiceDate);
+
+        const elInvDue = document.getElementById('drawer-inv-due');
+        if (elInvDue) elInvDue.innerText = s.dueDate ? window.FormatUtil.formatDate(s.dueDate) : 'Not set';
+
+        const elInvTerms = document.getElementById('drawer-inv-terms');
+        if (elInvTerms) elInvTerms.innerText = s.paymentTerms || '15 Days';
+
+        const elInvRef = document.getElementById('drawer-inv-ref');
+        if (elInvRef) elInvRef.innerText = s.referenceNo || '—';
+
+        const elStatus = document.getElementById('drawer-inv-status');
+        if (elStatus) {
+          elStatus.innerText = docSt;
+          elStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : (docSt === 'PENDING APPROVAL' ? 'badge-pending' : 'badge-danger')}`;
+        }
+
+        const elPayStatus = document.getElementById('drawer-inv-pay-status');
+        if (elPayStatus) {
+          const paySt = (s.paymentStatus || 'UNPAID').toUpperCase();
+          elPayStatus.innerText = paySt;
+          elPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
+        }
+
+        const elCustName = document.getElementById('drawer-cust-name');
+        if (elCustName) elCustName.innerText = custName;
+
+        const elCustGstin = document.getElementById('drawer-cust-gstin');
+        if (elCustGstin) elCustGstin.innerText = cust.gstin || s.billingGstin || 'Unregistered / Consumer';
+
+        const elCustPhone = document.getElementById('drawer-cust-phone');
+        if (elCustPhone) elCustPhone.innerText = cust.phone || '-';
+
+        const elCustEmail = document.getElementById('drawer-cust-email');
+        if (elCustEmail) elCustEmail.innerText = cust.email || '-';
+
+        const elCustAddr = document.getElementById('drawer-cust-address');
+        if (elCustAddr) elCustAddr.innerText = cust.address || s.billingAddress || '-';
+
+        const elTransp = document.getElementById('drawer-transporter');
+        if (elTransp) elTransp.innerText = s.transporter || 'Self / By Hand';
+
+        const elVehicle = document.getElementById('drawer-vehicle');
+        if (elVehicle) elVehicle.innerText = s.vehicleNumber || '-';
+
+        const elDoor = document.getElementById('drawer-door-delivery');
+        if (elDoor) elDoor.innerText = s.doorDelivery || 'Standard Delivery';
+
+        const elDeliveryAddr = document.getElementById('drawer-delivery-address');
+        if (elDeliveryAddr) elDeliveryAddr.innerText = s.deliveryAddress || s.billingAddress || cust.address || '-';
+
+        const taxable = s.subtotal != null ? s.subtotal : (s.taxableAmount || 0);
+        const elTaxable = document.getElementById('drawer-taxable-amt');
+        if (elTaxable) elTaxable.innerText = window.FormatUtil.formatRupees(taxable);
+
+        const elGst = document.getElementById('drawer-gst-amt');
+        if (elGst) elGst.innerText = window.FormatUtil.formatRupees(gstAmount);
+
+        const elCharges = document.getElementById('drawer-charges-amt');
+        if (elCharges) elCharges.innerText = window.FormatUtil.formatRupees(charges);
+
+        const elGrand = document.getElementById('drawer-grand-total');
+        if (elGrand) elGrand.innerText = window.FormatUtil.formatRupees(grandTotal);
+
+        const elPaid = document.getElementById('drawer-paid-amt');
+        if (elPaid) elPaid.innerText = window.FormatUtil.formatRupees(paid);
+
+        const elBalance = document.getElementById('drawer-balance-amt');
+        if (elBalance) elBalance.innerText = window.FormatUtil.formatRupees(pending);
+
+        const elPayPaid = document.getElementById('drawer-pay-paid-display');
+        if (elPayPaid) elPayPaid.innerText = window.FormatUtil.formatRupees(paid);
+
+        const elPayTotal = document.getElementById('drawer-pay-total-display');
+        if (elPayTotal) elPayTotal.innerText = window.FormatUtil.formatRupees(grandTotal);
+
+        const tbody = document.getElementById('drawer-items-tbody');
+        const lines = s.lines || [];
+        const countBadge = document.getElementById('drawer-items-count-badge');
+        if (countBadge) countBadge.innerText = `${lines.length} Items`;
+
+        if (tbody) {
+          if (lines.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No line item records.</td></tr>`;
+          } else {
+            tbody.innerHTML = lines.map((l, idx) => `
+              <tr>
+                <td style="color: var(--text-dim);">${idx + 1}</td>
+                <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+                <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
+                <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+                <td>${l.itemUnit || l.unit || 'PCS'}</td>
+                <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+                <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+                <td>${l.gstPercent || l.taxRate || 18}%</td>
+                <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        const approvalBox = document.getElementById('drawer-sale-approval-box');
+        if (approvalBox) {
+          const isPending = (s.documentStatus || '').toUpperCase() === 'PENDING APPROVAL';
+          approvalBox.style.display = isPending ? 'flex' : 'none';
+        }
+
+        this.switchDrawerTab('summary');
+      }
     } catch (err) {
+      console.error('Failed to load invoice drawer:', err);
       window.AppDialogService.showToast('Unable to load invoice details: ' + err.message, 'error');
     }
   },
@@ -3147,8 +3277,17 @@ window.SalesController = {
   },
 
   auditCurrentInvoice() {
-    if (!this.currentDrawerSale) return;
-    window.AppDialogService.showActivityTimeline('SALE', this.currentDrawerSale.id, this.currentDrawerSale.invoiceNo);
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) || this.selectedDrawerInvoiceNo;
+    const id = (this.currentDrawerSale && this.currentDrawerSale.id) || null;
+    if (!invNo) {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+    if (window.AppDialogService && typeof window.AppDialogService.showActivityTimeline === 'function') {
+      window.AppDialogService.showActivityTimeline('SALE', id, invNo);
+    } else if (typeof this.openAuditTrail === 'function') {
+      this.openAuditTrail(invNo);
+    }
   },
 
   async approveSelectedSale() {
@@ -3217,43 +3356,127 @@ window.SalesController = {
   },
 
   closeInvoiceDrawer() {
-    const drawer = document.getElementById('drawer-invoice-details');
+    const inlineDrawer = document.getElementById('sales-inline-drawer');
+    if (inlineDrawer) inlineDrawer.style.display = 'none';
+
+    const modalDrawer = document.getElementById('drawer-invoice-details');
+    if (modalDrawer) modalDrawer.classList.remove('open');
+
     const overlay = document.getElementById('side-drawer-overlay');
-    if (drawer) drawer.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
+
+    document.querySelectorAll('#sales-main-table tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     this.currentDrawerSale = null;
     this.selectedDrawerInvoiceNo = null;
   },
 
-  async recordPaymentForCurrentDrawer() {
+  openEmailForCurrentDrawer() {
     const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText) ||
+                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
                   this.selectedDrawerInvoiceNo;
-    const cachedSale = this.currentDrawerSale;
-    this.closeInvoiceDrawer();
+    if (!invNo || invNo === '-') {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+    this.openEmailModal(invNo);
+  },
 
-    if (invNo && invNo !== '-' && invNo !== 'Loading next sequence...') {
-      let sale = cachedSale || (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
-      if (!sale || !sale.id) {
-        try {
-          sale = await window.OperationsService.getSaleByInvoice(invNo);
-        } catch (e) {
-          console.warn('Could not fetch sale for drawer payment:', e);
-        }
-      }
-      if (window.openInvoicePaymentDetails) {
-        const grandTotal = sale ? (sale.totalAmount != null ? sale.totalAmount : (sale.total || 0)) : 0;
-        const isPaid = sale && sale.paymentStatus === 'PAID';
-        const isCancelled = sale && sale.documentStatus === 'CANCELLED';
-        const paid = isCancelled ? 0 : (sale ? (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0)) : 0);
-        const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
-        const custName = (sale && sale.customer && sale.customer.name) || (sale && sale.customerName) || (sale && sale.partyName) || 'Customer';
-        const saleId = sale ? (sale.id || 0) : 0;
-        window.openInvoicePaymentDetails('SALE', saleId, invNo, custName, grandTotal, paid, pending, sale);
-      } else {
-        this.openRecordPaymentModal(invNo);
+  async editCurrentDrawerSale() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
+                  this.selectedDrawerInvoiceNo;
+    if (!invNo || invNo === '-') {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+    let sale = this.currentDrawerSale;
+    if (!sale || !sale.lines || sale.lines.length === 0) {
+      try {
+        sale = await window.OperationsService.getSaleByInvoice(invNo);
+      } catch (e) {
+        console.warn('Could not fetch sale for editing:', e);
       }
     }
+    if (!sale) {
+      window.AppDialogService.showToast('Sale invoice details not found', 'error');
+      return;
+    }
+    this.closeInvoiceDrawer();
+    this.openSaleEditorTab(sale, false);
+  },
+
+  async recordPaymentForCurrentDrawer() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
+                  (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText) ||
+                  this.selectedDrawerInvoiceNo;
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+
+    let sale = this.currentDrawerSale;
+    if (!sale || !sale.id) {
+      try {
+        sale = await window.OperationsService.getSaleByInvoice(invNo);
+      } catch (e) {
+        console.warn('Could not fetch sale for drawer payment:', e);
+      }
+    }
+
+    const docStatus = (sale && (sale.documentStatus || sale.status || '')).toUpperCase();
+    if (docStatus === 'PENDING APPROVAL' || docStatus === 'REJECTED') {
+      window.AppDialogService.showToast('Admin approval is required before recording a payment for this Sale.', 'warning');
+      return;
+    }
+
+    const grandTotal = sale ? (sale.totalAmount != null ? sale.totalAmount : (sale.total || 0)) : 0;
+    const isPaid = sale && sale.paymentStatus === 'PAID';
+    const isCancelled = docStatus === 'CANCELLED';
+    const paid = isCancelled ? 0 : (sale ? (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0)) : 0);
+    const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
+    const custName = (sale && sale.customer && sale.customer.name) || (sale && sale.customerName) || (sale && sale.partyName) || 'Customer';
+    const saleId = sale ? (sale.id || 0) : 0;
+
+    this.closeInvoiceDrawer();
+
+    if (window.RecordPaymentController && typeof window.RecordPaymentController.open === 'function') {
+      window.RecordPaymentController.open('SALE', saleId, invNo, custName, grandTotal, paid, pending, sale);
+    } else if (typeof window.openInvoicePaymentDetails === 'function') {
+      window.openInvoicePaymentDetails('SALE', saleId, invNo, custName, grandTotal, paid, pending, sale);
+    } else {
+      this.openRecordPaymentModal(invNo);
+    }
+  },
+
+  async exportCurrentDrawerExcel() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
+                  this.selectedDrawerInvoiceNo;
+    if (!invNo || invNo === '-') {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+    await this.exportInvoiceExcel(invNo);
+  },
+
+  async dispatchBarcodeForCurrentDrawer() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
+                  this.selectedDrawerInvoiceNo;
+    if (!invNo || invNo === '-') {
+      window.AppDialogService.showToast('Please select an invoice first', 'warning');
+      return;
+    }
+    let sale = this.currentDrawerSale;
+    if (!sale || !sale.lines || sale.lines.length === 0) {
+      try {
+        sale = await window.OperationsService.getSaleByInvoice(invNo);
+      } catch (e) {
+        console.warn('Could not fetch sale for barcode:', e);
+      }
+    }
+    this.openDispatchBarcodeModal(invNo, sale);
   },
 
   // =========================================================================
@@ -3424,7 +3647,17 @@ window.SalesController = {
     this._shortcutsInstalled = true;
 
     document.addEventListener('keydown', (e) => {
-      // Check if Create Sale view is active
+      // 1. Escape key to close inline drawer matching desktop installEscapeClose
+      if (e.key === 'Escape') {
+        const inlineDrawer = document.getElementById('sales-inline-drawer');
+        if (inlineDrawer && inlineDrawer.style.display !== 'none' && inlineDrawer.style.display !== '') {
+          e.preventDefault();
+          this.closeInvoiceDrawer();
+          return;
+        }
+      }
+
+      // 2. Check if Create Sale view is active
       const createView = document.getElementById('view-sale-create');
       if (!createView || !createView.classList.contains('active')) return;
 

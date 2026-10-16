@@ -162,18 +162,6 @@ window.GlobalSearchController = (function() {
         });
       } catch (e) {}
 
-      // Fallback baseline entities if all queries returned empty
-      if (list.length === 0) {
-        list.push(
-          { module: 'Customers', moduleKey: 'CUSTOMER', recordId: 1, reference: 'CUST-001', description: 'Shailesh Dhameliya', detail: 'PHONE: +91 98250 12345  GSTIN: 24AABCS1429B1Z8  CITY: Surat', targetFxml: 'Customer.fxml' },
-          { module: 'Sales', moduleKey: 'SALE', recordId: 1, reference: 'JI/25-2026/0095', description: 'Shailesh Dhameliya', detail: 'DATE: 12/10/2026  AMOUNT: ₹ 78,780.00  STATUS: PAID', targetFxml: 'SaleView.fxml' },
-          { module: 'Purchases', moduleKey: 'PURCHASE', recordId: 1, reference: 'BILL-9821', description: 'Tata Steel Tubes & Pipes', detail: 'DATE: 10/10/2026  AMOUNT: ₹ 2,89,100.00  STATUS: APPROVED', targetFxml: 'PurchaseView.fxml' },
-          { module: 'Inventory', moduleKey: 'ITEM', recordId: 1, reference: 'R-MS-001', description: 'Mild Steel Seamless Pipe 2" Class B', detail: 'STOCK: 450 PCS  RATE: ₹ 1,250.00  CAT: Raw Materials', targetFxml: 'ItemMaster.fxml' },
-          { module: 'Suppliers', moduleKey: 'SUPPLIER', recordId: 1, reference: 'SUPP-001', description: 'Tata Steel Tubes & Pipes', detail: 'PHONE: +91 98251 23456  GSTIN: 24AAACT2727Q1ZW  BANK: Kotak Bank', targetFxml: 'Supplier.fxml' },
-          { module: 'Quotations', moduleKey: 'QUOTATION', recordId: 1, reference: 'QT-2026-0042', description: 'Aakash Diamond Tools Pvt Ltd', detail: 'DATE: 10/10/2026  AMOUNT: ₹ 1,71,100.00  STATUS: SENT', targetFxml: 'Quotation.fxml' }
-        );
-      }
-
       return list;
     },
 

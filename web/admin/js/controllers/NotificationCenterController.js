@@ -58,65 +58,88 @@ window.NotificationCenterController = (function() {
         const list = await window.ApiService.get('/api/insights/notifications?limit=50');
         notifications = Array.isArray(list) ? list : [];
 
-        if (!notifications.length) {
-          notifications = [
-            {
-              id: 101,
-              title: 'Purchase Bill BILL-9822 Pending Approval',
-              message: 'Procurement invoice for Jindal Stainless Stockists (₹ 2,10,040.00) requires director authorization.',
-              category: 'Approval',
-              severity: 'WARN',
-              read: false,
-              createdAt: Date.now() - 3600000,
-              actionCode: 'APPROVE_PURCHASE',
-              reference: 'BILL-9822'
-            },
-            {
-              id: 102,
-              title: 'Payment Received for JI/25-2026/0095',
-              message: 'RTGS clearance of ₹ 78,780.00 credited to HDFC Bank from Shailesh Dhameliya.',
-              category: 'Payments',
-              severity: 'INFO',
-              read: false,
-              createdAt: Date.now() - 7200000,
-              actionCode: 'VIEW_PAYMENT',
-              reference: 'JI/25-2026/0095'
-            },
-            {
-              id: 103,
-              title: 'Low Stock Alert: Mild Steel Seamless Pipe',
-              message: 'SKU R-MS-001 has reached reorder threshold (450 PCS remaining).',
-              category: 'Inventory',
-              severity: 'WARN',
-              read: false,
-              createdAt: Date.now() - 14400000,
-              actionCode: 'REORDER_ITEM',
-              reference: 'R-MS-001'
-            },
-            {
-              id: 104,
-              title: 'GST GSTR-3B Return Filing Due in 5 Days',
-              message: 'Monthly tax filing window closes on 20th October 2026. Review reconciliation data.',
-              category: 'Reminders',
-              severity: 'INFO',
-              read: true,
-              createdAt: Date.now() - 86400000,
-              actionCode: 'VIEW_GST',
-              reference: 'GSTR-3B'
-            },
-            {
-              id: 105,
-              title: 'Automated Database Backup Completed',
-              message: 'Nightly disaster recovery snapshot saved to local repository and S3 archive (42.8 MB).',
-              category: 'Backup',
-              severity: 'INFO',
-              read: true,
-              createdAt: Date.now() - 172800000,
-              actionCode: 'VIEW_BACKUP',
-              reference: 'BACKUP-20261012'
-            }
-          ];
+        // Update header badge
+        const unreadCount = notifications.filter(n => !n.read).length;
+        const badgeEl = document.getElementById('badge-notifications');
+        if (badgeEl) {
+          badgeEl.innerText = unreadCount;
+          badgeEl.classList.toggle('zero', unreadCount === 0);
         }
+
+        this.updateSummaryCounters();
+        this.renderCategoryRail();
+        this.renderNotificationList();
+      } catch (err) {
+        console.warn('[NotificationCenterController] Failed to load notifications:', err);
+        notifications = [];
+        this.updateSummaryCounters();
+        this.renderCategoryRail();
+        this.renderNotificationList();
+      }
+    },
+
+    updateSummaryCounters() {
+      const allCount = notifications.length;
+      const unreadCount = notifications.filter(n => !n.read).length;
+      const actionCount = notifications.filter(isActionable).length;
+
+  const CATEGORIES = [
+    { key: 'Approval', label: 'Approval', icon: '✔' },
+    { key: 'Sales', label: 'Sales', icon: '🛒' },
+    { key: 'Purchases', label: 'Purchases', icon: '📦' },
+    { key: 'Quotations', label: 'Quotations', icon: '📑' },
+    { key: 'Returns', label: 'Returns', icon: '↺' },
+    { key: 'Payments', label: 'Payments', icon: '💳' },
+    { key: 'Inventory', label: 'Inventory', icon: '🏷' },
+    { key: 'Reminders', label: 'Reminders', icon: '⏰' },
+    { key: 'Communication', label: 'Communication', icon: '✉' },
+    { key: 'Security', label: 'Security', icon: '🔒' },
+    { key: 'System', label: 'System', icon: '🔔' },
+    { key: 'Update', label: 'Update', icon: '⚡' },
+    { key: 'Backup', label: 'Backup', icon: '💾' }
+  ];
+
+  function formatNotifDate(ts) {
+    if (!ts) return '-';
+    try {
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return '-';
+      const day = String(d.getDate()).padStart(2, '0');
+      const mon = String(d.getMonth() + 1).padStart(2, '0');
+      const yr = d.getFullYear();
+      let hrs = d.getHours();
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hrs >= 12 ? 'PM' : 'AM';
+      hrs = hrs % 12;
+      if (hrs === 0) hrs = 12;
+      const hrsStr = String(hrs).padStart(2, '0');
+      return `${day}/${mon}/${yr} • ${hrsStr}:${mins} ${ampm}`;
+    } catch(e) {
+      return '-';
+    }
+  }
+
+  function getModuleIcon(cat) {
+    const c = (cat || '').toUpperCase();
+    if (c.includes('SALE')) return '🛒';
+    if (c.includes('PURCHASE')) return '📦';
+    if (c.includes('QUOTE')) return '📑';
+    if (c.includes('RETURN')) return '↺';
+    if (c.includes('PAY')) return '💳';
+    if (c.includes('INVENT') || c.includes('ITEM')) return '🏷';
+    if (c.includes('REMIND')) return '⏰';
+    if (c.includes('COMM')) return '✉';
+    if (c.includes('APPROV')) return '✔';
+    if (c.includes('BACKUP')) return '💾';
+    if (c.includes('SEC')) return '🔒';
+    return '🔔';
+  }
+
+  return {
+    async loadNotifications() {
+      try {
+        const list = await window.ApiService.get('/api/insights/notifications?limit=50');
+        notifications = Array.isArray(list) ? list : [];
 
         // Update header badge
         const unreadCount = notifications.filter(n => !n.read).length;
@@ -131,6 +154,10 @@ window.NotificationCenterController = (function() {
         this.renderNotificationList();
       } catch (err) {
         console.warn('[NotificationCenterController] Failed to load notifications:', err);
+        notifications = [];
+        this.updateSummaryCounters();
+        this.renderCategoryRail();
+        this.renderNotificationList();
       }
     },
 
@@ -153,29 +180,38 @@ window.NotificationCenterController = (function() {
       if (!railEl) return;
 
       const counts = {};
-      counts[ALL] = notifications.length;
-      counts['Unread'] = notifications.filter(n => !n.read).length;
-      counts['Action Needed'] = notifications.filter(isActionable).length;
-
       notifications.forEach(n => {
         const cat = (n.category || 'System').toUpperCase();
-        // Match against BASE_FILTERS
-        const matched = BASE_FILTERS.find(f => f.toUpperCase() === cat) || 'System';
-        counts[matched] = (counts[matched] || 0) + 1;
+        CATEGORIES.forEach(c => {
+          if (c.key.toUpperCase() === cat || (c.key === 'Sales' && cat.includes('SALE')) || (c.key === 'Purchases' && cat.includes('PURCHASE'))) {
+            counts[c.key] = (counts[c.key] || 0) + 1;
+          }
+        });
       });
 
-      let html = '';
-      BASE_FILTERS.forEach(f => {
-        const count = counts[f] || 0;
-        if (f === ALL || f === 'Unread' || f === 'Action Needed' || count > 0) {
-          const isActive = currentFilter === f;
-          html += `
-            <div class="notif-category-item ${isActive ? 'active' : ''}" onclick="window.NotificationCenterController.setFilter('${f.replace(/'/g, "\\'")}')">
-              <span>${f}</span>
-              <span class="search-module-badge">${count}</span>
+      let html = `
+        <div style="padding: 10px 12px 6px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); font-weight: 800;">
+          FILTERS
+        </div>
+        <div style="padding: 0 12px 10px; font-size: 0.82rem; font-weight: 700; color: var(--text-main);">
+          Categories
+        </div>
+      `;
+
+      CATEGORIES.forEach(c => {
+        const count = counts[c.key] || 0;
+        const isActive = currentFilter === c.key;
+        html += `
+          <div class="notif-category-item ${isActive ? 'active' : ''}" onclick="window.NotificationCenterController.setFilter('${c.key}')" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.85rem; color: ${isActive ? '#fff' : 'var(--text-muted)'};">${c.icon}</span>
+              <span style="font-size: 0.78rem; font-weight: ${isActive ? '700' : '600'}; color: ${isActive ? '#fff' : 'var(--text-muted)'};">${c.label}</span>
             </div>
-          `;
-        }
+            <span style="font-size: 0.72rem; padding: 1px 7px; border-radius: 10px; font-weight: 700; background: ${count > 0 ? (isActive ? 'rgba(255,255,255,0.25)' : 'rgba(56, 189, 248, 0.2)') : 'rgba(255,255,255,0.05)'}; color: ${count > 0 ? (isActive ? '#fff' : 'var(--cyan)') : 'var(--text-dim)'};">
+              ${count}
+            </span>
+          </div>
+        `;
       });
 
       railEl.innerHTML = html;
@@ -201,7 +237,7 @@ window.NotificationCenterController = (function() {
         if (currentFilter === 'Action Needed') return isActionable(n);
         if (currentFilter !== ALL) {
           const c = (n.category || 'System').toUpperCase();
-          if (c !== currentFilter.toUpperCase()) return false;
+          if (c !== currentFilter.toUpperCase() && !c.includes(currentFilter.toUpperCase())) return false;
         }
         return true;
       });
@@ -213,9 +249,16 @@ window.NotificationCenterController = (function() {
         });
       }
 
+      // Update sub-counter
+      const unreadCount = visible.filter(n => !n.read).length;
+      const subCounter = document.getElementById('nc-sub-counter');
+      if (subCounter) {
+        subCounter.innerText = `${visible.length} shown • ${unreadCount} unread`;
+      }
+
       if (visible.length === 0) {
         listPane.innerHTML = `
-          <div style="padding: 30px; text-align: center; color: var(--text-dim); font-size: 0.82rem;">
+          <div style="padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 0.82rem;">
             No notifications in this category.
           </div>
         `;
@@ -232,20 +275,37 @@ window.NotificationCenterController = (function() {
         const isSelected = selectedNotification && selectedNotification.id === n.id;
         const safeTitle = (n.title || 'Notification').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const safeMsg = (n.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const cat = (n.category || 'Sales').toUpperCase();
+        const icon = getModuleIcon(cat);
+        const ref = n.referenceNo || n.reference || '';
+        const dateStr = formatNotifDate(n.createdAt);
+
         return `
-          <div class="notif-item-card ${!n.read ? 'unread' : ''} ${isSelected ? 'selected' : ''}" onclick="window.NotificationCenterController.selectItem(${n.id})">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">${n.category || 'SYSTEM'}</span>
-              <span style="font-size: 0.72rem; color: var(--text-muted);">${timeAgo(n.createdAt)}</span>
+          <div class="notif-item-card ${!n.read ? 'unread' : ''} ${isSelected ? 'selected' : ''}" 
+               onclick="window.NotificationCenterController.selectItem(${n.id})"
+               ondblclick="window.NotificationCenterController.openLinkedRecord()"
+               style="padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.15s; background: ${isSelected ? 'rgba(37, 99, 235, 0.22)' : 'transparent'}; border-left: ${isSelected ? '4px solid #3b82f6' : '4px solid transparent'};">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                ${icon}
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-size: 0.84rem; font-weight: 700; color: #fff;">${safeTitle}</span>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <span style="font-size: 0.68rem; padding: 1px 7px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; text-transform: uppercase;">${n.category || 'Sales'}</span>
+                    ${!n.read ? '<span style="font-size: 0.68rem; padding: 1px 7px; border-radius: 4px; background: rgba(59, 130, 246, 0.3); color: #60a5fa; font-weight: 700;">NEW</span>' : ''}
+                  </div>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; line-height: 1.4;">
+                  ${safeMsg}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.72rem; color: var(--text-dim);">${n.category || 'Sales'} • ${ref || '-'}</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim);">${dateStr}</span>
+                </div>
+              </div>
             </div>
-            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px;">
-              ${!n.read ? '<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--cyan);"></span>' : ''}
-              <span>${safeTitle}</span>
-            </div>
-            <div style="font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              ${safeMsg}
-            </div>
-            ${n.referenceNo ? `<div style="margin-top: 5px;"><span class="search-chip money" style="font-size: 0.68rem; padding: 1px 6px;">${n.referenceNo}</span></div>` : ''}
           </div>
         `;
       }).join('');
@@ -276,43 +336,49 @@ window.NotificationCenterController = (function() {
 
       const safeTitle = (item.title || 'Notification').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const safeMsg = (item.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const createdStr = item.createdAt ? new Date(item.createdAt).toLocaleString('en-IN') : '-';
+      const createdStr = formatNotifDate(item.createdAt);
+      const ref = item.referenceNo || item.reference || '';
+      const cat = (item.category || 'Sales').toUpperCase();
+      const icon = getModuleIcon(cat);
 
       detailPane.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              ${getSeverityBadge(item.severity)}
-              <span class="search-chip" style="text-transform: uppercase; font-weight: 700;">${item.category || 'SYSTEM'}</span>
-              <span style="font-size: 0.72rem; color: var(--text-dim);">${createdStr}</span>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            ${icon}
+          </div>
+          <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">Notification Details</h3>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 800; color: #fff;">${safeTitle}</h4>
+          <p style="margin: 0 0 14px 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">${safeMsg}</p>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.76rem; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>${icon}</span>
+              <span>${item.category || 'Sales'} • ${item.severity || 'INFO'} • ${createdStr} • ${item.read ? 'Read' : 'Unread'}</span>
             </div>
-            <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">${safeTitle}</h3>
+            ${ref ? `
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>🔗</span>
+                <span>Reference: <strong style="color: var(--cyan);">${ref}</strong> • ${cat}</span>
+              </div>
+            ` : ''}
           </div>
         </div>
 
-        <div style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-          ${safeMsg}
-        </div>
-
-        ${item.referenceNo ? `
-          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Linked Record Reference</div>
-              <div style="font-size: 0.92rem; font-weight: 800; color: var(--cyan);">${item.referenceNo}</div>
-            </div>
-            <button type="button" class="btn btn-primary" style="font-size: 0.78rem; padding: 6px 14px;" onclick="window.NotificationCenterController.openLinkedRecord()">
-              🔗 Open Linked Record
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" class="btn btn-primary" style="width: 100%; height: 38px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(59, 130, 246, 0.85); border-color: #3b82f6;" onclick="window.NotificationCenterController.openLinkedRecord()">
+            <span>👁</span> Open Record
+          </button>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 600; padding: 8px 12px; color: #34d399; border-color: rgba(52, 211, 153, 0.4);" onclick="window.NotificationCenterController.toggleRead(${item.id})">
+              ${item.read ? '✉ Mark Unread' : '✔ Mark Read'}
+            </button>
+            <button type="button" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 600; padding: 8px 12px; color: #f87171; border-color: rgba(248, 113, 113, 0.4);" onclick="window.NotificationCenterController.deleteSelected(${item.id})">
+              🗑 Dismiss
             </button>
           </div>
-        ` : ''}
-
-        <div style="display: flex; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
-          <button type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 6px 14px;" onclick="window.NotificationCenterController.toggleRead(${item.id})">
-            ${item.read ? '✉ Mark as Unread' : '✔ Mark as Read'}
-          </button>
-          <button type="button" class="btn btn-danger" style="font-size: 0.76rem; padding: 6px 14px;" onclick="window.NotificationCenterController.deleteSelected(${item.id})">
-            🗑 Dismiss
-          </button>
         </div>
       `;
     },

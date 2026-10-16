@@ -195,6 +195,12 @@ window.ReturnsController = (function() {
 
   function onRowClick(no, event) {
     if (event && event.target && event.target.closest('button, select, input, a, .action-dropdown-menu')) return;
+    const isSales = currentType === 'SALES RETURN';
+    const drawer = document.getElementById(isSales ? 'sr-detail-drawer' : 'pr-detail-drawer');
+    if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedReturn && (selectedReturn.returnNo === no || selectedReturn.invoiceNo === no)) {
+      closeDrawer();
+      return;
+    }
     showDetails(no);
   }
 
@@ -247,6 +253,17 @@ window.ReturnsController = (function() {
     const isSales = currentType === 'SALES RETURN';
     const drawer = document.getElementById(isSales ? 'sr-detail-drawer' : 'pr-detail-drawer');
     if (!drawer) return;
+
+    // Highlight selected row
+    const tableId = isSales ? 'tbl-sales-returns-body' : 'tbl-purchase-returns-body';
+    document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
+    const rows = document.querySelectorAll(`#${tableId} tr`);
+    rows.forEach(r => {
+      const onclickAttr = r.getAttribute('onclick') || '';
+      if (onclickAttr.includes(`'${no}'`)) {
+        r.classList.add('active-selected-row');
+      }
+    });
 
     try {
       const details = await window.OperationsService.getReturnDetails(no);
@@ -320,6 +337,7 @@ window.ReturnsController = (function() {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
     }
+    document.querySelectorAll('#tbl-sales-returns-body tr.active-selected-row, #tbl-purchase-returns-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedReturn = null;
   }
 

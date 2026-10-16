@@ -2132,3 +2132,31 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
     }
 
+    /* DESKTOP PARITY: INLINE DOCKED SIDE INSPECTION DRAWER & ROW HIGHLIGHT */
+    .sales-desktop-table tr.active-selected-row td,
+    table.data-table tr.active-selected-row td {
+      background: rgba(37, 99, 235, 0.28) !important;
+      color: #ffffff !important;
+    }
+    .sales-desktop-table tr.active-selected-row td:first-child,
+    table.data-table tr.active-selected-row td:first-child {
+      border-left: 4px solid var(--cyan, #38bdf8) !important;
+    }
+    .sales-inline-drawer {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: -6px 0 24px rgba(0, 0, 0, 0.45);
+    }
+    .sales-inline-drawer::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sales-inline-drawer::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .sales-inline-drawer::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+    .sales-inline-drawer::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.4);
+    }
+

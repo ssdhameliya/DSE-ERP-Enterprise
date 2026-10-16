@@ -341,6 +341,16 @@ window.PurchaseController = (function() {
     }
     selectedDrawerBillNo = invoiceNo;
 
+    // Highlight selected row
+    document.querySelectorAll('#purchases-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    const rows = document.querySelectorAll('#purchases-table-tbody tr');
+    rows.forEach(r => {
+      const firstTd = r.querySelector('td');
+      if (firstTd && firstTd.innerText.trim() === invoiceNo) {
+        r.classList.add('active-selected-row');
+      }
+    });
+
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       let p = purchases.find(x => x.invoiceNo === invoiceNo);
@@ -534,6 +544,7 @@ window.PurchaseController = (function() {
       drawer.style.display = '';
     }
     if (overlay) overlay.classList.remove('open');
+    document.querySelectorAll('#purchases-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedPurchase = null;
     currentDrawerPurchase = null;
     selectedDrawerBillNo = null;

@@ -218,6 +218,11 @@ window.QuotationController = (function() {
 
   function onRowClick(id, event) {
     if (event && event.target && event.target.closest('button, select, input, a, .action-dropdown-menu')) return;
+    const drawer = document.getElementById('quote-detail-drawer');
+    if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedQuote && selectedQuote.id === id) {
+      closeDrawer();
+      return;
+    }
     showDetails(id);
   }
 
@@ -237,6 +242,16 @@ window.QuotationController = (function() {
   async function showDetails(id) {
     const drawer = document.getElementById('quote-detail-drawer');
     if (!drawer) return;
+
+    // Highlight row
+    document.querySelectorAll('#quote-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    const rows = document.querySelectorAll('#quote-table-tbody tr');
+    rows.forEach(r => {
+      const onclickAttr = r.getAttribute('onclick') || '';
+      if (onclickAttr.includes(`onRowClick(${id},`) || onclickAttr.includes(`onRowClick(${id})`)) {
+        r.classList.add('active-selected-row');
+      }
+    });
 
     try {
       const q = await window.OperationsService.getQuotation(id);
@@ -275,6 +290,7 @@ window.QuotationController = (function() {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
     }
+    document.querySelectorAll('#quote-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedQuote = null;
   }
 
