@@ -402,6 +402,19 @@ window.ReturnsController = (function() {
     window.open(url, '_blank');
   }
 
+  function exportExcel(type) {
+    const isSales = (type || currentType) === 'SALES RETURN';
+    const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting ${isSales ? 'Sales' : 'Purchase'} Returns register to Excel...`);
+    const q = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search')?.value?.trim() || '';
+    const party = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier')?.value || '';
+    const status = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status')?.value || '';
+    const from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
+    const to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
+    const url = `/api/documents/export?type=${typeCode}&q=${encodeURIComponent(q)}&party=${encodeURIComponent(party)}&status=${encodeURIComponent(status)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&format=EXCEL`;
+    window.open(url, '_blank');
+  }
+
   function sendEmailPrompt(no) {
     if (window.SalesController && window.SalesController.openEmailModal) {
       window.SalesController.openEmailModal(no, currentType === 'SALES RETURN' ? 'SALES_RETURN' : 'PURCHASE_RETURN');
@@ -826,6 +839,7 @@ window.ReturnsController = (function() {
     editReasonPrompt,
     downloadPdf,
     downloadExcel,
+    exportExcel,
     sendEmailPrompt,
     viewOriginalDoc,
     openCreateReturnModal,

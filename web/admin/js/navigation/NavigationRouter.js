@@ -21,6 +21,7 @@ window.NavigationRouter = (function() {
     'view-purchase-register': { title: 'Purchase Register', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
     'view-purchase-creation': { title: 'Purchase Invoice', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
     'view-purchase-returns': { title: 'Purchase Returns', breadcrumb: 'Supplier Returns & Memos', icon: '🔄' },
+    'view-record-payment': { title: 'Invoice Payment', breadcrumb: 'Finance & Payments', icon: '💳' },
     'view-debit-notes': { title: 'Debit Notes', breadcrumb: 'Supplier Debit Notes', icon: '🧾' },
     'view-item-master': { title: 'Item Master', breadcrumb: 'Materials & SKU Catalog', icon: '🏷️' },
     'view-masters': { title: 'Masters (Lookups)', breadcrumb: 'Categories & Unit Definitions', icon: '📚' },
@@ -91,6 +92,14 @@ window.NavigationRouter = (function() {
         sec.classList.remove('active');
         sec.style.display = 'none';
       });
+
+      // Close open side drawers and overlay
+      ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('open'); el.style.display = ''; }
+      });
+      const ov = document.getElementById('side-drawer-overlay');
+      if (ov) ov.classList.remove('open');
 
       // Clear all active navigation highlights
       document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {
@@ -351,6 +360,11 @@ window.NavigationRouter = (function() {
           break;
         case 'view-purchase-returns':
           if (window.ReturnsController) window.ReturnsController.loadReturns('PURCHASE RETURN');
+          break;
+        case 'view-record-payment':
+          if (window.RecordPaymentController && window.RecordPaymentController.refreshPayments) {
+            window.RecordPaymentController.refreshPayments();
+          }
           break;
         case 'view-credit-notes':
           if (window.CreditDebitNoteController) window.CreditDebitNoteController.loadCreditNotes();

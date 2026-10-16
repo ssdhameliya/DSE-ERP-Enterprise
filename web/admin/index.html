@@ -2429,6 +2429,7 @@
             </div>
           </div>
           <div class="drawer-footer">
+            <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.openPayments(document.getElementById('pd-invoice-no').innerText)">💳 Record Payment</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">Print PDF</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">Edit</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">Close</button>
@@ -2495,7 +2496,7 @@
                   </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1.3fr 1fr; gap:12px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                   <div class="form-group">
                     <label class="form-label">Billing GSTIN</label>
                     <input type="text" id="pe-billing-gstin" class="form-input" placeholder="Supplier GSTIN">
@@ -2504,6 +2505,9 @@
                     <label class="form-label">Delivery GSTIN</label>
                     <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN">
                   </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap:12px;">
                   <div class="form-group">
                     <label class="form-label">Payment Terms</label>
                     <select id="pe-payment-terms" class="form-select">
@@ -2523,7 +2527,11 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">PO / Vendor Ref #</label>
+                    <label class="form-label">PO Date</label>
+                    <input type="date" id="pe-po-date" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">PO / Supplier Ref #</label>
                     <input type="text" id="pe-order-no" class="form-input" placeholder="e.g. PO-2026-9901">
                   </div>
                 </div>
@@ -2580,10 +2588,10 @@
               </div>
             </div>
 
-            <!-- Right Rail: Summary & Transport Details -->
+            <!-- Right Rail: Summary, Transport Details & Attachments -->
             <div style="display:flex; flex-direction:column; gap:16px;">
               <!-- Summary Card matching desktop Purchase.fxml -->
-              <div class="editor-card" style="position:sticky; top:16px;">
+              <div class="editor-card">
                 <div class="editor-card-header">Purchase Summary</div>
                 <div style="font-size:0.85rem;">
                   <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
@@ -2650,7 +2658,7 @@
                   <label class="form-label">Vehicle Number</label>
                   <input type="text" id="pe-vehicle-number" class="form-input" placeholder="e.g. GJ-05-XX-1234">
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                   <div class="form-group">
                     <label class="form-label">Contact Person</label>
                     <input type="text" id="pe-contact-person" class="form-input" placeholder="Driver / Agent">
@@ -2660,31 +2668,94 @@
                     <input type="text" id="pe-contact-mobile" class="form-input" placeholder="Mobile #">
                   </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">PO Due Date</label>
-                  <input type="date" id="pe-po-date" class="form-input">
+              </div>
+
+              <!-- Card 3: Notes & Attachment matching desktop Purchase.fxml -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128203; Notes &amp; Attachment</span>
                 </div>
-                <div class="form-group" style="margin-top:10px;">
-                  <label class="form-label">Notes &amp; Inward Remarks</label>
-                  <textarea id="pe-notes" class="form-input" rows="2" placeholder="Inward inspection notes..."></textarea>
+                <textarea id="pe-notes" class="form-input" placeholder="Inward inspection notes..." style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-dim); padding-top: 4px;">
+                  <span id="pe-attachment-name" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;" title="No attachment selected">No attachment</span>
+                  <div style="display: flex; gap: 4px;">
+                    <input type="file" id="pe-attachment-file-input" style="display: none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
+                    <button type="button" id="pe-btn-attach-add" class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.7rem;" onclick="document.getElementById('pe-attachment-file-input').click()">+ Add / Replace</button>
+                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" style="padding: 2px 7px; font-size: 0.7rem;" disabled onclick="window.PurchaseController.previewAttachment()">&#128065;</button>
+                    <button type="button" id="pe-btn-attach-remove" class="btn btn-danger" style="padding: 2px 7px; font-size: 0.7rem;" disabled onclick="window.PurchaseController.removeAttachment()">&#128465;</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- VIEW: PURCHASE RETURNS -->
+        <!-- VIEW: PURCHASE RETURNS (DESKTOP PurchaseReturns.fxml PARITY) -->
         <div id="view-purchase-returns" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128260;</span> Purchase Return Register</h1>
-              <p>Rejections sent back to suppliers with debit memo tracking</p>
+              <p>Rejections sent back to suppliers with debit memo tracking and refund settlement</p>
             </div>
             <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.ReturnsController.resetFilters(false)">Reset</button>
               <button class="btn btn-secondary" onclick="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="window.ReturnsController.openCreateReturnModal()">+ Record Return</button>
+              <button class="btn btn-secondary" onclick="window.ReturnsController.exportExcel('PURCHASE RETURN')">&#128202; Export</button>
+              <button class="btn btn-primary" onclick="window.ReturnsController.openCreateReturnModal(null, 'PURCHASE RETURN')">+ Record Return</button>
             </div>
           </div>
+
+          <!-- 5 KPI Summary Cards matching PurchaseReturns desktop -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128176;</span> Total Returns</div>
+              <div class="kpi-value" id="pr-kpi-total">&#8377; 0.00</div>
+              <div class="kpi-sub">Total lifetime returns value</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128197;</span> This Month</div>
+              <div class="kpi-value" id="pr-kpi-month" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-sub">Current calendar month returns</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9203;</span> Pending Approval</div>
+              <div class="kpi-value" id="pr-kpi-pending" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub">Awaiting inspection &amp; debit note</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9989;</span> Approved Returns</div>
+              <div class="kpi-value" id="pr-kpi-approved" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-sub">Stock returned &amp; ledger adjusted</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128184;</span> Refunded Total</div>
+              <div class="kpi-value" id="pr-kpi-refund" style="color:var(--purple);">&#8377; 0.00</div>
+              <div class="kpi-sub">Settled via supplier refund ledger</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="pr-filter-search" class="filter-input" placeholder="Search return #, bill ref, supplier..." style="width:240px;" oninput="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+            <select id="pr-filter-supplier" class="form-select" style="width:190px;" onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <option value="">All Suppliers</option>
+            </select>
+            <select id="pr-filter-status" class="form-select" style="width:180px;" onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <option value="">All Status</option>
+              <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">From:</span>
+              <input type="date" id="pr-filter-from" class="form-input form-input-sm" style="width:130px;" onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <span style="font-size:0.75rem; color:var(--text-muted);">To:</span>
+              <input type="date" id="pr-filter-to" class="form-input form-input-sm" style="width:130px;" onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+            </div>
+          </div>
+
+          <!-- Purchase Returns Table -->
           <div class="sales-table-scroll">
             <table class="sales-desktop-table">
               <thead>
@@ -2705,6 +2776,48 @@
                 <tr><td colspan="10" style="text-align: center; color: var(--text-dim);">Loading purchase returns...</td></tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+            <div class="footer-left">
+              <span id="pr-pagination-info">Showing 0 returns</span>
+            </div>
+            <div class="footer-right" style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" id="pr-btn-prev" onclick="window.ReturnsController.prevPage()" disabled>&larr; Previous</button>
+              <button class="btn btn-secondary btn-sm" id="pr-btn-next" onclick="window.ReturnsController.nextPage()" disabled>Next &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE DETAIL DRAWER: PURCHASE RETURNS -->
+        <div id="pr-detail-drawer" class="slide-detail-drawer">
+          <div class="drawer-header">
+            <div>
+              <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--text-main);" id="pr-detail-no">Purchase Return Details</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Supplier Return Record &amp; Line Audit</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">&times;</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span class="drawer-field-value" id="pr-detail-date">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span class="drawer-field-value" id="pr-detail-party">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span class="drawer-field-value" id="pr-detail-invoice" style="color:var(--cyan);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span class="drawer-field-value" id="pr-detail-total" style="color:var(--yellow); font-size:0.95rem;">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Refunded Amount:</span><span class="drawer-field-value" id="pr-detail-refund" style="color:var(--green);">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Return Reason:</span><span class="drawer-field-value" id="pr-detail-reason">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Approval Status:</span><span class="drawer-field-value" id="pr-detail-status">-</span></div>
+            <div class="drawer-field-row"><span class="drawer-field-label">Refund Status:</span><span class="drawer-field-value" id="pr-detail-refund-status">-</span></div>
+            <div style="margin-top:16px; margin-bottom:8px; font-weight:700; font-size:0.80rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Return Line Items</div>
+            <div id="pr-detail-lines" style="max-height:220px; overflow-y:auto;"></div>
+          </div>
+          <div class="drawer-footer">
+            <button class="btn btn-success btn-sm" id="pr-detail-btn-approve" onclick="window.ReturnsController.approveReturn(document.getElementById('pr-detail-no').innerText)" style="display:none;">Approve Return</button>
+            <button class="btn btn-danger btn-sm" id="pr-detail-btn-reject" onclick="window.ReturnsController.rejectReturnPrompt(document.getElementById('pr-detail-no').innerText)" style="display:none;">Reject</button>
+            <button class="btn btn-primary btn-sm" id="pr-detail-btn-refund" onclick="window.ReturnsController.openRefundModal(document.getElementById('pr-detail-no').innerText)">Record Refund</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.downloadPdf(document.getElementById('pr-detail-no').innerText)">PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.sendEmailPrompt(document.getElementById('pr-detail-no').innerText)">Email</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">Close</button>
           </div>
         </div>
 
@@ -7070,6 +7183,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
+      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="if(window.SalesController && window.SalesController.currentDrawerSale) { const s = window.SalesController.currentDrawerSale; closeInvoiceDrawer(); window.openInvoicePaymentDetails('SALE', s.id, s.invoiceNo, s.customerName || (s.customer && s.customer.name), s.totalAmount, s.paidAmount, s.pendingAmount || (s.totalAmount - (s.paidAmount||0)), s); }">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196; Print Tax Invoice</button>
     </div>
   </div>
@@ -7127,6 +7241,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
+      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) { const p = window.PurchaseController.currentDrawerPurchase; closePurchaseDrawer(); window.PurchaseController.openPayments(p.invoiceNo); }">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196; Print Inward Bill</button>
     </div>
   </div>

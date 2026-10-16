@@ -79,16 +79,30 @@ window.RecordPaymentController = (function() {
       // 4. Reset Proof Attachment
       this.resetProof();
 
-      // 5. Navigate to workspace
+      // 5. Dismiss any open drawers and overlays so clicks are never blocked
+      ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('open'); el.style.display = ''; }
+      });
+      const ov = document.getElementById('side-drawer-overlay');
+      if (ov) ov.classList.remove('open');
+
+      // 6. Navigate to workspace
       if (window.NavigationRouter && window.NavigationRouter.selectNav) {
         window.NavigationRouter.selectNav('view-record-payment');
       } else {
-        document.querySelectorAll('.module-view').forEach(v => v.style.display = 'none');
+        document.querySelectorAll('.module-view').forEach(v => {
+          v.classList.remove('active');
+          v.style.display = 'none';
+        });
         const v = document.getElementById('view-record-payment');
-        if (v) v.style.display = 'block';
+        if (v) {
+          v.classList.add('active');
+          v.style.display = 'block';
+        }
       }
 
-      // 6. Load Payment History
+      // 7. Load Payment History
       await this.refreshPayments();
     },
 
@@ -316,8 +330,11 @@ window.RecordPaymentController = (function() {
         if (docType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
           const s = window.SalesController.salesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
           if (s && s.id) docId = parseInt(s.id);
-        } else if (docType === 'PURCHASE' && window.PurchaseController && Array.isArray(window.PurchaseController.purchasesCache)) {
-          const p = window.PurchaseController.purchasesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
+        } else if (docType === 'PURCHASE' && window.PurchaseController) {
+          const list = (typeof window.PurchaseController.getPurchasesCache === 'function') 
+            ? window.PurchaseController.getPurchasesCache() 
+            : (window.PurchaseController.purchases || []);
+          const p = Array.isArray(list) ? list.find(x => (x.invoiceNo || x.number) === currentInvoiceNo) : null;
           if (p && p.id) docId = parseInt(p.id);
         }
       }

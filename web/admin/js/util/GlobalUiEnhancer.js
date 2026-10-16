@@ -49,7 +49,7 @@ window.GlobalUiEnhancer = (function() {
     debounceTimer = setTimeout(() => {
       runEnhancements(container);
       debounceTimer = null;
-    }, 60);
+    }, 120);
   }
 
   function installObserver() {
@@ -59,25 +59,48 @@ window.GlobalUiEnhancer = (function() {
     observer = new MutationObserver((mutations) => {
       if (isEnhancing) return;
       let shouldEnhance = false;
+
       for (const m of mutations) {
         if (!m.addedNodes || m.addedNodes.length === 0) continue;
         for (let i = 0; i < m.addedNodes.length; i++) {
           const n = m.addedNodes[i];
           if (n.nodeType === 1) {
-            // Ignore internal enhancement nodes
+            const tag = n.tagName;
+            // Strictly ignore internal table elements, cols, options, badges, and inputs
+            if (tag === 'COL' || tag === 'COLGROUP' || tag === 'TBODY' || tag === 'THEAD' || tag === 'TR' || tag === 'TD' || tag === 'OPTION') {
+              continue;
+            }
             if (
               n.classList && (
                 n.classList.contains('erp-th-badge') ||
                 n.classList.contains('erp-th-icon') ||
                 n.classList.contains('label-icon') ||
                 n.classList.contains('kpi-icon-wrap') ||
-                n.classList.contains('erp-cell-status-badge')
+                n.classList.contains('kpi-icon-badge') ||
+                n.classList.contains('erp-master-checkbox') ||
+                n.classList.contains('erp-input-active-focused') ||
+                n.classList.contains('erp-cell-status-badge') ||
+                n.classList.contains('charges-summary-pill')
               )
             ) {
               continue;
             }
-            shouldEnhance = true;
-            break;
+            if (n.dataset && (n.dataset.erpHeaderEnhanced || n.dataset.erpKpiEnhanced || n.dataset.erpLabelEnhanced)) {
+              continue;
+            }
+            // Only trigger if an entire new view or significant card is injected
+            if (
+              n.classList && (
+                n.classList.contains('module-view') ||
+                n.classList.contains('editor-card') ||
+                n.classList.contains('kpi-grid') ||
+                n.classList.contains('data-panel') ||
+                n.classList.contains('modal-card')
+              ) || tag === 'TABLE'
+            ) {
+              shouldEnhance = true;
+              break;
+            }
           }
         }
         if (shouldEnhance) break;

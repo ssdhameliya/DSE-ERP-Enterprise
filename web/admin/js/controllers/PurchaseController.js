@@ -14,6 +14,9 @@ window.PurchaseController = (function() {
 
   // Purchase Editor Workspace State
   let editingInvoiceNo = null;
+  let editingPurchase = null;
+  let pendingAttachmentFile = null;
+  let attachmentRemovalPending = false;
   let editorLines = [];
   let editorCharges = [];
   let cachedSuppliers = [];
@@ -852,6 +855,12 @@ window.PurchaseController = (function() {
     isNavigatingToPurchaseEditor = true;
     try {
       editingInvoiceNo = invoiceNo;
+      editingPurchase = null;
+      pendingAttachmentFile = null;
+      attachmentRemovalPending = false;
+      const fileInp = document.getElementById('pe-attachment-file-input');
+      if (fileInp) fileInp.value = '';
+
       editorLines = [];
       editorCharges = [];
       selectedEditorItem = null;
@@ -940,6 +949,7 @@ window.PurchaseController = (function() {
       // Load Existing Purchase for Editing
       try {
         const p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+        editingPurchase = p;
         document.getElementById('pe-invoice-no').value = p.invoiceNo;
         document.getElementById('pe-invoice-date').value = p.invoiceDate ? p.invoiceDate.substring(0, 10) : today;
         document.getElementById('pe-supplier-select').value = p.supplier?.id || '';
@@ -977,10 +987,15 @@ window.PurchaseController = (function() {
           gstPercent: parseFloat(c.gstPercent) || 18
         }));
 
+        refreshAttachmentUi(p.attachmentPath || p.attachment || null);
+
       } catch (e) {
         alert('Failed to load purchase for editing: ' + e.message);
       }
     } else {
+      editingPurchase = null;
+      refreshAttachmentUi(null);
+
       // Preview Next Purchase Bill No
       try {
         const nextRes = await window.OperationsService.getNextPurchaseInvoice();
@@ -1000,6 +1015,12 @@ window.PurchaseController = (function() {
       }
     });
 
+    // Lock Attachment Controls in read-only view mode
+    const btnAttachAdd = document.getElementById('pe-btn-attach-add');
+    if (btnAttachAdd) btnAttachAdd.disabled = isReadOnlyView;
+    const btnAttachRemove = document.getElementById('pe-btn-attach-remove');
+    if (btnAttachRemove) btnAttachRemove.disabled = isReadOnlyView || (!pendingAttachmentFile && !(editingPurchase && editingPurchase.attachmentPath));
+
     // Lock Additional Charges in read-only view mode
     const chargesPill = document.getElementById('pe-charges-summary-display');
     if (chargesPill) {
@@ -1017,6 +1038,52 @@ window.PurchaseController = (function() {
     } finally {
       isNavigatingToPurchaseEditor = false;
     }
+  }
+
+  // ATTACHMENT CONTROLS FOR PURCHASE
+  function handleAttachmentFileSelected(inputEl) {
+    if (inputEl && inputEl.files && inputEl.files[0]) {
+      pendingAttachmentFile = inputEl.files[0];
+      attachmentRemovalPending = false;
+      refreshAttachmentUi(pendingAttachmentFile.name);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${pendingAttachmentFile.name}`);
+    }
+  }
+
+  function previewAttachment() {
+    if (pendingAttachmentFile) {
+      const url = URL.createObjectURL(pendingAttachmentFile);
+      window.open(url, '_blank');
+      return;
+    }
+    if (editingPurchase && (editingPurchase.attachmentPath || editingPurchase.attachment)) {
+      window.open(editingPurchase.attachmentPath || editingPurchase.attachment, '_blank');
+      return;
+    }
+    if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
+  }
+
+  function removeAttachment() {
+    pendingAttachmentFile = null;
+    attachmentRemovalPending = true;
+    const fileInput = document.getElementById('pe-attachment-file-input');
+    if (fileInput) fileInput.value = '';
+    refreshAttachmentUi(null);
+    if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
+  }
+
+  function refreshAttachmentUi(fileName) {
+    const lbl = document.getElementById('pe-attachment-name');
+    const btnPreview = document.getElementById('pe-btn-attach-preview');
+    const btnRemove = document.getElementById('pe-btn-attach-remove');
+    const hasAttachment = Boolean(fileName) && !attachmentRemovalPending;
+
+    if (lbl) {
+      lbl.innerText = hasAttachment ? (fileName.split('/').pop().split('\\').pop()) : 'No attachment';
+      lbl.title = hasAttachment ? fileName : 'No attachment selected';
+    }
+    if (btnPreview) btnPreview.disabled = !hasAttachment;
+    if (btnRemove) btnRemove.disabled = !hasAttachment || isReadOnlyView;
   }
 
   function onTransporterChange(selectEl) {
@@ -1413,7 +1480,7 @@ window.PurchaseController = (function() {
       lrAwbNo: '',
       discountType: 'Percentage',
       discountAmount: totalDiscount,
-      attachmentPath: '',
+      attachmentPath: pendingAttachmentFile ? pendingAttachmentFile.name : (attachmentRemovalPending ? '' : ((editingInvoiceNo && editingPurchase) ? (editingPurchase.attachmentPath || editingPurchase.attachment || '') : '')),
       createdBy: 'Admin',
       deliveryDate: invoiceDate,
       billingAddress: document.getElementById('pe-billing-address')?.value || '',
@@ -1432,7 +1499,7 @@ window.PurchaseController = (function() {
       quantity: totalQty,
       charges: editorCharges,
       lines: linesPayload,
-      rowVersion: 0
+      rowVersion: editingPurchase?.rowVersion || 0
     };
 
     const btnSave = document.getElementById('pe-btn-save');
@@ -1440,6 +1507,7 @@ window.PurchaseController = (function() {
 
     try {
       if (editingInvoiceNo) {
+        payload.id = editingPurchase?.id || null;
         await window.OperationsService.updatePurchase(payload);
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase invoice ${invoiceNo} updated successfully!`);
       } else {
@@ -1512,6 +1580,10 @@ window.PurchaseController = (function() {
     removeEditorLine,
     recalcEditorTotals,
     savePurchase,
-    cancelEditor
+    cancelEditor,
+    handleAttachmentFileSelected,
+    previewAttachment,
+    removeAttachment,
+    refreshAttachmentUi
   };
 })();

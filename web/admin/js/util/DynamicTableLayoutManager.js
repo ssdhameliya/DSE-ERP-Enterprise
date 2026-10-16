@@ -212,12 +212,7 @@ window.DynamicTableLayoutManager = (function() {
     const style = window.getComputedStyle(container);
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
-    let available = container.clientWidth - paddingLeft - paddingRight;
-
-    // Compensate for vertical scrollbar if container is scrolling vertically
-    if (container.scrollHeight > container.clientHeight) {
-      available -= 8; // standard scrollbar width
-    }
+    const available = container.clientWidth - paddingLeft - paddingRight;
 
     return Math.max(available, 100);
   }
@@ -305,6 +300,13 @@ window.DynamicTableLayoutManager = (function() {
 
     const available = contentViewportWidth(table);
     if (!Number.isFinite(available) || available < 150) return;
+
+    const lastWidth = parseFloat(table.dataset.lastLayoutWidth) || 0;
+    const currentCols = table.querySelectorAll('colgroup > col').length;
+    if (Math.abs(available - lastWidth) < 2 && currentCols === ths.length) {
+      return;
+    }
+    table.dataset.lastLayoutWidth = available;
 
     // Enforce fixed layout on table & hide container horizontal scroll for desktop
     table.style.tableLayout = 'fixed';
@@ -432,12 +434,18 @@ window.DynamicTableLayoutManager = (function() {
       const container = table.parentElement;
       if (container && window.ResizeObserver) {
         if (!tableObservers.has(container)) {
-          const ro = new ResizeObserver(() => {
+          let lastContainerW = container.clientWidth;
+          const ro = new ResizeObserver((entries) => {
+            const entry = entries && entries[0];
+            const currentW = entry ? entry.contentRect.width : container.clientWidth;
+            if (Math.abs(currentW - lastContainerW) < 2) return;
+            lastContainerW = currentW;
+
             let debouncer = tableDebouncers.get(table);
             if (debouncer) clearTimeout(debouncer);
             debouncer = setTimeout(() => {
               layoutNow(table);
-            }, 30);
+            }, 60);
             tableDebouncers.set(table, debouncer);
           });
           ro.observe(container);
