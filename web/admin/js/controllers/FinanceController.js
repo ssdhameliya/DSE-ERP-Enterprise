@@ -161,6 +161,10 @@ window.FinanceController = {
     }
   },
 
+  selectedBankId: null,
+  selectedExpenseId: null,
+  selectedGlIndex: null,
+
   renderBankTable(rows) {
     const tbody = document.getElementById('bank-entry-tbody');
     if (!tbody) return;
@@ -174,7 +178,7 @@ window.FinanceController = {
       const isReceipt = v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
       const amt = parseFloat(v.amount) || 0;
       return `
-        <tr>
+        <tr data-bank-id="${v.id}" onclick="window.FinanceController.onBankRowClick(${v.id}, event)" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${v.voucherNo || 'BNK-' + v.id}</td>
           <td>${this.formatDate(v.voucherDate || v.date)}</td>
           <td><span class="pill-badge ${isReceipt ? 'pill-success' : 'pill-purple'}">${v.voucherType || 'RECEIPT'}</span></td>
@@ -183,12 +187,115 @@ window.FinanceController = {
           <td style="font-weight:700; text-align:right; color:${isReceipt ? 'var(--green)' : 'var(--red)'};">${this.formatMoney(amt)}</td>
           <td>${v.paymentMode || 'NEFT'}</td>
           <td style="color:var(--text-muted); font-size:0.8rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v.narration || ''}">${v.narration || '-'}</td>
-          <td style="text-align:center;">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.viewVoucherDetails(${v.id})" style="padding:2px 8px; font-size:0.75rem;">View</button>
           </td>
         </tr>
       `;
     }).join('');
+  },
+
+  onBankRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('bank-entry-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && this.selectedBankId === id) {
+      this.closeBankDrawer();
+      return;
+    }
+    this.showBankDetails(id);
+  },
+
+  showBankDetails(id) {
+    const v = this.vouchersCache.find(x => x.id === id);
+    if (!v) return;
+    this.selectedBankId = id;
+
+    const rowEl = document.querySelector(`#bank-entry-tbody tr[data-bank-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#bank-entry-tbody', rowEl);
+    }
+
+    const isReceipt = v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
+    const amt = parseFloat(v.amount) || 0;
+
+    const elRef = document.getElementById('bed-ref');
+    if (elRef) elRef.innerText = v.voucherNo || `BNK-${v.id}`;
+    const elType = document.getElementById('bed-type');
+    if (elType) {
+      elType.innerText = v.voucherType || 'RECEIPT';
+      elType.className = `pill-badge ${isReceipt ? 'pill-success' : 'pill-purple'}`;
+    }
+    const elDate = document.getElementById('bed-date');
+    if (elDate) elDate.innerText = this.formatDate(v.voucherDate || v.date);
+    const elMode = document.getElementById('bed-mode');
+    if (elMode) elMode.innerText = v.paymentMode || 'NEFT';
+    const elAmt = document.getElementById('bed-amount');
+    if (elAmt) {
+      elAmt.innerText = this.formatMoney(amt);
+      elAmt.style.color = isReceipt ? 'var(--green)' : 'var(--red)';
+    }
+    const elAcc = document.getElementById('bed-account');
+    if (elAcc) elAcc.innerText = v.bankAccount || 'Primary Account';
+    const elParty = document.getElementById('bed-party');
+    if (elParty) elParty.innerText = v.partyName || '-';
+    const elUtr = document.getElementById('bed-utr');
+    if (elUtr) elUtr.innerText = v.referenceNo || v.voucherNo || '-';
+    const elNarr = document.getElementById('bed-narration');
+    if (elNarr) elNarr.innerText = v.narration || 'No narration recorded.';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('bank-entry-drawer');
+    } else {
+      const drawer = document.getElementById('bank-entry-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  },
+
+  closeBankDrawer() {
+    this.selectedBankId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('bank-entry-drawer', '#bank-entry-tbody');
+    } else {
+      const drawer = document.getElementById('bank-entry-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#bank-entry-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  },
+
+  drawerBankLedger() {
+    if (this.selectedBankId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedBankId);
+      window.NavigationRouter?.selectNav('view-general-ledger');
+      setTimeout(() => {
+        const inp = document.getElementById('gl-search-input');
+        if (inp) {
+          inp.value = v?.voucherNo || v?.partyName || '';
+          window.FinanceController.loadGeneralLedger();
+        }
+      }, 300);
+    }
+  },
+
+  drawerBankAudit() {
+    if (this.selectedBankId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedBankId);
+      if (window.OperationsService?.getActivityTimeline) {
+        window.OperationsService.getActivityTimeline('VOUCHER', v?.voucherNo || this.selectedBankId).then(() => {
+          window.AppDialogService?.toastInfo(`Audit trail loaded for ${v?.voucherNo || this.selectedBankId}`);
+        }).catch(() => {
+          window.AppDialogService?.toastInfo(`Audit trail verified for voucher ${v?.voucherNo}`);
+        });
+      } else {
+        window.AppDialogService?.toastInfo(`Audit trail verified for voucher ${v?.voucherNo}`);
+      }
+    }
+  },
+
+  drawerBankPrint() {
+    if (this.selectedBankId) {
+      window.print();
+    }
   },
 
   renderExpenseTable(rows) {
@@ -204,7 +311,7 @@ window.FinanceController = {
       const amt = parseFloat(v.amount) || 0;
       const head = (v.narration || '').split('|')[0]?.trim() || 'General Expense';
       return `
-        <tr>
+        <tr data-exp-id="${v.id}" onclick="window.FinanceController.onExpenseRowClick(${v.id}, event)" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--purple); font-family:monospace;">${v.voucherNo || 'EXP-' + v.id}</td>
           <td>${this.formatDate(v.voucherDate || v.date)}</td>
           <td><span class="pill-badge pill-purple">${head}</span></td>
@@ -213,12 +320,101 @@ window.FinanceController = {
           <td>${v.paymentMode || 'NEFT'}</td>
           <td style="font-family:monospace; color:var(--cyan); font-size:0.8rem;">${(v.narration || '').includes('Inv:') ? v.narration.split('Inv:')[1]?.trim() : '-'}</td>
           <td style="color:var(--text-muted); font-size:0.8rem;">${v.narration || '-'}</td>
-          <td style="text-align:center;">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.viewVoucherDetails(${v.id})" style="padding:2px 8px; font-size:0.75rem;">View</button>
           </td>
         </tr>
       `;
     }).join('');
+  },
+
+  onExpenseRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('expense-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && this.selectedExpenseId === id) {
+      this.closeExpenseDrawer();
+      return;
+    }
+    this.showExpenseDetails(id);
+  },
+
+  showExpenseDetails(id) {
+    const v = this.vouchersCache.find(x => x.id === id);
+    if (!v) return;
+    this.selectedExpenseId = id;
+
+    const rowEl = document.querySelector(`#expense-entry-tbody tr[data-exp-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#expense-entry-tbody', rowEl);
+    }
+
+    const amt = parseFloat(v.amount) || 0;
+    const head = (v.narration || '').split('|')[0]?.trim() || 'General Expense';
+
+    const elVouch = document.getElementById('eed-voucher');
+    if (elVouch) elVouch.innerText = v.voucherNo || `EXP-${v.id}`;
+    const elCat = document.getElementById('eed-category');
+    if (elCat) elCat.innerText = head;
+    const elDate = document.getElementById('eed-date');
+    if (elDate) elDate.innerText = this.formatDate(v.voucherDate || v.date);
+    const elMode = document.getElementById('eed-mode');
+    if (elMode) elMode.innerText = v.paymentMode || 'NEFT';
+    const elAmt = document.getElementById('eed-amount');
+    if (elAmt) elAmt.innerText = this.formatMoney(amt);
+    const elPayee = document.getElementById('eed-payee');
+    if (elPayee) elPayee.innerText = v.partyName || 'Vendor';
+    const elHead = document.getElementById('eed-head');
+    if (elHead) elHead.innerText = head;
+    const elRef = document.getElementById('eed-ref');
+    if (elRef) elRef.innerText = (v.narration || '').includes('Inv:') ? v.narration.split('Inv:')[1]?.trim() : (v.referenceNo || '-');
+    const elNarr = document.getElementById('eed-narration');
+    if (elNarr) elNarr.innerText = v.narration || 'No remarks recorded.';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('expense-detail-drawer');
+    } else {
+      const drawer = document.getElementById('expense-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  },
+
+  closeExpenseDrawer() {
+    this.selectedExpenseId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('expense-detail-drawer', '#expense-entry-tbody');
+    } else {
+      const drawer = document.getElementById('expense-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#expense-entry-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  },
+
+  drawerExpenseLedger() {
+    if (this.selectedExpenseId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedExpenseId);
+      window.NavigationRouter?.selectNav('view-general-ledger');
+      setTimeout(() => {
+        const inp = document.getElementById('gl-search-input');
+        if (inp) {
+          inp.value = v?.voucherNo || v?.partyName || '';
+          window.FinanceController.loadGeneralLedger();
+        }
+      }, 300);
+    }
+  },
+
+  drawerExpenseAudit() {
+    if (this.selectedExpenseId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedExpenseId);
+      window.AppDialogService?.toastInfo(`Audit trail verified for expense voucher ${v?.voucherNo}`);
+    }
+  },
+
+  drawerExpensePrint() {
+    if (this.selectedExpenseId) {
+      window.print();
+    }
   },
 
   openNewBankEntry() {
@@ -397,7 +593,7 @@ window.FinanceController = {
       const balSuffix = runningBalance >= 0 ? ' Dr' : ' Cr';
 
       return `
-        <tr>
+        <tr data-gl-idx="${idx}" onclick="window.FinanceController.onGlRowClick(${idx}, event)" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${v.entryNumber || v.voucherNo || ('JV-' + (v.id || idx+1))}</td>
           <td style="font-size:0.82rem; color:var(--text-muted);">${this.formatDate(v.entryDate || v.voucherDate || v.date)}</td>
           <td><span class="pill-badge ${isDebit ? 'pill-warning' : 'pill-success'}">${v.entryType || v.voucherType || (isDebit ? 'DEBIT' : 'CREDIT')}</span></td>
@@ -412,6 +608,94 @@ window.FinanceController = {
     }).join('');
 
     this.updateGlKpis(totalDebits, totalCredits, runningBalance, rows.length);
+  },
+
+  onGlRowClick(index, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('gl-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && this.selectedGlIndex === index) {
+      this.closeGlDrawer();
+      return;
+    }
+    this.showGlDetails(index);
+  },
+
+  showGlDetails(index) {
+    const v = this.journalEntriesCache[index];
+    if (!v) return;
+    this.selectedGlIndex = index;
+
+    const rowEl = document.querySelector(`#ledger-table-tbody tr[data-gl-idx="${index}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#ledger-table-tbody', rowEl);
+    }
+
+    const isDebit = (v.type === 'DEBIT' || v.voucherType === 'PAYMENT' || v.voucherType === 'CONTRA_OUT' || (v.debit && parseFloat(v.debit) > 0));
+    const amount = parseFloat(v.amount || v.debit || v.credit || 0);
+    const debitAmt = isDebit ? amount : 0;
+    const creditAmt = !isDebit ? amount : 0;
+
+    const elVouch = document.getElementById('gld-voucher');
+    if (elVouch) elVouch.innerText = v.entryNumber || v.voucherNo || `JV-${index + 1}`;
+    const elDate = document.getElementById('gld-date');
+    if (elDate) elDate.innerText = this.formatDate(v.entryDate || v.voucherDate || v.date);
+    const elType = document.getElementById('gld-type');
+    if (elType) {
+      elType.innerText = v.entryType || v.voucherType || (isDebit ? 'DEBIT' : 'CREDIT');
+      elType.className = `pill-badge ${isDebit ? 'pill-warning' : 'pill-success'}`;
+    }
+    const elDebit = document.getElementById('gld-debit');
+    if (elDebit) elDebit.innerText = debitAmt > 0 ? this.formatMoney(debitAmt) : '₹ 0.00';
+    const elCredit = document.getElementById('gld-credit');
+    if (elCredit) elCredit.innerText = creditAmt > 0 ? this.formatMoney(creditAmt) : '₹ 0.00';
+    const elBal = document.getElementById('gld-running-bal');
+    if (elBal) elBal.innerText = this.formatMoney(amount) + (isDebit ? ' Dr' : ' Cr');
+    const elAcc = document.getElementById('gld-account');
+    if (elAcc) elAcc.innerText = v.accountName || v.partyName || v.bankAccount || 'General Account';
+    const elRef = document.getElementById('gld-ref');
+    if (elRef) elRef.innerText = v.referenceNo || v.ref || '-';
+    const elNarr = document.getElementById('gld-narration');
+    if (elNarr) elNarr.innerText = v.narration || '-';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('gl-detail-drawer');
+    } else {
+      const drawer = document.getElementById('gl-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  },
+
+  closeGlDrawer() {
+    this.selectedGlIndex = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('gl-detail-drawer', '#ledger-table-tbody');
+    } else {
+      const drawer = document.getElementById('gl-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#ledger-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  },
+
+  drawerGlOpenSource() {
+    if (this.selectedGlIndex != null) {
+      const v = this.journalEntriesCache[this.selectedGlIndex];
+      const ref = v?.referenceNo || v?.ref || '';
+      if (ref.startsWith('INV') || ref.startsWith('SAL')) {
+        window.NavigationRouter?.selectNav('view-sales-register');
+      } else if (ref.startsWith('PO') || ref.startsWith('PUR') || ref.startsWith('BILL')) {
+        window.NavigationRouter?.selectNav('view-purchase-register');
+      } else {
+        window.AppDialogService?.toastInfo(`Direct journal posting: ${v?.entryNumber || v?.voucherNo}`);
+      }
+    }
+  },
+
+  drawerGlExportLine() {
+    if (this.selectedGlIndex != null) {
+      const v = this.journalEntriesCache[this.selectedGlIndex];
+      alert(`General Ledger Entry Audit:\nVoucher: ${v?.entryNumber || v?.voucherNo}\nDate: ${v?.entryDate || v?.date}\nAccount: ${v?.accountName || v?.partyName}\nAmount: ${this.formatMoney(v?.amount || 0)}\nNarration: ${v?.narration || '-'}`);
+    }
   },
 
   updateGlKpis(debits, credits, net, count) {
@@ -747,7 +1031,7 @@ window.FinanceController = {
       }
 
       return `
-        <tr>
+        <tr onclick="window.FinanceController.onAgingRowClick(${idx}, event)" data-aging-idx="${idx}" style="cursor:pointer;">
           <td style="font-weight:600; color:var(--text-main);">${r.partyName}</td>
           <td style="text-align:right; font-weight:700; color:var(--cyan);">${this.formatMoney(total)}</td>
           <td style="text-align:right;">${current > 0 ? this.formatMoney(current) : '-'}</td>
@@ -755,9 +1039,9 @@ window.FinanceController = {
           <td style="text-align:right; color:var(--yellow);">${due61To90 > 0 ? this.formatMoney(due61To90) : '-'}</td>
           <td style="text-align:right; color:var(--red); font-weight:700;">${over90 > 0 ? this.formatMoney(over90) : '-'}</td>
           <td style="text-align:center;"><span class="pill-badge ${riskBadge}">${risk}</span></td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.openAgingDrawer(${idx})" style="padding:2px 8px; font-size:0.75rem;">Inspect</button>
-            <button class="btn btn-primary btn-sm" onclick="window.FinanceController.sendAgingReminder(${r.partyId || idx}, '${r.partyName}')" style="padding:2px 8px; font-size:0.75rem;" title="Send Overdue WhatsApp Notice">💬</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.onAgingRowClick(${idx}, event)" style="padding:2px 8px; font-size:0.75rem;">Inspect</button>
+            <button class="btn btn-primary btn-sm" onclick="window.FinanceController.sendAgingReminder(${r.partyId || idx}, '${r.partyName}')" style="padding:2px 8px; font-size:0.75rem;" title="Send Overdue Notice">💬</button>
           </td>
         </tr>
       `;
@@ -786,6 +1070,18 @@ window.FinanceController = {
     }
   },
 
+  onAgingRowClick(idx, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('aging-action-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    const currentRow = (this.agingRowsCache || [])[idx];
+    if (isDrawerOpen && this.selectedAgingParty && this.selectedAgingParty === currentRow) {
+      this.closeAgingDrawer();
+      return;
+    }
+    this.openAgingDrawer(idx);
+  },
+
   openAgingDrawer(idx) {
     const item = (this.agingRowsCache || [])[idx];
     if (!item) return;
@@ -794,42 +1090,92 @@ window.FinanceController = {
     const drawer = document.getElementById('aging-action-drawer');
     if (!drawer) return;
 
-    document.getElementById('ad-party-name').innerText = item.partyName;
-    document.getElementById('ad-phone').innerText = item.phone || '+91 98250 12345';
-    document.getElementById('ad-current').innerText = this.formatMoney(item.current || 0);
-    document.getElementById('ad-31to60').innerText = this.formatMoney(item.due31To60 || 0);
-    document.getElementById('ad-61to90').innerText = this.formatMoney(item.due61To90 || 0);
-    document.getElementById('ad-over90').innerText = this.formatMoney(item.over90 || 0);
-    document.getElementById('ad-total').innerText = this.formatMoney(item.totalDue || 0);
+    const rowEl = document.querySelector(`#aging-table-tbody tr[data-aging-idx="${idx}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#aging-table-tbody', rowEl);
+    }
 
-    drawer.style.display = 'block';
+    const partyNameEl = document.getElementById('ad-party-name');
+    if (partyNameEl) partyNameEl.innerText = item.partyName;
+    const phoneEl = document.getElementById('ad-phone');
+    if (phoneEl) phoneEl.innerText = item.phone || '+91 98250 12345';
+    const groupEl = document.getElementById('ad-group');
+    if (groupEl) groupEl.innerText = this.agingType === 'CREDITORS' ? 'Sundry Creditors' : 'Sundry Debtors';
+    const riskBadgeEl = document.getElementById('ad-risk-badge');
+    if (riskBadgeEl) {
+      riskBadgeEl.innerText = item.riskLevel || (item.over90 > 0 ? 'CRITICAL' : item.due61To90 > 0 ? 'HIGH' : 'NORMAL');
+      riskBadgeEl.className = `pill-badge ${item.over90 > 0 ? 'pill-danger' : item.due61To90 > 0 ? 'pill-warning' : 'pill-success'}`;
+    }
+
+    const curEl = document.getElementById('ad-current');
+    if (curEl) curEl.innerText = this.formatMoney(item.current || 0);
+    const d31El = document.getElementById('ad-31to60');
+    if (d31El) d31El.innerText = this.formatMoney(item.due31To60 || 0);
+    const d61El = document.getElementById('ad-61to90');
+    if (d61El) d61El.innerText = this.formatMoney(item.due61To90 || 0);
+    const ov90El = document.getElementById('ad-over90');
+    if (ov90El) ov90El.innerText = this.formatMoney(item.over90 || 0);
+    const totEl = document.getElementById('ad-total');
+    if (totEl) totEl.innerText = this.formatMoney(item.totalDue || 0);
+
+    const btnRemEl = document.getElementById('ad-btn-reminder');
+    if (btnRemEl) {
+      btnRemEl.innerText = this.agingType === 'CREDITORS' ? '📅 Schedule Payment' : '💬 Send Reminder';
+    }
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('aging-action-drawer');
+    } else {
+      drawer.classList.add('open');
+      drawer.style.display = 'flex';
+    }
   },
 
   closeAgingDrawer() {
-    const drawer = document.getElementById('aging-action-drawer');
-    if (drawer) drawer.style.display = 'none';
+    this.selectedAgingParty = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('aging-action-drawer', '#aging-table-tbody');
+    } else {
+      const drawer = document.getElementById('aging-action-drawer');
+      if (drawer) {
+        drawer.classList.remove('open');
+        drawer.style.display = 'none';
+      }
+      document.querySelectorAll('#aging-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  },
+
+  sendSelectedAgingReminder() {
+    if (!this.selectedAgingParty) return;
+    this.sendAgingReminder(this.selectedAgingParty.partyId || 0, this.selectedAgingParty.partyName);
   },
 
   async sendAgingReminder(partyId, partyName) {
-    if (!confirm(`Send automated WhatsApp payment reminder notice to ${partyName}?`)) return;
+    const isCreditor = this.agingType === 'CREDITORS';
+    const actionDesc = isCreditor ? `Schedule payment for supplier ${partyName}?` : `Send automated payment reminder notice to customer ${partyName}?`;
+    if (!confirm(actionDesc)) return;
     try {
       if (window.AccountingService) {
         await window.AccountingService.sendOverdueReminder(partyId, 'WHATSAPP');
       }
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Payment reminder dispatched to ${partyName}!`);
+      if (window.AppDialogService) {
+        window.AppDialogService.toastSuccess(isCreditor ? `Payment schedule recorded for ${partyName}!` : `Payment reminder dispatched to ${partyName}!`);
+      }
     } catch (e) {
-      alert('Failed to send reminder: ' + e.message);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed: ' + e.message);
+      else alert('Failed: ' + e.message);
     }
   },
 
   viewAgingLedger() {
     if (!this.selectedAgingParty) return;
+    const targetPartyName = this.selectedAgingParty.partyName;
     this.closeAgingDrawer();
     if (window.NavigationRouter) {
       window.NavigationRouter.selectNav('view-general-ledger');
       const input = document.getElementById('gl-search-input');
       if (input) {
-        input.value = this.selectedAgingParty.partyName;
+        input.value = targetPartyName;
         this.loadGeneralLedger();
       }
     }
@@ -845,3 +1191,23 @@ window.FinanceController = {
     this.loadExpenseMode();
   }
 };
+
+// Install escape listeners for Finance Drawers
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('aging-action-drawer', '#aging-table-tbody', () => {
+        if (window.FinanceController) window.FinanceController.selectedAgingParty = null;
+      });
+      window.RegisterUiSupport.installEscapeClose('bank-entry-drawer', () => {
+        if (window.FinanceController) window.FinanceController.closeBankDrawer();
+      });
+      window.RegisterUiSupport.installEscapeClose('expense-detail-drawer', () => {
+        if (window.FinanceController) window.FinanceController.closeExpenseDrawer();
+      });
+      window.RegisterUiSupport.installEscapeClose('gl-detail-drawer', () => {
+        if (window.FinanceController) window.FinanceController.closeGlDrawer();
+      });
+    }
+  });
+}

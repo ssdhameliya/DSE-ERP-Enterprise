@@ -107,8 +107,8 @@ window.ItemMasterController = (function() {
       const isLow = stock <= minStock;
 
       return `
-        <tr style="${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
-          <td style="text-align:center;">
+        <tr onclick="window.ItemMasterController.onItemRowClick('${(i.itemCode || '').replace(/'/g, "\\'")}', event)" data-item-code="${i.itemCode}" style="cursor:pointer; ${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.ItemMasterController.toggleSelectItem('${i.itemCode}', this.checked)">
           </td>
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${i.itemCode}</td>
@@ -153,6 +153,103 @@ window.ItemMasterController = (function() {
     }).join('');
 
     updateSelectionFooter();
+  }
+
+  let selectedItemCode = null;
+
+  function onItemRowClick(itemCode, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('item-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && selectedItemCode === itemCode) {
+      closeItemDrawer();
+      return;
+    }
+    showItemDetails(itemCode);
+  }
+
+  function showItemDetails(itemCode) {
+    const item = items.find(i => i.itemCode === itemCode);
+    if (!item) return;
+    selectedItemCode = itemCode;
+
+    const rowEl = document.querySelector(`#items-table-tbody tr[data-item-code="${itemCode}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#items-table-tbody', rowEl);
+    }
+
+    const codeEl = document.getElementById('id-code');
+    if (codeEl) codeEl.innerText = item.itemCode;
+    const descEl = document.getElementById('id-desc');
+    if (descEl) descEl.innerText = item.description || '-';
+    const catEl = document.getElementById('id-category');
+    if (catEl) catEl.innerText = item.category || 'General';
+
+    const stock = parseFloat(item.openingStock) || 0;
+    const minStock = parseFloat(item.minimumStock) || 10;
+    const isLow = stock <= minStock;
+    const statusBadge = document.getElementById('id-status-badge');
+    if (statusBadge) {
+      statusBadge.innerText = stock <= 0 ? 'OUT OF STOCK' : (isLow ? 'LOW STOCK' : 'IN STOCK');
+      statusBadge.className = `pill-badge ${stock <= 0 ? 'pill-danger' : (isLow ? 'pill-warning' : 'pill-success')}`;
+    }
+
+    const unitEl = document.getElementById('id-unit');
+    if (unitEl) unitEl.innerText = item.unit || 'PCS';
+    const hsnEl = document.getElementById('id-hsn');
+    if (hsnEl) hsnEl.innerText = item.hsn || '-';
+    const gstEl = document.getElementById('id-gst');
+    if (gstEl) gstEl.innerText = (item.gst || 18).toFixed(1) + '%';
+    const discEl = document.getElementById('id-discount');
+    if (discEl) discEl.innerText = (item.discountPercent || 0).toFixed(1) + '%';
+    const pPriceEl = document.getElementById('id-purchase-price');
+    if (pPriceEl) pPriceEl.innerText = formatMoney(item.purchasePrice);
+    const sPriceEl = document.getElementById('id-selling-price');
+    if (sPriceEl) sPriceEl.innerText = formatMoney(item.sellingPrice);
+    const stockEl = document.getElementById('id-stock');
+    if (stockEl) stockEl.innerText = stock.toFixed(2);
+    const minEl = document.getElementById('id-min-stock');
+    if (minEl) minEl.innerText = minStock.toFixed(2);
+    const locEl = document.getElementById('id-location');
+    if (locEl) locEl.innerText = item.location || '-';
+    const bmEl = document.getElementById('id-brand-material');
+    if (bmEl) bmEl.innerText = [item.brand, item.material, item.size].filter(Boolean).join(' • ') || '-';
+    const remEl = document.getElementById('id-remarks');
+    if (remEl) remEl.innerText = item.remarks || 'None';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('item-detail-drawer');
+    } else {
+      const drawer = document.getElementById('item-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  }
+
+  function closeItemDrawer() {
+    selectedItemCode = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('item-detail-drawer', '#items-table-tbody');
+    } else {
+      const drawer = document.getElementById('item-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#items-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  }
+
+  function editDrawerItem() {
+    if (selectedItemCode) openEditItemModal(selectedItemCode);
+  }
+
+  function printDrawerBarcode() {
+    if (selectedItemCode) printBarcode(selectedItemCode);
+  }
+
+  function drawerAuditTrail() {
+    if (selectedItemCode) viewAuditTrail(selectedItemCode);
+  }
+
+  function drawerCreateSale() {
+    if (selectedItemCode) createSale(selectedItemCode);
   }
 
   function toggleActionMenu(itemCode, event) {
@@ -200,7 +297,7 @@ window.ItemMasterController = (function() {
   }
 
   function viewItemDetails(code) {
-    openEditItemModal(code);
+    showItemDetails(code);
   }
 
   function viewAuditTrail(code) {
@@ -625,7 +722,7 @@ window.ItemMasterController = (function() {
       }
 
       return `
-        <tr>
+        <tr onclick="window.ItemMasterController.onInventoryRowClick('${code}', event)" data-inv-code="${code}" style="cursor:pointer;">
           <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${code}</td>
           <td style="font-weight:600;">${desc}</td>
           <td><span class="badge badge-neutral">${cat}</span></td>
@@ -639,7 +736,7 @@ window.ItemMasterController = (function() {
           <td style="text-align:right; color:var(--text-dim);">${min.toFixed(2)}</td>
           <td style="text-align:right; font-weight:700;">${formatMoney(valuation)}</td>
           <td style="text-align:center;">${statusBadge}</td>
-          <td style="text-align:center;">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <div style="display:flex; gap:6px; justify-content:center;">
               <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockAdjustment('${code}')" title="Adjust Physical Stock">⚡ Adjust</button>
               <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockHistory('${code}')" title="View Stock Movement History">📜 History</button>
@@ -730,15 +827,18 @@ window.ItemMasterController = (function() {
         rows = await window.OperationsService.getStockHistory(itemCode);
       }
       if (!rows || rows.length === 0) {
-        // Fallback default opening row
-        rows = [{
-          date: new Date().toISOString().slice(0, 10),
-          type: 'OPENING BALANCE',
-          quantity: item ? (item.openingStock || 0) : 0,
-          reason: 'Initial System Stock Balance',
-          reference: 'INIT-001',
-          user: 'System'
-        }];
+        if (item && parseFloat(item.openingStock || 0) > 0) {
+          rows = [{
+            date: item.createdAt ? item.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            type: 'OPENING BALANCE',
+            quantity: parseFloat(item.openingStock),
+            reason: 'Opening Master Stock Balance',
+            reference: item.code || 'OPENING',
+            user: 'System'
+          }];
+        } else {
+          rows = [];
+        }
       }
 
       if (tbody) {
@@ -809,6 +909,115 @@ window.ItemMasterController = (function() {
     URL.revokeObjectURL(url);
   }
 
+  // --- INVENTORY DETAIL DRAWER (InventoryController.java Parity) ---
+  let selectedInvCode = null;
+
+  function onInventoryRowClick(code, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('inventory-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && selectedInvCode === code) {
+      closeInventoryDrawer();
+      return;
+    }
+    showInventoryDetails(code);
+  }
+
+  function showInventoryDetails(code) {
+    const item = inventoryItems.find(i => (i.itemCode || i.code) === code);
+    if (!item) return;
+    selectedInvCode = code;
+
+    const rowEl = document.querySelector(`#inventory-tbody tr[data-inv-code="${code}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#inventory-tbody', rowEl);
+    }
+
+    const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
+    const available = parseFloat(item.availableStock != null ? item.availableStock : stock);
+    const min = parseFloat(item.minimumStock || 10);
+    const cost = parseFloat(item.purchasePrice || item.costPrice || 0);
+    const valuation = stock * cost;
+
+    const elCode = document.getElementById('inv-d-code');
+    if (elCode) elCode.innerText = item.itemCode || item.code || code;
+    const elName = document.getElementById('inv-d-name');
+    if (elName) elName.innerText = item.description || item.name || '-';
+    const elCat = document.getElementById('inv-d-category');
+    if (elCat) elCat.innerText = item.category || 'General';
+
+    const elStatus = document.getElementById('inv-d-status');
+    if (elStatus) {
+      if (stock <= 0) {
+        elStatus.innerText = 'OUT OF STOCK';
+        elStatus.className = 'pill-badge pill-danger';
+      } else if (stock <= min) {
+        elStatus.innerText = 'LOW STOCK';
+        elStatus.className = 'pill-badge pill-warning';
+      } else {
+        elStatus.innerText = 'HEALTHY IN STOCK';
+        elStatus.className = 'pill-badge pill-success';
+      }
+    }
+
+    const elStock = document.getElementById('inv-d-stock');
+    if (elStock) elStock.innerText = `${stock.toFixed(2)} ${item.unit || 'NOS'}`;
+    const elAvail = document.getElementById('inv-d-avail');
+    if (elAvail) elAvail.innerText = `${available.toFixed(2)} ${item.unit || 'NOS'}`;
+    const elMin = document.getElementById('inv-d-min');
+    if (elMin) elMin.innerText = `${min.toFixed(2)} ${item.unit || 'NOS'}`;
+    const elHsn = document.getElementById('inv-d-hsn');
+    if (elHsn) elHsn.innerText = item.hsn || '-';
+    const elVal = document.getElementById('inv-d-valuation');
+    if (elVal) elVal.innerText = formatMoney(valuation);
+    const elLoc = document.getElementById('inv-d-location');
+    if (elLoc) elLoc.innerText = item.location || '-';
+    const elGst = document.getElementById('inv-d-gst');
+    if (elGst) elGst.innerText = `${(item.gst || 18).toFixed(1)}%`;
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('inventory-detail-drawer');
+    } else {
+      const drawer = document.getElementById('inventory-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  }
+
+  function closeInventoryDrawer() {
+    selectedInvCode = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('inventory-detail-drawer', '#inventory-tbody');
+    } else {
+      const drawer = document.getElementById('inventory-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#inventory-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  }
+
+  function drawerAdjustStock() {
+    if (selectedInvCode) openStockAdjustment(selectedInvCode);
+  }
+
+  function drawerStockHistory() {
+    if (selectedInvCode) openStockHistory(selectedInvCode);
+  }
+
+  function drawerEditFromInv() {
+    if (selectedInvCode) {
+      window.NavigationRouter?.selectNav('view-items');
+      setTimeout(() => {
+        openEditItemModal(selectedInvCode);
+      }, 300);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('item-detail-drawer', closeItemDrawer);
+      window.RegisterUiSupport.installEscapeClose('inventory-detail-drawer', closeInventoryDrawer);
+    }
+  });
+
   return {
     loadItems,
     filterItems,
@@ -829,6 +1038,15 @@ window.ItemMasterController = (function() {
     populateItemLookups,
     loadCategories() { loadCategoriesDropdown(); },
 
+    // Item Master Drawer Parity
+    onItemRowClick,
+    showItemDetails,
+    closeItemDrawer,
+    editDrawerItem,
+    printDrawerBarcode,
+    drawerAuditTrail,
+    drawerCreateSale,
+
     // Inventory Ledger Parity
     loadInventory,
     filterInventory,
@@ -836,6 +1054,14 @@ window.ItemMasterController = (function() {
     submitStockAdjustment,
     openStockHistory,
     exportInventoryExcel,
+
+    // Inventory Drawer Parity
+    onInventoryRowClick,
+    showInventoryDetails,
+    closeInventoryDrawer,
+    drawerAdjustStock,
+    drawerStockHistory,
+    drawerEditFromInv,
 
     exportItems() { window.open('/api/master/items/export/excel', '_blank'); },
     importItems() { if (window.NavigationRouter) window.NavigationRouter.selectNav('view-import'); }

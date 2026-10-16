@@ -217,7 +217,7 @@ window.QuotationController = (function() {
   }
 
   function onRowClick(id, event) {
-    if (event && event.target && event.target.closest('button, select, input, a, .action-dropdown-menu')) return;
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
     const drawer = document.getElementById('quote-detail-drawer');
     if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedQuote && selectedQuote.id === id) {
       closeDrawer();
@@ -244,8 +244,8 @@ window.QuotationController = (function() {
     if (!drawer) return;
 
     // Highlight row
-    document.querySelectorAll('#quote-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
-    const rows = document.querySelectorAll('#quote-table-tbody tr');
+    document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    const rows = document.querySelectorAll('#tbl-quotations-body tr');
     rows.forEach(r => {
       const onclickAttr = r.getAttribute('onclick') || '';
       if (onclickAttr.includes(`onRowClick(${id},`) || onclickAttr.includes(`onRowClick(${id})`)) {
@@ -284,14 +284,34 @@ window.QuotationController = (function() {
     }
   }
 
+  function showAudit(id, no) {
+    const targetId = id || (selectedQuote ? selectedQuote.id : null);
+    const targetNo = no || (selectedQuote ? selectedQuote.no : '');
+    if (!targetNo) return;
+    if (window.AppDialogService && window.AppDialogService.showActivityTimeline) {
+      window.AppDialogService.showActivityTimeline('QUOTATION', targetId, targetNo);
+    } else {
+      window.AppDialogService.toastInfo(`Audit trail for Quotation ${targetNo}`);
+    }
+  }
+
   function closeDrawer() {
     const drawer = document.getElementById('quote-detail-drawer');
     if (drawer) {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
     }
-    document.querySelectorAll('#quote-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedQuote = null;
+  }
+
+  // Install escape listener once loaded
+  if (typeof window !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.installEscapeClose('quote-detail-drawer', '#tbl-quotations-body', closeDrawer);
+      }
+    });
   }
 
   // 3. WORKFLOW ACTIONS
@@ -787,6 +807,7 @@ window.QuotationController = (function() {
   return {
     loadQuotations,
     showDetails,
+    showAudit,
     closeDrawer,
     onRowClick,
     toggleActionMenu,

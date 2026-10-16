@@ -13,6 +13,8 @@ window.UserAccessController = (function() {
   let activeTab = 'tab-users';
   let editingUserId = null;
   let selectedTargetUserId = null;
+  let selectedUserId = null;
+  let selectedUser = null;
 
   return {
     editSelectedUser() {
@@ -172,7 +174,7 @@ window.UserAccessController = (function() {
         const roleBadge = `<span class="badge badge-role" style="background: rgba(14,165,233,0.15); color: var(--cyan); border: 1px solid rgba(14,165,233,0.3); font-weight:700;">${u.role || 'USER'}</span>`;
 
         return `
-          <tr style="cursor: pointer;" onclick="window.UserAccessController.openEditUserModal(${u.id})">
+          <tr onclick="window.UserAccessController.onUserRowClick(${u.id}, event)" data-user-id="${u.id}" style="cursor: pointer;">
             <td style="color: var(--text-dim); font-size: 0.75rem;">#${u.id || '-'}</td>
             <td style="font-weight: 700; color: #fff;">${u.fullName || u.username}</td>
             <td style="color: var(--cyan); font-family: monospace;">${u.username || '-'}</td>
@@ -193,6 +195,91 @@ window.UserAccessController = (function() {
           </tr>
         `;
       }).join('');
+    },
+
+    onUserRowClick(id, event) {
+      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+      const drawer = document.getElementById('user-detail-drawer');
+      const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
+      if (isOpen && selectedUserId === id) {
+        this.closeUserDrawer();
+        return;
+      }
+      this.openUserDrawer(id);
+    },
+
+    openUserDrawer(id) {
+      const u = cachedUsers.find(x => x.id === id);
+      if (!u) return;
+      selectedUserId = id;
+      selectedUser = u;
+
+      const drawer = document.getElementById('user-detail-drawer');
+      if (!drawer) return;
+
+      const isLocked = u.locked || !u.active;
+      const setEl = (elemId, text) => { const el = document.getElementById(elemId); if (el) el.innerText = text; };
+
+      setEl('ud-full-name', u.fullName || u.username);
+      setEl('ud-username', '@' + (u.username || '-'));
+      
+      const badge = document.getElementById('ud-status-badge');
+      if (badge) {
+        badge.innerText = isLocked ? 'LOCKED / RESTRICTED' : 'ACTIVE';
+        badge.className = `pill-badge ${isLocked ? 'pill-danger' : 'pill-success'}`;
+      }
+
+      setEl('ud-role', u.role || 'USER');
+      setEl('ud-mfa', u.mfaEnabled ? 'ENABLED (2FA Active)' : 'DISABLED (Optional)');
+      setEl('ud-dept', u.department || 'GENERAL');
+      setEl('ud-branch', u.branch || 'HEADQUARTERS');
+      setEl('ud-email', u.email || '-');
+      setEl('ud-last-login', u.lastLogin ? window.FormatUtil.formatDateTime(u.lastLogin) : 'Never logged in');
+
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('user-detail-drawer');
+        const rowEl = document.querySelector(`#users-table-tbody tr[data-user-id="${id}"]`);
+        if (rowEl) window.RegisterUiSupport.highlightRow('#users-table-tbody', rowEl);
+      } else {
+        drawer.style.display = 'flex';
+      }
+    },
+
+    closeUserDrawer() {
+      selectedUserId = null;
+      selectedUser = null;
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.hideDrawer('user-detail-drawer', '#users-table-tbody');
+      } else {
+        const drawer = document.getElementById('user-detail-drawer');
+        if (drawer) drawer.style.display = 'none';
+        document.querySelectorAll('#users-table-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+      }
+    },
+
+    drawerEditUser() {
+      if (selectedUserId) this.openEditUserModal(selectedUserId);
+    },
+
+    drawerResetPassword() {
+      if (selectedUser) this.openPasswordModal(selectedUser.id, selectedUser.username);
+    },
+
+    drawerToggleLock() {
+      if (!selectedUser) return;
+      const isLocked = selectedUser.locked || !selectedUser.active;
+      this.toggleLockUser(selectedUser.id, !isLocked);
+    },
+
+    drawerToggleMfa() {
+      if (selectedUserId) this.toggleMfaUser(selectedUserId);
+    },
+
+    drawerUserAudit() {
+      if (!selectedUser) return;
+      if (window.AppDialogService) {
+        window.AppDialogService.showActivityTimeline('USER', selectedUser.id, selectedUser.username);
+      }
     },
 
     toggleRowActionsMenu(btnEl, userId, event) {
@@ -683,3 +770,17 @@ window.UserAccessController = (function() {
     }
   };
 })();
+
+// Install escape listener for User Detail Drawer
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('user-detail-drawer', () => {
+        if (window.UserAccessController && window.UserAccessController.closeUserDrawer) {
+          window.UserAccessController.closeUserDrawer();
+        }
+      });
+    }
+  });
+}
+

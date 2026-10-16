@@ -9,6 +9,8 @@ window.MasterDataController = (function() {
   let currentLookups = [];
   let filteredLookups = [];
   let selectedLookupId = null;
+  let selectedMasterId = null;
+  let selectedMasterItem = null;
 
   function escapeHtml(str) {
     if (!str) return '';
@@ -31,19 +33,7 @@ window.MasterDataController = (function() {
         const cats = await window.MasterService.getCategories();
         categories = Array.isArray(cats) ? cats : [];
         
-        // If empty, provide default enterprise categories matching Masterdata.fxml
-        if (categories.length === 0) {
-          categories = [
-            { categoryName: 'UNIT', name: 'UNIT', active: true, count: 6 },
-            { categoryName: 'PRODUCT_CATEGORY', name: 'PRODUCT_CATEGORY', active: true, count: 8 },
-            { categoryName: 'PAYMENT_TERMS', name: 'PAYMENT_TERMS', active: true, count: 4 },
-            { categoryName: 'TAX_CATEGORY', name: 'TAX_CATEGORY', active: true, count: 5 },
-            { categoryName: 'TRANSPORTER', name: 'TRANSPORTER', active: true, count: 3 },
-            { categoryName: 'CHARGE_TYPE', name: 'CHARGE_TYPE', active: true, count: 4 },
-            { categoryName: 'CUSTOMER_CATEGORY', name: 'CUSTOMER_CATEGORY', active: true, count: 3 },
-            { categoryName: 'BRANCH', name: 'BRANCH', active: true, count: 2 }
-          ];
-        }
+
 
         this.renderCategoriesList(categories);
 
@@ -178,7 +168,7 @@ window.MasterDataController = (function() {
           : '<span class="badge badge-overdue" style="font-size: 0.72rem;">INACTIVE</span>';
 
         return `
-          <tr style="cursor: default;">
+          <tr onclick="window.MasterDataController.onMasterRowClick('${escapeHtml(id)}', event)" data-master-id="${escapeHtml(id)}" style="cursor: pointer;">
             <td style="font-weight: 700; color: var(--cyan); font-family: monospace;">${escapeHtml(code)}</td>
             <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(name)}</td>
             <td style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(desc)}</td>
@@ -194,6 +184,89 @@ window.MasterDataController = (function() {
           </tr>
         `;
       }).join('');
+    },
+
+    onMasterRowClick(id, event) {
+      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+      const drawer = document.getElementById('master-detail-drawer');
+      const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
+      if (isOpen && String(selectedMasterId) === String(id)) {
+        this.closeMasterDrawer();
+        return;
+      }
+      this.openMasterDrawer(id);
+    },
+
+    openMasterDrawer(id) {
+      const item = currentLookups.find(l => String(l.id) === String(id));
+      if (!item) return;
+      selectedMasterId = id;
+      selectedMasterItem = item;
+      selectedLookupId = id;
+
+      const drawer = document.getElementById('master-detail-drawer');
+      if (!drawer) return;
+
+      const code = item.lookupCode || item.code || '-';
+      const name = item.lookupValue || item.name || item.value || '-';
+      const desc = item.description || 'No additional custom attributes specified.';
+      const sortOrder = item.sortOrder != null ? item.sortOrder : 1;
+      const isActive = item.active !== false;
+
+      const setEl = (elemId, text) => { const el = document.getElementById(elemId); if (el) el.innerText = text; };
+
+      setEl('md-lookup-code', code);
+      setEl('md-category', currentCategory || 'LOOKUP');
+      setEl('md-name', name);
+      setEl('md-sort-order', sortOrder);
+      setEl('md-category-name', currentCategory || '-');
+      setEl('md-description', desc);
+
+      const badge = document.getElementById('md-status');
+      if (badge) {
+        badge.innerText = isActive ? 'ACTIVE' : 'INACTIVE';
+        badge.className = `pill-badge ${isActive ? 'pill-success' : 'pill-danger'}`;
+      }
+
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('master-detail-drawer');
+        const rowEl = document.querySelector(`#masters-table-tbody tr[data-master-id="${id}"]`);
+        if (rowEl) window.RegisterUiSupport.highlightRow('#masters-table-tbody', rowEl);
+      } else {
+        drawer.style.display = 'flex';
+      }
+    },
+
+    closeMasterDrawer() {
+      selectedMasterId = null;
+      selectedMasterItem = null;
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.hideDrawer('master-detail-drawer', '#masters-table-tbody');
+      } else {
+        const drawer = document.getElementById('master-detail-drawer');
+        if (drawer) drawer.style.display = 'none';
+        document.querySelectorAll('#masters-table-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+      }
+    },
+
+    drawerEditLookup() {
+      if (selectedMasterId) this.openEditLookupModal(selectedMasterId);
+    },
+
+    drawerToggleStatus() {
+      if (selectedMasterId) this.toggleSelectedLookupActive();
+    },
+
+    drawerCopyCode() {
+      if (!selectedMasterItem) return;
+      const code = selectedMasterItem.lookupCode || selectedMasterItem.code || '';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code).then(() => {
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Copied lookup code "${code}" to clipboard!`);
+        }).catch(() => {
+          if (window.AppDialogService) window.AppDialogService.toastInfo(`Lookup code: ${code}`);
+        });
+      }
     },
 
     toggleRowActionsMenu(btnEl, lookupId, event) {
@@ -502,3 +575,17 @@ window.MasterDataController = (function() {
     }
   };
 })();
+
+// Install escape listener for Master Detail Drawer
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('master-detail-drawer', () => {
+        if (window.MasterDataController && window.MasterDataController.closeMasterDrawer) {
+          window.MasterDataController.closeMasterDrawer();
+        }
+      });
+    }
+  });
+}
+

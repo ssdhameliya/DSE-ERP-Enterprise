@@ -96,13 +96,119 @@ window.PartyController = (function() {
   }
 
   function selectCustomerRow(id) {
-    selectedCustomerId = id;
-    const tbody = document.getElementById('customers-table-tbody');
-    if (tbody) {
-      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected-row'));
+    onCustomerRowClick(id);
+  }
+
+  function onCustomerRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('customer-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && selectedCustomerId === id) {
+      closeCustomerDrawer();
+      return;
     }
-    const row = document.getElementById(`cust-row-${id}`);
-    if (row) row.classList.add('selected-row');
+    showCustomerDetails(id);
+  }
+
+  function showCustomerDetails(id) {
+    const cust = customers.find(c => c.id === id);
+    if (!cust) return;
+    selectedCustomerId = id;
+
+    const rowEl = document.querySelector(`#customers-table-tbody tr[data-cust-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#customers-table-tbody', rowEl);
+    }
+
+    const nameEl = document.getElementById('cd-name');
+    if (nameEl) nameEl.innerText = cust.name || 'Customer Details';
+    const codeEl = document.getElementById('cd-code');
+    if (codeEl) codeEl.innerText = cust.partyCode || cust.code || `ID: ${cust.id}`;
+
+    const statusEl = document.getElementById('cd-status');
+    if (statusEl) {
+      const isActive = cust.active !== false;
+      statusEl.innerText = isActive ? 'ACTIVE' : 'INACTIVE';
+      statusEl.className = `pill-badge ${isActive ? 'pill-success' : 'pill-danger'}`;
+    }
+
+    const gstTypeEl = document.getElementById('cd-gst-type');
+    if (gstTypeEl) {
+      const hasGst = cust.gstin && cust.gstin.trim().length >= 15;
+      gstTypeEl.innerText = hasGst ? 'B2B REGISTERED' : 'UNREGISTERED / CONSUMER';
+      gstTypeEl.className = `pill-badge ${hasGst ? 'pill-neutral' : 'pill-warning'}`;
+    }
+
+    const phoneEl = document.getElementById('cd-phone');
+    if (phoneEl) phoneEl.innerText = cust.phone || '-';
+    const emailEl = document.getElementById('cd-email');
+    if (emailEl) emailEl.innerText = cust.email || '-';
+    const gstinEl = document.getElementById('cd-gstin');
+    if (gstinEl) gstinEl.innerText = cust.gstin || '-';
+    const panEl = document.getElementById('cd-pan');
+    if (panEl) panEl.innerText = cust.pan || (cust.gstin && cust.gstin.length >= 12 ? cust.gstin.substring(2, 12) : '-');
+
+    const bal = parseFloat(cust.openingBalance) || 0;
+    const balEl = document.getElementById('cd-balance');
+    if (balEl) balEl.innerText = formatMoney(bal);
+
+    const contactEl = document.getElementById('cd-contact');
+    if (contactEl) contactEl.innerText = cust.contactPerson || '-';
+    const addrEl = document.getElementById('cd-address');
+    if (addrEl) addrEl.innerText = cust.address || '-';
+    const stateEl = document.getElementById('cd-state');
+    if (stateEl) stateEl.innerText = [cust.state, cust.stateCode].filter(Boolean).join(' (Code: ') + (cust.stateCode ? ')' : '') || 'Local State';
+    const termsEl = document.getElementById('cd-credit-terms');
+    if (termsEl) termsEl.innerText = cust.creditDays ? `Net ${cust.creditDays} Days` : 'Net 30 Days';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('customer-detail-drawer');
+    } else {
+      const drawer = document.getElementById('customer-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  }
+
+  function closeCustomerDrawer() {
+    selectedCustomerId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('customer-detail-drawer', '#customers-table-tbody');
+    } else {
+      const drawer = document.getElementById('customer-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#customers-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  }
+
+  function drawerEditCustomer() {
+    if (selectedCustomerId) openEditPartyModal('CUSTOMER', selectedCustomerId);
+  }
+
+  function drawerCustomer360() {
+    if (selectedCustomerId) openCustomer360(selectedCustomerId);
+  }
+
+  function drawerCustomerLedger() {
+    if (selectedCustomerId) {
+      const cust = customers.find(c => c.id === selectedCustomerId);
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-general-ledger');
+        setTimeout(() => {
+          if (window.FinanceController && window.FinanceController.selectLedgerAccount) {
+            window.FinanceController.selectLedgerAccount(cust?.name || '');
+          }
+        }, 300);
+      }
+    }
+  }
+
+  function drawerNewSale() {
+    if (selectedCustomerId) {
+      const cust = customers.find(c => c.id === selectedCustomerId);
+      if (window.SalesController && window.SalesController.openSaleWorkspace) {
+        window.SalesController.openSaleWorkspace(null, cust?.name || '');
+      }
+    }
   }
 
   function openSelectedCustomer360() {
@@ -136,10 +242,9 @@ window.PartyController = (function() {
       const code = c.partyCode || c.code || '-';
       const bal = parseFloat(c.openingBalance) || 0;
       const isActive = c.active !== false;
-      const isSelected = selectedCustomerId === c.id;
 
       return `
-        <tr id="cust-row-${c.id}" class="${isSelected ? 'selected-row' : ''}" onclick="window.PartyController.selectCustomerRow(${c.id})" ondblclick="window.PartyController.openCustomer360(${c.id})" style="cursor:pointer;">
+        <tr id="cust-row-${c.id}" data-cust-id="${c.id}" onclick="window.PartyController.onCustomerRowClick(${c.id}, event)" ondblclick="window.PartyController.openCustomer360(${c.id})" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${code}</td>
           <td style="font-weight:600; color:var(--text-main);">${c.name || '-'}</td>
           <td>${c.contactPerson || '-'}</td>
@@ -236,13 +341,119 @@ window.PartyController = (function() {
   }
 
   function selectSupplierRow(id) {
-    selectedSupplierId = id;
-    const tbody = document.getElementById('suppliers-table-tbody');
-    if (tbody) {
-      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected-row'));
+    onSupplierRowClick(id);
+  }
+
+  function onSupplierRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('supplier-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && selectedSupplierId === id) {
+      closeSupplierDrawer();
+      return;
     }
-    const row = document.getElementById(`supp-row-${id}`);
-    if (row) row.classList.add('selected-row');
+    showSupplierDetails(id);
+  }
+
+  function showSupplierDetails(id) {
+    const supp = suppliers.find(s => s.id === id);
+    if (!supp) return;
+    selectedSupplierId = id;
+
+    const rowEl = document.querySelector(`#suppliers-table-tbody tr[data-supp-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#suppliers-table-tbody', rowEl);
+    }
+
+    const nameEl = document.getElementById('sd-name');
+    if (nameEl) nameEl.innerText = supp.name || 'Supplier Details';
+    const codeEl = document.getElementById('sd-code');
+    if (codeEl) codeEl.innerText = supp.partyCode || supp.code || `ID: ${supp.id}`;
+
+    const statusEl = document.getElementById('sd-status');
+    if (statusEl) {
+      const isActive = supp.active !== false;
+      statusEl.innerText = isActive ? 'ACTIVE' : 'INACTIVE';
+      statusEl.className = `pill-badge ${isActive ? 'pill-success' : 'pill-danger'}`;
+    }
+
+    const gstTypeEl = document.getElementById('sd-gst-type');
+    if (gstTypeEl) {
+      const hasGst = supp.gstin && supp.gstin.trim().length >= 15;
+      gstTypeEl.innerText = hasGst ? 'B2B REGISTERED' : 'UNREGISTERED / VENDOR';
+      gstTypeEl.className = `pill-badge ${hasGst ? 'pill-neutral' : 'pill-warning'}`;
+    }
+
+    const phoneEl = document.getElementById('sd-phone');
+    if (phoneEl) phoneEl.innerText = supp.phone || '-';
+    const emailEl = document.getElementById('sd-email');
+    if (emailEl) emailEl.innerText = supp.email || '-';
+    const gstinEl = document.getElementById('sd-gstin');
+    if (gstinEl) gstinEl.innerText = supp.gstin || '-';
+    const panEl = document.getElementById('sd-pan');
+    if (panEl) panEl.innerText = supp.pan || (supp.gstin && supp.gstin.length >= 12 ? supp.gstin.substring(2, 12) : '-');
+
+    const bal = parseFloat(supp.openingBalance) || 0;
+    const balEl = document.getElementById('sd-balance');
+    if (balEl) balEl.innerText = formatMoney(bal);
+
+    const contactEl = document.getElementById('sd-contact');
+    if (contactEl) contactEl.innerText = supp.contactPerson || '-';
+    const addrEl = document.getElementById('sd-address');
+    if (addrEl) addrEl.innerText = supp.address || '-';
+    const stateEl = document.getElementById('sd-state');
+    if (stateEl) stateEl.innerText = [supp.state, supp.stateCode].filter(Boolean).join(' (Code: ') + (supp.stateCode ? ')' : '') || 'Local State';
+    const termsEl = document.getElementById('sd-credit-terms');
+    if (termsEl) termsEl.innerText = supp.creditDays ? `Net ${supp.creditDays} Days` : 'Net 30 Days';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('supplier-detail-drawer');
+    } else {
+      const drawer = document.getElementById('supplier-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  }
+
+  function closeSupplierDrawer() {
+    selectedSupplierId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('supplier-detail-drawer', '#suppliers-table-tbody');
+    } else {
+      const drawer = document.getElementById('supplier-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#suppliers-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  }
+
+  function drawerEditSupplier() {
+    if (selectedSupplierId) openEditPartyModal('SUPPLIER', selectedSupplierId);
+  }
+
+  function drawerSupplier360() {
+    if (selectedSupplierId) openSupplier360(selectedSupplierId);
+  }
+
+  function drawerSupplierLedger() {
+    if (selectedSupplierId) {
+      const supp = suppliers.find(s => s.id === selectedSupplierId);
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-general-ledger');
+        setTimeout(() => {
+          if (window.FinanceController && window.FinanceController.selectLedgerAccount) {
+            window.FinanceController.selectLedgerAccount(supp?.name || '');
+          }
+        }, 300);
+      }
+    }
+  }
+
+  function drawerNewPurchase() {
+    if (selectedSupplierId) {
+      const supp = suppliers.find(s => s.id === selectedSupplierId);
+      if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+        window.PurchaseController.openPurchaseEditor(null, supp?.name || '');
+      }
+    }
   }
 
   function openSelectedSupplier360() {
@@ -276,10 +487,9 @@ window.PartyController = (function() {
       const code = s.partyCode || s.code || '-';
       const bal = parseFloat(s.openingBalance) || 0;
       const isActive = s.active !== false;
-      const isSelected = selectedSupplierId === s.id;
 
       return `
-        <tr id="supp-row-${s.id}" class="${isSelected ? 'selected-row' : ''}" onclick="window.PartyController.selectSupplierRow(${s.id})" ondblclick="window.PartyController.openSupplier360(${s.id})" style="cursor:pointer;">
+        <tr id="supp-row-${s.id}" data-supp-id="${s.id}" onclick="window.PartyController.onSupplierRowClick(${s.id}, event)" ondblclick="window.PartyController.openSupplier360(${s.id})" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${code}</td>
           <td style="font-weight:600; color:var(--text-main);">${s.name || '-'}</td>
           <td>${s.contactPerson || '-'}</td>
@@ -944,7 +1154,34 @@ window.PartyController = (function() {
     switch360Tab,
     addCustomerNote,
     addSupplierNote,
+
+    // Customer Drawer Methods
+    onCustomerRowClick,
+    showCustomerDetails,
+    closeCustomerDrawer,
+    drawerEditCustomer,
+    drawerCustomer360,
+    drawerCustomerLedger,
+    drawerNewSale,
+
+    // Supplier Drawer Methods
+    onSupplierRowClick,
+    showSupplierDetails,
+    closeSupplierDrawer,
+    drawerEditSupplier,
+    drawerSupplier360,
+    drawerSupplierLedger,
+    drawerNewPurchase,
+
     exportCustomers() { window.open('/api/master/parties/export?type=CUSTOMER', '_blank'); },
     exportSuppliers() { window.open('/api/master/parties/export?type=SUPPLIER', '_blank'); }
   };
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.RegisterUiSupport) {
+    window.RegisterUiSupport.installEscapeClose('customer-detail-drawer', () => window.PartyController.closeCustomerDrawer());
+    window.RegisterUiSupport.installEscapeClose('supplier-detail-drawer', () => window.PartyController.closeSupplierDrawer());
+  }
+});
+

@@ -200,24 +200,17 @@ window.ReportsController = (function() {
         };
       }
 
-      // Default generic sample
+      // Clean fallback if report microservice endpoint returns empty
       return {
         reportId,
-        title: 'Executive Financial Summary',
+        title: 'Report Summary',
         columns: [
           { key: 'code', label: 'REFERENCE', numeric: false },
           { key: 'desc', label: 'DESCRIPTION', numeric: false },
           { key: 'amount', label: 'AMOUNT (₹)', numeric: true }
         ],
-        rows: [
-          { values: ['REV-Q3', 'Total Revenue from Operations', window.FormatUtil.formatRupees(1250000)] },
-          { values: ['COGS-Q3', 'Cost of Goods Sold (Raw Materials)', window.FormatUtil.formatRupees(780000)] },
-          { values: ['OPEX-Q3', 'Operational & Utility Expenses', window.FormatUtil.formatRupees(145000)] },
-          { values: ['EBITDA', 'Gross Operating Margin (EBITDA)', window.FormatUtil.formatRupees(325000)] }
-        ],
-        totals: {
-          amount: window.FormatUtil.formatRupees(325000)
-        }
+        rows: [],
+        totals: {}
       };
     },
 

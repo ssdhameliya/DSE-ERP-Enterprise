@@ -19,7 +19,9 @@ window.AutomationCenterController = (function() {
   ];
 
   let selectedMatchRow = null;
+  let selectedMatchIndex = null;
   let selectedReorderRow = null;
+  let selectedReorderIndex = null;
 
   function formatMoney(amount) {
     const val = parseFloat(amount) || 0;
@@ -71,42 +73,7 @@ window.AutomationCenterController = (function() {
 
     processMatches(purchases) {
       if (!purchases || purchases.length === 0) {
-        // Fallback realistic matches
-        allMatchRows = [
-          {
-            billNo: 'PB-2026-001',
-            poNo: 'PO-2026-881',
-            supplier: 'Kiran Textiles Ltd',
-            poAmt: 125000.00,
-            grnAmt: 125000.00,
-            billAmt: 125000.00,
-            variance: 0.00,
-            status: 'MATCHED',
-            matchedAt: new Date().toISOString().split('T')[0]
-          },
-          {
-            billNo: 'PB-2026-002',
-            poNo: 'PO-2026-885',
-            supplier: 'Surat Yarn Distributors',
-            poAmt: 84000.00,
-            grnAmt: 84000.00,
-            billAmt: 84000.00,
-            variance: 0.00,
-            status: 'MATCHED',
-            matchedAt: new Date().toISOString().split('T')[0]
-          },
-          {
-            billNo: 'PB-2026-003',
-            poNo: 'PO-2026-892',
-            supplier: 'Apex Chemical Suppliers',
-            poAmt: 46500.00,
-            grnAmt: 42000.00,
-            billAmt: 46500.00,
-            variance: 4500.00,
-            status: 'REVIEW_REQUIRED',
-            matchedAt: new Date().toISOString().split('T')[0]
-          }
-        ];
+        allMatchRows = [];
         return;
       }
 
@@ -116,11 +83,10 @@ window.AutomationCenterController = (function() {
         const supplier = (p.supplier && p.supplier.name) || p.supplierName || 'Primary Vendor';
         const billAmt = parseFloat(p.totalAmount != null ? p.totalAmount : (p.total || 0));
         
-        // Minor simulated variance on a small subset for demonstration
-        const hasVariance = idx === 2 && billAmt > 10000;
-        const variance = hasVariance ? 1500.00 : 0.00;
-        const poAmt = billAmt;
-        const grnAmt = Math.max(0, billAmt - variance);
+        // Compute variance against linked purchase order/GRN
+        const poAmt = parseFloat(p.poAmount || billAmt);
+        const grnAmt = parseFloat(p.grnAmount || billAmt);
+        const variance = Math.abs(billAmt - grnAmt);
         const status = variance === 0 ? 'MATCHED' : (grnAmt < billAmt ? 'REVIEW_REQUIRED' : 'SHORT_SHIPMENT');
 
         return {
@@ -140,41 +106,7 @@ window.AutomationCenterController = (function() {
 
     processReorders(items) {
       if (!items || items.length === 0) {
-        allReorderRows = [
-          {
-            code: 'RAW-COT-001',
-            name: 'Raw Combed Cotton 40s',
-            currentStock: 120.00,
-            minStock: 200.00,
-            suggestedQty: 280.00,
-            unit: 'KGS',
-            rate: 260.00,
-            estCost: 72800.00,
-            status: 'LOW_STOCK'
-          },
-          {
-            code: 'DYE-BLU-009',
-            name: 'Reactive Blue Dye Powder',
-            currentStock: 0.00,
-            minStock: 50.00,
-            suggestedQty: 100.00,
-            unit: 'KGS',
-            rate: 450.00,
-            estCost: 45000.00,
-            status: 'OUT_OF_STOCK'
-          },
-          {
-            code: 'YRN-POLY-02',
-            name: 'Polyester Filament Spool',
-            currentStock: 850.00,
-            minStock: 300.00,
-            suggestedQty: 0.00,
-            unit: 'SPOOL',
-            rate: 110.00,
-            estCost: 0.00,
-            status: 'HEALTHY'
-          }
-        ];
+        allReorderRows = [];
         return;
       }
 
@@ -288,7 +220,7 @@ window.AutomationCenterController = (function() {
         const isMatched = m.status === 'MATCHED';
         const badgeClass = isMatched ? 'pill-success' : (m.status === 'REVIEW_REQUIRED' ? 'pill-warning' : 'pill-danger');
         return `
-          <tr style="cursor:pointer;" onclick="window.AutomationCenterController.showMatchDetail(${idx})">
+          <tr onclick="window.AutomationCenterController.onMatchRowClick(${idx}, event)" data-match-idx="${idx}" style="cursor:pointer;">
             <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${m.billNo}</td>
             <td style="font-family:monospace; color:var(--text-dim);">${m.poNo}</td>
             <td style="font-weight:600; color:var(--text-main);">${m.supplier}</td>
@@ -297,39 +229,103 @@ window.AutomationCenterController = (function() {
             <td style="text-align:right; font-weight:700;">${formatMoney(m.billAmt)}</td>
             <td style="text-align:right; color:${m.variance > 0 ? 'var(--red)' : 'var(--text-dim)'}; font-weight:${m.variance > 0 ? '700' : '400'};">${m.variance > 0 ? formatMoney(m.variance) : '₹ 0.00'}</td>
             <td style="text-align:center;"><span class="pill-badge ${badgeClass}">${m.status}</span></td>
-            <td style="text-align:center; white-space:nowrap;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); window.AutomationCenterController.showMatchDetail(${idx})" style="padding:2px 8px; font-size:0.75rem;">Inspect</button>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="window.AutomationCenterController.showMatchDetail(${idx})" style="padding:2px 8px; font-size:0.75rem;">Inspect</button>
             </td>
           </tr>
         `;
       }).join('');
     },
 
+    onMatchRowClick(idx, event) {
+      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+      const drawer = document.getElementById('auto-match-drawer');
+      const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
+      if (isOpen && selectedMatchIndex === idx) {
+        this.closeMatchDrawer();
+        return;
+      }
+      this.showMatchDetail(idx);
+    },
+
     showMatchDetail(idx) {
       const item = allMatchRows[idx];
       if (!item) return;
+      selectedMatchIndex = idx;
       selectedMatchRow = item;
 
       const drawer = document.getElementById('auto-match-drawer');
       if (!drawer) return;
 
-      document.getElementById('amd-bill-no').innerText = item.billNo;
-      document.getElementById('amd-supplier').innerText = item.supplier;
-      document.getElementById('amd-po-no').innerText = item.poNo;
-      document.getElementById('amd-po-amt').innerText = formatMoney(item.poAmt);
-      document.getElementById('amd-grn-amt').innerText = formatMoney(item.grnAmt);
-      document.getElementById('amd-bill-amt').innerText = formatMoney(item.billAmt);
-      document.getElementById('amd-variance').innerText = formatMoney(item.variance);
-      document.getElementById('amd-status').innerText = item.status;
-      document.getElementById('amd-status').className = `pill-badge ${item.status === 'MATCHED' ? 'pill-success' : 'pill-warning'}`;
+      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      setEl('amd-bill-no', item.billNo);
+      setEl('amd-supplier', item.supplier);
+      setEl('amd-po-no', item.poNo);
+      setEl('amd-po-amt', formatMoney(item.poAmt));
+      setEl('amd-grn-amt', formatMoney(item.grnAmt));
+      setEl('amd-bill-amt', formatMoney(item.billAmt));
+      setEl('amd-variance', formatMoney(item.variance));
+      
+      const elStatus = document.getElementById('amd-status');
+      if (elStatus) {
+        elStatus.innerText = item.status;
+        elStatus.className = `pill-badge ${item.status === 'MATCHED' ? 'pill-success' : (item.status === 'REVIEW_REQUIRED' ? 'pill-warning' : 'pill-danger')}`;
+      }
 
-      drawer.style.display = 'block';
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('auto-match-drawer');
+        const rowEl = document.querySelector(`#auto-matches-tbody tr[data-match-idx="${idx}"]`);
+        if (rowEl) window.RegisterUiSupport.highlightRow('#auto-matches-tbody', rowEl);
+      } else {
+        drawer.style.display = 'flex';
+      }
     },
 
     closeMatchDrawer() {
-      const drawer = document.getElementById('auto-match-drawer');
-      if (drawer) drawer.style.display = 'none';
+      selectedMatchIndex = null;
       selectedMatchRow = null;
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.hideDrawer('auto-match-drawer', '#auto-matches-tbody');
+      } else {
+        const drawer = document.getElementById('auto-match-drawer');
+        if (drawer) drawer.style.display = 'none';
+        document.querySelectorAll('#auto-matches-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+      }
+    },
+
+    drawerOpenBill() {
+      if (!selectedMatchRow) return;
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-purchase-register');
+        setTimeout(() => {
+          if (window.PurchaseController && window.PurchaseController.openPurchaseDetails) {
+            window.PurchaseController.openPurchaseDetails(selectedMatchRow.id);
+          }
+        }, 200);
+      }
+    },
+
+    drawerSupplierLedger() {
+      if (!selectedMatchRow) return;
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-general-ledger');
+        setTimeout(() => {
+          const filter = document.getElementById('gl-account-filter');
+          if (filter) {
+            filter.value = selectedMatchRow.supplier;
+            if (window.FinanceController && window.FinanceController.filterGeneralLedger) {
+              window.FinanceController.filterGeneralLedger();
+            }
+          }
+        }, 200);
+      }
+    },
+
+    drawerAuditTimeline() {
+      if (!selectedMatchRow) return;
+      if (window.AppDialogService) {
+        window.AppDialogService.showActivityTimeline('PURCHASE', selectedMatchRow.id, selectedMatchRow.billNo);
+      }
     },
 
     filterReorders() {
@@ -363,7 +359,7 @@ window.AutomationCenterController = (function() {
         else if (r.status === 'LOW_STOCK') badgeClass = 'pill-warning';
 
         return `
-          <tr style="cursor:pointer;" onclick="window.AutomationCenterController.showReorderDetail(${idx})">
+          <tr onclick="window.AutomationCenterController.onReorderRowClick(${idx}, event)" data-reorder-idx="${idx}" style="cursor:pointer;">
             <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.code}</td>
             <td style="font-weight:600; color:var(--text-main);">${r.name}</td>
             <td style="text-align:right; font-weight:700; color:${r.currentStock <= 0 ? 'var(--red)' : (r.currentStock <= r.minStock ? 'var(--yellow)' : 'var(--text-main)')};">${r.currentStock}</td>
@@ -372,36 +368,104 @@ window.AutomationCenterController = (function() {
             <td style="text-align:center;"><span class="pill-badge pill-neutral">${r.unit}</span></td>
             <td style="text-align:right; font-weight:700;">${r.estCost > 0 ? formatMoney(r.estCost) : '-'}</td>
             <td style="text-align:center;"><span class="pill-badge ${badgeClass}">${r.status}</span></td>
-            <td style="text-align:center; white-space:nowrap;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); window.AutomationCenterController.createPoForItem('${r.code}', ${r.suggestedQty})" style="padding:2px 8px; font-size:0.75rem;">+ Create PO</button>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+              <button type="button" class="btn btn-primary btn-sm" onclick="window.AutomationCenterController.createPoForItem('${r.code}', ${r.suggestedQty})" style="padding:2px 8px; font-size:0.75rem;">+ Create PO</button>
             </td>
           </tr>
         `;
       }).join('');
     },
 
+    onReorderRowClick(idx, event) {
+      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+      const drawer = document.getElementById('auto-reorder-drawer');
+      const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
+      if (isOpen && selectedReorderIndex === idx) {
+        this.closeReorderDrawer();
+        return;
+      }
+      this.showReorderDetail(idx);
+    },
+
     showReorderDetail(idx) {
       const item = allReorderRows[idx];
       if (!item) return;
+      selectedReorderIndex = idx;
       selectedReorderRow = item;
 
       const drawer = document.getElementById('auto-reorder-drawer');
       if (!drawer) return;
 
-      document.getElementById('ard-code').innerText = item.code;
-      document.getElementById('ard-name').innerText = item.name;
-      document.getElementById('ard-stock').innerText = `${item.currentStock} ${item.unit}`;
-      document.getElementById('ard-min').innerText = `${item.minStock} ${item.unit}`;
-      document.getElementById('ard-suggested').innerText = `${item.suggestedQty} ${item.unit}`;
-      document.getElementById('ard-est-cost').innerText = formatMoney(item.estCost);
+      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      setEl('ard-code', item.code);
+      setEl('ard-name', item.name);
+      setEl('ard-stock', `${item.currentStock} ${item.unit}`);
+      setEl('ard-min', `${item.minStock} ${item.unit}`);
+      setEl('ard-suggested', `${item.suggestedQty} ${item.unit}`);
+      setEl('ard-est-cost', formatMoney(item.estCost));
 
-      drawer.style.display = 'block';
+      const elStatus = document.getElementById('ard-status');
+      if (elStatus) {
+        elStatus.innerText = item.status;
+        elStatus.className = `pill-badge ${item.status === 'OUT_OF_STOCK' ? 'pill-danger' : (item.status === 'LOW_STOCK' ? 'pill-warning' : 'pill-success')}`;
+      }
+
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('auto-reorder-drawer');
+        const rowEl = document.querySelector(`#auto-reorders-tbody tr[data-reorder-idx="${idx}"]`);
+        if (rowEl) window.RegisterUiSupport.highlightRow('#auto-reorders-tbody', rowEl);
+      } else {
+        drawer.style.display = 'flex';
+      }
     },
 
     closeReorderDrawer() {
-      const drawer = document.getElementById('auto-reorder-drawer');
-      if (drawer) drawer.style.display = 'none';
+      selectedReorderIndex = null;
       selectedReorderRow = null;
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.hideDrawer('auto-reorder-drawer', '#auto-reorders-tbody');
+      } else {
+        const drawer = document.getElementById('auto-reorder-drawer');
+        if (drawer) drawer.style.display = 'none';
+        document.querySelectorAll('#auto-reorders-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+      }
+    },
+
+    drawerCreatePo() {
+      if (!selectedReorderRow) return;
+      this.createPoForItem(selectedReorderRow.code, selectedReorderRow.suggestedQty);
+    },
+
+    drawerOpenStockRegister() {
+      if (!selectedReorderRow) return;
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-inventory');
+        setTimeout(() => {
+          const searchInput = document.getElementById('inventory-search-input');
+          if (searchInput) {
+            searchInput.value = selectedReorderRow.code;
+            if (window.ItemMasterController && window.ItemMasterController.filterInventory) {
+              window.ItemMasterController.filterInventory();
+            }
+          }
+        }, 200);
+      }
+    },
+
+    drawerItemMaster() {
+      if (!selectedReorderRow) return;
+      if (window.NavigationRouter) {
+        window.NavigationRouter.selectNav('view-item-master');
+        setTimeout(() => {
+          const searchInput = document.getElementById('item-master-search-input');
+          if (searchInput) {
+            searchInput.value = selectedReorderRow.code;
+            if (window.ItemMasterController && window.ItemMasterController.filterItems) {
+              window.ItemMasterController.filterItems();
+            }
+          }
+        }, 200);
+      }
     },
 
     createPoForItem(itemCode, qty) {
@@ -450,3 +514,22 @@ window.AutomationCenterController = (function() {
     }
   };
 })();
+
+// Install escape listeners for both Automation Center drawers
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('auto-match-drawer', () => {
+        if (window.AutomationCenterController && window.AutomationCenterController.closeMatchDrawer) {
+          window.AutomationCenterController.closeMatchDrawer();
+        }
+      });
+      window.RegisterUiSupport.installEscapeClose('auto-reorder-drawer', () => {
+        if (window.AutomationCenterController && window.AutomationCenterController.closeReorderDrawer) {
+          window.AutomationCenterController.closeReorderDrawer();
+        }
+      });
+    }
+  });
+}
+

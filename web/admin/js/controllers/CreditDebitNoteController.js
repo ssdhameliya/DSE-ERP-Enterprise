@@ -272,6 +272,23 @@ window.CreditDebitNoteController = (function() {
     const drawer = document.getElementById(isCredit ? 'cn-detail-drawer' : 'dn-detail-drawer');
     if (!drawer) return;
 
+    // Toggle close if clicking already active note
+    if ((drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedNote && selectedNote.id === id) {
+      closeDrawer(isCredit);
+      return;
+    }
+
+    // Highlight row
+    const tableId = isCredit ? 'tbl-credit-notes-body' : 'tbl-debit-notes-body';
+    document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
+    const rows = document.querySelectorAll(`#${tableId} tr`);
+    rows.forEach(r => {
+      const onclickAttr = r.getAttribute('onclick') || '';
+      if (onclickAttr.includes(`showNoteDetails(${id},`)) {
+        r.classList.add('active-selected-row');
+      }
+    });
+
     try {
       const note = isCredit ? await window.OperationsService.getCreditNote(id) : await window.OperationsService.getDebitNote(id);
       selectedNote = note;
@@ -303,7 +320,19 @@ window.CreditDebitNoteController = (function() {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
     }
+    const tableId = isCredit ? 'tbl-credit-notes-body' : 'tbl-debit-notes-body';
+    document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
     selectedNote = null;
+  }
+
+  // Install escape listeners
+  if (typeof window !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.installEscapeClose('cn-detail-drawer', '#tbl-credit-notes-body', () => closeDrawer(true));
+        window.RegisterUiSupport.installEscapeClose('dn-detail-drawer', '#tbl-debit-notes-body', () => closeDrawer(false));
+      }
+    });
   }
 
   // 4. CANCEL NOTE ACTION

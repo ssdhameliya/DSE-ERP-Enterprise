@@ -187,8 +187,8 @@ window.BankStatementController = (function() {
       else badgeClass = 'pill-danger';
 
       return `
-        <tr style="${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
-          <td style="text-align:center;">
+        <tr data-stmt-id="${t.id}" onclick="window.BankStatementController.onTxnRowClick(${t.id}, event)" style="cursor:pointer; ${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.BankStatementController.toggleSelectTxn(${t.id}, this.checked)">
           </td>
           <td style="white-space:nowrap; font-weight:600;">${formatDate(t.transactionDate)}</td>
@@ -214,7 +214,7 @@ window.BankStatementController = (function() {
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--purple);" title="${t.matchLink || t.linkedDocumentNo || ''}">
             ${t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-')}
           </td>
-          <td style="text-align:center; white-space:nowrap;">
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div style="display:flex; gap:4px; justify-content:center;">
               ${status === 'MATCHED' || status === 'EXPENSE' ? `
                 <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.reverseMatch(${t.id})" style="padding:2px 6px; font-size:0.72rem;" title="Reverse Reconciliation">↩ Reverse</button>
@@ -738,6 +738,111 @@ window.BankStatementController = (function() {
     if (m) m.style.display = 'none';
   }
 
+  // --- STATEMENT TRANSACTION DETAIL DRAWER ---
+  let activeSelectedTxnId = null;
+
+  function onTxnRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('statement-detail-drawer');
+    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+    if (isDrawerOpen && activeSelectedTxnId === id) {
+      closeStatementDrawer();
+      return;
+    }
+    showTxnDetails(id);
+  }
+
+  function showTxnDetails(id) {
+    const t = currentTransactions.find(x => x.id === id);
+    if (!t) return;
+    activeSelectedTxnId = id;
+
+    const rowEl = document.querySelector(`#bank-statement-tbody tr[data-stmt-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#bank-statement-tbody', rowEl);
+    }
+
+    const debit = parseFloat(t.debit) || 0;
+    const credit = parseFloat(t.credit) || 0;
+    const balance = parseFloat(t.balance) || 0;
+    const status = t.status || 'UNMATCHED';
+
+    const elRef = document.getElementById('bsd-ref');
+    if (elRef) elRef.innerText = t.reference ? `Ref: ${t.reference}` : `Txn #${t.id}`;
+    const elStatus = document.getElementById('bsd-status');
+    if (elStatus) {
+      elStatus.innerText = status;
+      let badgeClass = 'pill-neutral';
+      if (status === 'MATCHED') badgeClass = 'pill-success';
+      else if (status === 'SUGGESTED') badgeClass = 'pill-warning';
+      else if (status === 'EXPENSE') badgeClass = 'pill-purple';
+      else if (status === 'REVIEW') badgeClass = 'pill-warning';
+      else if (status === 'IGNORED') badgeClass = 'pill-neutral';
+      else badgeClass = 'pill-danger';
+      elStatus.className = `pill-badge ${badgeClass}`;
+    }
+
+    const elDate = document.getElementById('bsd-date');
+    if (elDate) elDate.innerText = formatDate(t.transactionDate);
+    const elValDate = document.getElementById('bsd-value-date');
+    if (elValDate) elValDate.innerText = formatDate(t.valueDate || t.transactionDate);
+    const elDebit = document.getElementById('bsd-debit');
+    if (elDebit) elDebit.innerText = debit > 0 ? formatMoney(debit) : '-';
+    const elCredit = document.getElementById('bsd-credit');
+    if (elCredit) elCredit.innerText = credit > 0 ? formatMoney(credit) : '-';
+    const elBal = document.getElementById('bsd-balance');
+    if (elBal) elBal.innerText = formatMoney(balance);
+    const elLink = document.getElementById('bsd-link');
+    if (elLink) elLink.innerText = t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `Suggested (${t.suggestedConfidence.toFixed(0)}%)` : 'Unlinked');
+    const elNarr = document.getElementById('bsd-narration');
+    if (elNarr) elNarr.innerText = t.description || '-';
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('statement-detail-drawer');
+    } else {
+      const drawer = document.getElementById('statement-detail-drawer');
+      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+    }
+  }
+
+  function closeStatementDrawer() {
+    activeSelectedTxnId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('statement-detail-drawer', '#bank-statement-tbody');
+    } else {
+      const drawer = document.getElementById('statement-detail-drawer');
+      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+      document.querySelectorAll('#bank-statement-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
+  }
+
+  function drawerMatch() {
+    if (activeSelectedTxnId) {
+      openMatchModal(activeSelectedTxnId);
+    }
+  }
+
+  function drawerMoveExpense() {
+    if (activeSelectedTxnId) {
+      const t = currentTransactions.find(x => x.id === activeSelectedTxnId);
+      const debit = parseFloat(t?.debit) || 0;
+      if (debit > 0) {
+        quickMoveExpense(activeSelectedTxnId, debit);
+      } else {
+        alert('Only debit transactions can be moved to operating expenses.');
+      }
+    }
+  }
+
+  function drawerMoveBankEntry() {
+    if (activeSelectedTxnId) {
+      const t = currentTransactions.find(x => x.id === activeSelectedTxnId);
+      const debit = parseFloat(t?.debit) || 0;
+      const credit = parseFloat(t?.credit) || 0;
+      quickMoveBankEntry(activeSelectedTxnId, debit > 0 ? debit : credit, debit > 0 ? 'DEBIT' : 'CREDIT');
+    }
+  }
+
   return {
     loadStatementWorkspace,
     onBatchSelected,
@@ -769,6 +874,23 @@ window.BankStatementController = (function() {
     toggleStatementHistory,
     openHistoryBatch,
     deleteStatement,
-    closeModal
+    closeModal,
+
+    // Drawer Parity
+    onTxnRowClick,
+    showTxnDetails,
+    closeStatementDrawer,
+    drawerMatch,
+    drawerMoveExpense,
+    drawerMoveBankEntry
   };
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.RegisterUiSupport) {
+    window.RegisterUiSupport.installEscapeClose('statement-detail-drawer', () => {
+      if (window.BankStatementController) window.BankStatementController.closeStatementDrawer();
+    });
+  }
+});
+

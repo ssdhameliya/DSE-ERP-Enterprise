@@ -1102,27 +1102,47 @@
       margin-bottom: 14px;
     }
 
-    /* SLIDE DETAIL DRAWER (PARITY WITH DESKTOP SalesReturns.fxml / CreditNoteRegister.fxml) */
-    .slide-detail-drawer {
-      position: fixed;
-      right: 0;
-      top: 64px;
-      bottom: 30px;
-      width: 440px;
-      max-width: 90vw;
-      background: #0b1324;
-      border-left: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: -12px 0 35px rgba(0, 0, 0, 0.65);
-      z-index: 1000;
+    /* REGISTER INLINE DOCKED DETAIL DRAWER (DESKTOP RegisterUiSupport SplitPane PARITY) */
+    .register-workspace,
+    .sales-register-workspace {
+      display: flex;
+      gap: 14px;
+      width: 100%;
+      align-items: stretch;
+    }
+    .register-table-panel,
+    .sales-table-panel {
+      flex: 1;
+      min-width: 0;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .slide-detail-drawer,
+    .register-inline-drawer,
+    .sales-inline-drawer {
+      position: static !important;
+      width: 380px !important;
+      min-width: 360px !important;
+      max-width: 420px !important;
+      flex-shrink: 0 !important;
       display: none;
       flex-direction: column;
+      background: rgba(15, 23, 42, 0.98) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 10px !important;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4) !important;
+      overflow-y: auto !important;
+      max-height: calc(100vh - 270px) !important;
+      transform: none !important;
+      z-index: 10 !important;
       backdrop-filter: blur(20px);
-      transform: translateX(100%);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .slide-detail-drawer.open {
-      display: flex;
-      transform: translateX(0);
+    .slide-detail-drawer.open,
+    .register-inline-drawer.open,
+    .sales-inline-drawer.open {
+      display: flex !important;
     }
     .drawer-header {
       padding: 16px 20px;
@@ -2142,21 +2162,31 @@
     table.data-table tr.active-selected-row td:first-child {
       border-left: 4px solid var(--cyan, #38bdf8) !important;
     }
-    .sales-inline-drawer {
+    .sales-inline-drawer,
+    .register-inline-drawer,
+    .slide-detail-drawer {
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: -6px 0 24px rgba(0, 0, 0, 0.45);
     }
-    .sales-inline-drawer::-webkit-scrollbar {
+    .sales-inline-drawer::-webkit-scrollbar,
+    .register-inline-drawer::-webkit-scrollbar,
+    .slide-detail-drawer::-webkit-scrollbar {
       width: 6px;
     }
-    .sales-inline-drawer::-webkit-scrollbar-track {
+    .sales-inline-drawer::-webkit-scrollbar-track,
+    .register-inline-drawer::-webkit-scrollbar-track,
+    .slide-detail-drawer::-webkit-scrollbar-track {
       background: rgba(15, 23, 42, 0.6);
     }
-    .sales-inline-drawer::-webkit-scrollbar-thumb {
+    .sales-inline-drawer::-webkit-scrollbar-thumb,
+    .register-inline-drawer::-webkit-scrollbar-thumb,
+    .slide-detail-drawer::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.15);
       border-radius: 3px;
     }
-    .sales-inline-drawer::-webkit-scrollbar-thumb:hover {
+    .sales-inline-drawer::-webkit-scrollbar-thumb:hover,
+    .register-inline-drawer::-webkit-scrollbar-thumb:hover,
+    .slide-detail-drawer::-webkit-scrollbar-thumb:hover {
       background: rgba(56, 189, 248, 0.4);
     }
 

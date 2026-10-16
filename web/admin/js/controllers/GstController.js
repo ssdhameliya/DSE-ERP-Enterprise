@@ -16,6 +16,7 @@ window.GstController = {
   reconciliationRows: [],
   filteredReconRows: [],
   selectedReconRow: null,
+  selectedReconIndex: null,
   activeSupplierNotice: null,
   gstr3bCache: null,
   gstr1Data: null,
@@ -256,7 +257,7 @@ window.GstController = {
       const sgst = parseFloat(r.sgstAmount != null ? r.sgstAmount : (r.sgst || 0));
 
       return `
-        <tr>
+        <tr onclick="window.GstController.onGstRowClick(${idx}, event)" data-gst-idx="${idx}" style="cursor:pointer;">
           <td style="font-family:monospace; color:var(--purple); font-weight:600;">${r.supplierGstin || '-'}</td>
           <td style="font-weight:600; color:var(--text-main);">${r.supplierTradeName || r.supplierName || '-'}</td>
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.invoiceNumber || r.invoiceNo || '-'}</td>
@@ -266,7 +267,7 @@ window.GstController = {
           <td style="text-align:right;">${cgst > 0 ? this.formatMoney(cgst) : '-'}</td>
           <td style="text-align:right;">${sgst > 0 ? this.formatMoney(sgst) : '-'}</td>
           <td style="text-align:center;"><span class="pill-badge ${badge}">${status}</span></td>
-          <td style="text-align:center;">
+          <td style="text-align:center;" onclick="event.stopPropagation();">
             <button class="btn btn-secondary btn-sm" onclick="window.GstController.openReconDrawer(${idx})" style="padding:2px 8px; font-size:0.75rem;">Verify</button>
           </td>
         </tr>
@@ -274,10 +275,22 @@ window.GstController = {
     }).join('');
   },
 
+  onGstRowClick(idx, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const drawer = document.getElementById('gst-recon-drawer');
+    const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
+    if (isOpen && this.selectedReconIndex === idx) {
+      this.closeReconDrawer();
+      return;
+    }
+    this.openReconDrawer(idx);
+  },
+
   openReconDrawer(idx) {
     const row = this.filteredReconRows[idx];
     if (!row) return;
 
+    this.selectedReconIndex = idx;
     this.selectedReconRow = row;
     const drawer = document.getElementById('gst-recon-drawer');
     if (!drawer) return;
@@ -287,21 +300,35 @@ window.GstController = {
     const cgst = parseFloat(row.cgstAmount != null ? row.cgstAmount : (row.cgst || 0));
     const sgst = parseFloat(row.sgstAmount != null ? row.sgstAmount : (row.sgst || 0));
 
-    document.getElementById('rd-invoice-no').innerText = row.invoiceNumber || row.invoiceNo || '-';
-    document.getElementById('rd-date').innerText = this.formatDate(row.invoiceDate);
-    document.getElementById('rd-supplier').innerText = row.supplierTradeName || row.supplierName || '-';
-    document.getElementById('rd-gstin').innerText = row.supplierGstin || '-';
-    document.getElementById('rd-taxable').innerText = this.formatMoney(taxable);
-    document.getElementById('rd-cgst').innerText = this.formatMoney(cgst + sgst);
-    document.getElementById('rd-igst').innerText = this.formatMoney(igst);
-    document.getElementById('rd-eligibility').innerText = row.itcEligibility || (row.matchStatus === 'MATCHED' ? 'Eligible (100% Claimable)' : 'Pending Verification');
+    const setEl = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+    setEl('rd-invoice-no', row.invoiceNumber || row.invoiceNo || '-');
+    setEl('rd-date', this.formatDate(row.invoiceDate));
+    setEl('rd-supplier', row.supplierTradeName || row.supplierName || '-');
+    setEl('rd-gstin', row.supplierGstin || '-');
+    setEl('rd-taxable', this.formatMoney(taxable));
+    setEl('rd-cgst', this.formatMoney(cgst + sgst));
+    setEl('rd-igst', this.formatMoney(igst));
+    setEl('rd-eligibility', row.itcEligibility || (row.matchStatus === 'MATCHED' ? 'Eligible (100% Claimable)' : 'Pending Verification'));
 
-    drawer.style.display = 'block';
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('gst-recon-drawer');
+      const rowEl = document.querySelector(`#gst-2b-tbody tr[data-gst-idx="${idx}"]`);
+      if (rowEl) window.RegisterUiSupport.highlightRow('#gst-2b-tbody', rowEl);
+    } else {
+      drawer.style.display = 'flex';
+    }
   },
 
   closeReconDrawer() {
-    const drawer = document.getElementById('gst-recon-drawer');
-    if (drawer) drawer.style.display = 'none';
+    this.selectedReconIndex = null;
+    this.selectedReconRow = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('gst-recon-drawer', '#gst-2b-tbody');
+    } else {
+      const drawer = document.getElementById('gst-recon-drawer');
+      if (drawer) drawer.style.display = 'none';
+      document.querySelectorAll('#gst-2b-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+    }
   },
 
   auditSelected() {
@@ -579,7 +606,7 @@ Jasvi Industries`;
           b2b: this.mapSalesToB2bParties(sales),
           b2cs: this.mapSalesToB2cs(sales),
           cdnr: [],
-          hsn: this.generateSampleHsn(),
+          hsn: this.generateSampleHsn(sales),
           documents: this.generateSampleDocs(sales)
         };
       } else {
@@ -644,17 +671,54 @@ Jasvi Industries`;
     ];
   },
 
-  generateSampleHsn() {
-    return [
-      { num: 1, hsn_sc: '7318', desc: 'Screws, bolts, nuts, washers', uqc: 'KGS', qty: 14500, val: 652500, txval: 552966.10, rt: 18.0, iamt: 24883.47, camt: 37325.21, samt: 37325.21 },
-      { num: 2, hsn_sc: '8483', desc: 'Transmission shafts, cranks, gears', uqc: 'NOS', qty: 320, val: 284000, txval: 240677.96, rt: 18.0, iamt: 43322.04, camt: 0, samt: 0 }
-    ];
+  generateSampleHsn(sales) {
+    if (!sales || sales.length === 0) return [];
+    const hsnMap = new Map();
+    let num = 1;
+    sales.forEach(s => {
+      (s.lines || []).forEach(l => {
+        const hsn = l.hsnCode || l.hsn || 'MISC';
+        if (!hsnMap.has(hsn)) {
+          hsnMap.set(hsn, {
+            num: num++,
+            hsn_sc: hsn,
+            desc: l.description || l.name || 'Commodity Supply',
+            uqc: l.unit || 'NOS',
+            qty: 0,
+            val: 0,
+            txval: 0,
+            rt: parseFloat(l.taxRate || 18.0),
+            iamt: 0,
+            camt: 0,
+            samt: 0
+          });
+        }
+        const rec = hsnMap.get(hsn);
+        rec.qty += parseFloat(l.quantity || 1);
+        rec.val += parseFloat(l.total || l.amount || 0);
+        rec.txval += parseFloat(l.taxableAmount || l.amount || 0);
+        rec.camt += parseFloat(l.cgstAmount || 0);
+        rec.samt += parseFloat(l.sgstAmount || 0);
+        rec.iamt += parseFloat(l.igstAmount || 0);
+      });
+    });
+    return Array.from(hsnMap.values());
   },
 
   generateSampleDocs(sales) {
+    if (!sales || sales.length === 0) return [];
+    const invoiceNos = sales.map(s => s.invoiceNo).filter(Boolean).sort();
+    if (invoiceNos.length === 0) return [];
     return [
-      { doc_num: 1, doc_name: 'Tax Invoices for Outward Supply', from_serial: 'JI/25-26/001', to_serial: 'JI/25-26/150', total_count: 150, cancelled_count: 2, net_issued_count: 148 },
-      { doc_num: 2, doc_name: 'Credit Notes', from_serial: 'CN-2526-001', to_serial: 'CN-2526-005', total_count: 5, cancelled_count: 0, net_issued_count: 5 }
+      {
+        doc_num: 1,
+        doc_name: 'Tax Invoices for Outward Supply',
+        from_serial: invoiceNos[0],
+        to_serial: invoiceNos[invoiceNos.length - 1],
+        total_count: sales.length,
+        cancelled_count: sales.filter(s => (s.status || '').toUpperCase() === 'CANCELLED').length,
+        net_issued_count: sales.filter(s => (s.status || '').toUpperCase() !== 'CANCELLED').length
+      }
     ];
   },
 
@@ -830,3 +894,17 @@ Jasvi Industries`;
     }
   }
 };
+
+// Install escape listener for GST Recon Drawer
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('gst-recon-drawer', () => {
+        if (window.GstController && window.GstController.closeReconDrawer) {
+          window.GstController.closeReconDrawer();
+        }
+      });
+    }
+  });
+}
+

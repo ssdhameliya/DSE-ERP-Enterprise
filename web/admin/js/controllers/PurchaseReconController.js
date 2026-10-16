@@ -118,7 +118,7 @@ window.PurchaseReconController = (function() {
       else badgeClass = 'pill-neutral';
 
       return `
-        <tr>
+        <tr onclick="window.PurchaseReconController.onReconRowClick(${r.id}, event)" data-recon-id="${r.id}" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.systemRef || 'PRC-' + r.id}</td>
           <td style="white-space:nowrap;">${formatDate(r.invoiceDate)}</td>
           <td style="font-weight:600; color:var(--text-main);">${r.supplierName || '-'}</td>
@@ -134,7 +134,7 @@ window.PurchaseReconController = (function() {
             <span class="pill-badge ${badgeClass}">${status}</span>
           </td>
           <td><span class="pill-badge pill-neutral">${r.source || 'MANUAL'}</span></td>
-          <td style="text-align:center; white-space:nowrap;">
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div style="display:flex; gap:4px; justify-content:center;">
               <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.openEditRecon(${r.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Recon">✏️</button>
               <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.viewBankLinks(${r.id})" style="padding:2px 6px; font-size:0.72rem;" title="View Bank Links">🔗</button>
@@ -144,6 +144,17 @@ window.PurchaseReconController = (function() {
         </tr>
       `;
     }).join('');
+  }
+
+  function onReconRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const panel = document.getElementById('recon-editor-panel');
+    const isOpen = panel && (panel.classList.contains('open') || panel.style.display === 'flex' || panel.style.display === 'block');
+    if (isOpen && activeEditingReconId === id) {
+      closeReconEditor();
+      return;
+    }
+    openEditRecon(id);
   }
 
   function updatePagination() {
@@ -191,6 +202,10 @@ window.PurchaseReconController = (function() {
     const panel = document.getElementById('recon-editor-panel');
     if (!panel) return;
 
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.clearSelection('#purchase-recon-tbody');
+    }
+
     document.getElementById('pr-editor-title').innerText = 'New Purchase Recon';
     document.getElementById('pr-editor-subtitle').innerText = 'Reference generated automatically on save';
 
@@ -208,13 +223,23 @@ window.PurchaseReconController = (function() {
     document.getElementById('pr-editor-balance').innerText = '₹ 0.00';
     document.getElementById('pr-editor-status').innerText = 'OPEN';
 
-    panel.style.display = 'block';
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('recon-editor-panel');
+    } else {
+      panel.classList.add('open');
+      panel.style.display = 'flex';
+    }
   }
 
   async function openEditRecon(id) {
     activeEditingReconId = id;
     const panel = document.getElementById('recon-editor-panel');
     if (!panel) return;
+
+    const rowEl = document.querySelector(`#purchase-recon-tbody tr[data-recon-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#purchase-recon-tbody', rowEl);
+    }
 
     try {
       const r = await window.ReconService.getReconRecord(id);
@@ -238,7 +263,12 @@ window.PurchaseReconController = (function() {
       document.getElementById('pr-editor-balance').innerText = formatMoney(r.balance || 0);
       document.getElementById('pr-editor-status').innerText = (r.status || 'OPEN').toUpperCase();
 
-      panel.style.display = 'block';
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('recon-editor-panel');
+      } else {
+        panel.classList.add('open');
+        panel.style.display = 'flex';
+      }
 
     } catch (e) {
       alert('Failed to load record details: ' + (e.message || 'Server error'));
@@ -337,8 +367,17 @@ window.PurchaseReconController = (function() {
   }
 
   function closeReconEditor() {
-    const panel = document.getElementById('recon-editor-panel');
-    if (panel) panel.style.display = 'none';
+    activeEditingReconId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('recon-editor-panel', '#purchase-recon-tbody');
+    } else {
+      const panel = document.getElementById('recon-editor-panel');
+      if (panel) {
+        panel.classList.remove('open');
+        panel.style.display = 'none';
+      }
+      document.querySelectorAll('#purchase-recon-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
   }
 
   // ==========================================
@@ -404,7 +443,7 @@ window.PurchaseReconController = (function() {
       const isActive = (s.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 
       return `
-        <tr>
+        <tr onclick="window.PurchaseReconController.onSupplierRowClick(${s.id}, event)" data-supplier-id="${s.id}" style="cursor:pointer;">
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${s.reference || 'SUPP-' + s.id}</td>
           <td style="font-weight:600; color:var(--text-main);">${s.legalName}</td>
           <td style="font-family:monospace; color:var(--purple);">${s.gstin || 'Unregistered'}</td>
@@ -414,7 +453,7 @@ window.PurchaseReconController = (function() {
           <td style="text-align:center;">
             ${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}
           </td>
-          <td style="text-align:center; white-space:nowrap;">
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div style="display:flex; gap:4px; justify-content:center;">
               <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.openEditSupplier(${s.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Supplier">✏️ Edit</button>
               <button class="btn btn-danger btn-sm" onclick="window.PurchaseReconController.deleteSupplier(${s.id})" style="padding:2px 6px; font-size:0.72rem;" title="Delete Supplier">🗑️</button>
@@ -425,12 +464,27 @@ window.PurchaseReconController = (function() {
     }).join('');
   }
 
+  function onSupplierRowClick(id, event) {
+    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+    const panel = document.getElementById('recon-supplier-editor-panel');
+    const isOpen = panel && (panel.classList.contains('open') || panel.style.display === 'flex' || panel.style.display === 'block');
+    if (isOpen && activeEditingSupplierId === id) {
+      closeSupplierEditor();
+      return;
+    }
+    openEditSupplier(id);
+  }
+
   function openNewSupplier() {
     activeEditingSupplierId = null;
     editingRowVersion = 0;
 
     const panel = document.getElementById('recon-supplier-editor-panel');
     if (!panel) return;
+
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.clearSelection('#recon-supplier-tbody');
+    }
 
     document.getElementById('rs-editor-title').innerText = 'New Recon Supplier';
     document.getElementById('rs-editor-name').value = '';
@@ -442,13 +496,23 @@ window.PurchaseReconController = (function() {
     document.getElementById('rs-editor-status').value = 'ACTIVE';
     document.getElementById('rs-editor-notes').value = '';
 
-    panel.style.display = 'block';
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.showDrawer('recon-supplier-editor-panel');
+    } else {
+      panel.classList.add('open');
+      panel.style.display = 'flex';
+    }
   }
 
   async function openEditSupplier(id) {
     activeEditingSupplierId = id;
     const panel = document.getElementById('recon-supplier-editor-panel');
     if (!panel) return;
+
+    const rowEl = document.querySelector(`#recon-supplier-tbody tr[data-supplier-id="${id}"]`);
+    if (window.RegisterUiSupport && rowEl) {
+      window.RegisterUiSupport.highlightRow('#recon-supplier-tbody', rowEl);
+    }
 
     try {
       const s = await window.ReconService.getReconSupplier(id);
@@ -465,7 +529,12 @@ window.PurchaseReconController = (function() {
       document.getElementById('rs-editor-status').value = s.status || 'ACTIVE';
       document.getElementById('rs-editor-notes').value = s.notes || '';
 
-      panel.style.display = 'block';
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.showDrawer('recon-supplier-editor-panel');
+      } else {
+        panel.classList.add('open');
+        panel.style.display = 'flex';
+      }
     } catch (e) {
       alert('Failed to load supplier: ' + e.message);
     }
@@ -527,14 +596,24 @@ window.PurchaseReconController = (function() {
   }
 
   function closeSupplierEditor() {
-    const panel = document.getElementById('recon-supplier-editor-panel');
-    if (panel) panel.style.display = 'none';
+    activeEditingSupplierId = null;
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.hideDrawer('recon-supplier-editor-panel', '#recon-supplier-tbody');
+    } else {
+      const panel = document.getElementById('recon-supplier-editor-panel');
+      if (panel) {
+        panel.classList.remove('open');
+        panel.style.display = 'none';
+      }
+      document.querySelectorAll('#recon-supplier-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    }
   }
 
   return {
     loadPurchaseRecon,
     openNewRecon,
     openEditRecon,
+    onReconRowClick,
     calculateEditorTotals,
     saveReconRecord,
     deleteReconRecord,
@@ -546,8 +625,23 @@ window.PurchaseReconController = (function() {
     loadReconSuppliers,
     openNewSupplier,
     openEditSupplier,
+    onSupplierRowClick,
     saveSupplier,
     deleteSupplier,
     closeSupplierEditor
   };
 })();
+
+// Install escape listeners for both Purchase Recon and Recon Supplier drawers
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.RegisterUiSupport) {
+      window.RegisterUiSupport.installEscapeClose('recon-editor-panel', '#purchase-recon-tbody', () => {
+        if (window.PurchaseReconController) window.PurchaseReconController.closeReconEditor();
+      });
+      window.RegisterUiSupport.installEscapeClose('recon-supplier-editor-panel', '#recon-supplier-tbody', () => {
+        if (window.PurchaseReconController) window.PurchaseReconController.closeSupplierEditor();
+      });
+    }
+  });
+}

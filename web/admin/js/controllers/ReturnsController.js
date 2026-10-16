@@ -341,6 +341,16 @@ window.ReturnsController = (function() {
     selectedReturn = null;
   }
 
+  // Install escape listeners
+  if (typeof window !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.RegisterUiSupport) {
+        window.RegisterUiSupport.installEscapeClose('sr-detail-drawer', '#tbl-sales-returns-body', closeDrawer);
+        window.RegisterUiSupport.installEscapeClose('pr-detail-drawer', '#tbl-purchase-returns-body', closeDrawer);
+      }
+    });
+  }
+
   // 3. WORKFLOW ACTIONS: APPROVE, REJECT, CANCEL, DELETE, EDIT REASON
   async function approveReturn(no) {
     if (!confirm(`Approve Return ${no}?\n\nApproval posts the Return stock movement and starts the Return settlement period.`)) return;
