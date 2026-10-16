@@ -329,10 +329,12 @@ window.TableUiEnhancer = (function() {
      */
     enhanceTable(table) {
       if (!table || table.nodeType !== 1) return;
-      if (table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) return;
       enhanceHeaders(table);
-      enhanceCells(table);
-      attachTableInteractions(table);
+      const isEntryWorkspace = table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation');
+      if (!isEntryWorkspace) {
+        enhanceCells(table);
+        attachTableInteractions(table);
+      }
       if (window.DynamicTableLayoutManager) {
         window.DynamicTableLayoutManager.install(table);
       }
@@ -343,7 +345,7 @@ window.TableUiEnhancer = (function() {
      */
     enhanceAll(container = document) {
       if (!container) return;
-      const tables = container.querySelectorAll('table.data-table, table.sales-desktop-table, table.erp-table, .data-panel table, .sales-table-scroll table');
+      const tables = container.querySelectorAll('table');
       tables.forEach(tbl => this.enhanceTable(tbl));
       if (window.DynamicTableLayoutManager) {
         window.DynamicTableLayoutManager.installAll(container);

@@ -311,6 +311,20 @@ window.QuotationController = (function() {
     }
   }
 
+  function openInSaleCreator() {
+    if (!selectedQuote) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No quotation selected.');
+      return;
+    }
+    const quoteToConvert = selectedQuote;
+    closeDrawer();
+    if (window.SalesController && window.SalesController.openSaleCreatorFromQuotation) {
+      window.SalesController.openSaleCreatorFromQuotation(quoteToConvert);
+    } else {
+      if (window.AppDialogService) window.AppDialogService.toastError('Sale Creator is not available.');
+    }
+  }
+
   async function duplicate(id, no) {
     if (!confirm(`Duplicate Quotation ${no}?`)) return;
     try {
@@ -761,6 +775,8 @@ window.QuotationController = (function() {
     onRowClick,
     toggleActionMenu,
     convertToSale,
+    openInSaleCreator,
+    get selectedQuote() { return selectedQuote; },
     duplicate,
     deleteQuotation,
     printPdf,

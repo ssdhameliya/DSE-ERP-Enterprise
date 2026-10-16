@@ -827,7 +827,7 @@ window.PurchaseController = (function() {
     if (window.openInvoicePaymentDetails) {
       window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending, p);
     } else {
-      alert(`Payment drilldown for purchase ${invoiceNo}`);
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Payment drilldown for purchase ${invoiceNo}`);
     }
   }
 
@@ -847,7 +847,7 @@ window.PurchaseController = (function() {
       window.NavigationRouter.selectNav('view-barcode-studio');
       window.BarcodeStudioController.quickGenerate(invoiceNo);
     } else {
-      alert(`Print Inward Barcodes for Purchase ${invoiceNo}`);
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Generated Inward Barcodes for Purchase ${invoiceNo}`);
     }
   }
 
@@ -861,7 +861,7 @@ window.PurchaseController = (function() {
     if (window.SalesController && window.SalesController.openEmailModal) {
       window.SalesController.openEmailModal(invoiceNo, true, p);
     } else {
-      alert(`Send Email for purchase ${invoiceNo}`);
+      if (window.AppDialogService) window.AppDialogService.toastWarning(`Email service unavailable for purchase ${invoiceNo}`);
     }
   }
 
@@ -1527,10 +1527,31 @@ window.PurchaseController = (function() {
     const invoiceDate = document.getElementById('pe-invoice-date')?.value;
     const suppId = document.getElementById('pe-supplier-select')?.value;
 
-    if (!invoiceNo) { alert('Purchase invoice number is required.'); return; }
-    if (!invoiceDate) { alert('Purchase date is required.'); return; }
-    if (!suppId) { alert('Please select a supplier.'); return; }
-    if (editorLines.length === 0) { alert('Please add at least one line item to the purchase invoice.'); return; }
+    if (!invoiceNo) { 
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Purchase invoice number is required.'); else alert('Purchase invoice number is required.');
+      return; 
+    }
+    if (!invoiceDate) { 
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Purchase date is required.'); else alert('Purchase date is required.');
+      return; 
+    }
+    if (!suppId) { 
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a supplier.'); else alert('Please select a supplier.');
+      return; 
+    }
+    if (editorLines.length === 0) { 
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please add at least one line item to the purchase invoice.'); else alert('Please add at least one line item to the purchase invoice.');
+      return; 
+    }
+
+    if (!editingInvoiceNo) {
+      const existing = (purchases || []).find(p => p.invoiceNo && p.invoiceNo.trim().toLowerCase() === invoiceNo.toLowerCase());
+      if (existing) {
+        const suppName = (existing.supplier && existing.supplier.name) || existing.supplierName || 'another supplier';
+        const proceed = confirm(`Duplicate Purchase Bill Alert: Bill number "${invoiceNo}" already exists in the system (Supplier: ${suppName}, Date: ${existing.invoiceDate || 'N/A'}). Do you still want to proceed with this bill number?`);
+        if (!proceed) return;
+      }
+    }
 
     const supp = cachedSuppliers.find(s => s.id == suppId);
 

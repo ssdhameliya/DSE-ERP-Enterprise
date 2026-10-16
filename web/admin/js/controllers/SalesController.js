@@ -81,18 +81,7 @@ window.SalesController = {
         }
       } catch (e) {
         console.warn('Could not fetch items cache:', e);
-      }
-      if (!this.itemsCache || this.itemsCache.length === 0) {
-        this.itemsCache = [
-          { itemCode: 'R-MS-001', description: 'Mild Steel Seamless Pipe 2" Class B', category: 'Raw Materials', hsn: '73063000', unit: 'PCS', sellingPrice: 1250, gst: 18, openingStock: 450 },
-          { itemCode: 'F-SS-002', description: 'Stainless Steel Flange 3" ANSI 150', category: 'Fittings & Valves', hsn: '73072100', unit: 'PCS', sellingPrice: 850, gst: 18, openingStock: 320 },
-          { itemCode: 'V-BV-003', description: 'Industrial Ball Valve 50mm PN40', category: 'Valves', hsn: '84818030', unit: 'PCS', sellingPrice: 2400, gst: 18, openingStock: 180 },
-          { itemCode: 'G-NB-004', description: 'High Tensile Bolt M16x75 Grade 8.8', category: 'Hardware', hsn: '73181500', unit: 'KG', sellingPrice: 140, gst: 18, openingStock: 1200 },
-          { itemCode: 'C-GL-005', description: 'Chemical Resistant Industrial Gloves', category: 'Safety & PPE', hsn: '40151900', unit: 'PAIR', sellingPrice: 120, gst: 18, openingStock: 800 },
-          { itemCode: 'M-ST-006', description: 'Structural Steel Channel 100x50mm', category: 'Raw Materials', hsn: '72163100', unit: 'MTR', sellingPrice: 780, gst: 18, openingStock: 650 },
-          { itemCode: 'P-HY-007', description: 'Hydraulic Hose Assembly 1/2" 2SN', category: 'Hydraulics', hsn: '40092100', unit: 'MTR', sellingPrice: 420, gst: 18, openingStock: 250 },
-          { itemCode: 'E-CB-008', description: 'Copper Busbar 50x6mm Tinned', category: 'Electrical', hsn: '74071010', unit: 'KG', sellingPrice: 920, gst: 18, openingStock: 190 }
-        ];
+        this.itemsCache = [];
       }
     }
     const items = this.itemsCache || [];
@@ -357,7 +346,7 @@ window.SalesController = {
     if (!tbody) return;
 
     if (!list || list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">No matching sales invoices found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; color: var(--text-dim); padding: 30px;">No matching sales invoices found.</td></tr>`;
       this.updateTableSummary(0, 0, 0, 0);
       const counter = document.getElementById('sr-entries-counter');
       if (counter) counter.innerText = 'Showing 0 entries';
@@ -421,7 +410,12 @@ window.SalesController = {
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
       const payBadge = isPaid ? '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399;">💳 PAID</span>' : '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24;">⏱ PENDING</span>';
       const retLabel = s.returnStatus === 'FULLY_RETURNED' ? '<span style="color:#34d399;">🔄 FULLY RET..</span>' : '<span style="color:var(--text-dim);">📄 N/A</span>';
-      const emailLabel = s.emailSent ? '<span style="color:#34d399;">✈ Sent</span>' : '<span style="color:#fbbf24;">✉ Not Sent</span>';
+      const emailBtn = s.emailSent
+        ? `<button class="btn-email-sent" onclick="event.stopPropagation(); window.SalesController.openEmailModal('${invNo}')" title="Email sent. Click to view or resend">✔ Sent</button>`
+        : `<button class="btn-email-send" onclick="event.stopPropagation(); window.SalesController.openEmailModal('${invNo}')" title="Click to send invoice by Email">✉ Send</button>`;
+      const whatsappBtn = s.whatsappSent
+        ? `<button class="btn-whatsapp-sent" onclick="event.stopPropagation(); window.SalesController.sendWhatsapp('${invNo}')" title="WhatsApp sent. Click to resend">✔ Sent</button>`
+        : `<button class="btn-whatsapp-send" onclick="event.stopPropagation(); window.SalesController.sendWhatsapp('${invNo}')" title="Click to send invoice by WhatsApp">💬 Send</button>`;
 
       return `
         <tr style="cursor: pointer;" onclick="window.SalesController.openInvoiceDrawer('${invNo}')">
@@ -437,7 +431,8 @@ window.SalesController = {
           <td>${docBadge}</td>
           <td>${payBadge}</td>
           <td>${retLabel}</td>
-          <td>${emailLabel}</td>
+          <td style="text-align: center;" onclick="event.stopPropagation()">${emailBtn}</td>
+          <td style="text-align: center;" onclick="event.stopPropagation()">${whatsappBtn}</td>
           <td style="text-align: center;" onclick="event.stopPropagation()">
             <button class="btn-purple" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" onclick="window.SalesController.toggleRowActionsMenu(this, '${invNo}', event)" title="View Actions Menu">
               ::: Actions
@@ -725,6 +720,51 @@ window.SalesController = {
     await this.initSaleWorkspace(existingSale, isViewMode);
   },
 
+  async openSaleCreatorFromQuotation(quote) {
+    if (!quote) return;
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    if (window.NavigationRouter) {
+      window.NavigationRouter.selectNav('view-sale-create');
+    }
+
+    const custObj = typeof quote.customer === 'object' && quote.customer !== null 
+      ? quote.customer 
+      : { id: quote.customerId || null, name: quote.customer || quote.customerName || 'Customer', phone: quote.phone || '', gstin: quote.gstin || '', address: quote.address || '' };
+
+    const draftLines = (quote.lines || quote.items || []).map(l => ({
+      itemCode: l.itemCode || l.code || 'SKU',
+      itemDescription: l.itemDescription || l.description || l.itemName || '',
+      itemCategory: l.itemCategory || l.category || 'General',
+      itemHsn: l.itemHsn || l.hsn || '73063000',
+      itemUnit: l.itemUnit || l.unit || 'PCS',
+      quantity: parseFloat(l.quantity || l.qty) || 1,
+      rate: parseFloat(l.rate || l.price) || 0,
+      discountPercent: parseFloat(l.discountPercent || l.discount) || 0,
+      taxPercent: parseFloat(l.taxPercent || l.taxRate || l.gstPercent) || 18,
+      gstPercent: parseFloat(l.taxPercent || l.taxRate || l.gstPercent) || 18
+    }));
+
+    const draftSale = {
+      isQuotationConversion: true,
+      quotationNo: quote.no || quote.quotationNo,
+      customer: custObj,
+      customerId: custObj.id,
+      billingAddress: quote.billingAddress || quote.address || custObj.address || '',
+      deliveryAddress: quote.shippingAddress || quote.deliveryAddress || quote.address || custObj.address || '',
+      billingGstin: quote.billingGstin || quote.gstin || custObj.gstin || '',
+      deliveryGstin: quote.deliveryGstin || quote.gstin || custObj.gstin || '',
+      orderNo: quote.no || quote.quotationNo || '',
+      notes: `Converted from Quotation ${quote.no || quote.quotationNo || ''}`,
+      lines: draftLines,
+      charges: quote.charges || []
+    };
+
+    await this.initSaleWorkspace(draftSale, false);
+    if (window.AppDialogService) {
+      window.AppDialogService.toastSuccess(`Quotation ${quote.no || quote.quotationNo} items loaded into Sale Creator!`);
+    }
+  },
+
   async openSaleViewMode(invNo) {
     try {
       const sale = await window.OperationsService.getSaleByInvoice(invNo);
@@ -746,7 +786,7 @@ window.SalesController = {
 
       if (invNoEl) invNoEl.value = 'Loading next sequence...';
 
-      if (!existingSale) {
+      if (!existingSale || existingSale.isQuotationConversion) {
         try {
           const seq = await window.OperationsService.getNextSaleInvoice();
           if (seq && (seq.value || typeof seq === 'string')) {

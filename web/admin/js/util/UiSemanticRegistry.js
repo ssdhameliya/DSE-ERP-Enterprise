@@ -14,6 +14,8 @@ window.UiSemanticRegistry = (function() {
     blue: { name: 'blue', hex: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)' },
     purple: { name: 'purple', hex: '#a78bfa', bg: 'rgba(167, 139, 250, 0.15)', border: 'rgba(167, 139, 250, 0.35)' },
     green: { name: 'green', hex: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.35)' },
+    whatsapp: { name: 'whatsapp', hex: '#25D366', bg: 'rgba(37, 211, 102, 0.22)', border: 'rgba(37, 211, 102, 0.55)' },
+    email: { name: 'email', hex: '#38bdf8', bg: 'rgba(56, 189, 248, 0.22)', border: 'rgba(56, 189, 248, 0.55)' },
     indigo: { name: 'indigo', hex: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)', border: 'rgba(129, 140, 248, 0.35)' },
     orange: { name: 'orange', hex: '#fb923c', bg: 'rgba(251, 146, 60, 0.15)', border: 'rgba(251, 146, 60, 0.35)' },
     pink: { name: 'pink', hex: '#f472b6', bg: 'rgba(244, 114, 182, 0.15)', border: 'rgba(244, 114, 182, 0.35)' },
@@ -27,22 +29,22 @@ window.UiSemanticRegistry = (function() {
   // Exact desktop parity mapping
   const SEMANTICS = {
     'document': { icon: '📄', colour: 'purple', label: 'Document' },
-    'invoice': { icon: '📄', colour: 'purple', label: 'Invoice' },
+    'invoice': { icon: '🧾', colour: 'purple', label: 'Invoice' },
     'purchase': { icon: '📦', colour: 'indigo', label: 'Purchase' },
     'quotation': { icon: '📝', colour: 'blue', label: 'Quotation' },
     'return': { icon: '🔄', colour: 'orange', label: 'Return' },
     'date': { icon: '📅', colour: 'purple', label: 'Date' },
     'calendar': { icon: '📅', colour: 'purple', label: 'Calendar' },
     'time': { icon: '⏰', colour: 'teal', label: 'Time' },
-    'customer': { icon: '🏢', colour: 'blue', label: 'Customer' },
+    'customer': { icon: '👤', colour: 'blue', label: 'Customer' },
     'supplier': { icon: '🏭', colour: 'indigo', label: 'Supplier' },
     'party': { icon: '👥', colour: 'blue', label: 'Party' },
     'user': { icon: '👤', colour: 'teal', label: 'User' },
     'contact': { icon: '📇', colour: 'teal', label: 'Contact' },
     'phone': { icon: '📞', colour: 'teal', label: 'Phone' },
     'mobile': { icon: '📱', colour: 'teal', label: 'Mobile' },
-    'email': { icon: '✉️', colour: 'teal', label: 'Email' },
-    'whatsapp': { icon: '💬', colour: 'green', label: 'WhatsApp' },
+    'email': { icon: '✉️', colour: 'email', label: 'Email' },
+    'whatsapp': { icon: '💬', colour: 'whatsapp', label: 'WhatsApp' },
     'address': { icon: '📍', colour: 'pink', label: 'Address' },
     'location': { icon: '📍', colour: 'pink', label: 'Location' },
     'amount': { icon: '💰', colour: 'green', label: 'Amount' },
@@ -137,11 +139,11 @@ window.UiSemanticRegistry = (function() {
       if (combined.includes('phone') || combined.includes('mobile') || combined.includes('contact')) {
         return { icon: '📞', colour: 'teal', label: headingText };
       }
-      if (combined.includes('email')) {
-        return { icon: '✉️', colour: 'teal', label: headingText };
+      if (combined.includes('email') || combined.includes('mail')) {
+        return { icon: '✉️', colour: 'email', label: headingText };
       }
-      if (combined.includes('whatsapp')) {
-        return { icon: '💬', colour: 'green', label: headingText };
+      if (combined.includes('whatsapp') || combined.includes('whats app')) {
+        return { icon: '💬', colour: 'whatsapp', label: headingText };
       }
       if (combined.includes('gstin') || combined.includes('tax no')) {
         return { icon: '🏷️', colour: 'orange', label: headingText };

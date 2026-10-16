@@ -1109,11 +1109,12 @@
                     <th>Payment Status</th>
                     <th>Return Status</th>
                     <th>Email</th>
+                    <th>WhatsApp</th>
                     <th style="text-align: center;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="sales-table-tbody">
-                  <tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading live invoices from PostgreSQL...</td></tr>
+                  <tr><td colspan="15" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading live invoices from PostgreSQL...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2053,6 +2054,7 @@
           </div>
           <div class="drawer-footer">
             <button class="btn btn-success btn-sm" id="qd-btn-convert" onclick="window.QuotationController.convertToSale(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText, window.QuotationController.selectedQuote?.rowVersion || 0)">Convert to Sale</button>
+            <button class="btn btn-purple btn-sm" id="qd-btn-edit-sale" onclick="window.QuotationController.openInSaleCreator()" title="Open quotation in Sale Creator to customize line items before saving">Open in Sale Creator</button>
             <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.printPdf(document.getElementById('qd-no').innerText)">View PDF</button>
             <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.closeDrawer()">Close</button>
           </div>
