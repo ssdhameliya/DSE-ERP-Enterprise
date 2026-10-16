@@ -334,141 +334,186 @@ window.RecordPaymentController = (function() {
     },
 
     async savePayment(e) {
-      if (e) e.preventDefault();
-
-      const elAmount = document.getElementById('rp-pay-amount');
-      const amount = parseFloat(elAmount ? elAmount.value : 0) || 0;
-      if (amount <= 0) {
-        alert('Please enter a valid payment amount greater than zero.');
-        return;
+      if (e) {
+        try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
       }
 
-      const date = document.getElementById('rp-pay-date')?.value || new Date().toISOString().split('T')[0];
-      const mode = document.getElementById('rp-pay-mode')?.value || 'NEFT/RTGS';
-      const ref = document.getElementById('rp-pay-ref')?.value || '';
-      const from = document.getElementById('rp-pay-from')?.value || currentPartyName;
-      const bank = document.getElementById('rp-bank-account')?.value || 'HDFC Bank Primary';
-      const notes = document.getElementById('rp-pay-notes')?.value || '';
-      const proofName = attachedProofFile ? attachedProofFile.name : '';
+      const btnSave = document.getElementById('rp-btn-save');
+      try {
+        const elAmount = document.getElementById('rp-pay-amount');
+        const amount = Math.round((parseFloat(elAmount ? elAmount.value : 0) || 0) * 100) / 100;
+        if (amount <= 0) {
+          const msg = 'Please enter a valid payment amount greater than zero.';
+          if (window.AppDialogService) window.AppDialogService.toastError(msg);
+          else alert(msg);
+          if (elAmount) elAmount.focus();
+          return;
+        }
 
-      const docType = currentType === 'PURCHASE' ? 'PURCHASE' : 'SALE';
-      let docId = parseInt(currentInvoiceId) || 0;
+        const date = document.getElementById('rp-pay-date')?.value || new Date().toISOString().split('T')[0];
+        const mode = document.getElementById('rp-pay-mode')?.value || 'NEFT/RTGS';
+        const ref = document.getElementById('rp-pay-ref')?.value || '';
+        const from = document.getElementById('rp-pay-from')?.value || currentPartyName;
+        const bank = document.getElementById('rp-bank-account')?.value || 'HDFC Bank Primary';
+        const notes = document.getElementById('rp-pay-notes')?.value || '';
+        const proofName = attachedProofFile ? attachedProofFile.name : '';
 
-      // Ensure docId is a valid positive integer from caches if not set
-      if (docId <= 0 && currentInvoiceNo && currentInvoiceNo !== '-') {
-        if (docType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
-          const s = window.SalesController.salesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
-          if (s && s.id) docId = parseInt(s.id);
-        } else if (docType === 'PURCHASE' && window.PurchaseController) {
-          const list = (typeof window.PurchaseController.getPurchasesCache === 'function') 
-            ? window.PurchaseController.getPurchasesCache() 
-            : (window.PurchaseController.purchases || []);
-          const p = Array.isArray(list) ? list.find(x => (x.invoiceNo || x.number) === currentInvoiceNo) : null;
-          if (p && p.id) docId = parseInt(p.id);
+        const docType = currentType === 'PURCHASE' ? 'PURCHASE' : 'SALE';
+        let docId = parseInt(currentInvoiceId) || 0;
+
+        // Ensure docId is a valid positive integer from caches if not set
+        if (docId <= 0 && currentInvoiceNo && currentInvoiceNo !== '-') {
+          if (docType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
+            const s = window.SalesController.salesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
+            if (s && s.id) docId = parseInt(s.id);
+          } else if (docType === 'PURCHASE' && window.PurchaseController) {
+            const list = (typeof window.PurchaseController.getPurchasesCache === 'function') 
+              ? window.PurchaseController.getPurchasesCache() 
+              : (window.PurchaseController.purchases || []);
+            const p = Array.isArray(list) ? list.find(x => (x.invoiceNo || x.number) === currentInvoiceNo) : null;
+            if (p && p.id) docId = parseInt(p.id);
+          }
+
+          if (docId <= 0) {
+            try {
+              if (docType === 'SALE') {
+                const s = await window.OperationsService.getSaleByInvoice(currentInvoiceNo);
+                if (s && s.id) docId = parseInt(s.id);
+              } else {
+                const p = await window.OperationsService.getPurchaseByInvoice(currentInvoiceNo);
+                if (p && p.id) docId = parseInt(p.id);
+              }
+            } catch (eDoc) {
+              console.warn('Could not resolve docId from server:', eDoc);
+            }
+          }
         }
 
         if (docId <= 0) {
-          try {
-            if (docType === 'SALE') {
-              const s = await window.OperationsService.getSaleByInvoice(currentInvoiceNo);
-              if (s && s.id) docId = parseInt(s.id);
-            } else {
-              const p = await window.OperationsService.getPurchaseByInvoice(currentInvoiceNo);
-              if (p && p.id) docId = parseInt(p.id);
+          const errMsg = `Cannot save payment: A valid document ID could not be found for ${docType} ${currentInvoiceNo}.`;
+          if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
+          else alert(errMsg);
+          return;
+        }
+
+        const remainingAfter = Math.max(0, Math.round((invoiceBalance - amount) * 100) / 100);
+        const paymentType = remainingAfter <= 0.01 ? 'FULL' : 'PARTIAL';
+        let currentUser = 'Admin';
+        try {
+          if (window.AuthService) {
+            if (typeof window.AuthService.getCurrentUsername === 'function') {
+              currentUser = window.AuthService.getCurrentUsername();
+            } else if (typeof window.AuthService.getCurrentUser === 'function') {
+              const u = window.AuthService.getCurrentUser();
+              currentUser = (u && (u.username || u.fullName || u.name)) || 'Admin';
             }
-          } catch (eDoc) {
-            console.warn('Could not resolve docId from server:', eDoc);
           }
+        } catch (_) {
+          currentUser = 'Admin';
         }
-      }
 
-      if (docId <= 0) {
-        const errMsg = `Cannot save payment: A valid document ID could not be found for ${docType} ${currentInvoiceNo}.`;
-        if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
-        else alert(errMsg);
-        return;
-      }
+        const payload = {
+          documentType: docType,
+          documentId: docId,
+          date: date,
+          amount: amount,
+          mode: mode,
+          reference: ref || ('TXN-' + Math.floor(100000 + Math.random() * 900000)),
+          notes: notes || `Payment recorded for ${currentInvoiceNo}`,
+          receivedFrom: from || currentPartyName,
+          paymentType: paymentType,
+          attachment: proofName || null,
+          createdBy: currentUser
+        };
 
-      const remainingAfter = Math.max(0, invoiceBalance - amount);
-      const paymentType = remainingAfter <= 0.01 ? 'FULL' : 'PARTIAL';
-      const currentUser = (window.AuthService && window.AuthService.getCurrentUsername()) || 'Admin';
+        if (btnSave) {
+          btnSave.disabled = true;
+          btnSave.innerText = 'Saving...';
+        }
 
-      const payload = {
-        documentType: docType,
-        documentId: docId,
-        date: date,
-        amount: amount,
-        mode: mode,
-        reference: ref || ('TXN-' + Math.floor(100000 + Math.random() * 900000)),
-        notes: notes || `Payment recorded for ${currentInvoiceNo}`,
-        receivedFrom: from || currentPartyName,
-        paymentType: paymentType,
-        attachment: proofName || null,
-        createdBy: currentUser
-      };
+        try {
+          await window.ApiService.post('/api/support/payments', payload);
+        } catch (err) {
+          console.error('Failed to post payment to backend:', err);
+          if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerText = '💾 Save Payment';
+          }
+          if (window.AppDialogService) {
+            window.AppDialogService.toastError('Server payment error: ' + (err.message || 'Validation failed'));
+          } else {
+            alert('Failed to save payment on server: ' + err.message);
+          }
+          return;
+        }
 
-      try {
-        await window.ApiService.post('/api/support/payments', payload);
-      } catch (err) {
-        console.error('Failed to post payment to backend:', err);
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.innerText = '💾 Save Payment';
+        }
+
+        // Update local state
+        invoicePaid += amount;
+        invoiceBalance = remainingAfter;
+
+        paymentHistory.unshift({
+          id: Date.now(),
+          date,
+          mode,
+          referenceNo: payload.reference,
+          bankAccount: bank,
+          receivedFrom: from,
+          amount,
+          proofFileName: proofName,
+          notes
+        });
+
+        // Update Top Status Badge
+        const elStatusBadge = document.getElementById('rp-status-badge');
+        if (elStatusBadge) {
+          const newStatus = invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL';
+          elStatusBadge.innerHTML = getStatusBadge(newStatus);
+        }
+
+        this.updateSummaryCard();
+        this.renderHistoryTable();
+        this.resetForm();
+        this.resetProof();
+
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+
         if (window.AppDialogService) {
-          window.AppDialogService.toastError('Server payment error: ' + (err.message || 'Validation failed'));
+          window.AppDialogService.toastSuccess(`Payment of ${formatMoney(amount)} successfully recorded! Invoice status updated to ${invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL'}.`);
         } else {
-          alert('Failed to save payment on server: ' + err.message);
+          alert(`Payment of ${formatMoney(amount)} recorded successfully!`);
         }
-        return;
-      }
 
-      // Update local state
-      invoicePaid += amount;
-      invoiceBalance = remainingAfter;
-
-      paymentHistory.unshift({
-        id: Date.now(),
-        date,
-        mode,
-        referenceNo: payload.reference,
-        bankAccount: bank,
-        receivedFrom: from,
-        amount,
-        proofFileName: proofName,
-        notes
-      });
-
-      // Update Top Status Badge
-      const elStatusBadge = document.getElementById('rp-status-badge');
-      if (elStatusBadge) {
-        const newStatus = invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL';
-        elStatusBadge.innerHTML = getStatusBadge(newStatus);
-      }
-
-      this.updateSummaryCard();
-      this.renderHistoryTable();
-      this.resetForm();
-      this.resetProof();
-
-      if (window.AppDialogService) {
-        window.AppDialogService.toastSuccess(`Payment of ${formatMoney(amount)} successfully recorded! Invoice status updated to ${invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL'}.`);
-      } else {
-        alert(`Payment of ${formatMoney(amount)} recorded successfully!`);
-      }
-
-      // Reload register from server so database changes immediately reflect
-      try {
-        if (docType === 'SALE') {
-          if (window.SalesController && typeof window.SalesController.loadSales === 'function') {
-            await window.SalesController.loadSales(0);
+        // Reload register from server so database changes immediately reflect
+        try {
+          if (docType === 'SALE') {
+            if (window.SalesController && typeof window.SalesController.loadSales === 'function') {
+              await window.SalesController.loadSales(0);
+            }
+          } else {
+            if (window.PurchaseController && typeof window.PurchaseController.loadPurchases === 'function') {
+              await window.PurchaseController.loadPurchases(0);
+            }
           }
-        } else {
-          if (window.PurchaseController && typeof window.PurchaseController.loadPurchases === 'function') {
-            await window.PurchaseController.loadPurchases(0);
+          if (window.DashboardController && typeof window.DashboardController.refresh === 'function') {
+            window.DashboardController.refresh();
           }
+        } catch (e2) {
+          console.warn('Post-payment register reload warning:', e2);
         }
-        if (window.DashboardController && typeof window.DashboardController.refresh === 'function') {
-          window.DashboardController.refresh();
+      } catch (err) {
+        console.error('Failed to save payment:', err);
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.innerText = '💾 Save Payment';
         }
-      } catch (e2) {
-        console.warn('Post-payment register reload warning:', e2);
+        const msg = 'Failed to save payment: ' + (err.message || 'Validation error');
+        if (window.AppDialogService) window.AppDialogService.toastError(msg);
+        else alert(msg);
       }
     },
 

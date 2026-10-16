@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.33.9">
+    <link rel="stylesheet" href="css/app.css?v=10.0.33.10">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -1211,7 +1211,7 @@
               <div class="editor-card-header">
                 <span>&#128179; Record New Payment</span>
               </div>
-              <form id="rp-payment-form" onsubmit="window.RecordPaymentController.savePayment(event)">
+              <form id="rp-payment-form" onsubmit="window.RecordPaymentController.savePayment(event); return false;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                   <div>
                     <label class="form-label">Payment Date *</label>
@@ -1281,7 +1281,7 @@
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                   <button type="button" class="btn btn-secondary" onclick="window.RecordPaymentController.resetForm()">Reset Form</button>
-                  <button type="submit" id="rp-btn-save" class="btn btn-primary" style="padding: 6px 18px; font-weight: 700;">&#128190; Save Payment</button>
+                  <button type="button" id="rp-btn-save" class="btn btn-primary" onclick="window.RecordPaymentController.savePayment(event)" style="padding: 6px 18px; font-weight: 700;">&#128190; Save Payment</button>
                 </div>
               </form>
             </div>
@@ -7838,7 +7838,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
         </div>
 
         <!-- New Receipt Form (Active when balance > 0) -->
-        <form id="form-record-payment" onsubmit="window.SalesController.submitRecordPayment(event)">
+        <form id="form-record-payment" onsubmit="window.SalesController.submitRecordPayment(event); return false;">
           <input type="hidden" id="mrp-sale-id">
           <input type="hidden" id="mrp-inv-no">
 
@@ -7882,7 +7882,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 18px;">
-              <button type="submit" class="btn btn-primary" id="mrp-submit-btn">&#10004; Record Receipt</button>
+              <button type="button" class="btn btn-primary" id="mrp-submit-btn" onclick="window.SalesController.submitRecordPayment(event)">&#10004; Record Receipt</button>
             </div>
           </div>
         </form>
@@ -9006,61 +9006,61 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.33.9"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.9"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.9"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.33.9"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.9"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.9"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.33.9"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.9"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.9"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.9"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.9"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.33.9"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.33.9"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.33.9"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.33.10"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.10"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.10"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.33.10"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.10"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.10"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.33.10"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.10"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.10"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.10"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.10"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.33.10"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.33.10"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.33.10"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.33.9"></script>
-  <script src="js/services/AuthService.js?v=10.0.33.9"></script>
-  <script src="js/services/MasterService.js?v=10.0.33.9"></script>
-  <script src="js/services/OperationsService.js?v=10.0.33.9"></script>
-  <script src="js/services/ReportService.js?v=10.0.33.9"></script>
-  <script src="js/services/ReconService.js?v=10.0.33.9"></script>
-  <script src="js/services/AccountingService.js?v=10.0.33.9"></script>
-  <script src="js/services/ImportService.js?v=10.0.33.9"></script>
+  <script src="js/services/ApiService.js?v=10.0.33.10"></script>
+  <script src="js/services/AuthService.js?v=10.0.33.10"></script>
+  <script src="js/services/MasterService.js?v=10.0.33.10"></script>
+  <script src="js/services/OperationsService.js?v=10.0.33.10"></script>
+  <script src="js/services/ReportService.js?v=10.0.33.10"></script>
+  <script src="js/services/ReconService.js?v=10.0.33.10"></script>
+  <script src="js/services/AccountingService.js?v=10.0.33.10"></script>
+  <script src="js/services/ImportService.js?v=10.0.33.10"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/GstController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.9"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/GstController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.10"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.10"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.33.9"></script>
-  <script src="js/app.js?v=10.0.33.9"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.33.10"></script>
+  <script src="js/app.js?v=10.0.33.10"></script>
 </body>
 </html>
 

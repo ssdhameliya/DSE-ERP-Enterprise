@@ -21,6 +21,11 @@ window.AuthService = (function() {
       return { username: 'admin', fullName: 'Shailesh Dhameliya', role: 'ADMIN' };
     },
 
+    getCurrentUsername() {
+      const u = this.getCurrentUser();
+      return (u && (u.username || u.fullName || u.name)) || 'Admin';
+    },
+
     getAccessToken() {
       return localStorage.getItem('dse_access_token');
     },

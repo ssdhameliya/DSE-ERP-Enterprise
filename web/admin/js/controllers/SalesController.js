@@ -2131,8 +2131,9 @@ window.SalesController = {
       notes,
       receivedFrom,
       paymentType: 'RECEIPT',
-      attachment: null,
-      createdBy: window.AuthService ? (window.AuthService.getCurrentUsername() || 'Admin') : 'Admin'
+      createdBy: (window.AuthService && typeof window.AuthService.getCurrentUsername === 'function')
+        ? window.AuthService.getCurrentUsername()
+        : ((window.AuthService && typeof window.AuthService.getCurrentUser === 'function' && window.AuthService.getCurrentUser() && (window.AuthService.getCurrentUser().username || window.AuthService.getCurrentUser().fullName)) || 'Admin')
     };
 
     try {
