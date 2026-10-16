@@ -329,6 +329,7 @@ window.TableUiEnhancer = (function() {
      */
     enhanceTable(table) {
       if (!table || table.nodeType !== 1) return;
+      if (table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) return;
       enhanceHeaders(table);
       enhanceCells(table);
       attachTableInteractions(table);

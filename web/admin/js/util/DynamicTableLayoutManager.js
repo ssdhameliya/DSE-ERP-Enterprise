@@ -292,6 +292,7 @@ window.DynamicTableLayoutManager = (function() {
    */
   function layoutNow(table) {
     if (!table || !table.parentElement) return;
+    if (table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) return;
     const thead = table.querySelector('thead');
     if (!thead) return;
 
@@ -320,14 +321,6 @@ window.DynamicTableLayoutManager = (function() {
     for (const p of profiles) {
       floorTotal += p.floor;
       weightTotal += p.weight;
-    }
-
-    if (table.parentElement) {
-      if (floorTotal > available || available < 850) {
-        table.parentElement.style.overflowX = 'auto';
-      } else {
-        table.parentElement.style.overflowX = 'hidden';
-      }
     }
 
     const effectiveAvailable = Math.max(available, floorTotal);
@@ -421,8 +414,8 @@ window.DynamicTableLayoutManager = (function() {
      */
     install(table) {
       if (!table || table.nodeType !== 1) return;
+      if (table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) return;
       if (table.dataset[INSTALLED] === 'true') {
-        this.requestLayout(table);
         return;
       }
       table.dataset[INSTALLED] = 'true';
@@ -438,14 +431,14 @@ window.DynamicTableLayoutManager = (function() {
           const ro = new ResizeObserver((entries) => {
             const entry = entries && entries[0];
             const currentW = entry ? entry.contentRect.width : container.clientWidth;
-            if (Math.abs(currentW - lastContainerW) < 2) return;
+            if (Math.abs(currentW - lastContainerW) < 12) return;
             lastContainerW = currentW;
 
             let debouncer = tableDebouncers.get(table);
             if (debouncer) clearTimeout(debouncer);
             debouncer = setTimeout(() => {
               layoutNow(table);
-            }, 60);
+            }, 100);
             tableDebouncers.set(table, debouncer);
           });
           ro.observe(container);

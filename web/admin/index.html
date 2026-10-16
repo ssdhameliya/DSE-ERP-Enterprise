@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.33.7">
+    <link rel="stylesheet" href="css/app.css?v=10.0.33.9">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -2429,7 +2429,7 @@
             </div>
           </div>
           <div class="drawer-footer">
-            <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.openPayments(document.getElementById('pd-invoice-no').innerText)">💳 Record Payment</button>
+            <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">Print PDF</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">Edit</button>
             <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">Close</button>
@@ -2640,8 +2640,8 @@
                 <div class="form-group" style="margin-bottom:10px;">
                   <label class="form-label">GST Type *</label>
                   <select id="pe-gst-type" class="form-select" onchange="window.PurchaseController.recalcEditorTotals()">
-                    <option value="Intra-State GST">Intra-State GST (CGST 50% + SGST 50%)</option>
-                    <option value="Inter-State IGST">Inter-State IGST (Full 100% IGST)</option>
+                    <option value="GST">Intra-State GST (CGST 50% + SGST 50%)</option>
+                    <option value="IGST">Inter-State IGST (Full 100% IGST)</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin-bottom:10px;">
@@ -7183,7 +7183,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
-      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="if(window.SalesController && window.SalesController.currentDrawerSale) { const s = window.SalesController.currentDrawerSale; closeInvoiceDrawer(); window.openInvoicePaymentDetails('SALE', s.id, s.invoiceNo, s.customerName || (s.customer && s.customer.name), s.totalAmount, s.paidAmount, s.pendingAmount || (s.totalAmount - (s.paidAmount||0)), s); }">💳 Record Payment</button>
+      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="window.SalesController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196; Print Tax Invoice</button>
     </div>
   </div>
@@ -7241,7 +7241,7 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
     </div>
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
-      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) { const p = window.PurchaseController.currentDrawerPurchase; closePurchaseDrawer(); window.PurchaseController.openPayments(p.invoiceNo); }">💳 Record Payment</button>
+      <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
       <button class="btn btn-primary" onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196; Print Inward Bill</button>
     </div>
   </div>
@@ -9006,61 +9006,61 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.33.7"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.7"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.7"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.33.7"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.7"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.7"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.33.7"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.7"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.7"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.7"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.7"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.33.7"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.33.7"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.33.7"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.33.9"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.33.9"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.33.9"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.33.9"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.33.9"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.33.9"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.33.9"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.33.9"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.33.9"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.33.9"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.33.9"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.33.9"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.33.9"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.33.9"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.33.7"></script>
-  <script src="js/services/AuthService.js?v=10.0.33.7"></script>
-  <script src="js/services/MasterService.js?v=10.0.33.7"></script>
-  <script src="js/services/OperationsService.js?v=10.0.33.7"></script>
-  <script src="js/services/ReportService.js?v=10.0.33.7"></script>
-  <script src="js/services/ReconService.js?v=10.0.33.7"></script>
-  <script src="js/services/AccountingService.js?v=10.0.33.7"></script>
-  <script src="js/services/ImportService.js?v=10.0.33.7"></script>
+  <script src="js/services/ApiService.js?v=10.0.33.9"></script>
+  <script src="js/services/AuthService.js?v=10.0.33.9"></script>
+  <script src="js/services/MasterService.js?v=10.0.33.9"></script>
+  <script src="js/services/OperationsService.js?v=10.0.33.9"></script>
+  <script src="js/services/ReportService.js?v=10.0.33.9"></script>
+  <script src="js/services/ReconService.js?v=10.0.33.9"></script>
+  <script src="js/services/AccountingService.js?v=10.0.33.9"></script>
+  <script src="js/services/ImportService.js?v=10.0.33.9"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/GstController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.7"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.7"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/GstController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.33.9"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.33.9"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.33.7"></script>
-  <script src="js/app.js?v=10.0.33.7"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.33.9"></script>
+  <script src="js/app.js?v=10.0.33.9"></script>
 </body>
 </html>
 

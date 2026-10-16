@@ -17,6 +17,9 @@ window.GlobalUiEnhancer = (function() {
   function runEnhancements(container) {
     if (isEnhancing) return;
     isEnhancing = true;
+    if (observer) {
+      try { observer.disconnect(); } catch (e) {}
+    }
     try {
       const root = container || document.getElementById('main-content-stage') || document.body;
       if (!root) return;
@@ -37,10 +40,16 @@ window.GlobalUiEnhancer = (function() {
         window.WorkflowFocusManager.autoEnhanceScreen(root);
       }
     } finally {
-      // Allow DOM mutations to settle before accepting new observation triggers
+      // Allow DOM mutations to settle before reconnecting observer
       setTimeout(() => {
         isEnhancing = false;
-      }, 80);
+        if (observer) {
+          const target = document.getElementById('main-content-stage') || document.body;
+          try {
+            observer.observe(target, { childList: true, subtree: true });
+          } catch (e) {}
+        }
+      }, 150);
     }
   }
 
@@ -88,15 +97,18 @@ window.GlobalUiEnhancer = (function() {
             if (n.dataset && (n.dataset.erpHeaderEnhanced || n.dataset.erpKpiEnhanced || n.dataset.erpLabelEnhanced)) {
               continue;
             }
-            // Only trigger if an entire new view or significant card is injected
+            // Strictly ignore any nodes inside an active editor workspace
+            if (n.closest && (n.closest('.sale-workspace-container') || n.closest('#view-sale-create') || n.closest('#view-purchase-creation'))) {
+              continue;
+            }
+            // Only trigger if an entire new view or significant panel is injected
             if (
               n.classList && (
                 n.classList.contains('module-view') ||
-                n.classList.contains('editor-card') ||
                 n.classList.contains('kpi-grid') ||
                 n.classList.contains('data-panel') ||
                 n.classList.contains('modal-card')
-              ) || tag === 'TABLE'
+              )
             ) {
               shouldEnhance = true;
               break;

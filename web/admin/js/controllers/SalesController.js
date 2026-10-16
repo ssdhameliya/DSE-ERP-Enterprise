@@ -514,14 +514,23 @@ window.SalesController = {
         this.sendWhatsapp(invNo);
         break;
       case 'PAYMENT':
-        if (sale && window.openInvoicePaymentDetails) {
-          const grandTotal = sale.totalAmount != null ? sale.totalAmount : (sale.total || 0);
-          const isPaid = sale.paymentStatus === 'PAID';
-          const isCancelled = sale.documentStatus === 'CANCELLED';
-          const paid = isCancelled ? 0 : (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0));
+        let targetSale = sale;
+        if (!targetSale || !targetSale.id) {
+          try {
+            targetSale = await window.OperationsService.getSaleByInvoice(invNo);
+          } catch (e) {
+            console.warn('Could not fetch sale for payment action:', e);
+          }
+        }
+        if (window.openInvoicePaymentDetails) {
+          const grandTotal = targetSale ? (targetSale.totalAmount != null ? targetSale.totalAmount : (targetSale.total || 0)) : 0;
+          const isPaid = targetSale && targetSale.paymentStatus === 'PAID';
+          const isCancelled = targetSale && targetSale.documentStatus === 'CANCELLED';
+          const paid = isCancelled ? 0 : (targetSale ? (targetSale.paidAmount != null ? targetSale.paidAmount : (isPaid ? grandTotal : 0)) : 0);
           const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
-          const custName = (sale.customer && sale.customer.name) || sale.customerName || sale.partyName || 'Customer';
-          window.openInvoicePaymentDetails('SALE', sale.id, invNo, custName, grandTotal, paid, pending, sale);
+          const custName = (targetSale && targetSale.customer && targetSale.customer.name) || (targetSale && targetSale.customerName) || (targetSale && targetSale.partyName) || 'Customer';
+          const saleId = targetSale ? (targetSale.id || 0) : 0;
+          window.openInvoicePaymentDetails('SALE', saleId, invNo, custName, grandTotal, paid, pending, targetSale);
         } else {
           this.openRecordPaymentModal(invNo);
         }
@@ -2910,6 +2919,37 @@ window.SalesController = {
     if (overlay) overlay.classList.remove('open');
     this.currentDrawerSale = null;
     this.selectedDrawerInvoiceNo = null;
+  },
+
+  async recordPaymentForCurrentDrawer() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+                  (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText) ||
+                  this.selectedDrawerInvoiceNo;
+    const cachedSale = this.currentDrawerSale;
+    this.closeInvoiceDrawer();
+
+    if (invNo && invNo !== '-' && invNo !== 'Loading next sequence...') {
+      let sale = cachedSale || (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+      if (!sale || !sale.id) {
+        try {
+          sale = await window.OperationsService.getSaleByInvoice(invNo);
+        } catch (e) {
+          console.warn('Could not fetch sale for drawer payment:', e);
+        }
+      }
+      if (window.openInvoicePaymentDetails) {
+        const grandTotal = sale ? (sale.totalAmount != null ? sale.totalAmount : (sale.total || 0)) : 0;
+        const isPaid = sale && sale.paymentStatus === 'PAID';
+        const isCancelled = sale && sale.documentStatus === 'CANCELLED';
+        const paid = isCancelled ? 0 : (sale ? (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0)) : 0);
+        const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
+        const custName = (sale && sale.customer && sale.customer.name) || (sale && sale.customerName) || (sale && sale.partyName) || 'Customer';
+        const saleId = sale ? (sale.id || 0) : 0;
+        window.openInvoicePaymentDetails('SALE', saleId, invNo, custName, grandTotal, paid, pending, sale);
+      } else {
+        this.openRecordPaymentModal(invNo);
+      }
+    }
   },
 
   // =========================================================================

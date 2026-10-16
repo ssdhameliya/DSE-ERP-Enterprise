@@ -48,6 +48,35 @@ window.RecordPaymentController = (function() {
       invoiceBalance = balanceAmount != null ? parseFloat(balanceAmount) : Math.max(0, invoiceTotal - invoicePaid);
       attachedProofFile = null;
 
+      // Auto-resolve missing ID or amounts from server if missing
+      if ((currentInvoiceId <= 0 || invoiceTotal <= 0) && currentInvoiceNo && currentInvoiceNo !== '-') {
+        try {
+          if (currentType === 'PURCHASE') {
+            const p = await window.OperationsService.getPurchaseByInvoice(currentInvoiceNo);
+            if (p) {
+              currentInvoiceId = p.id || currentInvoiceId;
+              currentPartyName = (p.supplier && p.supplier.name) || p.supplierName || currentPartyName;
+              invoiceTotal = parseFloat(p.totalAmount) || invoiceTotal;
+              invoicePaid = parseFloat(p.paidAmount) || invoicePaid;
+              invoiceBalance = Math.max(0, invoiceTotal - invoicePaid);
+              extraDetails = p;
+            }
+          } else {
+            const s = await window.OperationsService.getSaleByInvoice(currentInvoiceNo);
+            if (s) {
+              currentInvoiceId = s.id || currentInvoiceId;
+              currentPartyName = (s.customer && s.customer.name) || s.customerName || s.partyName || currentPartyName;
+              invoiceTotal = parseFloat(s.totalAmount != null ? s.totalAmount : s.total) || invoiceTotal;
+              invoicePaid = parseFloat(s.paidAmount != null ? s.paidAmount : (s.paymentStatus === 'PAID' ? invoiceTotal : 0)) || invoicePaid;
+              invoiceBalance = Math.max(0, invoiceTotal - invoicePaid);
+              extraDetails = s;
+            }
+          }
+        } catch (err) {
+          console.warn('RecordPaymentController auto-resolve document warning:', err);
+        }
+      }
+
       // Extract details
       const invDate = (extraDetails && (extraDetails.invoiceDate || extraDetails.date)) || new Date().toISOString().split('T')[0];
       const dueDate = (extraDetails && (extraDetails.dueDate || extraDetails.paymentDueDate)) || invDate;
@@ -326,7 +355,7 @@ window.RecordPaymentController = (function() {
       let docId = parseInt(currentInvoiceId) || 0;
 
       // Ensure docId is a valid positive integer from caches if not set
-      if (docId <= 0 && currentInvoiceNo) {
+      if (docId <= 0 && currentInvoiceNo && currentInvoiceNo !== '-') {
         if (docType === 'SALE' && window.SalesController && Array.isArray(window.SalesController.salesCache)) {
           const s = window.SalesController.salesCache.find(x => (x.invoiceNo || x.number) === currentInvoiceNo);
           if (s && s.id) docId = parseInt(s.id);
@@ -337,6 +366,27 @@ window.RecordPaymentController = (function() {
           const p = Array.isArray(list) ? list.find(x => (x.invoiceNo || x.number) === currentInvoiceNo) : null;
           if (p && p.id) docId = parseInt(p.id);
         }
+
+        if (docId <= 0) {
+          try {
+            if (docType === 'SALE') {
+              const s = await window.OperationsService.getSaleByInvoice(currentInvoiceNo);
+              if (s && s.id) docId = parseInt(s.id);
+            } else {
+              const p = await window.OperationsService.getPurchaseByInvoice(currentInvoiceNo);
+              if (p && p.id) docId = parseInt(p.id);
+            }
+          } catch (eDoc) {
+            console.warn('Could not resolve docId from server:', eDoc);
+          }
+        }
+      }
+
+      if (docId <= 0) {
+        const errMsg = `Cannot save payment: A valid document ID could not be found for ${docType} ${currentInvoiceNo}.`;
+        if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
+        else alert(errMsg);
+        return;
       }
 
       const remainingAfter = Math.max(0, invoiceBalance - amount);

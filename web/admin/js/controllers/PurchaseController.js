@@ -702,7 +702,7 @@ window.PurchaseController = (function() {
 
   async function openPayments(invoiceNo) {
     let p = purchases.find(x => x.invoiceNo === invoiceNo);
-    if (!p) {
+    if (!p || !p.id) {
       try {
         p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
       } catch (e) {
@@ -719,6 +719,17 @@ window.PurchaseController = (function() {
       window.openInvoicePaymentDetails('PURCHASE', purchaseId, invoiceNo, suppName, total, paid, pending, p);
     } else {
       alert(`Payment drilldown for purchase ${invoiceNo}`);
+    }
+  }
+
+  function recordPaymentForCurrentDrawer() {
+    const invNo = (currentDrawerPurchase && currentDrawerPurchase.invoiceNo) || 
+                  (document.getElementById('drawer-pur-no') && document.getElementById('drawer-pur-no').innerText) || 
+                  (document.getElementById('pd-invoice-no') && document.getElementById('pd-invoice-no').innerText) || 
+                  selectedDrawerBillNo;
+    closePurchaseDrawer();
+    if (invNo && invNo !== '-' && invNo !== 'Loading next sequence...') {
+      openPayments(invNo);
     }
   }
 
@@ -960,7 +971,8 @@ window.PurchaseController = (function() {
         document.getElementById('pe-payment-terms').value = p.paymentTerms || 'Net 30';
         document.getElementById('pe-po-date').value = p.poDate ? p.poDate.substring(0, 10) : today;
         document.getElementById('pe-order-no').value = p.orderNo || '';
-        document.getElementById('pe-gst-type').value = p.gstType || 'Intra-State GST';
+        const existingGst = (p.gstType || 'GST').toUpperCase();
+        document.getElementById('pe-gst-type').value = (existingGst.includes('INTER') || existingGst.includes('IGST')) ? 'IGST' : 'GST';
         document.getElementById('pe-transporter').value = p.transporter || '';
         document.getElementById('pe-transporter-gstin').value = p.transporterGstin || '';
         document.getElementById('pe-vehicle-number').value = p.vehicleNumber || '';
@@ -1162,9 +1174,9 @@ window.PurchaseController = (function() {
     if (gstTypeSelect && supplierState) {
       // 24 is Gujarat (Jasvi Industries state)
       if (supplierState === '24') {
-        gstTypeSelect.value = 'Intra-State GST';
+        gstTypeSelect.value = 'GST';
       } else {
-        gstTypeSelect.value = 'Inter-State IGST';
+        gstTypeSelect.value = 'IGST';
       }
       recalcEditorTotals();
     }
@@ -1354,8 +1366,8 @@ window.PurchaseController = (function() {
     });
 
     const netGst = totalGst + chargesGst;
-    const gstType = document.getElementById('pe-gst-type')?.value || 'Intra-State GST';
-    const isInterState = gstType === 'Inter-State IGST';
+    const rawGst = (document.getElementById('pe-gst-type')?.value || 'GST').toUpperCase();
+    const isInterState = rawGst.includes('INTER') || rawGst.includes('IGST');
 
     let cgst = 0, sgst = 0, igst = 0;
     if (isInterState) {
@@ -1487,7 +1499,7 @@ window.PurchaseController = (function() {
       deliveryAddress: document.getElementById('pe-delivery-address')?.value || '',
       billingGstin: document.getElementById('pe-billing-gstin')?.value || '',
       deliveryGstin: document.getElementById('pe-delivery-gstin')?.value || '',
-      gstType: document.getElementById('pe-gst-type')?.value || 'Intra-State GST',
+      gstType: ((document.getElementById('pe-gst-type')?.value || 'GST').toUpperCase().includes('INTER') || (document.getElementById('pe-gst-type')?.value || 'GST').toUpperCase().includes('IGST')) ? 'IGST' : 'GST',
       transporterGstin: document.getElementById('pe-transporter-gstin')?.value || '',
       vehicleNumber: document.getElementById('pe-vehicle-number')?.value || '',
       contactPerson: document.getElementById('pe-contact-person')?.value || '',
@@ -1563,6 +1575,7 @@ window.PurchaseController = (function() {
     goToPage,
     openPurchaseView,
     openPayments,
+    recordPaymentForCurrentDrawer,
     openPurchaseEditor,
     get isNavigatingToEditor() { return isNavigatingToPurchaseEditor; },
     openNewPurchaseModal() { openPurchaseEditor(); },
