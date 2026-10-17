@@ -679,7 +679,7 @@
           <div class="nav-item-left"><span class="nav-icon">&#128172;</span><span>Communication</span></div>
         </div>
 
-        <!-- 20. SETTINGS (EXPANDABLE - 10 DESKTOP SUBSECTIONS) -->
+        <!-- 20. SETTINGS (EXPANDABLE - 7 SHARED ENTERPRISE SUBSECTIONS) -->
         <div class="nav-group" id="grp-settings">
           <div class="nav-parent-row" onclick="toggleNavGroup('grp-settings')">
             <div class="nav-item-left"><span class="nav-icon">&#9881;&#65039;</span><span>Settings</span></div>
@@ -692,10 +692,7 @@
             <div class="nav-child-item" id="nav-settings-notifications" onclick="selectNav('view-settings-notifications')">Notifications</div>
             <div class="nav-child-item" id="nav-settings-email" onclick="selectNav('view-settings-email')">Email Settings</div>
             <div class="nav-child-item" id="nav-settings-security" onclick="selectNav('view-settings-security')">Security &amp; Session</div>
-            <div class="nav-child-item" id="nav-settings-workspace" onclick="selectNav('view-settings-workspace')">Workspace &amp; Storage</div>
-            <div class="nav-child-item" id="nav-settings-shortcuts" onclick="selectNav('view-settings-shortcuts')">Keyboard Shortcuts</div>
-            <div class="nav-child-item" id="nav-settings-backup" onclick="selectNav('view-settings-backup')">Database Backup</div>
-            <div class="nav-child-item" id="nav-settings-rollback" onclick="selectNav('view-settings-rollback')">Safe Rollback</div>
+            <div class="nav-child-item" id="nav-settings-modules" onclick="selectNav('view-settings-modules')">Module Management</div>
           </div>
         </div>
       </aside>
@@ -6783,7 +6780,7 @@
             </div>
           </div>
 
-          <!-- 10-SECTION TAB NAVIGATION (Desktop Section Enum Parity) -->
+          <!-- 7-SECTION TAB NAVIGATION (Desktop Section Enum Parity) -->
           <div class="settings-tab-nav">
             <button type="button" class="settings-tab-btn active" data-section="COMPANY" onclick="window.SettingsController.switchSection('COMPANY')">
               <span>&#127970;</span> Company Profile
@@ -6803,59 +6800,51 @@
             <button type="button" class="settings-tab-btn" data-section="SECURITY" onclick="window.SettingsController.switchSection('SECURITY')">
               <span>&#128274;</span> Security Policies
             </button>
-            <button type="button" class="settings-tab-btn" data-section="WORKSPACE" onclick="window.SettingsController.switchSection('WORKSPACE')">
-              <span>&#128193;</span> Workspace &amp; Storage
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="SHORTCUTS" onclick="window.SettingsController.switchSection('SHORTCUTS')">
-              <span>&#9000;&#65039;</span> Shortcuts
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="BACKUP" onclick="window.SettingsController.switchSection('BACKUP')">
-              <span>💾</span> Database Backups
-            </button>
-            <button type="button" class="settings-tab-btn" data-section="ROLLBACK" onclick="window.SettingsController.switchSection('ROLLBACK')">
-              <span>🛡️</span> Safe Rollback
+            <button type="button" class="settings-tab-btn" data-section="MODULES" onclick="window.SettingsController.switchSection('MODULES')">
+              <span>&#129513;</span> Module Management
             </button>
           </div>
 
-          <!-- PANEL HOST -->
+          <!-- PANEL HOST: 7 SHARED ENTERPRISE PANELS -->
           <div class="settings-panel-host">
-            <!-- 1. COMPANY PANEL -->
+            
+            <!-- 1. COMPANY PROFILE PANEL (CompanySettingsPanel.fxml Parity) -->
             <div id="settings-panel-company" class="settings-subpanel" data-section="COMPANY">
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
                 <div class="data-panel" style="padding:18px;">
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Legal Company Identity</h3>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Company Name *</label>
-                    <input type="text" id="set-company-name" class="form-input form-input-sm" value="JASVI INDUSTRIES" oninput="if(document.getElementById('setting-company-name')) document.getElementById('setting-company-name').value=this.value">
+                    <input type="text" id="setting-company-name" class="form-input form-input-sm" value="JASVI INDUSTRIES">
                   </div>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Business Tagline</label>
-                    <input type="text" id="set-company-tagline" class="form-input form-input-sm" value="Excellence in Ceramic Manufacturing &amp; Enterprise Engineering" oninput="if(document.getElementById('setting-company-tagline')) document.getElementById('setting-company-tagline').value=this.value">
+                    <input type="text" id="setting-company-tagline" class="form-input form-input-sm" value="Excellence in Ceramic Manufacturing &amp; Enterprise Engineering">
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Phone Number *</label>
-                      <input type="text" id="set-company-phone" class="form-input form-input-sm" value="+91 90999 39193" oninput="if(document.getElementById('setting-company-phone')) document.getElementById('setting-company-phone').value=this.value">
+                      <input type="text" id="setting-company-phone" class="form-input form-input-sm" value="+91 90999 39193">
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Official Email *</label>
-                      <input type="email" id="set-company-email" class="form-input form-input-sm" value="accounts@jasviindustries.in" oninput="if(document.getElementById('setting-company-email')) document.getElementById('setting-company-email').value=this.value">
+                      <input type="email" id="setting-company-email" class="form-input form-input-sm" value="accounts@jasviindustries.in">
                     </div>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">GSTIN *</label>
-                      <input type="text" id="set-company-gstin" class="form-input form-input-sm" value="24AAACJ1234A1Z5" oninput="if(document.getElementById('setting-company-gstin')) document.getElementById('setting-company-gstin').value=this.value">
+                      <input type="text" id="setting-company-gstin" class="form-input form-input-sm" value="24AAACJ1234A1Z5">
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Income Tax PAN *</label>
-                      <input type="text" id="set-company-pan" class="form-input form-input-sm" value="AAACJ1234A" oninput="if(document.getElementById('setting-company-pan')) document.getElementById('setting-company-pan').value=this.value">
+                      <input type="text" id="setting-company-pan" class="form-input form-input-sm" value="AAACJ1234A">
                     </div>
                   </div>
-                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Business Type</label>
-                      <select id="set-business-type" class="form-select form-input-sm" onchange="if(document.getElementById('setting-business-type')) document.getElementById('setting-business-type').value=this.value">
+                      <select id="setting-business-type" class="form-select form-input-sm">
                         <option value="MANUFACTURING" selected>MANUFACTURING</option>
                         <option value="TRADING">TRADING</option>
                         <option value="SERVICES">SERVICES</option>
@@ -6863,8 +6852,18 @@
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Industry Sector</label>
-                      <input type="text" id="set-industry" class="form-input form-input-sm" value="CERAMICS &amp; TILES" oninput="if(document.getElementById('setting-industry')) document.getElementById('setting-industry').value=this.value">
+                      <select id="setting-industry" class="form-select form-input-sm">
+                        <option value="CERAMICS" selected>CERAMICS &amp; TILES</option>
+                        <option value="ENGINEERING">ENGINEERING</option>
+                        <option value="TEXTILES">TEXTILES</option>
+                        <option value="CHEMICALS">CHEMICALS</option>
+                        <option value="OTHER">OTHER</option>
+                      </select>
                     </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.75rem;">Financial Year Start Date</label>
+                    <input type="date" id="setting-fy-start" class="form-input form-input-sm" value="2026-04-01">
                   </div>
                 </div>
 
@@ -6872,57 +6871,74 @@
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Registered Facilities &amp; Website</h3>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Registered Factory / Office Address</label>
-                    <textarea id="set-company-address" class="form-input form-input-sm" rows="3" oninput="if(document.getElementById('setting-company-address')) document.getElementById('setting-company-address').value=this.value">Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India</textarea>
+                    <textarea id="setting-company-address" class="form-input form-input-sm" rows="3">Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India</textarea>
                   </div>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Default Shipping / Warehouse Address</label>
-                    <textarea id="set-ship-address" class="form-input form-input-sm" rows="3" oninput="if(document.getElementById('setting-ship-address')) document.getElementById('setting-ship-address').value=this.value">Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat</textarea>
+                    <textarea id="setting-ship-address" class="form-input form-input-sm" rows="3">Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat</textarea>
                   </div>
-                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Official Website</label>
-                      <input type="url" id="set-company-website" class="form-input form-input-sm" value="https://jasviindustries.in" oninput="if(document.getElementById('setting-company-website')) document.getElementById('setting-company-website').value=this.value">
+                      <input type="url" id="setting-company-website" class="form-input form-input-sm" value="https://jasviindustries.in">
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">State / Supply Place</label>
-                      <input type="text" id="set-company-state" class="form-input form-input-sm" value="GUJARAT (24)" oninput="if(document.getElementById('setting-company-state')) document.getElementById('setting-company-state').value=this.value">
+                      <input type="text" id="setting-company-state" class="form-input form-input-sm" value="GUJARAT (24)">
+                    </div>
+                  </div>
+                  <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
+                    <h4 style="font-size:0.78rem; color:var(--cyan); margin:0 0 8px 0;">Application Branding &amp; Startup</h4>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+                      <div class="form-group">
+                        <label class="form-label" style="font-size:0.7rem;">Application Title</label>
+                        <input type="text" id="setting-app-name" class="form-input form-input-sm" value="JASVI INDUSTRIES ERP">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" style="font-size:0.7rem;">Startup Tagline</label>
+                        <input type="text" id="setting-app-tagline" class="form-input form-input-sm" value="Enterprise Production &amp; Distribution">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.7rem;">Sign-in Welcome Text</label>
+                      <input type="text" id="setting-app-starting-text" class="form-input form-input-sm" value="Welcome to Jasvi Industries ERP System">
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 2. PAYMENT & BANK PANEL -->
+            <!-- 2. PAYMENT & BANK PANEL (PaymentSettingsPanel.fxml Parity) -->
             <div id="settings-panel-payment" class="settings-subpanel" data-section="PAYMENT" style="display:none;">
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
                 <div class="data-panel" style="padding:18px;">
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Primary Commercial Banking</h3>
                   <div class="form-group" style="margin-bottom:10px;">
-                    <label class="form-label" style="font-size:0.75rem;">Bank Name</label>
-                    <input type="text" id="set-bank-name" class="form-input form-input-sm" value="STATE BANK OF INDIA" oninput="if(document.getElementById('setting-bank-name')) document.getElementById('setting-bank-name').value=this.value">
+                    <label class="form-label" style="font-size:0.75rem;">Bank Name *</label>
+                    <input type="text" id="setting-bank-name" class="form-input form-input-sm" value="STATE BANK OF INDIA">
                   </div>
                   <div class="form-group" style="margin-bottom:10px;">
-                    <label class="form-label" style="font-size:0.75rem;">Account Beneficiary / Holder</label>
-                    <input type="text" id="set-account-holder" class="form-input form-input-sm" value="JASVI INDUSTRIES" oninput="if(document.getElementById('setting-account-holder')) document.getElementById('setting-account-holder').value=this.value">
+                    <label class="form-label" style="font-size:0.75rem;">Account Beneficiary / Holder *</label>
+                    <input type="text" id="setting-account-holder" class="form-input form-input-sm" value="JASVI INDUSTRIES">
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
-                      <label class="form-label" style="font-size:0.75rem;">Account Number</label>
-                      <input type="text" id="set-account-number" class="form-input form-input-sm" value="382910482910" oninput="if(document.getElementById('setting-account-number')) document.getElementById('setting-account-number').value=this.value">
+                      <label class="form-label" style="font-size:0.75rem;">Account Number *</label>
+                      <input type="text" id="setting-account-number" class="form-input form-input-sm" value="382910482910">
                     </div>
                     <div class="form-group">
-                      <label class="form-label" style="font-size:0.75rem;">IFSC Code</label>
-                      <input type="text" id="set-ifsc" class="form-input form-input-sm" value="SBIN0001234" oninput="if(document.getElementById('setting-ifsc')) document.getElementById('setting-ifsc').value=this.value">
+                      <label class="form-label" style="font-size:0.75rem;">IFSC Code *</label>
+                      <input type="text" id="setting-ifsc" class="form-input form-input-sm" value="SBIN0001234">
                     </div>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Branch Name</label>
-                      <input type="text" id="set-branch" class="form-input form-input-sm" value="MORBI MAIN BRANCH" oninput="if(document.getElementById('setting-branch')) document.getElementById('setting-branch').value=this.value">
+                      <input type="text" id="setting-branch" class="form-input form-input-sm" value="MORBI MAIN BRANCH">
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Account Type</label>
-                      <select id="set-account-type" class="form-select form-input-sm" onchange="if(document.getElementById('setting-account-type')) document.getElementById('setting-account-type').value=this.value">
+                      <select id="setting-account-type" class="form-select form-input-sm">
                         <option value="CURRENT" selected>CURRENT</option>
                         <option value="SAVINGS">SAVINGS</option>
                         <option value="OVERDRAFT">OVERDRAFT / CC</option>
@@ -6935,18 +6951,18 @@
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">UPI &amp; Reconciliation Policy</h3>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Corporate UPI ID / VPA</label>
-                    <input type="text" id="set-upi-id" class="form-input form-input-sm" value="jasviindustries@sbi" oninput="if(document.getElementById('setting-upi-id')) document.getElementById('setting-upi-id').value=this.value">
+                    <input type="text" id="setting-upi-id" class="form-input form-input-sm" value="jasviindustries@sbi">
                   </div>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Bank Matching Rounding Tolerance (&#8377;)</label>
-                    <input type="number" id="set-tolerance" class="form-input form-input-sm" value="1.00" step="0.1" oninput="if(document.getElementById('setting-tolerance')) document.getElementById('setting-tolerance').value=this.value">
+                    <input type="number" id="setting-tolerance" class="form-input form-input-sm" value="1.00" step="0.1">
                   </div>
                   <div style="margin-top:16px; padding:12px; background:rgba(0,0,0,0.25); border-radius:8px; border:1px solid var(--border);">
                     <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:6px;">UPI Dynamic QR Preview:</div>
                     <div style="display:flex; align-items:center; gap:12px;">
                       <div style="width:64px; height:64px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">&#128241;</div>
                       <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
-                        Printed dynamically on B2B / B2C invoices for Instant Real-Time UPI Settlements.
+                        Printed dynamically on B2B / B2C tax invoices for instant real-time UPI settlements.
                       </div>
                     </div>
                   </div>
@@ -6954,7 +6970,7 @@
               </div>
             </div>
 
-            <!-- 3. INVOICE DEFAULTS PANEL -->
+            <!-- 3. INVOICE DEFAULTS PANEL (InvoiceSettingsPanel.fxml Parity) -->
             <div id="settings-panel-invoice" class="settings-subpanel" data-section="INVOICE" style="display:none;">
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
                 <div class="data-panel" style="padding:18px;">
@@ -6962,31 +6978,42 @@
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Currency</label>
-                      <select id="set-currency" class="form-select form-input-sm" onchange="if(document.getElementById('setting-currency')) document.getElementById('setting-currency').value=this.value">
+                      <select id="setting-currency" class="form-select form-input-sm">
                         <option value="INR (&#8377;)" selected>INR (&#8377;)</option>
                         <option value="USD ($)">USD ($)</option>
                         <option value="EUR (&#8364;)">EUR (&#8364;)</option>
+                        <option value="GBP (&#163;)">GBP (&#163;)</option>
+                        <option value="AED">AED (&#1583;.&#1573;)</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Timezone</label>
-                      <select id="set-timezone" class="form-select form-input-sm" onchange="if(document.getElementById('setting-timezone')) document.getElementById('setting-timezone').value=this.value">
+                      <select id="setting-timezone" class="form-select form-input-sm">
                         <option value="Asia/Kolkata (IST)" selected>Asia/Kolkata (IST)</option>
                         <option value="UTC">UTC</option>
                       </select>
                     </div>
                   </div>
-                  <div class="form-group" style="margin-bottom:10px;">
-                    <label class="form-label" style="font-size:0.75rem;">Invoice Display Date Format</label>
-                    <select id="set-date-format" class="form-select form-input-sm" onchange="if(document.getElementById('setting-date-format')) document.getElementById('setting-date-format').value=this.value">
-                      <option value="DD-MM-YYYY" selected>DD-MM-YYYY (13-10-2026)</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD (2026-10-13)</option>
-                      <option value="DD/MM/YYYY">DD/MM/YYYY (13/10/2026)</option>
-                    </select>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Display Date Format</label>
+                      <select id="setting-date-format" class="form-select form-input-sm">
+                        <option value="DD-MM-YYYY" selected>DD-MM-YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Display Time Format</label>
+                      <select id="setting-time-format" class="form-select form-input-sm">
+                        <option value="12-hour" selected>12-Hour (hh:mm a)</option>
+                        <option value="24-hour">24-Hour (HH:mm)</option>
+                      </select>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label class="form-label" style="font-size:0.75rem;">Default Invoice Terms &amp; Conditions</label>
-                    <textarea id="set-invoice-terms" class="form-input form-input-sm" rows="5" oninput="if(document.getElementById('setting-invoice-terms')) document.getElementById('setting-invoice-terms').value=this.value">1. Goods once sold will not be taken back.
+                    <textarea id="setting-invoice-terms" class="form-input form-input-sm" rows="5">1. Goods once sold will not be taken back.
 2. Interest @ 18% p.a. will be charged after 30 days.
 3. Subject to Morbi jurisdiction only.</textarea>
                   </div>
@@ -7010,7 +7037,7 @@
               </div>
             </div>
 
-            <!-- 4. NOTIFICATIONS PANEL -->
+            <!-- 4. NOTIFICATIONS PANEL (NotificationsSettingsPanel.fxml Parity) -->
             <div id="settings-panel-notifications" class="settings-subpanel" data-section="NOTIFICATIONS" style="display:none;">
               <div class="data-panel" style="padding:18px;">
                 <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:14px;">Event Dispatch &amp; Notification Triggers</h3>
@@ -7043,10 +7070,25 @@
                     <input type="checkbox" id="chkNotifyBanking" checked> Bank reconciliation discrepancy alerts
                   </label>
                   <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="chkNotifyReports" checked> Executive reports &amp; analytics
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="chkNotifyReminders" checked> Scheduled reminders &amp; tasks
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
                     <input type="checkbox" id="chkNotifyCommunication" checked> Email &amp; WhatsApp activity confirmations
                   </label>
                   <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="chkNotifyApproval" checked> User access &amp; registration approvals
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="chkNotifyImports" checked> Bulk excel imports
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
                     <input type="checkbox" id="chkNotifyBackup" checked> PostgreSQL Automated Backup status
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="chkNotifySystem" checked> System diagnostics &amp; health
                   </label>
                   <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
                     <input type="checkbox" id="chkNotifySecurity" checked> Security policy &amp; lockout audits
@@ -7055,525 +7097,271 @@
               </div>
             </div>
 
-            <!-- 5. CORPORATE EMAIL PANEL -->
+            <!-- 5. CORPORATE EMAIL PANEL (EmailSettingsPanel.fxml Parity) -->
             <div id="settings-panel-email" class="settings-subpanel" data-section="EMAIL" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Corporate SMTP Credentials</h3>
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
-                  <div>
-                    <div class="form-group" style="margin-bottom:10px;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Corporate SMTP Credentials</h3>
+                  <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">SMTP Host *</label>
-                      <input type="text" id="set-smtp-host" class="form-input form-input-sm" value="smtp.gmail.com" oninput="if(document.getElementById('smtp-host')) document.getElementById('smtp-host').value=this.value">
+                      <input type="text" id="smtp-host" class="form-input form-input-sm" value="smtp.gmail.com">
                     </div>
-                    <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">SMTP Port *</label>
-                      <input type="number" id="set-smtp-port" class="form-input form-input-sm" value="587" oninput="if(document.getElementById('smtp-port')) document.getElementById('smtp-port').value=this.value">
-                    </div>
-                    <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">SMTP Username / Sender Email *</label>
-                      <input type="email" id="set-smtp-email" class="form-input form-input-sm" value="director@jasviindustries.in" oninput="if(document.getElementById('smtp-email')) document.getElementById('smtp-email').value=this.value">
-                    </div>
-                    <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">SMTP Password / App Secret *</label>
-                      <input type="password" id="set-smtp-password" class="form-input form-input-sm" value="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" oninput="if(document.getElementById('smtp-password')) document.getElementById('smtp-password').value=this.value">
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Port *</label>
+                      <input type="number" id="smtp-port" class="form-input form-input-sm" value="587">
                     </div>
                   </div>
-                  <div>
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">Sender / Username Email Address *</label>
+                    <input type="email" id="smtp-email" class="form-input form-input-sm" value="billing@jasviindustries.in">
+                  </div>
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">App Password / SMTP Secret *</label>
+                    <input type="password" id="smtp-password" class="form-input form-input-sm" placeholder="••••••••••••••••">
+                  </div>
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">From Display Name</label>
+                    <input type="text" id="smtp-from-name" class="form-input form-input-sm" value="Jasvi Industries Accounts">
+                  </div>
+                  <div class="form-group" style="margin-bottom:12px;">
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="smtp-tls" checked> Enable STARTTLS Transport Encryption
+                    </label>
+                  </div>
+                  <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label" style="font-size:0.75rem;">Default Outgoing Signature</label>
+                    <textarea id="smtp-signature" class="form-input form-input-sm" rows="4">Best regards,
+Jasvi Industries Accounts Team
+Morbi, Gujarat | Phone: +91 90999 39193</textarea>
+                  </div>
+                  <button type="button" class="btn btn-secondary" onclick="window.SettingsController.testEmail()">
+                    <span>&#9993;</span> Send Diagnostic Test Email
+                  </button>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Document Dispatch Templates</h3>
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">Document Category</label>
+                    <select id="email-template-doc" class="form-select form-input-sm" onchange="window.SettingsController.onTemplateDocChanged(this.value)">
+                      <option value="Sales Invoice (Email)">Sales Invoice (Email)</option>
+                      <option value="Quotation (Email)">Quotation (Email)</option>
+                      <option value="Purchase Bill (Email)">Purchase Bill (Email)</option>
+                      <option value="Payment Receipt (Email)">Payment Receipt (Email)</option>
+                      <option value="Sales Return (Email)">Sales Return (Email)</option>
+                      <option value="Sales Invoice (WhatsApp)">Sales Invoice (WhatsApp)</option>
+                      <option value="Quotation (WhatsApp)">Quotation (WhatsApp)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="box-email-subject" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">Subject Line</label>
+                    <input type="text" id="email-template-subject" class="form-input form-input-sm" value="Tax Invoice {docNo} from {company}">
+                  </div>
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">Message Body</label>
+                    <textarea id="email-template-body" class="form-input form-input-sm" rows="6">Dear {customer},
+
+Please find attached {docType} {docNo} dated {date} for total amount {total}.
+
+{signature}</textarea>
+                  </div>
+                  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:6px;">Insert Placeholder Variable:</div>
+                  <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{customer}')">{customer}</button>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{docNo}')">{docNo}</button>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{date}')">{date}</button>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{total}')">{total}</button>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{balance}')">{balance}</button>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="window.SettingsController.insertTemplateToken('{signature}')">{signature}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. SECURITY PANEL (SecuritySettingsPanel.fxml Parity) -->
+            <div id="settings-panel-security" class="settings-subpanel" data-section="SECURITY" style="display:none;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Authentication Governance &amp; Sessions</h3>
+                  <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label" style="font-size:0.75rem;">MFA / 2FA Enforcement Policy</label>
+                    <select id="sec-mfa-policy" class="form-select form-input-sm">
+                      <option value="ADMIN_CONTROLLED" selected>Admin Controlled (Administrator toggles per user)</option>
+                      <option value="REQUIRED">Required for All Users</option>
+                      <option value="DISABLED">Disabled Organization-wide</option>
+                    </select>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Inactivity Timeout (Minutes)</label>
+                      <input type="number" id="sec-session-timeout" class="form-input form-input-sm" value="60" min="5" max="120">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Session Warning (Minutes)</label>
+                      <input type="number" id="sec-session-warning" class="form-input form-input-sm" value="5" min="1" max="60">
+                    </div>
+                  </div>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="sec-ui-diagnostics" checked> Enable Real-time UI Security Diagnostics Logging
+                  </label>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Update My Password</h3>
+                  <form onsubmit="window.SettingsController.handlePasswordChange(event)">
                     <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">Sender Display Name</label>
-                      <input type="text" id="set-smtp-from-name" class="form-input form-input-sm" value="Jasvi Industries ERP" oninput="if(document.getElementById('smtp-from-name')) document.getElementById('smtp-from-name').value=this.value">
+                      <label class="form-label" style="font-size:0.75rem;">Current Password *</label>
+                      <input type="password" id="pw-current" class="form-input form-input-sm" required>
                     </div>
                     <div class="form-group" style="margin-bottom:10px;">
+                      <label class="form-label" style="font-size:0.75rem;">New Password (8+ chars) *</label>
+                      <input type="password" id="pw-new" class="form-input form-input-sm" required minlength="8">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                      <label class="form-label" style="font-size:0.75rem;">Confirm New Password *</label>
+                      <input type="password" id="pw-confirm" class="form-input form-input-sm" required minlength="8">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. MODULE MANAGEMENT PANEL (ModulesSettingsPanel.fxml Parity) -->
+            <div id="settings-panel-modules" class="settings-subpanel" data-section="MODULES" style="display:none;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:16px;">
+                
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">General Ledger &amp; Accounting</h3>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-enabled" checked>
+                      <div>
+                        <strong>General Ledger &amp; Double-Entry Engine</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Maintains chart of accounts and running debit/credit ledger balances.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-autopost" checked>
+                      <div>
+                        <strong>Auto-Post Vouchers to GL on Approval</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Automatically posts sales, purchases, and receipts directly to running journal accounts.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-trialbalance" checked>
+                      <div>
+                        <strong>Running Trial Balance Verification</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Requires debits equal credits before committing any financial transaction.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Taxation &amp; Statutory Compliance</h3>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-enabled" checked>
+                      <div>
+                        <strong>GST Compliance &amp; E-Way Bill Engine</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Computes CGST, SGST, IGST and validates Place of Supply codes.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-auto2b" checked>
+                      <div>
+                        <strong>Automated GSTR-2B Inward Purchase Match</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">2-way invoice cross-matching against government GST portal records.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-posgating" checked>
+                      <div>
+                        <strong>Place of Supply (POS) Gating</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Prevents saving invoices without a verified state tax code.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-tds-enabled" checked>
+                      <div>
+                        <strong>TDS Statutory Deduction Engine</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Applies Section 194Q / 206C deductions during payment settlements.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Automation &amp; Risk Governance</h3>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-enabled" checked>
+                      <div>
+                        <strong>3-Way Matching (PO vs Inward GRN vs Bill)</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Validates purchase order quantities against warehouse receipt before payment approval.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-autodebit" checked>
+                      <div>
+                        <strong>Auto-Draft Debit Note on Discrepancy</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Instantly prepares supplier debit note if inward items arrive damaged or missing.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-reorder-enabled" checked>
+                      <div>
+                        <strong>Automated Stock Reordering Alerts</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Generates reorder triggers when warehouse stock reaches safety minimums.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-credit-hardstop" checked>
+                      <div>
+                        <strong>Hard-Stop Credit Control</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Blocks new sales invoice creation for customers with overdue unpaid balances.</div>
+                      </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-batch-serial" checked>
+                      <div>
+                        <strong>Batch &amp; Serial Number Tracking</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Tracks manufacturing lot numbers and expiry dates per item.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Executive Intelligence &amp; Briefing</h3>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
+                      <input type="checkbox" id="mod-briefing-enabled" checked>
+                      <div>
+                        <strong>Daily Executive Summary Briefing</strong>
+                        <div style="font-size:0.72rem; color:var(--text-dim);">Dispatches morning operational digest (today sales, bank balance, low stock).</div>
+                      </div>
+                    </label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                       <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                        <input type="checkbox" id="set-smtp-tls" checked onchange="if(document.getElementById('smtp-tls')) document.getElementById('smtp-tls').checked=this.checked"> Enable TLS / STARTTLS Encryption
+                        <input type="checkbox" id="mod-briefing-wa" checked> WhatsApp Digest
+                      </label>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                        <input type="checkbox" id="mod-briefing-email" checked> Email Digest
                       </label>
                     </div>
                     <div class="form-group">
-                      <label class="form-label" style="font-size:0.75rem;">Default Outgoing Signature</label>
-                      <textarea id="set-smtp-signature" class="form-input form-input-sm" rows="4" oninput="if(document.getElementById('smtp-signature')) document.getElementById('smtp-signature').value=this.value">Best regards,
-Jasvi Industries Accounts Team
-Morbi, Gujarat | Phone: +91 90999 39193</textarea>
+                      <label class="form-label" style="font-size:0.75rem;">Executive Contact Phone Number</label>
+                      <input type="text" id="mod-briefing-phone" class="form-input form-input-sm" value="+91 90999 39193">
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
-            <!-- 6. SECURITY PANEL -->
-            <div id="settings-panel-security" class="settings-subpanel" data-section="SECURITY" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Authentication Governance &amp; Sessions</h3>
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
-                  <div class="form-group">
-                    <label class="form-label" style="font-size:0.75rem;">MFA / 2FA Enforcement Policy</label>
-                    <select id="set-sec-mfa" class="form-select form-input-sm" onchange="if(document.getElementById('sec-mfa-policy')) document.getElementById('sec-mfa-policy').value=this.value">
-                      <option value="OPTIONAL" selected>OPTIONAL - Self-Enrollment</option>
-                      <option value="REQUIRED_NON_ADMIN">REQUIRED - Non-Admin Roles</option>
-                      <option value="STRICT_ALL">STRICT - Enforce For All Users</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" style="font-size:0.75rem;">Idle Session Inactivity Timeout (Minutes)</label>
-                    <input type="number" id="set-sec-timeout" class="form-input form-input-sm" value="60" oninput="if(document.getElementById('sec-timeout')) document.getElementById('sec-timeout').value=this.value">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 7. WORKSPACE & STORAGE PANEL -->
-            <div id="settings-panel-workspace" class="settings-subpanel" data-section="WORKSPACE" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Desktop Runtime Paths &amp; Server Connection</h3>
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
-                  <div>
-                    <div style="font-size:0.76rem; color:var(--text-dim); margin-bottom:4px;">Protected Runtime Workspace:</div>
-                    <div id="lbl-workspace-path" style="font-family:monospace; color:var(--cyan); font-size:0.82rem; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:6px; border:1px solid var(--border);">D:\DSE Production\workspace</div>
-                    <div id="lbl-workspace-status" style="font-size:0.72rem; color:#10b981; margin-top:6px;">Operational &bull; Connected to PostgreSQL (55432)</div>
-                  </div>
-                  <div>
-                    <div class="form-group">
-                      <label class="form-label" style="font-size:0.75rem;">Company Server Backend URL</label>
-                      <input type="text" id="txt-company-server-url" class="form-input form-input-sm" value="https://erp-uat.jasviindustries.in">
-                    </div>
-                    <button type="button" class="btn btn-secondary" style="height:32px; font-size:0.74rem;" onclick="window.AppDialogService.showToast('PostgreSQL Server Backend is Online and Healthy (HTTP 200)!', 'success')">
-                      <span>&#9889;</span> Test Server Connectivity
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 8. SHORTCUTS PANEL -->
-            <div id="settings-panel-shortcuts" class="settings-subpanel" data-section="SHORTCUTS" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Keyboard Shortcuts Studio</h3>
-                  <input type="text" class="form-input form-input-sm" placeholder="Search hotkeys (Ctrl+S, F2)..." style="width:200px;" oninput="window.SettingsController.filterShortcuts(this.value)">
-                </div>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th style="width:130px;">Key Accelerator</th>
-                      <th style="width:200px;">Action / Operation</th>
-                      <th style="width:140px;">Scope</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody id="shortcuts-settings-tbody">
-                    <!-- Populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- 9. DATABASE BACKUP & RECOVERY PANEL (BackupRestore.fxml Parity) -->
-            <div id="settings-panel-backup" class="settings-subpanel" data-section="BACKUP" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">PostgreSQL Disaster Recovery &amp; Backup Catalog</h3>
-                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Automated pg_dump snapshots, SHA256 integrity validation, and staged rollback points</p>
-                  </div>
-                  <div style="display:flex; gap:8px;">
-                    <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.loadBackups()">🔄 Refresh Catalog</button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.exportRecoveryPackage()">📦 Export Recovery Package</button>
-                    <button class="btn btn-primary btn-sm" onclick="window.SettingsController.triggerImmediateBackup()">💾 Create Backup Now</button>
-                  </div>
-                </div>
-
-                <!-- 4 KPI Metrics matching BackupRestore.fxml -->
-                <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-                  <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 10px 14px;">
-                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem;">DATABASE SIZE</span></div>
-                    <div class="kpi-value" id="backup-kpi-size" style="font-size:1.15rem; color:var(--cyan);">--</div>
-                    <div class="kpi-meta" id="backup-kpi-health" style="font-size:0.65rem; color:var(--green);">HEALTHY (READY)</div>
-                  </div>
-                  <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 10px 14px;">
-                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--purple-accent);">AVAILABLE BACKUPS</span></div>
-                    <div class="kpi-value" id="backup-kpi-count" style="font-size:1.15rem; color:var(--purple-accent);">0</div>
-                    <div class="kpi-meta" style="font-size:0.65rem;">Archived Snapshots</div>
-                  </div>
-                  <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 10px 14px;">
-                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--green);">LATEST BACKUP</span></div>
-                    <div class="kpi-value" id="backup-kpi-last" style="font-size:1.05rem; color:var(--green); font-weight:700;">Never</div>
-                    <div class="kpi-meta" style="font-size:0.65rem;">Snapshot verified</div>
-                  </div>
-                  <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 10px 14px;">
-                    <div class="kpi-header"><span class="kpi-label" style="font-size:0.65rem; color:var(--yellow);">DATA RETENTION</span></div>
-                    <div class="kpi-value" style="font-size:1.05rem; color:var(--yellow); font-weight:700;">Active 7 Days</div>
-                    <div class="kpi-meta" style="font-size:0.65rem;">Manual + Auto policy</div>
-                  </div>
-                </div>
-
-                <div style="overflow-x:auto;">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>ARCHIVE FILE NAME</th>
-                        <th style="width:160px;">CREATED TIMESTAMP</th>
-                        <th style="width:110px;">SIZE</th>
-                        <th style="width:110px; text-align:center;">STATUS</th>
-                        <th style="width:110px; text-align:center;">TRIGGER</th>
-                        <th style="width:200px; text-align:right;">ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody id="backups-table-tbody">
-                      <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No backup archives found. Click "Create Backup Now" to capture an immediate snapshot.</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- 10. SAFE ROLLBACK PANEL (SafeRollback.fxml Parity) -->
-            <div id="settings-panel-rollback" class="settings-subpanel" data-section="ROLLBACK" style="display:none;">
-              <div class="data-panel" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-                  <div>
-                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Safe Application Rollback Studio</h3>
-                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Return to a previous application version while preserving all production database records and attachments</p>
-                  </div>
-                  <button class="btn btn-secondary btn-sm" onclick="window.SettingsController.loadSafeRollback()">🔄 Refresh Candidates</button>
-                </div>
-
-                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:1.5rem;">🛡️</span>
-                  <div style="font-size:0.8rem; color:var(--text-main); line-height:1.4;">
-                    <strong>Zero-Data-Loss Guarantee:</strong> A rollback switches the application package only. Sales invoices, purchase bills, general ledger, payment vouchers, and customer balances are preserved. A safety snapshot is created automatically before execution.
-                  </div>
-                </div>
-
-                <div style="overflow-x:auto;">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th style="width:110px;">TARGET RELEASE</th>
-                        <th>INSTALLER PACKAGE</th>
-                        <th style="width:120px;">SCHEMA VER</th>
-                        <th style="width:140px; text-align:center;">COMPATIBILITY</th>
-                        <th>SHA256 CHECKSUM</th>
-                        <th style="width:90px;">SIZE</th>
-                        <th style="width:200px; text-align:right;">ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody id="rollback-candidates-tbody">
-                      <!-- Populated dynamically -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        <!-- VIEW: COMPANY & BILLING SETTINGS (SettingsController.java & CompanySettingsPanel.fxml PARITY) -->
-        <div id="view-settings-company" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#9881;&#65039;</span> Company &amp; Billing Settings</h1>
-              <p>Legal organization profile, GSTIN, registered factory address, and bank credentials</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-primary" onclick="window.SettingsController.saveCompanySettings(event)">
-                <span>&#128190;</span> Save Company Profile
-              </button>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
-            <!-- Card 1: Legal Identity -->
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Legal Company Identity</h3>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Company Name *</label>
-                <input type="text" id="setting-company-name" class="form-input form-input-sm" value="JASVI INDUSTRIES">
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Company Tagline / Brand</label>
-                <input type="text" id="setting-company-tagline" class="form-input form-input-sm" value="Excellence in Ceramic Manufacturing">
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">GSTIN *</label>
-                  <input type="text" id="setting-company-gstin" class="form-input form-input-sm" value="24AAACJ1234A1Z5">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Company PAN *</label>
-                  <input type="text" id="setting-company-pan" class="form-input form-input-sm" value="AAACJ1234A">
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Business Type</label>
-                  <select id="setting-business-type" class="form-select form-input-sm">
-                    <option value="MANUFACTURING">Manufacturing</option>
-                    <option value="TRADING">Trading / Wholesale</option>
-                    <option value="SERVICES">Services</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Industry</label>
-                  <select id="setting-industry" class="form-select form-input-sm">
-                    <option value="CERAMICS">Ceramics &amp; Tiles</option>
-                    <option value="ENGINEERING">Industrial Engineering</option>
-                    <option value="CHEMICALS">Chemicals</option>
-                  </select>
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Phone Number</label>
-                  <input type="text" id="setting-company-phone" class="form-input form-input-sm" value="+91 98250 12345">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Email Address</label>
-                  <input type="email" id="setting-company-email" class="form-input form-input-sm" value="accounts@jasviindustries.in">
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">State Code</label>
-                  <input type="text" id="setting-company-state" class="form-input form-input-sm" value="GUJARAT (24)">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Website URL</label>
-                  <input type="text" id="setting-company-website" class="form-input form-input-sm" value="https://jasviindustries.in">
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 2: Registered Addresses -->
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Registered Locations &amp; Terms</h3>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Registered Billing / Factory Address *</label>
-                <textarea id="setting-company-address" class="form-input form-input-sm" rows="3">Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India</textarea>
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Shipping / Dispatch Warehouse Address</label>
-                <textarea id="setting-ship-address" class="form-input form-input-sm" rows="2">Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat</textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label" style="font-size:0.75rem;">Standard Invoice Terms &amp; Conditions</label>
-                <textarea id="setting-invoice-terms" class="form-input form-input-sm" rows="3">1. Goods once sold will not be taken back.
-2. Interest @ 18% p.a. will be charged after 30 days.
-3. Subject to Morbi jurisdiction only.</textarea>
-              </div>
-            </div>
-
-            <!-- Card 3: Banking & Settlement Credentials -->
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Banking &amp; Settlement Details</h3>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Bank Name</label>
-                  <input type="text" id="setting-bank-name" class="form-input form-input-sm" value="STATE BANK OF INDIA">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Account Holder Name</label>
-                  <input type="text" id="setting-account-holder" class="form-input form-input-sm" value="JASVI INDUSTRIES">
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Account Number</label>
-                  <input type="text" id="setting-account-number" class="form-input form-input-sm" value="382910482910">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">IFSC Code</label>
-                  <input type="text" id="setting-ifsc" class="form-input form-input-sm" value="SBIN0001234">
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Branch</label>
-                  <input type="text" id="setting-branch" class="form-input form-input-sm" value="MORBI MAIN BRANCH">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Account Type</label>
-                  <select id="setting-account-type" class="form-select form-input-sm">
-                    <option value="CURRENT">Current Account</option>
-                    <option value="CASH_CREDIT">Cash Credit (CC)</option>
-                    <option value="SAVINGS">Savings Account</option>
-                  </select>
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">UPI ID / VPA</label>
-                  <input type="text" id="setting-upi-id" class="form-input form-input-sm" value="jasviindustries@sbi">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Bank Recon Tolerance (&#8377;)</label>
-                  <input type="number" id="setting-tolerance" class="form-input form-input-sm" value="1.00" step="0.01">
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 4: Regional & Accounting Defaults -->
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Regional &amp; Accounting Parameters</h3>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Base Currency</label>
-                <select id="setting-currency" class="form-select form-input-sm">
-                  <option value="INR (&#8377;)">Indian Rupee (INR - &#8377;)</option>
-                  <option value="USD ($)">US Dollar (USD - $)</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Time Zone</label>
-                <select id="setting-timezone" class="form-select form-input-sm">
-                  <option value="Asia/Kolkata (IST)">Asia/Kolkata (IST - UTC+5:30)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" style="font-size:0.75rem;">Date Format</label>
-                <select id="setting-date-format" class="form-select form-input-sm">
-                  <option value="DD-MM-YYYY">DD-MM-YYYY (e.g. 13-10-2026)</option>
-                  <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW: CORPORATE EMAIL SETTINGS (EmailSettingsPanel.fxml PARITY) -->
-        <div id="view-settings-email" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#9993;&#65039;</span> Corporate Email &amp; SMTP Settings</h1>
-              <p>SMTP host, TLS port, sender identity, automated delivery dispatch, and diagnostic test probes</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.SettingsController.testEmail()">
-                <span>&#9889;</span> Send Diagnostic Test Email
-              </button>
-              <button class="btn btn-primary" onclick="window.SettingsController.saveEmailSettings(event)">
-                <span>&#128190;</span> Save SMTP Configuration
-              </button>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">SMTP Server Credentials</h3>
-              <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">SMTP Host</label>
-                  <input type="text" id="smtp-host" class="form-input form-input-sm" value="smtp.gmail.com">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:0.75rem;">Port</label>
-                  <input type="number" id="smtp-port" class="form-input form-input-sm" value="587">
-                </div>
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">Sender / Username Email Address</label>
-                <input type="email" id="smtp-email" class="form-input form-input-sm" value="billing@jasviindustries.in">
-              </div>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label class="form-label" style="font-size:0.75rem;">App Password / SMTP Secret</label>
-                <input type="password" id="smtp-password" class="form-input form-input-sm" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
-              </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label" style="font-size:0.75rem;">From Display Name</label>
-                <input type="text" id="smtp-from-name" class="form-input form-input-sm" value="Jasvi Industries Accounts">
-              </div>
-              <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                <input type="checkbox" id="smtp-tls" checked> Enable STARTTLS Transport Encryption
-              </label>
-            </div>
-
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Email Signature &amp; Formatting</h3>
-              <div class="form-group">
-                <label class="form-label" style="font-size:0.75rem;">Corporate Email Signature</label>
-                <textarea id="smtp-signature" class="form-input form-input-sm" rows="6">--
-Best Regards,
-Accounts &amp; Dispatch Department
-JASVI INDUSTRIES - Morbi, Gujarat
-Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW: SECURITY & SESSION SETTINGS (SecuritySettingsPanel.fxml PARITY) -->
-        <div id="view-settings-security" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128274;</span> Security &amp; Session Settings</h1>
-              <p>JWT expiration timers, multi-factor authentication policies, and password updates</p>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:16px;">
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Governance &amp; Session Security</h3>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label" style="font-size:0.75rem;">MFA Enforcement Policy</label>
-                <select id="sec-mfa-policy" class="form-select form-input-sm">
-                  <option value="OPTIONAL">Optional (User Managed)</option>
-                  <option value="MANDATORY_ADMIN">Mandatory for Administrators</option>
-                  <option value="ENFORCED_ALL">Enforced for All Users</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label" style="font-size:0.75rem;">Inactivity Session Timeout (Minutes)</label>
-                <input type="number" id="sec-timeout" class="form-input form-input-sm" value="60">
-              </div>
-              <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                <input type="checkbox" id="sec-diagnostics" checked> Enable Real-time UI Security Diagnostics Logging
-              </label>
-            </div>
-
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Update My Password</h3>
-              <form onsubmit="window.SettingsController.handlePasswordChange(event)">
-                <div class="form-group" style="margin-bottom:10px;">
-                  <label class="form-label" style="font-size:0.75rem;">Current Password *</label>
-                  <input type="password" id="pw-current" class="form-input form-input-sm" required>
-                </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                  <label class="form-label" style="font-size:0.75rem;">New Password (8+ chars) *</label>
-                  <input type="password" id="pw-new" class="form-input form-input-sm" required minlength="8">
-                </div>
-                <div class="form-group" style="margin-bottom:12px;">
-                  <label class="form-label" style="font-size:0.75rem;">Confirm New Password *</label>
-                  <input type="password" id="pw-confirm" class="form-input form-input-sm" required minlength="8">
-                </div>
-                <button type="submit" class="btn btn-primary">Update Password</button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW: KEYBOARD SHORTCUTS STUDIO (ShortcutsSettingsPanel.fxml PARITY) -->
-        <div id="view-settings-shortcuts" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#9000;&#65039;</span> Keyboard Shortcuts Studio</h1>
-              <p>High-productivity desktop hotkeys matching JavaFX application accelerators</p>
-            </div>
-            <div class="view-header-actions" style="display:flex; gap:8px;">
-              <input type="text" class="form-input form-input-sm" placeholder="Filter hotkeys (e.g. Sales, F2)..." style="width:220px;" oninput="window.SettingsController.filterShortcuts(this.value)">
-            </div>
-          </div>
-
-          <div class="data-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="width:130px;">Key Accelerator</th>
-                  <th style="width:200px;">Action / Operation</th>
-                  <th style="width:140px;">Module Scope</th>
-                  <th>Description</th>
-                  <th style="width:100px; text-align:center;">Status</th>
-                </tr>
-              </thead>
-              <tbody id="shortcuts-table-tbody">
-                <!-- Dynamically populated by SettingsController.loadShortcutsSettings() -->
-              </tbody>
-            </table>
           </div>
         </div>
 

@@ -1,275 +1,315 @@
-# SCOPE OF WORK: 100% DESKTOP PARITY & COMPREHENSIVE REGRESSION RESOLUTION
+# DSE ERP SETTINGS STUDIO: FULL IMPLEMENTATION & SYNCHRONIZATION SCOPE
 
-> **Project**: Jasvi Industries Enterprise ERP &mdash; Centralized Web Studio  
 > **Target Baseline**: Desktop ERP `DSE-ERP-10.0.25` (`c:\Users\JATIN DHAMELIYA\Downloads\DSE-ERP-10.0.25-INTELLIJ-READY-FINAL-V19\DSE-ERP-10.0.25`)  
-> **Working Directory**: `d:\ERP Website\admin`  
-> **Release Staging**: `D:\GitHub\ReleaseSource Website\admin`  
-> **Repository Target**: `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`)  
-> **Production & UAT Runtime**: `https://erp-uat.jasviindustries.in/admin/`  
+> **Working Directory (Web)**: `d:\ERP Website\admin`  
+> **Release Staging (Web)**: `D:\GitHub\ReleaseSource Website\admin`  
+> **Repository Target (Web)**: `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`)  
+> **Repository Target (Desktop/Server)**: `D:\GitHub\DSE-ERP-Primary` (`ssdhameliya/DSE-ERP`)  
+> **Live UAT Runtime**: `https://erp-uat.jasviindustries.in/admin/`  
+> **Live PROD Runtime**: `https://erp.jasviindustries.in/admin/`  
 > **Date**: October 17, 2026  
 
 ---
 
-## 1. Executive Summary & Objective
+## 1. Release Versions & Environment Identification
 
-The objective of this engagement is to eliminate all discrepancies between the Web Application (`d:\ERP Website\admin`) and the Desktop Application (`DSE-ERP-10.0.25`), resolve all existing functional and visual regressions, and achieve 100% end-to-end parity across all 24 identified points.
-
-### Root Problem Statement
-During initial rounds, fixes were applied locally in scattered JavaScript controllers without complete regression isolation, comprehensive version cache-busting, or exhaustive first-principles verification against the desktop codebase. When tested on UAT, functionality appeared broken or regressed due to:
-1. **Asset Caching**: Browsers retaining stale script and stylesheet bundles.
-2. **Missing Backend Event Triggers**: Notification Center and Returns expecting active server lifecycle events that web controllers were bypassing.
-3. **Incomplete Desktop Dict Ports**: Label icons relying on a 15-keyword stub rather than the 1,355-line canonical `semantic-registry.properties`.
-4. **Static HTML Mock Flashes**: Template rows in `index.html` rendering fake data before live API promises resolved.
-5. **Event Listener Clashes**: Multiple click handlers on table rows conflicting with action dropdowns and drawers.
+| Component | Current Live Version | Target Release Version | Deployment Mechanism |
+|---|---|---|---|
+| **Desktop Application** | `v10.0.32` | `v10.0.33` | GitHub Actions &rarr; MSI/EXE/DMG installer & pre-login auto-updater gateway |
+| **Backend API Server** | `v10.0.32` | `v10.0.33` | GitHub Actions &rarr; Oracle Cloud VM (`deploy-oracle-release.sh`) |
+| **Web Application Studio**| `10.0.32` | `10.0.33.11` (Cache Tag) | Git push to `DSE-ERP-Enterprise` (`web/admin`) &rarr; Cloud Web Server |
+| **PostgreSQL Database** | Port `55432` | Schema Version 10.x | Managed PostgreSQL cluster (`dse_erp_uat` / `dse_erp`) |
 
 ---
 
-## 2. Complete 24-Point Scope & Technical Implementation Matrix
+## 2. End-to-End Build & Deployment Flow (UAT & PROD)
 
-### Item 1: Sales Register Zero-Lag Drawer & Event Collision Elimination
-* **User Requirement**: Click on record causes lag, freezing, and duplicate method execution. Must match desktop smooth single-click slide drawer and re-click hide behavior.
-* **Desktop Reference**: `SalesListController.java` (`setRowFactory`, `RegisterDetailDrawer`), `RegisterUiSupport.java`.
-* **Root Cause**: Web row click handlers were firing duplicate network calls (`getSaleByInvoice`) on every single click, blocking UI rendering.
-* **Technical Scope**:
-  - Implement instant synchronous population from `salesCache` in `SalesController.js`.
-  - Fetch line items and history asynchronously in background without freezing the UI.
-  - Implement clean toggle: clicking an active selected row toggles `#drawer-invoice-details` closed; clicking another row switches selection smoothly.
-  - Prevent event bubbling (`event.stopPropagation()`) on checkboxes, links, and action buttons.
+```text
+                                [ Developer / Antigravity ]
+                                             │
+                      ┌──────────────────────┴──────────────────────┐
+                      ▼                                             ▼
+         [ Desktop & Server Pipeline ]                      [ Web Studio Pipeline ]
+         Repo: `ssdhameliya/DSE-ERP`                        Repo: `DSE-ERP-Enterprise`
+                      │                                             │
+                      ▼ (Tag: `v10.0.33`)                           ▼ (Commit: `web/admin`)
+         GitHub Actions: "Build Native Release"             Auto-Deployed to Web Server
+         • Compiles Spring `server.jar`                     • Static assets copied to web root
+         • Builds Windows x64 (.msi/.exe)                   • Version tag `?v=10.0.33.11`
+         • Builds macOS Apple Silicon (.dmg)                • Instant UAT access upon Ctrl+F5
+                      │
+         ┌────────────┴────────────┐
+         ▼                         ▼
+  [ UAT Environment ]       [ PROD Environment ]
+  • Oracle VM (`dse_erp_uat`) • Oracle VM (`dse_erp`)
+  • Auto-deploys via SSH    • Gated: Requires Admin Approval
+  • Verifies health         • Verifies UAT health first
+  • Auto-rollback ready     • Deploys verified JAR
+                            • Promotes Release to "Latest"
+                            • Desktop clients auto-update
+```
 
-### Item 2: Sales Table Columns Parity (WhatsApp Removal & Email Status Badge)
-* **User Requirement**: Remove WhatsApp table header and column. Email header should display only read-only status (`SENT` / `NOT SENT`) for all records.
-* **Desktop Reference**: `SalesList.fxml` (`colMail` TableColumn), `SalesListController.java`.
-* **Technical Scope**:
-  - Remove WhatsApp `<th>` and `<td>` from `index.html` and `SalesController.js`.
-  - Adjust empty state `colspan="14"`.
-  - Render Email as a non-clickable status badge (`badge-paid` / `badge-pending`) based on boolean `mailSent` / `emailStatus`.
+### Desktop & Server Deployment Detail
+1. **Repository Authority**: `ssdhameliya/DSE-ERP` is the sole deployment authority for backend and desktop builds.
+2. **UAT Auto-Deploy**:
+   - Pushing tag `v10.0.33` triggers `.github/workflows/deploy-prod.yml`.
+   - The workflow compiles the canonical server JAR and native desktop installers, uploads them to the GitHub Release, and streams the verified artifact over SSH to the UAT Oracle VM.
+   - It performs an automatic PostgreSQL snapshot before applying database migrations and verifies `/api/runtime/health`.
+3. **PROD Promotion Gate**:
+   - The same workflow run pauses before entering the protected `production` environment.
+   - Once approved by the administrator, the exact checksum-verified artifact is promoted to PROD, health-verified, and marked as `Latest`.
+4. **Desktop Updates**:
+   - Desktop apps poll the server's private gateway `/api/updates/releases/latest`.
+   - Connected desktop users receive an in-app update prompt with zero manual file transfers.
 
-### Item 3: Duplicate Sale & Duplicate Purchase Desktop Parity
-* **User Requirement**: Duplicate Sale & Duplicate Purchase should open the creation workspace populated with the existing record's lines, customer/supplier, and items, allowing changes before saving, matching desktop `prepareDuplicate()`.
-* **Desktop Reference**: `SalesController.java` (`prepareDuplicate`), `PurchaseController.java` (`prepareDuplicate`).
-* **Technical Scope**:
-  - In `SalesController.js` and `PurchaseController.js`, implement `prepareDuplicate(entity)`:
-    - Sets `editingSale = null` / `editingPurchase = null`.
-    - Clones all line items and additional charges.
-    - Sets invoice date to current date (`BusinessClock.today()`).
-    - Clears attachments, payment transactions, and audit metadata.
-    - Requests next sequential document number from `/api/operations/sales/next-invoice` or `/api/operations/purchases/next-bill`.
-    - Navigates immediately to the creation workspace tab (`#view-sale-create` / `#view-purchase-creation`).
-
-### Item 4: Direct PDF Download Instead of Full-Page Blob Navigation
-* **User Requirement**: Clicking View / Download PDF opens a new tab navigating to `blob:...` which reloads the web application. Must download the PDF directly.
-* **Desktop Reference**: `DesktopUiUtil.java` (`exportPdfDirect`), `InvoicePrintService.java`.
-* **Technical Scope**:
-  - In `ApiService.js`, route `openPdfPreview(type, no)` directly to `downloadDocumentPdf(type, no)`.
-  - Create a hidden anchor element (`<a>`) with `download="${filename}.pdf"` and trigger `.click()` cleanly without viewport navigation.
-
-### Item 5: Form Label Icons Across All Pages (Desktop Centralized Logic)
-* **User Requirement**: Label icons are missing across forms on all pages. Desktop has centralized logic for label icons.
-* **Desktop Reference**: `UiSemanticRegistry.java`, `semantic-registry.properties` (1,355 lines of field-to-icon mappings), `IconFactory.java` (`semanticForLabel`).
-* **Root Cause**: `UiSemanticRegistry.js` had a tiny 15-word regex dictionary that missed >70% of business fields (`Full Name`, `Department`, `Branch`, `Category`, `Unit`, `Terms`, `Status`, `Role`, `Credit Limit`, `GSTIN`, etc.).
-* **Technical Scope**:
-  - Port the full `semantic-registry.properties` field dictionary into `UiSemanticRegistry.js`.
-  - Enhance `LabelIconEnhancer.js` to automatically decorate all `<label>` tags with matching glyph spans.
-  - Hook `GlobalUiEnhancer.enhance()` into `NavigationRouter.selectNav()` and `AppDialogService.openModal()` so every newly opened view and modal is automatically iconified.
-
-### Item 6: In-Place Purchase & Sales Return Modal
-* **User Requirement**: Purchase return and sales return row action triggers navigation to a separate return screen instead of opening an in-place modal popup to select items and return.
-* **Desktop Reference**: `SalesReturnsController.java` (`openCreateReturnDialog`), `PurchaseReturnsController.java`, `CreateReturnDialog.fxml`.
-* **Technical Scope**:
-  - In `SalesController.js` and `PurchaseController.js`, bind "Return" action directly to `ReturnsController.openCreateReturnModal(invoiceNo, type)`.
-  - Open `#modal-create-return` directly in-place over the active register without changing navigation tabs or unmounting state.
-
-### Item 7: Purchase & Sales Returns Infinite Loading State Fix
-* **User Requirement**: Returns register does not display data and stays stuck showing "Loading sales/purchase return data...".
-* **Desktop Reference**: `ReturnController.java` (`/api/returns/page`), `SalesReturnsController.java`.
-* **Root Cause**: When `/api/returns/page` returned an empty array or null metrics, `ReturnsController.js` failed to clear the static loading spinner row, leaving the register hung.
-* **Technical Scope**:
-  - Guard `loadReturns()` in `ReturnsController.js` with defensive array unboxing:
-    `const rows = data?.rows || (Array.isArray(data) ? data : []);`
-  - Immediately render the clean empty-state card if count is 0.
-  - Implement a 7-second fetch timeout with a user-facing retry button and toast notification on network failure.
-
-### Item 8: Quotation Action Button Dropdown Clipping Fix
-* **User Requirement**: Quotation action dropdown button is not clickable or clipped by the table container.
-* **Desktop Reference**: `QuotationsController.java` (`setupActionColumn`), `Quotations.fxml`.
-* **Technical Scope**:
-  - In `QuotationController.js`, rewrite `toggleActionMenu()` to use fixed viewport positioning:
-    - Compute coordinates via `button.getBoundingClientRect()`.
-    - Apply `position: fixed`, `z-index: 100005`, and calculate viewport collision boundaries.
-  - Close dropdown automatically on outside click, window resize, or table scroll.
-
-### Item 9: Item Master 18 Columns Parity with Desktop
-* **User Requirement**: Item Master table headers and columns do not match desktop ERP.
-* **Desktop Reference**: `ItemMaster.fxml` (18 columns), `ItemMasterController.java`.
-* **Technical Scope**:
-  - Verify and align all 18 columns in `index.html` and `ItemMasterController.js`:
-    1. Select Checkbox
-    2. SKU / Item Code
-    3. Item Name / Description
-    4. Category
-    5. Brand
-    6. Material / Variant
-    7. HSN / SAC Code
-    8. Unit of Measurement (UOM)
-    9. Purchase Cost (Excl. Tax)
-    10. Selling Price (Excl. Tax)
-    11. Tax Rate (% GST)
-    12. Current Stock On-Hand
-    13. Min Reorder Point
-    14. Max Stock Threshold
-    15. Barcode / Universal ID
-    16. Status (Active/Inactive)
-    17. Last Updated
-    18. Actions (`::: Actions`)
-
-### Item 10: Add Master Lookup Modal UX & Code Auto-Generation
-* **User Requirement**: Add Lookup popup is difficult to fill and does not feel like desktop.
-* **Desktop Reference**: `MasterdataController.java` (`showAddLookupDialog`), `AddLookupDialog.fxml`.
-* **Technical Scope**:
-  - Redesign `#modal-add-lookup` with desktop-matching layout, field labels, and semantic icons.
-  - Code field is marked read-only and automatically populated by calling `GET /api/master/lookups/next-code?type={CATEGORY}`.
-  - Auto-focus on `Value` input with keyboard accelerator `Enter` to submit.
-
-### Item 11: Master Lookup Unique Key Generation & Method Aliasing
-* **User Requirement**: Master lookup unique key should be auto-generated for all categories.
-* **Desktop Reference**: `MasterdataController.java`, `LookupService.java`.
-* **Technical Scope**:
-  - In `MasterDataController.js`, ensure auto-generation of unique keys (`UPPERCASE_SNAKE_CASE` or sequential alphanumeric).
-  - Add backward-compatible alias `submitSaveLookup = submitLookupSave` to prevent uncaught runtime errors in form callbacks.
-
-### Item 12: Import Bank Statement Dynamic Bank Instructions
-* **User Requirement**: Import bank statement popup displays mock bank instructions instead of live values from master lookups.
-* **Desktop Reference**: `BankStatementController.java`, `BankStatementImportDialog.fxml`.
-* **Technical Scope**:
-  - In `BankStatementController.js`, dynamically populate bank account dropdown from `GET /api/master/lookups?type=BANK_ACCOUNT`.
-  - Render specific file layout guidelines (CSV column headers, date format, delimiter) based on the selected bank institution.
-
-### Item 13: Purchase Register Drawer Binding & Row Toggle Parity
-* **User Requirement**: Purchase register row click does not behave like desktop; drawer fields missing values; re-click does not hide drawer.
-* **Desktop Reference**: `PurchaseListController.java`, `RegisterDetailDrawer.java`.
-* **Technical Scope**:
-  - Bind all `pd-...` drawer elements (`pd-invoice-no`, `pd-supplier-name`, `pd-bill-date`, `pd-subtotal`, `pd-tax-amount`, `pd-grand-total`, `pd-status`, etc.).
-  - Implement instantaneous synchronous population from `purchasesCache`.
-  - Re-clicking the selected row smoothly collapses `#drawer-purchase-details-inspect`.
-
-### Item 14: Purchase Recon, Supplier Recon & Inventory Action Menus
-* **User Requirement**: Action lists and menus in Purchase Recon, Recon Supplier, and Inventory Ledger do not match desktop.
-* **Desktop Reference**: `PurchaseReconController.java`, `SupplierReconController.java`, `InventoryController.java`.
-* **Technical Scope**:
-  - Replace raw inline buttons with standardized `::: Actions` purple dropdown buttons.
-  - Wire actions: Match with 2B, Dispute Invoice, Accept Discrepancy, View Ledger, Export Statement.
-
-### Item 15: CRM / Customers & HRM / Suppliers Drawer Integration
-* **User Requirement**: Clicking records in CRM / HRM opens disruptive 360 modal instead of side drawer with clean actions matching desktop.
-* **Desktop Reference**: `CustomerController.java`, `SupplierController.java`.
-* **Technical Scope**:
-  - In `TableUiEnhancer.js` and `PartyController.js`, replace full 360 modal trigger with side inspection drawer.
-  - Drawer exposes: Party Overview, Billing Address, Shipping Address, Ledger Balance, Outstanding Invoices, and quick actions (New Transaction, Statement PDF, Edit Party).
-
-### Item 16: Reporting Dashboard UI & Multi-Tab Layout Parity
-* **User Requirement**: Reporting Dashboard UI does not match desktop; needs full module inspection and 2-tab layout.
-* **Desktop Reference**: `ReportsController.java`, `Reports.fxml`.
-* **Technical Scope**:
-  - Implement desktop 2-tab structure in `#view-reports`:
-    - Tab 1: Executive Analytics (6 KPI cards, Payment Snapshot, Top Customers, Top Selling Items, Gross Margin Bar).
-    - Tab 2: Standard Reports Register & Report Generation Engine.
-  - Wire all 6 KPI cards to real data from `ReportService.getExecutiveMetrics()`.
-
-### Item 17: Reminder Center Parity with Desktop
-* **User Requirement**: Reminder Center looks different from desktop; needs full desktop parity.
-* **Desktop Reference**: `ReminderCenterController.java`, `ReminderCenter.fxml`.
-* **Technical Scope**:
-  - Bind to `/api/insights/reminders`.
-  - Render desktop 4-tab filter: `ALL`, `OVERDUE`, `DUE TODAY`, `UPCOMING (NEXT 7 DAYS)`.
-  - Implement desktop action modals: Complete Follow-up, Snooze, Create Reminder, Link to Invoice.
-
-### Item 18: User Access RBAC Permissions Table 400 Bad Request Fix
-* **User Requirement**: User access buttons and permission matrix not working like desktop.
-* **Desktop Reference**: `UserAccessController.java`, `PermissionMatrixController.java`.
-* **Technical Scope**:
-  - In `ReportService.js`, add required query parameter `?role=ADMIN` to `/api/reports/user-access-matrix`.
-  - Wire permission toggle checkboxes to `PUT /api/users/{id}/permissions` with optimistic UI updates.
-
-### Item 19: Communication Center Status Recognition (`SENT` vs Pending)
-* **User Requirement**: Communication logs show all records as "Pending" even when delivered.
-* **Desktop Reference**: `CommunicationCenterController.java`.
-* **Technical Scope**:
-  - Update `CommunicationController.js` status mapping: treat `SENT` and `DELIVERED` as success states.
-  - Display green status pill `SENT` with timestamp and increment Sent KPI counter.
-
-### Item 20: Settings Sidebar Accordion & Dedicated Profile View
-* **User Requirement**: Settings hide/unhide menu does not match desktop; settings navigate to profile working differently; all submenus must match desktop.
-* **Desktop Reference**: `Dashboard.fxml` (`settingsSubmenu` with 10 child buttons), `SettingsController.java` (`Section` enum: COMPANY, PAYMENT, INVOICE, NOTIFICATIONS, EMAIL, SECURITY, WORKSPACE, SHORTCUTS, UPDATES, MODULES), `Profile.fxml`, `ProfileController.java`.
-* **Technical Scope**:
-  - Refactor Settings navigation in `index.html` sidebar into an accordion group `grp-settings` containing the exact 10 desktop submenus:
-    1. Company & Billing
-    2. Payment & Bank
-    3. Invoice & Delivery
-    4. Notifications
-    5. Email Settings
-    6. Security & Session
-    7. Workspace & Storage
-    8. Keyboard Shortcuts
-    9. Application Updates
-    10. Module Activation (`chkGlEnabled`, `chkGstEnabled`, `chkThreeWayMatch`, etc.)
-  - Implement `#view-profile` matching `Profile.fxml` as a dedicated workspace view (Full Name, Email, Department, Branch, Account Overview, Password Change).
-  - Update top-right profile dropdown to select `#view-profile` rather than opening a modal.
-
-### Item 21: Notification Center Live Event Dispatcher
-* **User Requirement**: No notifications coming to Notification Center; must store events based on desktop behavior with full button actions.
-* **Desktop Reference**: `NotificationService.java`, `NotificationCenterController.java`, `/api/insights/notifications`.
-* **Technical Scope**:
-  - Create centralized `window.NotificationService.createNotification(category, title, message, severity, targetView, referenceNo)` in web.
-  - Hook dispatcher into all controller operational events: Sale created/cancelled, Purchase saved, Return created/approved, Payment recorded, Backup performed.
-  - In `NotificationCenterController.js`, bind to `/api/insights/notifications?limit=500`, update header badge counter, and wire all buttons: *Mark All Read*, *Clear History*, *Open Record*.
-
-### Item 22: Header Live Clock with Date, Time & IST Format
-* **User Requirement**: Top bar displays date only; timestamp and IST label missing.
-* **Desktop Reference**: `DashboardController.java` (`updateSystemClock`), `shellClockCard`.
-* **Technical Scope**:
-  - Format live ticking header clock in `app.js` to:
-    `${dayOfWeek}, ${day}/${month}/${year} | ${hours}:${minutes}:${seconds} ${ampm} IST`
-  - Update every 1,000ms synchronously.
-
-### Item 23: Dashboard Elimination of Mock Data Flash on Refresh
-* **User Requirement**: Dashboard flashes mock/dummy data on page refresh before real UAT data appears.
-* **Desktop Reference**: `DashboardHomeController.java`, `Dashboard.fxml`.
-* **Root Cause**: `index.html` lines 881-883 and 909-923 had static HTML placeholder text (`"Shailesh Dhameliya ₹78,780.00"`, `"test completed - GST / Tax Report"`).
-* **Technical Scope**:
-  - Remove all hardcoded dummy customer and activity rows from `index.html`.
-  - Replace with subtle skeleton loaders (`<div class="skeleton-shimmer"></div>`) or empty state indicators (`"Loading live metrics..."`) until `DashboardController.refresh()` completes.
-
-### Item 24: Reminder KPI Cards Centralized Logic & Styling
-* **User Requirement**: Reminder KPI cards do not match desktop styling or follow centralized design system.
-* **Desktop Reference**: `ReminderCenter.fxml`, `KpiCardEnhancer.java`.
-* **Technical Scope**:
-  - Restructure Reminder KPI cards into 4 standard `metric-card` containers with semantic icons:
-    1. Total Reminders (`blue`)
-    2. Overdue (`red`)
-    3. Due Today (`yellow`)
-    4. Upcoming 7 Days (`green`)
-  - Hook into `KpiCardEnhancer.js` for consistent glassmorphic styling and glow accents.
+### Web Studio Deployment Detail
+1. **Source & Staging**: Changes are developed in `d:\ERP Website\admin`, synced to `D:\GitHub\ReleaseSource Website\admin`, and pushed to `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`).
+2. **Instant Refresh**: The web server serves static HTML/JS/CSS. Bumping asset links to `?v=10.0.33.11` forces all browsers to fetch fresh code on `Ctrl + F5`.
 
 ---
 
-## 3. Regression Prevention & Quality Assurance Protocol
+## 3. Storage Audit & Bidirectional Server Synchronization
 
-To ensure zero regressions across all modules:
-1. **Cache Busting**: Bump asset query string across all script and CSS imports from `?v=10.0.33.10` to `?v=10.0.33.11`.
-2. **Lexer & Syntax Verification**: Execute automated parenthetical/brace syntax audit across all 25 controllers and services.
-3. **Event Listener Hygiene**: Cleanly remove or unbind obsolete DOM listeners before re-attaching new ones.
-4. **Three-Way Workspace Synchronization**:
-   - Primary: `d:\ERP Website\admin`
-   - Release Staging: `D:\GitHub\ReleaseSource Website\admin`
-   - Enterprise Git: `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`)
-5. **Direct Verification on Live UAT**: Test each feature directly against live endpoints on `https://erp-uat.jasviindustries.in/admin/`.
+### The Vulnerability in Existing Desktop Code
+In Desktop's `ConfigManager.java`:
+```java
+private static boolean shouldUseServerSetting(String key) {
+    if (getConfiguredDeploymentMode() != DeploymentMode.SHARED_CLIENT || key == null || org.example.api.ApiSession.token() == null) 
+        return false;
+    return key.startsWith("company.") || key.startsWith("payment.") || key.startsWith("invoice.") ...
+}
+```
+* **Problem**: In `LOCAL` or `STANDALONE` mode, Desktop writes settings **only to `config.properties` on the local hard disk**. It never pushes them to PostgreSQL!
+* **Consequence**: Web reads from PostgreSQL `application_setting`, which remains empty, causing Desktop and Web settings to diverge.
+
+### The Unified Server-Authoritative Solution
+1. **Desktop Fix**: Modify `ConfigManager.java` so that whenever an authenticated API session exists (`ApiSession.token() != null`), Desktop **always reads from and writes to the server database**, regardless of the deployment mode string.
+2. **Server Endpoints (Single Source of Truth for Both Desktop and Web)**:
+   - **General Business Settings**:
+     - `GET /api/support/settings/{key}` &rarr; Fetch single configuration key.
+     - `PUT /api/support/settings` &rarr; Batch upsert `SupportDtos.SettingsBatch` (`Map<String, String>`) into PostgreSQL `application_setting` table.
+   - **Corporate Email (SMTP)**:
+     - `GET /api/authority/email/settings` &rarr; Returns SMTP host, port, sending email, and configured status.
+     - `PUT /api/authority/email/settings` &rarr; Encrypts and persists SMTP credentials on server.
+     - `POST /api/authority/email/test` &rarr; Tests live SMTP delivery directly from the server.
+   - **Notification Preferences**:
+     - `GET /api/insights/notification-preferences` &rarr; Returns per-user category toggles.
+     - `PUT /api/insights/notification-preferences` &rarr; Persists notification preferences on server.
+   - **Branding & Image Assets**:
+     - `PUT /api/authority/resources/BUSINESS_ASSET/{key}` &rarr; Uploads raw binary bytes (Logo, Signature, QR, Banners).
+     - `GET /api/authority/resources/BUSINESS_ASSET/{key}` &rarr; Serves image bytes directly.
 
 ---
 
-## 4. Execution Phases
+## 4. Submenus Scope Separation (Desktop vs Web)
 
-* **Phase 1**: Core Controller Fixes & Regression Elimination (Items 1, 2, 3, 4, 6, 7, 8, 13, 23).
-* **Phase 2**: Master Data, Lookups & Table Headers (Items 9, 10, 11, 12, 14, 15).
-* **Phase 3**: Centralized Presentation & Semantic Label Icons (Items 5, 22, 24).
-* **Phase 4**: Settings Studio, Profile & RBAC Parity (Items 16, 18, 19, 20).
-* **Phase 5**: Notification Center Live Dispatcher & Final UAT Verification (Item 21, Full 24-point regression sweep).
+| # | Submenu Title | Desktop App Status | Web App Status | Rationale |
+|---|---|---|---|---|
+| **1** | Company & Billing | **Retained** | **Retained** | Core business identity and legal tax details. |
+| **2** | Payment & Bank | **Retained** | **Retained** | Bank accounts, IFSC, UPI ID, and QR code. |
+| **3** | Invoice & Delivery | **Retained** | **Retained** | Address, GST place of supply, logo, and signature. |
+| **4** | Notifications | **Retained** | **Retained** | 16 activity categories & toast preferences. |
+| **5** | Email Settings | **Retained** | **Retained** | SMTP delivery, signature, and message templates. |
+| **6** | Security & Session | **Retained** | **Retained** | Inactivity timeout, warning, and MFA policy. |
+| **7** | Workspace & Storage | **Retained** | ❌ **Removed from Web** | Desktop-only local folder pickers & diagnostic disk cleanup. |
+| **8** | Keyboard Shortcuts | **Retained** | ❌ **Removed from Web** | Desktop-only JavaFX OS keyboard accelerator registry. |
+| **9** | Application Updates | **Retained** | ❌ **Removed from Web** | Desktop-only JAR/EXE auto-updater & GitHub release tag checker. |
+| **10**| Module Activation | **Retained** | **Retained** | GL, GST engine, 3-way match, daily briefing, serial tracking. |
+
+### Settings Dual Entry Points
+Both entry points will share the exact same DOM view and controller state:
+1. **Left-hand Sidebar Accordion (`#grp-settings`)**: Shows the 7 web submenus. Clicking any submenu opens `#view-settings` and activates that tab immediately.
+2. **Top Header User Dropdown**: Avatar click &rarr; "Settings" navigates to `#view-settings` and defaults to Section 1 (**Company & Billing**).
+
+---
+
+## 5. Field-by-Field Specification Across All 7 Web Screens
+
+### Screen 1: Company & Billing (`CompanySettingsPanel.fxml`)
+* **Legal Identity Controls**:
+  - `txtCompanyName` &mdash; Official Registered Business Name.
+  - `txtPhone` &mdash; Primary Contact Phone Number.
+  - `txtEmail` &mdash; Official Corporate Email Address.
+  - `txtGstin` &mdash; 15-character GSTIN (Auto-uppercased).
+  - `txtCompanyPan` &mdash; 10-character PAN (Auto-uppercased).
+  - `cmbBusinessType` &mdash; *Private Limited, Partnership, Sole Proprietorship, LLP, Public Limited*.
+  - `cmbIndustry` &mdash; *Manufacturing, Engineering & Tooling, Textile & Apparel, Wholesale & Distribution, Services*.
+  - `dpFinancialYearStart` &mdash; Financial Year Start Date (Default: `01/04`).
+* **Application Branding Controls**:
+  - `txtApplicationName` &mdash; Display Title (Mirrors Company Name by default).
+  - `txtApplicationTagline` &mdash; Subtitle Tagline.
+  - `txtApplicationStartingText` &mdash; Splash and Sign-in Welcome Message.
+* **Branding Assets (Server Resource Upload)**:
+  - Application Banner (`application.brandPath` &mdash; 1600 &times; 320 image, Upload / Preview / Remove).
+  - Application Mark (`application.markPath` &mdash; 512 &times; 512 icon, Upload / Preview / Remove).
+
+### Screen 2: Payment & Bank (`PaymentSettingsPanel.fxml`)
+* **Banking Controls**:
+  - `txtUpiId` &mdash; Corporate UPI VPA ID (e.g. `company@icici`).
+  - `txtAccountHolder` &mdash; Bank Account Holder Name.
+  - `txtBankName` &mdash; Banking Institution Name.
+  - `txtAccountNumber` &mdash; Bank Account / Overdraft Number.
+  - `txtIfsc` &mdash; 11-character IFSC Code (Auto-uppercased).
+  - `txtBranch` &mdash; Bank Branch Location.
+  - `txtBankMatchRoundingTolerance` &mdash; Reconciliation round-off tolerance (Numeric, max ₹5.00).
+* **Master Data Dynamic Lookup**:
+  - `cmbAccountType` &mdash; **Dynamically loaded from server** via `GET /api/master/lookups?type=ACCOUNT_TYPE`.
+  - Populates all user-created Master Data account types (*Savings, Current, Overdraft, Cash Credit, Escrow*).
+  - Fallback safety preserves any legacy configured value.
+* **Asset**:
+  - UPI Payment QR Code (`payment.qrImagePath` &mdash; Upload / Preview / Remove; prints dynamically on tax invoices & payment vouchers).
+
+### Screen 3: Invoice & Delivery (`InvoiceSettingsPanel.fxml`)
+* **Address & Regional Formatting**:
+  - `txtCompanyAddress` &mdash; Principal Place of Business / Registered Office.
+  - `txtShipAddress` &mdash; Default Warehouse / Dispatch Address.
+  - `cmbCompanyState` &mdash; State Name & GST State Code (Bound to GST State master codes, e.g. *24-Gujarat*).
+  - `cmbCurrency` &mdash; *INR (₹), USD ($), EUR (€), GBP (£)*.
+  - `cmbTimeZone` &mdash; *Asia/Kolkata (IST), UTC, America/New_York (EST)*.
+  - `cmbDateFormat` &mdash; *dd/MM/yyyy, yyyy-MM-dd, dd-MMM-yyyy*.
+  - `cmbTimeFormat` &mdash; *12-hour AM/PM, 24-hour*.
+  - `txtCompanyWebsite` &mdash; Official Website URL.
+  - `txtCompanyTagline` &mdash; Sub-Header Tagline.
+  - `txtInvoiceTerms` &mdash; Standard Commercial Terms & Jurisdiction Conditions.
+* **Branding Assets**:
+  - Invoice Brand Logo (`company.logoPath` &mdash; Transparent PNG logo used on all generated PDFs).
+  - Authorized Signature (`company.signaturePath` &mdash; Digital signature stamp for document sign-off).
+
+### Screen 4: Notifications (`NotificationsSettingsPanel.fxml`)
+* **Master Preferences**:
+  - `chkNotifications` &mdash; Show Application Notifications.
+  - `chkNotificationToasts` &mdash; Show Desktop / Web Toast Alerts.
+* **16 Activity Categories (Backed by `/api/insights/notification-preferences`)**:
+  - Sales & Invoices (`sales`), Purchases (`purchases`), Quotations (`quotations`), Returns (`returns`), Payments (`payments`), Inventory (`inventory`), Banking (`banking`), Reports (`reports`), Reminders (`reminders`), Communication (`communication`), Approvals (`approval`), Imports (`imports`), Backup (`backup`), Updates (`update`), System (`system`), and Security (`security` &mdash; locked checked).
+
+### Screen 5: Email Settings (`EmailSettingsPanel.fxml`)
+* **SMTP Delivery Configuration**:
+  - `txtSmtpHost` &mdash; SMTP Server Host.
+  - `txtSmtpPort` &mdash; Port (`587` TLS / `465` SSL).
+  - `txtSmtpEmail` &mdash; Authenticated Email Address.
+  - `txtSmtpPassword` &mdash; App Password (Masked with toggle).
+  - `btnTestEmail` &mdash; Sends test email verification to current user via `POST /api/authority/email/test`.
+* **Corporate Email Signature**:
+  - `txtEmailSignature` &mdash; HTML / Plaintext corporate signature block.
+* **Document Message & Email Templates**:
+  - Document Selector: *Sales Invoice, Quotation, Purchase Order, Payment Receipt, Credit Note, Debit Note, Reminder*.
+  - Subject Template & Body Template.
+  - Dynamic Tokens: `{CustomerName}`, `{DocumentNo}`, `{DocumentDate}`, `{TotalAmount}`, `{BalanceAmount}`, `{Signature}`.
+  - Live Preview & Reset to Default buttons.
+
+### Screen 6: Security & Session (`SecuritySettingsPanel.fxml`)
+* **Controls**:
+  - `txtSessionTimeoutMinutes` &mdash; Inactivity auto-logout timeout (Allowed: 5 to 120 mins).
+  - `txtSessionWarningMinutes` &mdash; Pre-logout warning popup duration (1 to 10 mins).
+  - `cmbMfaPolicy` &mdash; Multi-Factor Authentication Policy (*Required*, *Admin Controlled*, *Disabled*).
+  - `chkUiDiagnostics` &mdash; Enable Diagnostic Logging & UI Audit Trails.
+
+### Screen 7: Module Activation (`ModulesSettingsPanel.fxml`)
+* **Controls**:
+  - **General Ledger**: Enable GL (`module.gl.enabled`), Auto-post Journal Vouchers (`module.gl.autoPost`), Live Trial Balance (`module.gl.trialBalance`).
+  - **GST Statutory Engine**: Enable GST (`module.gst.enabled`), Auto-Reconcile GSTR-2B (`module.gst.auto2bMatch`), Strict Place of Supply Gating (`module.gst.posGating`), TDS Withholding (`module.tds.enabled`).
+  - **Smart Operational Automations**: Smart 3-Way Matching (`module.automation.threeWayMatch`), Auto-draft Debit Notes (`module.automation.autoDraftDebitNote`), Safety Stock Alerts (`module.automation.stockAutoReorder`), Credit Hard Stop (`module.automation.creditHardStop`).
+  - **Executive 8:00 PM Daily Briefing**: Enable Briefing (`module.briefing.enabled`), WhatsApp Channel, Email Channel, Mobile Number (`txtBriefingPhone`).
+  - **Multi-Warehouse & Serial Registry**: Batch, Expiry (FEFO), and Serial Tracking (`module.inventory.batchSerialTracking`).
+
+---
+
+## 6. Authentication, MFA Recovery & Session Persistence Scope (Desktop & Web)
+
+### 6.1 Desktop: Authenticator Recovery (Lost / Replaced Phone) Flow Polish
+* **Root Cause Identified**:
+  - The self-service lost-phone recovery flow is fundamentally a **two-step security process**:
+    1. **Step 1 (Registered Email OTP)**: Validates identity and revokes the old phone's TOTP secret (`completeLoginMfaRecovery`).
+    2. **Step 2 (New Authenticator Enrollment)**: Generates a replacement QR code / manual key (`showAuthenticatorEnrollment`). The user **must scan the QR code into Google/Microsoft Authenticator and enter the new 6-digit TOTP code**.
+  - **The "Login to ERP" Loop**: Users often believe the Email verification code was the final step. When the second dialog opens with the new QR code, entering the Email OTP again or closing the dialog leaves enrollment incomplete.
+  - Dismissing the QR dialog immediately reverts the desktop UI to the primary `"LOGIN"` button, leaving the user with the impression that sign-in failed.
+  - Server-side security contract: `tokens.revokeUser(userId)` explicitly revokes active sessions during recovery; no valid session exists until the newly provisioned authenticator is verified.
+* **Scope of Fix**:
+  - **Clear Multi-Step Modal Guidance**: Update `LoginController.java` to display an intermediate confirmation dialog between Step 1 and Step 2: *"Registered email verified. Old authenticator invalidated. You must now scan the new QR code below to complete sign-in."*
+  - **Enrollment Persistence**: Prevent resetting `btnLogin` back to `"LOGIN"` if the user temporarily minimizes the enrollment dialog. Keep the enrollment challenge active and display an explicit *"Continue Enrollment"* action.
+  - **Safe Session Establishment**: Ensure `completeLogin()` handles post-recovery session tokens cleanly without spurious `AuthenticationRequiredException` rollbacks.
+
+---
+
+### 6.2 Web: "Remember Me" Credential & Session Persistence
+* **Root Cause Identified**:
+  - **Checkbox State Not Saved**: The `#login-remember` checkbox in `index.html` is never saved to or loaded from `localStorage` (`dse_remember_me`). On page reload, it always reverts to default.
+  - **Password / Token Not Remembered**: Desktop saves encrypted credentials in OS preferences (`PREF_PASSWORD`). Web only stored `dse_saved_identity` and `dse_saved_role`, forcing manual password entry on every login.
+  - **Role Selection Wipe**: When `window.loadLoginRoles()` asynchronously fetches `/api/auth/login-roles` from the server, replacing `roleSelect.innerHTML` wipes out the user's saved role and resets it back to `ADMIN`.
+  - **Aggressive 401 Session Clearing**: In `ApiService.js`, any transient 401 on background requests removes `dse_access_token` and displays `#auth-overlay` with a blank form.
+* **Scope of Fix**:
+  - **Persist Checkbox State**: Store and restore `dse_remember_me` in `localStorage`.
+  - **Safe Asynchronous Role Restoration**: Modify `loadLoginRoles()` to ensure the saved role (`dse_saved_role`) is re-selected after `roleSelect.innerHTML` is dynamically populated.
+  - **Session Keep-Alive & Token Storage**: Allow persistent session tokens when "Remember Me" is enabled, preventing accidental overlay prompts on browser reloads.
+  - **Refined 401 Interception**: Distinguish between expired main sessions and benign resource-level unauthorized responses so the auth overlay is only shown when the session is truly invalid.
+
+---
+
+### 6.3 Web: Non-Admin User OTP Login & Role-Aware Startup
+* **Root Cause Identified**:
+  - **Post-Login Hardcoded Admin Calls Crash Login**:
+    In `app.js` (`handleLoginSubmit` lines 538–540), immediately after `window.AuthService.completeMfa(otp)` succeeds, the client unconditionally executes:
+    ```javascript
+    if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+    if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
+    if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+    ```
+    Non-admin users (e.g. `USER`, `SALES`, `PURCHASE`, `ACCOUNTANT`, `STAFF`) lack permissions for `/api/insights/dashboard` or `/api/operations/purchases`.
+    The server rejects these calls with **HTTP 403 Forbidden**.
+    `DashboardController.refresh()` throws an unhandled `403 Insufficient permission` error.
+    The enclosing `catch (err)` block in `handleLoginSubmit` catches this 403, assumes MFA verification failed, and displays `alertEl.innerText = err.message || 'MFA verification failed.'` on the login card!
+    The non-admin user is trapped on the login overlay despite entering the 100% correct OTP.
+  - **Startup Crash on Page Reload**:
+    In `app.js` (`window.App.init()` lines 273–279), the exact same unconditional admin calls are executed on page load, crashing the script for any authenticated non-admin user.
+  - **Role Dropdown Mismatch Trap**:
+    `#login-role` defaults to `ADMIN`. If a non-admin enters credentials without changing the dropdown, `AuthService.login()` rejects them with `roleMismatch: true` before MFA even starts.
+* **Scope of Fix**:
+  - **Auto-Detect User Role**: Auto-select the user's role from the server response payload instead of forcing the user to manually match the dropdown.
+  - **Role-Aware Safe Post-Login Execution**:
+    - Wrap `DashboardController.refresh()`, `loadItems()`, and `loadCustomers()` in role-permission checks and safe `try/catch` blocks so missing administrative permissions never fail the login or display MFA errors.
+  - **Role-Appropriate Default View Routing**:
+    - If a non-admin user lacks `DASHBOARD.VIEW` permission, safely route them to their role's authorized landing view (e.g., Sales Register for `SALES`, Purchase Register for `PURCHASE`, or My Profile for `USER`).
+  - **Safe Startup Initialization**:
+    - Patch `window.App.init()` to respect user permissions during initial data loading.
+
+---
+
+## 7. One-Shot Execution Steps
+
+```text
+Step 1: Desktop Settings & MFA Recovery Polish
+        ├── File: desktop/src/main/java/org/example/config/ConfigManager.java
+        │   └── Ensure Desktop writes all 7 settings sections to PostgreSQL `application_setting` table.
+        └── File: desktop/src/main/java/org/example/controller/LoginController.java
+            └── Add clear transition guidance between Email OTP (Step 1) and QR code enrollment (Step 2).
+            └── Prevent premature reset to "LOGIN" button if QR dialog is minimized.
+
+Step 2: Web Navigation Clean-Up
+        ├── File: index.html & js/navigation/NavigationRouter.js
+        └── Remove Workspace, Shortcuts, and Updates from Web. Keep only 7 submenus.
+
+Step 3: Web Settings Studio HTML Markup Port
+        ├── File: index.html (#view-settings)
+        └── Port exact FXML layouts, inputs, asset preview boxes, and buttons for all 7 screens.
+
+Step 4: Web SettingsController & Master Lookup Service
+        ├── File: js/controllers/SettingsController.js
+        └── Connect to /api/support/settings, /api/master/lookups, /api/authority/email, /api/insights.
+
+Step 5: Web Authentication & Session Hardening
+        ├── File: js/services/AuthService.js, js/services/ApiService.js, js/app.js
+        └── Fix "Remember Me" checkbox & role persistence in localStorage.
+        └── Implement auto-role detection from server credentials.
+        └── Wrap post-login data loading in permission guards so non-admin OTP login never crashes.
+        └── Route non-admin users to authorized default views (Sales, Purchase, Profile).
+
+Step 6: Syntax & Delimiter Audit
+        └── Run automated lexer script across all JS files. Zero unclosed braces or syntax errors.
+
+Step 7: Three-Way Repository Synchronization & Verification
+        └── Sync from `d:\ERP Website\admin` to `ReleaseSource` and `DSE-ERP-Enterprise` (`web/admin`).
+        └── Push to GitHub `main` branch to trigger live UAT update.
+        └── Test bidirectional settings sync between Desktop and Web.
+        └── Validate MFA recovery in Desktop and Non-Admin OTP login in Web.
+```
+

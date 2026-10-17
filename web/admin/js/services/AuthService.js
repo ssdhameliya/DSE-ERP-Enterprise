@@ -67,11 +67,15 @@ window.AuthService = (function() {
     async login(identity, password, selectedRole) {
       const res = await window.ApiService.post('/api/auth/login', { identity, password });
 
-      // Role check matching LoginController.java lines 298-306
-      if (res.user && selectedRole) {
+      // Auto-detect and sync role matching LoginController.java
+      if (res.user && res.user.role) {
         const actualRole = normalizeRole(res.user.role);
         const wantedRole = normalizeRole(selectedRole);
-        if (actualRole && wantedRole && actualRole !== wantedRole) {
+        const roleSelect = document.getElementById('login-role');
+        if (roleSelect && actualRole) {
+          roleSelect.value = actualRole;
+        }
+        if (wantedRole && wantedRole !== actualRole && wantedRole !== 'ADMIN') {
           return {
             success: false,
             roleMismatch: true,

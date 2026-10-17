@@ -98,6 +98,9 @@ window.App = (function() {
 
       const savedIdentity = localStorage.getItem('dse_saved_identity');
       const identityInput = document.getElementById('login-identity');
+      const rememberCheck = document.getElementById('login-remember');
+      const savedRemember = localStorage.getItem('dse_remember_me') === 'true';
+      if (rememberCheck) rememberCheck.checked = savedRemember || !!savedIdentity;
       if (savedIdentity && identityInput) {
         identityInput.value = savedIdentity;
       }
@@ -423,6 +426,7 @@ window.updateLoginMode = function() {
   const role = ((roleSelect ? roleSelect.value : '') || '').toUpperCase();
   const roleRequiresOtp = !!role && role !== 'ADMIN';
   const mfaPending = !!(window.AuthService && window.AuthService.getPendingMfaChallenge());
+  const hasEnrollment = !!pendingEnrollmentSetup;
 
   const mfaGroup = document.getElementById('login-mfa-group');
   const mfaCodeInput = document.getElementById('login-mfa-code');
@@ -437,7 +441,9 @@ window.updateLoginMode = function() {
 
   if (mfaCodeInput) {
     mfaCodeInput.disabled = !mfaPending;
-    if (!mfaPending && roleRequiresOtp) {
+    if (hasEnrollment) {
+      mfaCodeInput.placeholder = 'Scan QR code, then enter 6-digit code';
+    } else if (!mfaPending && roleRequiresOtp) {
       mfaCodeInput.placeholder = 'Authenticator code is required after password verification';
     } else {
       mfaCodeInput.placeholder = 'Enter current 6-digit authenticator code';
@@ -448,10 +454,11 @@ window.updateLoginMode = function() {
     getHelpBtn.disabled = false;
   }
 
+  const btnLabel = hasEnrollment ? 'SCAN QR & VERIFY' : (mfaPending ? 'VERIFY MFA' : '➜ LOGIN');
   if (submitText) {
-    submitText.innerText = mfaPending ? 'VERIFY MFA' : '➜ LOGIN';
+    submitText.innerText = btnLabel;
   } else if (submitBtn && !submitBtn.disabled) {
-    submitBtn.innerText = mfaPending ? 'VERIFY MFA' : '➜ LOGIN';
+    submitBtn.innerText = btnLabel;
   }
 };
 
@@ -478,6 +485,78 @@ window.resetPendingLogin = function() {
 };
 
 /**
+ * Centralized post-login handler: persists credentials if remember-me is checked,
+ * routes the user to their authorized landing view, and safely loads initial data
+ * with permission guards so 403 Forbidden errors never trigger false auth failures.
+ */
+window.handlePostLoginSuccess = async function(user, remember, identity, selectedRole) {
+  if (!user) return;
+  const userRole = user.role || selectedRole || 'ADMIN';
+  if (remember) {
+    if (identity) localStorage.setItem('dse_saved_identity', identity);
+    localStorage.setItem('dse_saved_role', userRole);
+    localStorage.setItem('dse_remember_me', 'true');
+  } else {
+    localStorage.removeItem('dse_saved_identity');
+    localStorage.removeItem('dse_saved_role');
+    localStorage.removeItem('dse_remember_me');
+  }
+
+  const roleSelect = document.getElementById('login-role');
+  if (roleSelect && user.role) {
+    roleSelect.value = user.role;
+  }
+
+  pendingEnrollmentSetup = null;
+  applyUserToHeader(user);
+  if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+  window.App.hideAuthOverlay();
+  window.AppDialogService.closeAllModals();
+  window.AppDialogService.showToast(`Welcome back, ${user.fullName || user.username}!`, 'success');
+
+  // Role-based landing navigation
+  const normalizedRole = String(userRole || '').toUpperCase();
+  if (window.NavigationRouter) {
+    if (normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER') {
+      window.NavigationRouter.selectNav('view-dashboard');
+    } else if (normalizedRole === 'SALES') {
+      window.NavigationRouter.selectNav('view-sales-register');
+    } else if (normalizedRole === 'PURCHASE') {
+      window.NavigationRouter.selectNav('view-purchase-register');
+    } else if (normalizedRole === 'STORE' || normalizedRole === 'STOREKEEPER' || normalizedRole === 'WAREHOUSE') {
+      window.NavigationRouter.selectNav('view-item-master');
+    } else if (normalizedRole === 'ACCOUNTANT' || normalizedRole === 'FINANCE') {
+      window.NavigationRouter.selectNav('view-general-ledger');
+    } else {
+      window.NavigationRouter.selectNav('view-profile');
+    }
+  }
+
+  // Safe guarded post-login pre-loading: never let 403 or network exceptions throw out of login!
+  try {
+    if (window.DashboardController && window.DashboardController.refresh && (normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER')) {
+      await window.DashboardController.refresh();
+    }
+  } catch (e) {
+    console.warn('Dashboard pre-load skipped or unauthorized:', e.message);
+  }
+  try {
+    if (window.ItemMasterController && window.ItemMasterController.loadItems) {
+      await window.ItemMasterController.loadItems();
+    }
+  } catch (e) {
+    console.warn('Item master pre-load skipped:', e.message);
+  }
+  try {
+    if (window.PartyController && window.PartyController.loadCustomers) {
+      await window.PartyController.loadCustomers();
+    }
+  } catch (e) {
+    console.warn('Party pre-load skipped:', e.message);
+  }
+};
+
+/**
  * Desktop LoginController.java login() parity (lines 273-346):
  * If an MFA challenge is already pending, submits the in-place Authenticator code.
  * Otherwise submits identity + password and activates the in-place MFA field without navigating away.
@@ -498,10 +577,16 @@ window.handleLoginSubmit = async function(e) {
   // 1. If MFA challenge is pending: verify in-place authenticator code (Desktop verifyLoginOtp lines 466-499)
   if (pendingChallenge) {
     const otp = ((mfaCodeInput || {}).value || '').trim();
+    if (pendingEnrollmentSetup && !otp) {
+      window.openAuthenticatorSetupModal(pendingEnrollmentSetup, 'login');
+      return;
+    }
     if (!otp) {
       if (alertEl) {
         alertEl.className = 'auth-alert error';
-        alertEl.innerText = 'Verification code is required.';
+        alertEl.innerText = pendingEnrollmentSetup
+          ? 'Scan the QR code into your authenticator app, then enter the 6-digit code.'
+          : 'Verification code is required.';
         alertEl.style.display = 'block';
       }
       if (mfaCodeInput) mfaCodeInput.focus();
@@ -522,22 +607,7 @@ window.handleLoginSubmit = async function(e) {
     try {
       const res = await window.AuthService.completeMfa(otp);
       if (res.success && res.user) {
-        if (rememberCheck && rememberCheck.checked) {
-          localStorage.setItem('dse_saved_identity', identity);
-          localStorage.setItem('dse_saved_role', selectedRole);
-        } else {
-          localStorage.removeItem('dse_saved_identity');
-          localStorage.removeItem('dse_saved_role');
-        }
-        pendingEnrollmentSetup = null;
-        applyUserToHeader(res.user);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.App.hideAuthOverlay();
-        window.AppDialogService.closeAllModals();
-        window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
-        if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
-        if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
-        if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+        await window.handlePostLoginSuccess(res.user, rememberCheck ? rememberCheck.checked : false, identity, selectedRole);
       } else {
         if (alertEl) {
           alertEl.className = 'auth-alert error';
@@ -617,21 +687,7 @@ window.handleLoginSubmit = async function(e) {
     }
 
     if (res.success && res.user) {
-      if (rememberCheck && rememberCheck.checked) {
-        localStorage.setItem('dse_saved_identity', identity);
-        localStorage.setItem('dse_saved_role', selectedRole);
-      } else {
-        localStorage.removeItem('dse_saved_identity');
-        localStorage.removeItem('dse_saved_role');
-      }
-      applyUserToHeader(res.user);
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.App.hideAuthOverlay();
-      window.AppDialogService.closeAllModals();
-      window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
-      if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
-      if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
-      if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+      await window.handlePostLoginSuccess(res.user, rememberCheck ? rememberCheck.checked : false, identity, selectedRole);
     } else {
       if (alertEl) {
         alertEl.className = 'auth-alert error';
@@ -838,16 +894,11 @@ window.submitLoginAuthenticatorSetup = async function() {
   try {
     const res = await window.AuthService.completeMfa(otp);
     if (res.success && res.user) {
-      pendingEnrollmentSetup = null;
       window.AppDialogService.closeModal('modal-authenticator-setup');
-      applyUserToHeader(res.user);
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.App.hideAuthOverlay();
-      window.AppDialogService.closeAllModals();
-      window.AppDialogService.showToast(`Welcome back, ${res.user.fullName || res.user.username}!`, 'success');
-      if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
-      if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
-      if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+      const rememberCheck = document.getElementById('login-remember');
+      const identity = document.getElementById('login-identity')?.value?.trim();
+      const selectedRole = document.getElementById('login-role')?.value;
+      await window.handlePostLoginSuccess(res.user, rememberCheck ? rememberCheck.checked : false, identity, selectedRole);
     } else {
       if (errEl) {
         errEl.innerText = res.message || 'Authenticator verification failed.';
@@ -1095,12 +1146,10 @@ window.completeRegistrationAuthenticator = async function() {
       if (res.success && res.user) {
         window.AppDialogService.closeModal('modal-authenticator-setup');
         window.currentMfaEnrollmentMode = null;
-        applyUserToHeader(res.user);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.App.hideAuthOverlay();
-        window.AppDialogService.closeAllModals();
-        window.AppDialogService.showToast(`MFA Verified! Welcome, ${res.user.fullName || res.user.username}!`, 'success');
-        if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
+        const rememberCheck = document.getElementById('login-remember');
+        const identity = document.getElementById('login-identity')?.value?.trim();
+        const selectedRole = document.getElementById('login-role')?.value;
+        await window.handlePostLoginSuccess(res.user, rememberCheck ? rememberCheck.checked : false, identity, selectedRole);
         return;
       } else {
         if (errEl) {

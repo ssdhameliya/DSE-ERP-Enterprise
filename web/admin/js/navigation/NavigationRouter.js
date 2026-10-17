@@ -58,10 +58,7 @@ window.NavigationRouter = (function() {
     'view-settings-notifications': { title: 'Notification Settings', breadcrumb: 'System Alerts & Subscriptions', icon: '🔔' },
     'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
     'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
-    'view-settings-workspace': { title: 'Workspace & Storage', breadcrumb: 'Local Directories & Storage Paths', icon: '📁' },
-    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' },
-    'view-settings-backup': { title: 'Database Backup', breadcrumb: 'PostgreSQL Enterprise Snapshot Engine', icon: '💾' },
-    'view-settings-rollback': { title: 'Safe Rollback', breadcrumb: 'Version Downgrade & Recovery Guard', icon: '🔄' }
+    'view-settings-modules': { title: 'Module Management', breadcrumb: 'Enterprise Module Toggles & Automation', icon: '🧩' }
   };
 
   function updateHeader(meta) {
@@ -484,20 +481,11 @@ window.NavigationRouter = (function() {
             window.SettingsController.loadSecuritySettings();
           }
           break;
-        case 'view-settings-workspace':
-          if (window.SettingsController) window.SettingsController.init('WORKSPACE');
-          break;
-        case 'view-settings-shortcuts':
+        case 'view-settings-modules':
           if (window.SettingsController) {
-            window.SettingsController.init('SHORTCUTS');
-            window.SettingsController.loadShortcutsSettings();
+            window.SettingsController.init('MODULES');
+            window.SettingsController.loadModulesSettings();
           }
-          break;
-        case 'view-settings-backup':
-          if (window.SettingsController) window.SettingsController.init('BACKUP');
-          break;
-        case 'view-settings-rollback':
-          if (window.SettingsController) window.SettingsController.init('ROLLBACK');
           break;
         case 'view-automation':
           if (window.AutomationCenterController) window.AutomationCenterController.loadData();

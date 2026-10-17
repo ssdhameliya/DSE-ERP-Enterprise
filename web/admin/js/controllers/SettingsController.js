@@ -1,40 +1,55 @@
 /**
  * Jasvi Industries ERP - SettingsController
- * Full Desktop Parity for Company Profile, SMTP Email, Security, Shortcuts,
- * Database Backup & Recovery, Safe Rollback, and Document Studios
- * Reference: SettingsController.java, BackupRestoreController.java, SafeRollbackController.java, ServerBackupService.java
+ * Full 1:1 Desktop FXML Parity for all 7 Enterprise Shared Settings:
+ * 1. COMPANY: Legal Profile, Tax IDs, Factory Addresses, Application Branding
+ * 2. PAYMENT: Commercial Bank, IFSC, Account Type, UPI VPA, Reconciliation Tolerance
+ * 3. INVOICE: Regional Currencies, Date/Time Formats, Terms & Conditions, Digital Seals
+ * 4. NOTIFICATIONS: Event Notification Triggers & Preference Subscriptions
+ * 5. EMAIL: Corporate SMTP Gateway, TLS, Signatures, Dispatch Message Templates & Test Probes
+ * 6. SECURITY: Inactivity Session Timers, MFA Enforcement Policies, Password Management
+ * 7. MODULES: GL Double-Entry, GST Statutory Compliance, 3-Way Match, Hard Credit Stops, Briefings
+ *
+ * Server-Authoritative: All settings read and write to PostgreSQL application_setting via /api/support/settings
+ * Reference: SettingsController.java, CompanySettingsPanel.fxml, PaymentSettingsPanel.fxml,
+ *            InvoiceSettingsPanel.fxml, NotificationsSettingsPanel.fxml, EmailSettingsPanel.fxml,
+ *            SecuritySettingsPanel.fxml, ModulesSettingsPanel.fxml
  */
 window.SettingsController = (function() {
-  let cachedBackups = [];
-  let cachedBackupMetrics = null;
-  let cachedProfile = null;
+  let cachedSettings = {};
   let cachedEmailSettings = null;
-  let cachedPdfTemplates = [];
+  let cachedNotificationPrefs = null;
+  let lookupsLoaded = false;
 
-  const desktopShortcuts = [
-    { key: 'Ctrl + D', action: 'Dashboard Overview', scope: 'Global Navigation', desc: 'Jump to real-time executive operations dashboard' },
-    { key: 'Ctrl + S', action: 'Sales Register', scope: 'Sales Module', desc: 'Open sales tax invoices register' },
-    { key: 'Ctrl + P', action: 'Purchase Register', scope: 'Purchase Module', desc: 'Open raw materials & supplier purchase register' },
-    { key: 'Ctrl + I', action: 'Warehouse Inventory', scope: 'Inventory Module', desc: 'Open inventory ledger and stock valuation workspace' },
-    { key: 'Ctrl + R', action: 'Executive Reports', scope: 'BI & Analytics', desc: 'Open unified multi-catalog executive reporting engine' },
-    { key: 'Ctrl + L', action: 'General Ledger', scope: 'Finance Module', desc: 'Open running-balance financial audit ledger' },
-    { key: 'Ctrl + B', action: 'Bank Reconciliation', scope: 'Finance Module', desc: 'Open 2-way bank statement matching workspace' },
-    { key: 'Ctrl + G', action: 'GST Compliance Center', scope: 'Taxation Module', desc: 'Open GSTR-1, GSTR-2B, and GSTR-3B compliance workspace' },
-    { key: 'F1', action: 'System Help & Guides', scope: 'Global', desc: 'View desktop keyboard manual and documentation' },
-    { key: 'F2', action: 'New Sales Invoice', scope: 'Sales Module', desc: 'Instant hotkey to open Sales Invoice Creator' },
-    { key: 'F3', action: 'New Purchase Voucher', scope: 'Purchase Module', desc: 'Instant hotkey to open Purchase Voucher Creator' },
-    { key: 'F4', action: 'Global Spotlight Search', scope: 'Global', desc: 'Focus universal search bar across all registers' },
-    { key: 'F5', action: 'Live Server Refresh', scope: 'Global', desc: 'Reload active table view directly from PostgreSQL backend' },
-    { key: 'Ctrl + N', action: 'Create New Master', scope: 'Active View', desc: 'Trigger primary action on active workspace' },
-    { key: 'Ctrl + E', action: 'Export Data to Excel', scope: 'Active View', desc: 'Download current dataset as formatted spreadsheet' }
-  ];
+  // Template draft memory matching desktop SettingsController.java
+  const templateDrafts = {
+    'Sales Invoice (Email)': { subject: 'Tax Invoice {docNo} from {company}', body: 'Dear {customer},\n\nPlease find attached sales tax invoice {docNo} dated {date} for total amount {total}.\n\nOutstanding Balance: {balance}\n\n{signature}' },
+    'Quotation (Email)': { subject: 'Sales Quotation {docNo} from {company}', body: 'Dear {customer},\n\nThank you for your inquiry. Please find attached quotation {docNo} dated {date} for total amount {total}.\n\n{signature}' },
+    'Purchase Bill (Email)': { subject: 'Purchase Bill {docNo} Confirmation', body: 'Dear {customer},\n\nWe acknowledge receipt of inward purchase bill {docNo} dated {date} for amount {total}.\n\n{signature}' },
+    'Payment Receipt (Email)': { subject: 'Payment Receipt Confirmation - {docNo}', body: 'Dear {customer},\n\nWe have received your payment of {total} against invoice reference {docNo}. Thank you for your business.\n\n{signature}' },
+    'Sales Return (Email)': { subject: 'Credit Memo / Sales Return {docNo}', body: 'Dear {customer},\n\nPlease find attached credit return note {docNo} dated {date} for total refund amount {total}.\n\n{signature}' },
+    'Sales Invoice (WhatsApp)': { subject: '', body: 'Hello {customer}, your invoice {docNo} for {total} has been generated. Thank you for choosing {company}.' },
+    'Quotation (WhatsApp)': { subject: '', body: 'Hello {customer}, your requested quotation {docNo} for {total} is ready. Valid for 15 days.' }
+  };
 
-  const rollbackCandidates = [
-    { version: '10.0.24', filename: 'DSE-ERP-10.0.24-Setup.exe', schema: '10.0.24', compatibility: 'COMPATIBLE', checksum: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678', size: '142 MB' },
-    { version: '10.0.23', filename: 'DSE-ERP-10.0.23-Setup.exe', schema: '10.0.23', compatibility: 'COMPATIBLE', checksum: 'b2c3d4e5f6a10718293a4b5c6d7e8f9012345678', size: '139 MB' },
-    { version: '10.0.22', filename: 'DSE-ERP-10.0.22-Setup.exe', schema: '10.0.22', compatibility: 'COMPATIBLE', checksum: 'c3d4e5f6a1b20718293a4b5c6d7e8f9012345678', size: '137 MB' },
-    { version: '10.0.21', filename: 'DSE-ERP-10.0.21-Setup.exe', schema: '10.0.21', compatibility: 'MIGRATION_REQUIRED', checksum: 'd4e5f6a1b2c30718293a4b5c6d7e8f9012345678', size: '135 MB' }
-  ];
+  function val(id, fallback = '') {
+    const el = document.getElementById(id);
+    return el ? el.value : fallback;
+  }
+
+  function setVal(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.value = v != null ? v : '';
+  }
+
+  function chk(id) {
+    const el = document.getElementById(id);
+    return el ? !!el.checked : false;
+  }
+
+  function setChk(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.checked = (v === true || v === 'true');
+  }
 
   return {
     activeSection: 'COMPANY',
@@ -42,6 +57,9 @@ window.SettingsController = (function() {
     init(initialSection) {
       const target = (initialSection || 'COMPANY').toUpperCase();
       this.switchSection(target);
+      if (!lookupsLoaded) {
+        this.loadMasterLookups();
+      }
     },
 
     switchSection(sectionId) {
@@ -50,20 +68,29 @@ window.SettingsController = (function() {
 
       // Update tab buttons
       document.querySelectorAll('.settings-tab-btn').forEach(btn => {
-        const targetSec = btn.dataset.section || '';
-        btn.classList.toggle('active', targetSec.toUpperCase() === sec);
+        const targetSec = (btn.dataset.section || '').toUpperCase();
+        btn.classList.toggle('active', targetSec === sec);
       });
 
       // Update panel visibility
       document.querySelectorAll('.settings-subpanel').forEach(panel => {
-        const panelSec = panel.dataset.section || '';
-        panel.style.display = panelSec.toUpperCase() === sec ? 'block' : 'none';
+        const panelSec = (panel.dataset.section || '').toUpperCase();
+        panel.style.display = panelSec === sec ? 'block' : 'none';
       });
 
       // Update save button label
       const saveBtn = document.getElementById('btn-save-settings-active');
       if (saveBtn) {
-        saveBtn.innerHTML = `<span>💾</span> Save ${sec.charAt(0) + sec.slice(1).toLowerCase()} Settings`;
+        const names = {
+          COMPANY: 'Company Profile',
+          PAYMENT: 'Payment & Bank',
+          INVOICE: 'Invoice Defaults',
+          NOTIFICATIONS: 'Notifications',
+          EMAIL: 'Email Delivery',
+          SECURITY: 'Security Policies',
+          MODULES: 'Module Toggles'
+        };
+        saveBtn.innerHTML = `<span>&#128190;</span> Save ${names[sec] || 'Settings'}`;
       }
 
       // Trigger section loader
@@ -86,17 +113,8 @@ window.SettingsController = (function() {
         case 'SECURITY':
           this.loadSecuritySettings();
           break;
-        case 'WORKSPACE':
-          this.loadWorkspaceSettings();
-          break;
-        case 'SHORTCUTS':
-          this.loadShortcutsSettings();
-          break;
-        case 'BACKUP':
-          this.loadBackups();
-          break;
-        case 'ROLLBACK':
-          this.loadSafeRollback();
+        case 'MODULES':
+          this.loadModulesSettings();
           break;
         default:
           this.loadCompanySettings();
@@ -124,601 +142,603 @@ window.SettingsController = (function() {
         case 'SECURITY':
           await this.saveSecuritySettings();
           break;
-        case 'WORKSPACE':
-          await this.saveWorkspaceSettings();
-          break;
-        case 'BACKUP':
-          this.triggerImmediateBackup();
+        case 'MODULES':
+          await this.saveModulesSettings();
           break;
         default:
           await this.saveCompanySettings();
       }
     },
 
-    async loadPaymentSettings() {
-      await this.loadCompanySettings();
-    },
-
-    async savePaymentSettings() {
-      await this.saveCompanySettings();
-    },
-
-    async loadInvoiceSettings() {
-      await this.loadCompanySettings();
-    },
-
-    async saveInvoiceSettings() {
-      await this.saveCompanySettings();
-    },
-
-    loadNotificationsSettings() {
+    // ==========================================
+    // 0. MASTER LOOKUPS PRE-LOADER
+    // ==========================================
+    async loadMasterLookups() {
       try {
-        const saved = JSON.parse(localStorage.getItem('dse_notification_settings') || '{}');
-        const toggles = [
-          'chkNotifications', 'chkNotificationToasts', 'chkNotifySales', 'chkNotifyPurchases',
-          'chkNotifyQuotations', 'chkNotifyReturns', 'chkNotifyPayments', 'chkNotifyInventory',
-          'chkNotifyBanking', 'chkNotifyReports', 'chkNotifyReminders', 'chkNotifyCommunication',
-          'chkNotifyApproval', 'chkNotifyImports', 'chkNotifyBackup', 'chkNotifyUpdate',
-          'chkNotifySystem', 'chkNotifySecurity'
-        ];
-        toggles.forEach(id => {
-          const el = document.getElementById(id);
+        const [accountTypes, businessTypes, industries] = await Promise.allSettled([
+          window.ApiService.get('/api/master/lookups/category/ACCOUNT_TYPE'),
+          window.ApiService.get('/api/master/lookups/category/BUSINESS_TYPE'),
+          window.ApiService.get('/api/master/lookups/category/INDUSTRY')
+        ]);
+
+        if (accountTypes.status === 'fulfilled' && Array.isArray(accountTypes.value) && accountTypes.value.length > 0) {
+          const el = document.getElementById('setting-account-type');
           if (el) {
-            el.checked = saved[id] !== undefined ? saved[id] : true;
+            const currentVal = el.value;
+            el.innerHTML = accountTypes.value.map(item => {
+              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
+              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
+              return `<option value="${code}">${label}</option>`;
+            }).join('');
+            if (currentVal) el.value = currentVal;
           }
-        });
-      } catch (e) {
-        console.warn('[SettingsController] Failed to load notification settings:', e);
+        }
+
+        if (businessTypes.status === 'fulfilled' && Array.isArray(businessTypes.value) && businessTypes.value.length > 0) {
+          const el = document.getElementById('setting-business-type');
+          if (el) {
+            const currentVal = el.value;
+            el.innerHTML = businessTypes.value.map(item => {
+              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
+              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
+              return `<option value="${code}">${label}</option>`;
+            }).join('');
+            if (currentVal) el.value = currentVal;
+          }
+        }
+
+        if (industries.status === 'fulfilled' && Array.isArray(industries.value) && industries.value.length > 0) {
+          const el = document.getElementById('setting-industry');
+          if (el) {
+            const currentVal = el.value;
+            el.innerHTML = industries.value.map(item => {
+              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
+              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
+              return `<option value="${code}">${label}</option>`;
+            }).join('');
+            if (currentVal) el.value = currentVal;
+          }
+        }
+        lookupsLoaded = true;
+      } catch (err) {
+        console.warn('[SettingsController] Lookup loading warning:', err);
       }
-    },
-
-    saveNotificationsSettings() {
-      try {
-        const settings = {};
-        const toggles = [
-          'chkNotifications', 'chkNotificationToasts', 'chkNotifySales', 'chkNotifyPurchases',
-          'chkNotifyQuotations', 'chkNotifyReturns', 'chkNotifyPayments', 'chkNotifyInventory',
-          'chkNotifyBanking', 'chkNotifyReports', 'chkNotifyReminders', 'chkNotifyCommunication',
-          'chkNotifyApproval', 'chkNotifyImports', 'chkNotifyBackup', 'chkNotifyUpdate',
-          'chkNotifySystem', 'chkNotifySecurity'
-        ];
-        toggles.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) settings[id] = el.checked;
-        });
-        localStorage.setItem('dse_notification_settings', JSON.stringify(settings));
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Notification preferences saved successfully!', 'success');
-      } catch (e) {
-        window.AppDialogService.showToast('Failed to save notification preferences: ' + e.message, 'error');
-      }
-    },
-
-    loadWorkspaceSettings() {
-      const pathEl = document.getElementById('lbl-workspace-path');
-      if (pathEl) pathEl.innerText = 'D:\\DSE Production\\workspace';
-      const statusEl = document.getElementById('lbl-workspace-status');
-      if (statusEl) statusEl.innerText = 'Operational • Connected to PostgreSQL (55432)';
-      const serverUrl = document.getElementById('txt-company-server-url');
-      if (serverUrl && !serverUrl.value) serverUrl.value = window.location.origin;
-    },
-
-    saveWorkspaceSettings() {
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast('Workspace paths & deployment parameters verified and saved!', 'success');
     },
 
     // ==========================================
-    // 1. COMPANY & BILLING SETTINGS
+    // 1. COMPANY PROFILE SETTINGS
     // ==========================================
     async loadCompanySettings() {
       try {
-        const profile = await window.ReportService.getProfile();
-        cachedProfile = profile;
-        if (!profile) return;
+        let serverSettings = {};
+        try {
+          serverSettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+          const appSettings = await window.ApiService.get('/api/support/settings?prefix=application.');
+          Object.assign(serverSettings, appSettings);
+        } catch (e) {
+          console.warn('[SettingsController] Support settings endpoint unavailable, using profile fallback:', e);
+        }
 
-        // Identity
-        if (document.getElementById('setting-company-name')) document.getElementById('setting-company-name').value = profile.companyName || 'JASVI INDUSTRIES';
-        if (document.getElementById('setting-company-tagline')) document.getElementById('setting-company-tagline').value = profile.tagline || 'Excellence in Ceramic Manufacturing & Enterprise Engineering';
-        if (document.getElementById('setting-company-phone')) document.getElementById('setting-company-phone').value = profile.phone || '+91 98250 12345';
-        if (document.getElementById('setting-company-email')) document.getElementById('setting-company-email').value = profile.email || 'accounts@jasviindustries.in';
-        if (document.getElementById('setting-company-gstin')) document.getElementById('setting-company-gstin').value = profile.gstin || '24AAACJ1234A1Z5';
-        if (document.getElementById('setting-company-pan')) document.getElementById('setting-company-pan').value = profile.pan || 'AAACJ1234A';
-        if (document.getElementById('setting-business-type')) document.getElementById('setting-business-type').value = profile.businessType || 'MANUFACTURING';
-        if (document.getElementById('setting-industry')) document.getElementById('setting-industry').value = profile.industry || 'CERAMICS';
-        if (document.getElementById('setting-company-state')) document.getElementById('setting-company-state').value = profile.state || 'GUJARAT (24)';
-        if (document.getElementById('setting-company-website')) document.getElementById('setting-company-website').value = profile.website || 'https://jasviindustries.in';
+        let profile = null;
+        if (window.ReportService && window.ReportService.getProfile) {
+          try { profile = await window.ReportService.getProfile(); } catch (err) {}
+        }
 
-        // Addresses
-        if (document.getElementById('setting-company-address')) document.getElementById('setting-company-address').value = profile.address || 'Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India';
-        if (document.getElementById('setting-ship-address')) document.getElementById('setting-ship-address').value = profile.shipAddress || 'Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat';
-        if (document.getElementById('setting-invoice-terms')) document.getElementById('setting-invoice-terms').value = profile.invoiceTerms || '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged after 30 days.\n3. Subject to Morbi jurisdiction only.';
+        setVal('setting-company-name', serverSettings['company.name'] || (profile && profile.companyName) || 'JASVI INDUSTRIES');
+        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || 'Excellence in Ceramic Manufacturing & Enterprise Engineering');
+        setVal('setting-company-phone', serverSettings['company.phone'] || (profile && profile.phone) || '+91 90999 39193');
+        setVal('setting-company-email', serverSettings['company.email'] || (profile && profile.email) || 'accounts@jasviindustries.in');
+        setVal('setting-company-gstin', serverSettings['company.gstin'] || (profile && profile.gstin) || '24AAACJ1234A1Z5');
+        setVal('setting-company-pan', serverSettings['company.pan'] || (profile && profile.pan) || 'AAACJ1234A');
+        setVal('setting-business-type', serverSettings['company.businessType'] || (profile && profile.businessType) || 'MANUFACTURING');
+        setVal('setting-industry', serverSettings['company.industry'] || (profile && profile.industry) || 'CERAMICS');
+        setVal('setting-fy-start', serverSettings['company.financialYearStart'] || '2026-04-01');
 
-        // Banking
-        if (document.getElementById('setting-bank-name')) document.getElementById('setting-bank-name').value = profile.bankName || 'STATE BANK OF INDIA';
-        if (document.getElementById('setting-account-holder')) document.getElementById('setting-account-holder').value = profile.accountHolder || 'JASVI INDUSTRIES';
-        if (document.getElementById('setting-account-number')) document.getElementById('setting-account-number').value = profile.accountNumber || '382910482910';
-        if (document.getElementById('setting-ifsc')) document.getElementById('setting-ifsc').value = profile.ifsc || 'SBIN0001234';
-        if (document.getElementById('setting-branch')) document.getElementById('setting-branch').value = profile.branch || 'MORBI MAIN BRANCH';
-        if (document.getElementById('setting-account-type')) document.getElementById('setting-account-type').value = profile.accountType || 'CURRENT';
-        if (document.getElementById('setting-upi-id')) document.getElementById('setting-upi-id').value = profile.upiId || 'jasviindustries@sbi';
-        if (document.getElementById('setting-tolerance')) document.getElementById('setting-tolerance').value = profile.bankMatchTolerance != null ? profile.bankMatchTolerance : '1.00';
+        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || 'Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India');
+        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || 'Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat');
+        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || 'https://jasviindustries.in');
+        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || 'GUJARAT (24)');
 
-        // Regional
-        if (document.getElementById('setting-currency')) document.getElementById('setting-currency').value = profile.currency || 'INR (₹)';
-        if (document.getElementById('setting-timezone')) document.getElementById('setting-timezone').value = profile.timezone || 'Asia/Kolkata (IST)';
-        if (document.getElementById('setting-date-format')) document.getElementById('setting-date-format').value = profile.dateFormat || 'DD-MM-YYYY';
+        setVal('setting-app-name', serverSettings['application.displayName'] || (profile && profile.companyName) || 'JASVI INDUSTRIES ERP');
+        setVal('setting-app-tagline', serverSettings['application.tagline'] || 'Enterprise Production & Distribution');
+        setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
       } catch (err) {
-        console.warn('[SettingsController] Could not load profile:', err);
+        console.error('[SettingsController] Failed to load company settings:', err);
       }
     },
 
     async saveCompanySettings(e) {
       if (e) e.preventDefault();
-      const payload = {
-        companyName: document.getElementById('setting-company-name').value.trim(),
-        tagline: document.getElementById('setting-company-tagline').value.trim(),
-        phone: document.getElementById('setting-company-phone').value.trim(),
-        email: document.getElementById('setting-company-email').value.trim(),
-        gstin: document.getElementById('setting-company-gstin').value.trim(),
-        pan: document.getElementById('setting-company-pan').value.trim(),
-        businessType: document.getElementById('setting-business-type').value,
-        industry: document.getElementById('setting-industry').value,
-        state: document.getElementById('setting-company-state').value,
-        website: document.getElementById('setting-company-website').value.trim(),
-        address: document.getElementById('setting-company-address').value.trim(),
-        shipAddress: document.getElementById('setting-ship-address').value.trim(),
-        invoiceTerms: document.getElementById('setting-invoice-terms').value.trim(),
-        bankName: document.getElementById('setting-bank-name').value.trim(),
-        accountHolder: document.getElementById('setting-account-holder').value.trim(),
-        accountNumber: document.getElementById('setting-account-number').value.trim(),
-        ifsc: document.getElementById('setting-ifsc').value.trim(),
-        branch: document.getElementById('setting-branch').value.trim(),
-        accountType: document.getElementById('setting-account-type').value,
-        upiId: document.getElementById('setting-upi-id').value.trim(),
-        bankMatchTolerance: parseFloat(document.getElementById('setting-tolerance').value) || 1.0,
-        currency: document.getElementById('setting-currency').value,
-        timezone: document.getElementById('setting-timezone').value,
-        dateFormat: document.getElementById('setting-date-format').value
+      const companyName = val('setting-company-name').trim();
+      const phone = val('setting-company-phone').trim();
+      const email = val('setting-company-email').trim();
+      const gstin = val('setting-company-gstin').trim().toUpperCase();
+      const pan = val('setting-company-pan').trim().toUpperCase();
+
+      if (!companyName) {
+        window.AppDialogService.showToast('Company name is required.', 'error');
+        return;
+      }
+
+      const values = {
+        'company.name': companyName,
+        'company.tagline': val('setting-company-tagline').trim(),
+        'company.phone': phone,
+        'company.email': email,
+        'company.gstin': gstin,
+        'company.pan': pan,
+        'company.businessType': val('setting-business-type'),
+        'company.industry': val('setting-industry'),
+        'company.financialYearStart': val('setting-fy-start'),
+        'company.address': val('setting-company-address').trim(),
+        'company.shipAddress': val('setting-ship-address').trim(),
+        'company.website': val('setting-company-website').trim(),
+        'company.state': val('setting-company-state').trim(),
+        'application.displayName': val('setting-app-name').trim() || companyName,
+        'application.tagline': val('setting-app-tagline').trim(),
+        'application.startingText': val('setting-app-starting-text').trim()
       };
 
       try {
-        await window.ReportService.updateProfile(payload);
+        await window.ApiService.put('/api/support/settings', { values });
+        if (window.ReportService && window.ReportService.updateProfile) {
+          try {
+            await window.ReportService.updateProfile({
+              companyName,
+              tagline: values['company.tagline'],
+              phone,
+              email,
+              gstin,
+              pan,
+              businessType: values['company.businessType'],
+              industry: values['company.industry'],
+              state: values['company.state'],
+              website: values['company.website'],
+              address: values['company.address'],
+              shipAddress: values['company.shipAddress']
+            });
+          } catch (ignored) {}
+        }
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Company profile & billing credentials updated!', 'success');
+        window.AppDialogService.showToast('Company profile & application branding saved to server!', 'success');
       } catch (err) {
-        window.AppDialogService.showToast('Failed to save profile: ' + err.message, 'error');
+        window.AppDialogService.showToast('Failed to save company settings: ' + err.message, 'error');
       }
     },
 
     // ==========================================
-    // 2. SMTP EMAIL SETTINGS
+    // 2. PAYMENT & BANKING SETTINGS
+    // ==========================================
+    async loadPaymentSettings() {
+      try {
+        let serverSettings = {};
+        try {
+          serverSettings = await window.ApiService.get('/api/support/settings?prefix=payment.');
+        } catch (e) {}
+
+        let profile = null;
+        if (window.ReportService && window.ReportService.getProfile) {
+          try { profile = await window.ReportService.getProfile(); } catch (err) {}
+        }
+
+        setVal('setting-bank-name', serverSettings['payment.bankName'] || (profile && profile.bankName) || 'STATE BANK OF INDIA');
+        setVal('setting-account-holder', serverSettings['payment.accountHolder'] || (profile && profile.accountHolder) || 'JASVI INDUSTRIES');
+        setVal('setting-account-number', serverSettings['payment.accountNumber'] || (profile && profile.accountNumber) || '382910482910');
+        setVal('setting-ifsc', serverSettings['payment.ifsc'] || (profile && profile.ifsc) || 'SBIN0001234');
+        setVal('setting-branch', serverSettings['payment.branch'] || (profile && profile.branch) || 'MORBI MAIN BRANCH');
+        setVal('setting-account-type', serverSettings['payment.accountType'] || (profile && profile.accountType) || 'CURRENT');
+        setVal('setting-upi-id', serverSettings['payment.upiId'] || (profile && profile.upiId) || 'jasviindustries@sbi');
+        setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '1.00');
+      } catch (err) {
+        console.error('[SettingsController] Failed to load payment settings:', err);
+      }
+    },
+
+    async savePaymentSettings(e) {
+      if (e) e.preventDefault();
+      const bankName = val('setting-bank-name').trim();
+      const accountNumber = val('setting-account-number').trim();
+      const ifsc = val('setting-ifsc').trim().toUpperCase();
+
+      if (!bankName || !accountNumber || !ifsc) {
+        window.AppDialogService.showToast('Bank Name, Account Number and IFSC are required.', 'error');
+        return;
+      }
+
+      const values = {
+        'payment.bankName': bankName,
+        'payment.accountHolder': val('setting-account-holder').trim(),
+        'payment.accountNumber': accountNumber,
+        'payment.ifsc': ifsc,
+        'payment.branch': val('setting-branch').trim(),
+        'payment.accountType': val('setting-account-type'),
+        'payment.upiId': val('setting-upi-id').trim(),
+        'payment.bankMatchRoundingTolerance': val('setting-tolerance').trim() || '1.00'
+      };
+
+      try {
+        await window.ApiService.put('/api/support/settings', { values });
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Commercial banking credentials & UPI parameters saved to server!', 'success');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to save payment settings: ' + err.message, 'error');
+      }
+    },
+
+    // ==========================================
+    // 3. INVOICE DEFAULTS & PRINT SETTINGS
+    // ==========================================
+    async loadInvoiceSettings() {
+      try {
+        let serverSettings = {};
+        try {
+          serverSettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+        } catch (e) {}
+
+        let profile = null;
+        if (window.ReportService && window.ReportService.getProfile) {
+          try { profile = await window.ReportService.getProfile(); } catch (err) {}
+        }
+
+        setVal('setting-currency', serverSettings['company.currency'] || (profile && profile.currency) || 'INR (₹)');
+        setVal('setting-timezone', serverSettings['company.timeZone'] || (profile && profile.timezone) || 'Asia/Kolkata (IST)');
+        setVal('setting-date-format', serverSettings['company.dateFormat'] || (profile && profile.dateFormat) || 'DD-MM-YYYY');
+        setVal('setting-time-format', serverSettings['company.timeFormat'] || '12-hour');
+        setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged after 30 days.\n3. Subject to Morbi jurisdiction only.');
+      } catch (err) {
+        console.error('[SettingsController] Failed to load invoice settings:', err);
+      }
+    },
+
+    async saveInvoiceSettings(e) {
+      if (e) e.preventDefault();
+      const values = {
+        'company.currency': val('setting-currency'),
+        'company.timeZone': val('setting-timezone'),
+        'company.dateFormat': val('setting-date-format'),
+        'company.timeFormat': val('setting-time-format'),
+        'company.terms': val('setting-invoice-terms').trim()
+      };
+
+      try {
+        await window.ApiService.put('/api/support/settings', { values });
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Invoice regional parameters and legal terms saved to server!', 'success');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to save invoice settings: ' + err.message, 'error');
+      }
+    },
+
+    // ==========================================
+    // 4. NOTIFICATION PREFERENCES
+    // ==========================================
+    async loadNotificationsSettings() {
+      try {
+        const prefs = await window.ApiService.get('/api/insights/notification-preferences');
+        cachedNotificationPrefs = prefs;
+        if (prefs) {
+          setChk('chkNotifications', prefs.enabled !== false);
+          setChk('chkNotificationToasts', prefs.toastsEnabled !== false);
+          if (Array.isArray(prefs.categories)) {
+            const catSet = new Set(prefs.categories.map(c => c.toUpperCase()));
+            setChk('chkNotifySales', catSet.has('SALES') || catSet.has('INVOICE'));
+            setChk('chkNotifyPurchases', catSet.has('PURCHASE'));
+            setChk('chkNotifyQuotations', catSet.has('QUOTATION'));
+            setChk('chkNotifyReturns', catSet.has('RETURN'));
+            setChk('chkNotifyPayments', catSet.has('PAYMENT'));
+            setChk('chkNotifyInventory', catSet.has('INVENTORY') || catSet.has('STOCK'));
+            setChk('chkNotifyBanking', catSet.has('BANKING') || catSet.has('FINANCE'));
+            setChk('chkNotifyReports', catSet.has('REPORT') || catSet.has('REPORTS'));
+            setChk('chkNotifyReminders', catSet.has('REMINDER') || catSet.has('REMINDERS'));
+            setChk('chkNotifyCommunication', catSet.has('COMMUNICATION'));
+            setChk('chkNotifyApproval', catSet.has('APPROVAL') || catSet.has('USER'));
+            setChk('chkNotifyImports', catSet.has('IMPORT') || catSet.has('IMPORTS'));
+            setChk('chkNotifyBackup', catSet.has('BACKUP'));
+            setChk('chkNotifySystem', catSet.has('SYSTEM'));
+            setChk('chkNotifySecurity', catSet.has('SECURITY'));
+          }
+        }
+      } catch (e) {
+        console.warn('[SettingsController] Loading notification preferences fallback:', e);
+      }
+    },
+
+    async saveNotificationsSettings(e) {
+      if (e) e.preventDefault();
+      const categories = [];
+      if (chk('chkNotifySales')) categories.push('SALES');
+      if (chk('chkNotifyPurchases')) categories.push('PURCHASE');
+      if (chk('chkNotifyQuotations')) categories.push('QUOTATION');
+      if (chk('chkNotifyReturns')) categories.push('RETURN');
+      if (chk('chkNotifyPayments')) categories.push('PAYMENT');
+      if (chk('chkNotifyInventory')) categories.push('INVENTORY');
+      if (chk('chkNotifyBanking')) categories.push('BANKING');
+      if (chk('chkNotifyReports')) categories.push('REPORTS');
+      if (chk('chkNotifyReminders')) categories.push('REMINDERS');
+      if (chk('chkNotifyCommunication')) categories.push('COMMUNICATION');
+      if (chk('chkNotifyApproval')) categories.push('APPROVAL');
+      if (chk('chkNotifyImports')) categories.push('IMPORTS');
+      if (chk('chkNotifyBackup')) categories.push('BACKUP');
+      if (chk('chkNotifySystem')) categories.push('SYSTEM');
+      if (chk('chkNotifySecurity')) categories.push('SECURITY');
+
+      const payload = {
+        enabled: chk('chkNotifications'),
+        toastsEnabled: chk('chkNotificationToasts'),
+        soundEnabled: true,
+        categories: categories
+      };
+
+      try {
+        await window.ApiService.put('/api/insights/notification-preferences', payload);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Notification triggers & subscriptions updated on server!', 'success');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to save notification preferences: ' + err.message, 'error');
+      }
+    },
+
+    // ==========================================
+    // 5. CORPORATE EMAIL & MESSAGE TEMPLATES
     // ==========================================
     async loadEmailSettings() {
       try {
-        const res = await window.ReportService.getEmailSettings();
+        const res = await window.ApiService.get('/api/authority/email/settings');
         cachedEmailSettings = res;
-        if (!res) return;
+        if (res) {
+          setVal('smtp-host', res.host || 'smtp.gmail.com');
+          setVal('smtp-port', res.port || '587');
+          setVal('smtp-email', res.email || 'billing@jasviindustries.in');
+          setVal('smtp-from-name', res.fromName || 'Jasvi Industries Accounts');
+          setChk('smtp-tls', res.startTls !== false);
+        }
 
-        if (document.getElementById('smtp-host')) document.getElementById('smtp-host').value = res.host || 'smtp.gmail.com';
-        if (document.getElementById('smtp-port')) document.getElementById('smtp-port').value = res.port || '587';
-        if (document.getElementById('smtp-email')) document.getElementById('smtp-email').value = res.username || res.email || 'billing@jasviindustries.in';
-        if (document.getElementById('smtp-from-name')) document.getElementById('smtp-from-name').value = res.fromName || 'Jasvi Industries Billing';
-        if (document.getElementById('smtp-tls')) document.getElementById('smtp-tls').checked = res.startTls !== false;
-        if (document.getElementById('smtp-signature')) document.getElementById('smtp-signature').value = res.signature || '--\nBest Regards,\nAccounts & Dispatch Dept\nJasvi Industries Morbi';
+        // Load signature and active template
+        let emailSettings = {};
+        try {
+          emailSettings = await window.ApiService.get('/api/support/settings?prefix=email.');
+          if (emailSettings['email.signature']) {
+            setVal('smtp-signature', emailSettings['email.signature']);
+          }
+        } catch (ignored) {}
+
+        this.onTemplateDocChanged(val('email-template-doc') || 'Sales Invoice (Email)');
       } catch (err) {
-        console.warn('[SettingsController] Could not load email settings:', err);
+        console.warn('[SettingsController] Could not load email settings from server:', err);
       }
     },
 
     async saveEmailSettings(e) {
       if (e) e.preventDefault();
-      const payload = {
-        host: document.getElementById('smtp-host').value.trim(),
-        port: parseInt(document.getElementById('smtp-port').value, 10) || 587,
-        username: document.getElementById('smtp-email').value.trim(),
-        password: document.getElementById('smtp-password').value,
-        fromName: document.getElementById('smtp-from-name').value.trim(),
-        startTls: document.getElementById('smtp-tls').checked,
-        signature: document.getElementById('smtp-signature').value
+      const host = val('smtp-host').trim();
+      const port = parseInt(val('smtp-port'), 10) || 587;
+      const email = val('smtp-email').trim();
+      const password = val('smtp-password');
+      const fromName = val('smtp-from-name').trim();
+      const startTls = chk('smtp-tls');
+      const signature = val('smtp-signature').trim();
+
+      if (!host || !email) {
+        window.AppDialogService.showToast('SMTP Host and Sender Email are required.', 'error');
+        return;
+      }
+
+      const smtpPayload = {
+        host,
+        port,
+        email,
+        appPassword: password,
+        fromName,
+        startTls
+      };
+
+      const docCategory = val('email-template-doc') || 'Sales Invoice (Email)';
+      const subject = val('email-template-subject').trim();
+      const body = val('email-template-body').trim();
+      templateDrafts[docCategory] = { subject, body };
+
+      const settingValues = {
+        'email.signature': signature,
+        [`email.template.${encodeURIComponent(docCategory)}.subject`]: subject,
+        [`email.template.${encodeURIComponent(docCategory)}.body`]: body
       };
 
       try {
-        await window.ReportService.saveEmailSettings(payload);
+        await Promise.all([
+          window.ApiService.put('/api/authority/email/settings', smtpPayload),
+          window.ApiService.put('/api/support/settings', { values: settingValues })
+        ]);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('SMTP credentials and email signature committed!', 'success');
+        window.AppDialogService.showToast('SMTP credentials and dispatch message templates saved to server!', 'success');
       } catch (err) {
         window.AppDialogService.showToast('Failed to save email settings: ' + err.message, 'error');
       }
+    },
+
+    onTemplateDocChanged(docOption) {
+      if (!docOption) return;
+      const isWhatsapp = docOption.includes('WhatsApp');
+      const subjectBox = document.getElementById('box-email-subject');
+      if (subjectBox) {
+        subjectBox.style.display = isWhatsapp ? 'none' : 'block';
+      }
+
+      const draft = templateDrafts[docOption] || { subject: '', body: '' };
+      setVal('email-template-subject', draft.subject || '');
+      setVal('email-template-body', draft.body || '');
+    },
+
+    insertTemplateToken(token) {
+      const textarea = document.getElementById('email-template-body');
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      textarea.value = text.substring(0, start) + token + text.substring(end);
+      textarea.selectionStart = textarea.selectionEnd = start + token.length;
+      textarea.focus();
     },
 
     async testEmail() {
       const recipient = prompt('Enter recipient email address to send test diagnostic message:', 'director@jasviindustries.in');
       if (!recipient) return;
 
-      window.AppDialogService.showToast(`Dispatching diagnostic TLS message to ${recipient}...`, 'info');
+      window.AppDialogService.showToast(`Dispatching diagnostic TLS probe to ${recipient}...`, 'info');
       try {
-        await window.ReportService.testEmail({
-          recipient,
-          subject: 'Jasvi ERP - SMTP Diagnostic Probe',
-          body: 'This is an automated verification message confirming that the Jasvi ERP Email Subsystem is operational.'
-        });
+        await window.ApiService.post('/api/authority/email/test', { recipient });
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Test email sent successfully to ${recipient}!`, 'success');
+        window.AppDialogService.showToast(`Diagnostic test email dispatched successfully to ${recipient}!`, 'success');
       } catch (err) {
         window.AppDialogService.showToast('SMTP Test Failed: ' + err.message, 'error');
       }
     },
 
     // ==========================================
-    // 3. SECURITY & SESSIONS
+    // 6. SECURITY & SESSION POLICIES
     // ==========================================
-    loadSecuritySettings() {
-      // Default security parameters
-      if (document.getElementById('sec-mfa-policy')) document.getElementById('sec-mfa-policy').value = 'OPTIONAL';
-      if (document.getElementById('sec-timeout')) document.getElementById('sec-timeout').value = '60';
-      if (document.getElementById('sec-diagnostics')) document.getElementById('sec-diagnostics').checked = true;
+    async loadSecuritySettings() {
+      try {
+        const secSettings = await window.ApiService.get('/api/support/settings?prefix=security.');
+        setVal('sec-session-timeout', secSettings['security.session.timeout.minutes'] || '60');
+        setVal('sec-session-warning', secSettings['security.session.warning.minutes'] || '5');
+        setVal('sec-mfa-policy', secSettings['security.auth.mfa.policy'] || 'ADMIN_CONTROLLED');
+        setChk('sec-ui-diagnostics', true);
+      } catch (err) {
+        console.warn('[SettingsController] Could not load security settings:', err);
+      }
+    },
+
+    async saveSecuritySettings(e) {
+      if (e) e.preventDefault();
+      const timeout = parseInt(val('sec-session-timeout'), 10);
+      const warning = parseInt(val('sec-session-warning'), 10);
+      const mfaPolicy = val('sec-mfa-policy');
+
+      if (isNaN(timeout) || timeout < 5 || timeout > 120) {
+        window.AppDialogService.showToast('Session timeout must be between 5 and 120 minutes.', 'error');
+        return;
+      }
+      if (isNaN(warning) || warning < 1 || warning >= timeout) {
+        window.AppDialogService.showToast('Session warning must be at least 1 minute and less than the timeout.', 'error');
+        return;
+      }
+
+      const values = {
+        'security.session.timeout.minutes': String(timeout),
+        'security.session.warning.minutes': String(warning),
+        'security.auth.mfa.policy': mfaPolicy
+      };
+
+      try {
+        await window.ApiService.put('/api/support/settings', { values });
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Security & MFA governance policies updated on server!', 'success');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to save security settings: ' + err.message, 'error');
+      }
     },
 
     async handlePasswordChange(e) {
       if (e) e.preventDefault();
-      const currentPassword = document.getElementById('pw-current').value;
-      const password = document.getElementById('pw-new').value;
-      const confirm = document.getElementById('pw-confirm').value;
+      const cur = val('pw-current');
+      const nw = val('pw-new');
+      const conf = val('pw-confirm');
 
-      if (!currentPassword) {
-        window.AppDialogService.showToast('Current password is required.', 'error');
+      if (!cur || !nw || !conf) {
+        window.AppDialogService.showToast('Please fill all password fields.', 'error');
         return;
       }
-      if (!password || password.length < 6) {
-        window.AppDialogService.showToast('New password must be at least 6 characters long.', 'error');
+      if (nw !== conf) {
+        window.AppDialogService.showToast('New password and confirmation do not match.', 'error');
         return;
       }
-      if (password !== confirm) {
-        window.AppDialogService.showToast('New passwords do not match!', 'error');
+      if (nw.length < 8) {
+        window.AppDialogService.showToast('Password must be at least 8 characters long.', 'error');
         return;
       }
 
-      const user = window.AuthService.getCurrentUser();
       try {
-        const res = await window.ApiService.post('/api/auth/password', {
-          userId: user ? user.id : 1,
-          currentPassword,
-          password
+        await window.ApiService.post('/api/auth/change-password', {
+          currentPassword: cur,
+          newPassword: nw
         });
-        if (res.success !== false) {
-          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-          window.AppDialogService.showToast('Password updated securely!', 'success');
-          document.getElementById('pw-current').value = '';
-          document.getElementById('pw-new').value = '';
-          document.getElementById('pw-confirm').value = '';
-        } else {
-          window.AppDialogService.showToast(res.message || 'Password update rejected.', 'error');
-        }
-      } catch (err) {
-        window.AppDialogService.showToast(err.message, 'error');
-      }
-    },
-
-    // ==========================================
-    // 4. KEYBOARD SHORTCUTS
-    // ==========================================
-    loadShortcutsSettings() {
-      const tbody = document.getElementById('shortcuts-settings-tbody') || document.getElementById('shortcuts-table-tbody');
-      if (!tbody) return;
-      this.filterShortcuts('');
-    },
-
-    filterShortcuts(query) {
-      const tbody = document.getElementById('shortcuts-settings-tbody') || document.getElementById('shortcuts-table-tbody');
-      if (!tbody) return;
-      const clean = (query || '').toLowerCase().trim();
-
-      const matched = desktopShortcuts.filter(s =>
-        !clean ||
-        s.key.toLowerCase().includes(clean) ||
-        s.action.toLowerCase().includes(clean) ||
-        s.scope.toLowerCase().includes(clean) ||
-        s.desc.toLowerCase().includes(clean)
-      );
-
-      if (matched.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 20px;">No shortcuts match "${query}".</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = matched.map(s => `
-        <tr>
-          <td><kbd style="background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); color: var(--cyan); padding: 3px 8px; border-radius: 4px; font-weight: 700; font-family: monospace;">${s.key}</kbd></td>
-          <td style="font-weight: 700; color: #fff;">${s.action}</td>
-          <td style="font-size: 0.8rem; color: var(--text-dim);"><span class="badge badge-role">${s.scope}</span></td>
-          <td style="font-size: 0.82rem; color: var(--text-muted);">${s.desc}</td>
-          <td style="text-align: center;"><span class="badge badge-paid">ENABLED</span></td>
-        </tr>
-      `).join('');
-    },
-
-    // ==========================================
-    // 5. DATABASE BACKUP & RECOVERY (BackupRestore.fxml)
-    // ==========================================
-    async loadBackups() {
-      const tbody = document.getElementById('backups-table-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);"><div class="spinner"></div> Reading PostgreSQL backup catalog...</td></tr>`;
-
-      try {
-        const [backups, metrics] = await Promise.all([
-          window.ReportService.getBackups().catch(() => []),
-          window.ReportService.getBackupMetrics().catch(() => null)
-        ]);
-
-        cachedBackups = Array.isArray(backups) ? backups : [];
-        cachedBackupMetrics = metrics;
-
-        // 4 KPIs matching BackupRestore.fxml
-        const sizeFormatted = metrics && metrics.sizeBytes ? `${(metrics.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : '48.2 MB';
-        const healthStatus = metrics && metrics.ready ? 'HEALTHY (READY)' : 'READY';
-        const count = cachedBackups.length;
-        const lastBackup = cachedBackups.length > 0 ? (cachedBackups[0].createdAt || 'Today') : 'None';
-
-        if (document.getElementById('backup-kpi-size')) document.getElementById('backup-kpi-size').textContent = sizeFormatted;
-        if (document.getElementById('backup-kpi-health')) document.getElementById('backup-kpi-health').textContent = healthStatus;
-        if (document.getElementById('backup-kpi-count')) document.getElementById('backup-kpi-count').textContent = count;
-        if (document.getElementById('backup-kpi-last')) document.getElementById('backup-kpi-last').textContent = lastBackup;
-
-        if (cachedBackups.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No backup archives found. Click "Create Backup Now" to capture an immediate PostgreSQL snapshot.</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = cachedBackups.map(b => {
-          const mb = b.size ? `${(b.size / (1024 * 1024)).toFixed(2)} MB` : '38.4 MB';
-          return `
-            <tr>
-              <td style="font-weight: 700; color: var(--cyan); font-family: monospace;">${b.name}</td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">${b.createdAt ? window.FormatUtil.formatDateTime(b.createdAt) : '-'}</td>
-              <td style="font-size: 0.82rem; font-weight: 600;">${mb}</td>
-              <td><span class="badge badge-paid">VALID</span></td>
-              <td><span class="badge badge-role">${b.source || 'MANUAL'}</span></td>
-              <td style="text-align: right; white-space: nowrap;">
-                <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.validateBackup('${b.name}')" title="Validate SHA256 Integrity">Validate</button>
-                <button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.stageRestore('${b.name}')" title="Stage PostgreSQL Restore">Stage Restore</button>
-                <button class="btn btn-secondary" style="padding: 3px 6px; font-size: 0.72rem; color: #f87171;" onclick="window.SettingsController.deleteBackup('${b.name}')" title="Recycle Archive">&times;</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Failed to read backups: ${err.message}</td></tr>`;
-      }
-    },
-
-    async triggerImmediateBackup() {
-      window.AppDialogService.showToast('Initiating pg_dump snapshot on PostgreSQL server...', 'info');
-      try {
-        const res = await window.ReportService.triggerBackup();
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        if (window.NotificationService) {
-          window.NotificationService.notifyBackup(res ? res.name : 'DSE-ERP-Server.pgbackup');
-        }
-        window.AppDialogService.showToast(`PostgreSQL snapshot created: ${res ? res.name : 'DSE-ERP-Server.pgbackup'}`, 'success');
-        this.loadBackups();
+        window.AppDialogService.showToast('Account password updated successfully!', 'success');
+        setVal('pw-current', '');
+        setVal('pw-new', '');
+        setVal('pw-confirm', '');
       } catch (err) {
-        window.AppDialogService.showToast('Backup creation failed: ' + err.message, 'error');
+        window.AppDialogService.showToast('Failed to change password: ' + err.message, 'error');
       }
     },
 
-    async validateBackup(name) {
-      window.AppDialogService.showToast(`Verifying archive structure & SHA256 checksum for "${name}"...`, 'info');
+    // ==========================================
+    // 7. MODULE MANAGEMENT
+    // ==========================================
+    async loadModulesSettings() {
       try {
-        const res = await window.ReportService.validateBackup(name);
-        if (res && res.valid) {
-          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-          window.AppDialogService.showToast(`Backup "${name}" verified 100% valid!`, 'success');
-        } else {
-          window.AppDialogService.showToast(`Verification issue: ${res ? res.message : 'Unknown'}`, 'error');
-        }
+        const modSettings = await window.ApiService.get('/api/support/settings?prefix=module.');
+        setChk('mod-gl-enabled', modSettings['module.gl.enabled'] !== 'false');
+        setChk('mod-gl-autopost', modSettings['module.gl.autoPost'] !== 'false');
+        setChk('mod-gl-trialbalance', modSettings['module.gl.trialBalance'] !== 'false');
+
+        setChk('mod-gst-enabled', modSettings['module.gst.enabled'] !== 'false');
+        setChk('mod-gst-auto2b', modSettings['module.gst.auto2bMatch'] !== 'false');
+        setChk('mod-gst-posgating', modSettings['module.gst.posGating'] !== 'false');
+        setChk('mod-tds-enabled', modSettings['module.tds.enabled'] !== 'false');
+
+        setChk('mod-threeway-enabled', modSettings['module.automation.threeWayMatch'] !== 'false');
+        setChk('mod-threeway-autodebit', modSettings['module.automation.autoDraftDebitNote'] !== 'false');
+        setChk('mod-reorder-enabled', modSettings['module.automation.stockAutoReorder'] !== 'false');
+        setChk('mod-credit-hardstop', modSettings['module.automation.creditHardStop'] !== 'false');
+        setChk('mod-batch-serial', modSettings['module.inventory.batchSerialTracking'] !== 'false');
+
+        setChk('mod-briefing-enabled', modSettings['module.briefing.daily'] !== 'false');
+        setChk('mod-briefing-wa', modSettings['module.briefing.whatsapp'] !== 'false');
+        setChk('mod-briefing-email', modSettings['module.briefing.email'] !== 'false');
+        setVal('mod-briefing-phone', modSettings['module.briefing.phone'] || '+91 90999 39193');
       } catch (err) {
-        window.AppDialogService.showToast('Validation failed: ' + err.message, 'error');
+        console.warn('[SettingsController] Could not load module settings:', err);
       }
     },
 
-    async stageRestore(name) {
-      if (!confirm(`CAUTION: Staging restore for "${name}" will prepare PostgreSQL to roll back to this snapshot. Proceed?`)) return;
+    async saveModulesSettings(e) {
+      if (e) e.preventDefault();
+      const values = {
+        'module.gl.enabled': String(chk('mod-gl-enabled')),
+        'accounting.gl.enabled': String(chk('mod-gl-enabled')),
+        'module.gl.autoPost': String(chk('mod-gl-autopost')),
+        'module.gl.trialBalance': String(chk('mod-gl-trialbalance')),
+
+        'module.gst.enabled': String(chk('mod-gst-enabled')),
+        'compliance.gst.enabled': String(chk('mod-gst-enabled')),
+        'module.gst.auto2bMatch': String(chk('mod-gst-auto2b')),
+        'module.gst.posGating': String(chk('mod-gst-posgating')),
+        'module.tds.enabled': String(chk('mod-tds-enabled')),
+
+        'module.automation.threeWayMatch': String(chk('mod-threeway-enabled')),
+        'automation.threeway.enabled': String(chk('mod-threeway-enabled')),
+        'module.automation.autoDraftDebitNote': String(chk('mod-threeway-autodebit')),
+        'module.automation.stockAutoReorder': String(chk('mod-reorder-enabled')),
+        'automation.reorder.enabled': String(chk('mod-reorder-enabled')),
+        'module.automation.creditHardStop': String(chk('mod-credit-hardstop')),
+        'credit_control.hard_stop': String(chk('mod-credit-hardstop')),
+        'module.inventory.batchSerialTracking': String(chk('mod-batch-serial')),
+
+        'module.briefing.daily': String(chk('mod-briefing-enabled')),
+        'automation.briefing.enabled': String(chk('mod-briefing-enabled')),
+        'module.briefing.whatsapp': String(chk('mod-briefing-wa')),
+        'module.briefing.email': String(chk('mod-briefing-email')),
+        'module.briefing.phone': val('mod-briefing-phone').trim()
+      };
+
       try {
-        await window.ReportService.stageRestore(name);
+        await window.ApiService.put('/api/support/settings', { values });
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Backup "${name}" staged for restore. Restart server to apply.`, 'success');
+        window.AppDialogService.showToast('Enterprise module toggles & automation rules updated on server!', 'success');
       } catch (err) {
-        window.AppDialogService.showToast('Stage restore failed: ' + err.message, 'error');
+        window.AppDialogService.showToast('Failed to save module settings: ' + err.message, 'error');
       }
-    },
-
-    async deleteBackup(name) {
-      if (!confirm(`Are you sure you want to move backup archive "${name}" to recycle storage?`)) return;
-      try {
-        await window.ReportService.deleteBackup(name);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Backup "${name}" moved to recycle storage.`, 'success');
-        this.loadBackups();
-      } catch (err) {
-        window.AppDialogService.showToast('Delete failed: ' + err.message, 'error');
-      }
-    },
-
-    exportRecoveryPackage() {
-      window.AppDialogService.showToast('Generating standalone disaster recovery bundle (zip)...', 'info');
-      window.open('/api/authority/backups/recovery-package', '_blank');
-    },
-
-    // ==========================================
-    // 6. SAFE ROLLBACK STUDIO (SafeRollback.fxml)
-    // ==========================================
-    loadSafeRollback() {
-      const tbody = document.getElementById('rollback-candidates-tbody');
-      if (!tbody) return;
-
-      tbody.innerHTML = rollbackCandidates.map(c => `
-        <tr>
-          <td style="font-weight: 700; color: var(--cyan); font-family: monospace;">v${c.version}</td>
-          <td style="font-weight: 600; color: #fff;">${c.filename}</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted);">${c.schema}</td>
-          <td><span class="badge ${c.compatibility === 'COMPATIBLE' ? 'badge-paid' : 'badge-pending'}">${c.compatibility}</span></td>
-          <td style="font-family: monospace; font-size: 0.75rem; color: var(--text-dim);">${c.checksum.substring(0, 16)}...</td>
-          <td style="font-size: 0.8rem;">${c.size}</td>
-          <td style="text-align: right; white-space: nowrap;">
-            <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.SettingsController.verifyRollbackChecksum('${c.version}')">Verify</button>
-            <button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="window.SettingsController.triggerRollback('${c.version}')">Rollback to v${c.version}</button>
-          </td>
-        </tr>
-      `).join('');
-    },
-
-    verifyRollbackChecksum(version) {
-      const cand = rollbackCandidates.find(c => c.version === version);
-      if (!cand) return;
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-      window.AppDialogService.showToast(`SHA256 signature verified for v${version}: ${cand.checksum}`, 'success');
-    },
-
-    triggerRollback(version) {
-      const cand = rollbackCandidates.find(c => c.version === version);
-      if (!cand) return;
-
-      const confirmed = confirm(
-        `PRE-FLIGHT SAFETY PROTOCOL FOR ROLLBACK:\n\n` +
-        `1. An automatic safety snapshot of PostgreSQL will be created.\n` +
-        `2. Active user sessions will be gracefully drained.\n` +
-        `3. Application package will be switched to v${version}.\n\n` +
-        `Target Release: v${version} (${cand.filename})\n` +
-        `Schema: ${cand.schema} (${cand.compatibility})\n\n` +
-        `Do you confirm proceeding with rollback?`
-      );
-
-      if (!confirmed) return;
-
-      window.AppDialogService.showToast(`Executing pre-flight snapshot and staging rollback to v${version}...`, 'info');
-      setTimeout(() => {
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Rollback package for v${version} staged! Server will restart in maintenance mode.`, 'success');
-      }, 1500);
-    },
-
-    // ==========================================
-    // 7. PDF STUDIO & EXCEL STUDIO
-    // ==========================================
-    async loadPdfStudio() {
-      const listEl = document.getElementById('pdf-template-list');
-      if (!listEl) return;
-
-      try {
-        const templates = await window.ReportService.getPdfTemplates().catch(() => []);
-        cachedPdfTemplates = Array.isArray(templates) ? templates : [];
-
-        const defaultTemplates = [
-          { key: 'invoice_classic', name: 'Classic Tax Invoice', category: 'SALES', format: 'A4 Portrait', active: true },
-          { key: 'invoice_gst_modern', name: 'Modern GST Enterprise Invoice', category: 'SALES', format: 'A4 Portrait', active: true },
-          { key: 'thermal_80mm', name: 'Thermal Dispatch Roll (80mm)', category: 'RETAIL/POS', format: 'Thermal 80mm', active: true },
-          { key: 'proforma_invoice', name: 'Proforma Invoice Studio', category: 'QUOTATION', format: 'A4 Portrait', active: true },
-          { key: 'purchase_order', name: 'Standard Purchase Order', category: 'PURCHASE', format: 'A4 Portrait', active: true },
-          { key: 'delivery_challan', name: 'Delivery Challan & E-Way Slip', category: 'LOGISTICS', format: 'A4 Landscape', active: true }
-        ];
-
-        const displayList = cachedPdfTemplates.length > 0 ? cachedPdfTemplates : defaultTemplates;
-
-        listEl.innerHTML = displayList.map((t, idx) => `
-          <div class="pdf-template-card ${idx === 0 ? 'active' : ''}" style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.SettingsController.selectPdfTemplate('${t.key || t.name}')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 700; color: #fff;">${t.name}</span>
-              <span class="badge badge-paid" style="font-size: 0.7rem;">${t.format || 'PDF'}</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">Category: ${t.category || 'COMMERCIAL'}</div>
-          </div>
-        `).join('');
-
-        this.renderPdfPreview(displayList[0]);
-      } catch (err) {
-        console.warn('[SettingsController] PDF Studio error:', err);
-      }
-    },
-
-    selectPdfTemplate(key) {
-      document.querySelectorAll('.pdf-template-card').forEach(c => c.classList.remove('active'));
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      window.AppDialogService.showToast(`Selected template: ${key}`, 'info');
-    },
-
-    renderPdfPreview(tpl) {
-      const preview = document.getElementById('pdf-preview-canvas');
-      if (!preview) return;
-      preview.innerHTML = `
-        <div style="background: #ffffff; color: #111827; padding: 32px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-height: 480px; font-family: Inter, sans-serif;">
-          <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 16px;">
-            <div>
-              <h2 style="margin: 0; color: #0284c7; font-size: 1.4rem; font-weight: 800;">JASVI INDUSTRIES</h2>
-              <p style="margin: 4px 0 0; font-size: 0.8rem; color: #4b5563;">Ceramic Tiles & Industrial Vitrified Products</p>
-              <p style="margin: 2px 0 0; font-size: 0.75rem; color: #6b7280;">GSTIN: 24AAACJ1234A1Z5 &bull; Morbi, Gujarat</p>
-            </div>
-            <div style="text-align: right;">
-              <h3 style="margin: 0; font-size: 1.1rem; color: #111827;">TAX INVOICE</h3>
-              <p style="margin: 4px 0 0; font-size: 0.8rem; font-weight: 700;">INV-2026-0042</p>
-              <p style="margin: 2px 0 0; font-size: 0.75rem; color: #6b7280;">Date: 13-Oct-2026</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; font-size: 0.78rem;">
-            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-              <strong>Billed To:</strong><br>
-              Apex Builders & Developers<br>
-              GSTIN: 24BBDDA8899C1Z2<br>
-              Ahmedabad, Gujarat
-            </div>
-            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-              <strong>Dispatch Details:</strong><br>
-              Transporter: Royal Freight Logistics<br>
-              Vehicle: GJ-36-T-8821<br>
-              E-Way Bill: 281920194810
-            </div>
-          </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 16px;">
-            <thead>
-              <tr style="background: #0284c7; color: #fff;">
-                <th style="padding: 6px; text-align: left;">Item Description</th>
-                <th style="padding: 6px; text-align: center;">HSN</th>
-                <th style="padding: 6px; text-align: right;">Qty</th>
-                <th style="padding: 6px; text-align: right;">Rate</th>
-                <th style="padding: 6px; text-align: right;">GST%</th>
-                <th style="padding: 6px; text-align: right;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 6px;">Vitrified Floor Tiles 600x600 Premium</td>
-                <td style="padding: 6px; text-align: center;">6907</td>
-                <td style="padding: 6px; text-align: right;">500 SQM</td>
-                <td style="padding: 6px; text-align: right;">₹320.00</td>
-                <td style="padding: 6px; text-align: right;">18%</td>
-                <td style="padding: 6px; text-align: right; font-weight: 700;">₹1,60,000.00</td>
-              </tr>
-            </tbody>
-          </table>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-            <div>
-              <strong>Bank Details:</strong> State Bank of India<br>
-              A/C: 382910482910 &bull; IFSC: SBIN0001234
-            </div>
-            <div style="text-align: right;">
-              <div>Taxable Value: ₹1,60,000.00</div>
-              <div>CGST (9%): ₹14,400.00</div>
-              <div>SGST (9%): ₹14,400.00</div>
-              <div style="font-size: 1rem; font-weight: 800; color: #0284c7; margin-top: 4px;">Grand Total: ₹1,88,800.00</div>
-            </div>
-          </div>
-        </div>
-      `;
-    },
-
-    loadExcelStudio() {
-      // Excel templates setup
     }
   };
 })();
