@@ -83,3 +83,49 @@ Whenever processing a user request:
 4. **Mirror & Stage**: Sync changes to `D:\GitHub\ReleaseSource Website\admin` and `D:\GitHub\DSE-ERP-Enterprise\web\admin`.
 5. **Commit, Push & Deploy**: Push to `main` branch to trigger GitHub Actions deployment.
 6. **Live Verification**: Verify the deployed UAT application (`https://erp-uat.jasviindustries.in/admin/`) with actual HTTP/API checks or browser verification before reporting back.
+
+---
+
+## 4. Web Application Release, Versioning & Cache Invalidation Protocol
+
+To ensure seamless deployment, avoid client-side caching bugs, and maintain 100% transparency between Desktop and Web releases, the following rules are strictly enforced:
+
+### Rule 1: Desktop-Driven Web Versioning Contract
+The Web Application version MUST ALWAYS be derived from the Desktop ERP release revision:
+$$\mathbf{\text{Web Version}} = \langle\text{DesktopMajor}\rangle.\langle\text{DesktopMinor}\rangle.\langle\text{DesktopPatch}\rangle.\langle\text{WebBuild: 2 digits}\rangle$$
+
+- **Within Same Desktop Baseline:** As long as Desktop remains at `10.0.33`, Web releases increment sequentially: `10.0.33.01`, `10.0.33.02`, ... `10.0.33.12`, `10.0.33.13`, etc.
+- **When Desktop Advances:** When Desktop moves to `10.0.34`, the Web build counter resets: `10.0.34.01`, `10.0.34.02`, etc.
+- **Git Tag Convention:** Every Web release tag in GitHub MUST be prefixed with `web-v`:
+  - Format: `web-v10.0.33.12`
+
+### Rule 2: Single Source of Truth
+Never hardcode versions in random files. The version is governed by:
+1. **`web/admin/version.json`**: Canonical JSON containing `desktopVersion`, `webBuild`, `webVersion`, `tag`, `releaseDate`, `environment`, and release highlights.
+2. **`web/admin/js/version.js`**: Synchronously exposes `window.DSE_VERSION` on page load.
+
+### Rule 3: Dynamic UI Version Binding (Zero Hardcoded Strings)
+- **Login Screen:** Dynamically displays both `#auth-app-version-badge` (`Version 10.0.33.12`) and `#auth-desktop-baseline` (`Desktop Baseline: v10.0.33`).
+- **Application Shell:** Dynamically displays `#header-app-version-badge` (`v10.0.33.12`) in the top navigation bar and `#menu-version-footer` (`Web Studio v10.0.33.12 • Desktop v10.0.33`) inside the user profile dropdown.
+
+### Rule 4: Mandatory Cache Invalidation (`?v=...`)
+- **NEVER deploy code changes without bumping the version string in `index.html`.**
+- Browsers aggressively cache `.js` and `.css` files by URL. If `?v=...` is not incremented on all 54 script and stylesheet tags, browsers will execute old cached JavaScript against new HTML markup, leading to broken button handlers, missing functions, and unstyled modals.
+
+### Rule 5: One-Command Release Automation Tool
+Always use the standardized release script to perform version bumps, cache-buster updates, git tagging, and GitHub release creation in a single atomic step:
+
+```powershell
+# Auto-increments web build (or resets if desktop bumped), updates index.html, commits, tags, pushes, and publishes GitHub Release:
+.\scripts\bump-web-version.ps1 -Note "Parity fixes & enhancements" -Release
+```
+
+Or via Python:
+```bash
+python scripts/bump-web-version.py --note "Parity fixes & enhancements" --release
+```
+
+To specify or override the desktop baseline during a desktop upgrade:
+```powershell
+.\scripts\bump-web-version.ps1 -Desktop "10.0.34" -Note "Transition to Desktop 10.0.34" -Release
+```
