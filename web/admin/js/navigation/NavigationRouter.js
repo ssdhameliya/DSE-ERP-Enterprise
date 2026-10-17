@@ -49,12 +49,19 @@ window.NavigationRouter = (function() {
     'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
     'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' },
     'view-global-search': { title: 'Global Search', breadcrumb: 'Cross-Module Enterprise Intelligence', icon: '🔍' },
+    'view-profile': { title: 'My Profile', breadcrumb: 'Account Security & Personal Info', icon: '👤' },
     'view-record-payment': { title: 'Invoice Payment', breadcrumb: 'Record Payment & History', icon: '💳' },
     'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
     'view-settings-company': { title: 'Company Settings', breadcrumb: 'Organization Legal Profile & Banking', icon: '⚙️' },
+    'view-settings-payment': { title: 'Payment & Bank', breadcrumb: 'Payment Methods & Banking Rules', icon: '💳' },
+    'view-settings-invoice': { title: 'Invoice & Print', breadcrumb: 'Invoice Layout & Print Formats', icon: '🧾' },
+    'view-settings-notifications': { title: 'Notification Settings', breadcrumb: 'System Alerts & Subscriptions', icon: '🔔' },
     'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
     'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
-    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' }
+    'view-settings-workspace': { title: 'Workspace & Storage', breadcrumb: 'Local Directories & Storage Paths', icon: '📁' },
+    'view-settings-shortcuts': { title: 'Keyboard Shortcuts', breadcrumb: 'Productivity Hotkey Accelerators', icon: '⌨️' },
+    'view-settings-backup': { title: 'Database Backup', breadcrumb: 'PostgreSQL Enterprise Snapshot Engine', icon: '💾' },
+    'view-settings-rollback': { title: 'Safe Rollback', breadcrumb: 'Version Downgrade & Recovery Guard', icon: '🔄' }
   };
 
   function updateHeader(meta) {
@@ -106,10 +113,23 @@ window.NavigationRouter = (function() {
         btn.classList.remove('active');
       });
 
-      const targetView = document.getElementById(viewId);
+      const isSettingsSub = viewId.startsWith('view-settings-');
+      const domViewId = isSettingsSub ? 'view-settings' : viewId;
+      const targetView = document.getElementById(domViewId);
       if (targetView) {
         targetView.classList.add('active');
         targetView.style.display = 'block';
+      }
+
+      if (isSettingsSub) {
+        const sec = viewId.replace('view-settings-', '').toUpperCase();
+        if (window.SettingsController && window.SettingsController.switchSection) {
+          window.SettingsController.switchSection(sec);
+        }
+      }
+
+      if (window.LabelIconEnhancer && targetView) {
+        window.LabelIconEnhancer.enhance(targetView);
       }
 
       const navKey = viewId.replace('view-', '');
@@ -429,6 +449,11 @@ window.NavigationRouter = (function() {
         case 'view-barcode-studio':
           if (window.BarcodeStudioController) window.BarcodeStudioController.init();
           break;
+        case 'view-profile':
+          if (window.ProfileController && window.ProfileController.loadProfile) {
+            window.ProfileController.loadProfile();
+          }
+          break;
         case 'view-settings':
           if (window.SettingsController) window.SettingsController.init('COMPANY');
           break;
@@ -437,6 +462,15 @@ window.NavigationRouter = (function() {
             window.SettingsController.init('COMPANY');
             window.SettingsController.loadCompanySettings();
           }
+          break;
+        case 'view-settings-payment':
+          if (window.SettingsController) window.SettingsController.init('PAYMENT');
+          break;
+        case 'view-settings-invoice':
+          if (window.SettingsController) window.SettingsController.init('INVOICE');
+          break;
+        case 'view-settings-notifications':
+          if (window.SettingsController) window.SettingsController.init('NOTIFICATIONS');
           break;
         case 'view-settings-email':
           if (window.SettingsController) {
@@ -450,11 +484,20 @@ window.NavigationRouter = (function() {
             window.SettingsController.loadSecuritySettings();
           }
           break;
+        case 'view-settings-workspace':
+          if (window.SettingsController) window.SettingsController.init('WORKSPACE');
+          break;
         case 'view-settings-shortcuts':
           if (window.SettingsController) {
             window.SettingsController.init('SHORTCUTS');
             window.SettingsController.loadShortcutsSettings();
           }
+          break;
+        case 'view-settings-backup':
+          if (window.SettingsController) window.SettingsController.init('BACKUP');
+          break;
+        case 'view-settings-rollback':
+          if (window.SettingsController) window.SettingsController.init('ROLLBACK');
           break;
         case 'view-automation':
           if (window.AutomationCenterController) window.AutomationCenterController.loadData();

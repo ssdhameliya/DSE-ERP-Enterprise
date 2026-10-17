@@ -816,6 +816,9 @@ window.QuotationController = (function() {
         saved = await window.OperationsService.createQuotation(payload);
       }
       const quoteNo = saved?.no || 'Quotation';
+      if (window.NotificationService) {
+        window.NotificationService.notifyQuotation(quoteNo, payload.customerName || 'Customer', payload.grandTotal || 0);
+      }
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${quoteNo} saved successfully!`);
 
       // Return to Quotation Register

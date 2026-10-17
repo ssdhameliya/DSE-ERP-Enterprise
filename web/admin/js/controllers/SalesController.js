@@ -1891,6 +1891,9 @@ window.SalesController = {
       } else {
         savedSale = await window.OperationsService.createSale(payload);
         const actualInvoiceNo = (savedSale && (savedSale.invoiceNo || savedSale.number)) || invoiceNo;
+        if (window.NotificationService) {
+          window.NotificationService.notifySale(actualInvoiceNo, payload.customerName || 'Customer', payload.grandTotal || 0);
+        }
         window.AppDialogService.showToast(`Invoice ${actualInvoiceNo} generated & saved successfully!`, 'success');
       }
 

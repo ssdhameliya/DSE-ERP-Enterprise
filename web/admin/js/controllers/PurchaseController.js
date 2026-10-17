@@ -1754,6 +1754,9 @@ window.PurchaseController = (function() {
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase invoice ${invoiceNo} updated successfully!`);
       } else {
         await window.OperationsService.createPurchase(payload);
+        if (window.NotificationService) {
+          window.NotificationService.notifyPurchase(invoiceNo, payload.supplierName || 'Supplier', payload.grandTotal || 0);
+        }
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase invoice ${invoiceNo} created successfully!`);
       }
 

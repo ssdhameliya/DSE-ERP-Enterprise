@@ -234,6 +234,7 @@ window.App = (function() {
       if (window.ShortcutManager) window.ShortcutManager.init();
       if (window.NavigationRouter) window.NavigationRouter.init();
       if (window.GlobalUiEnhancer) window.GlobalUiEnhancer.init();
+      if (window.LabelIconEnhancer) window.LabelIconEnhancer.init();
 
       // Check current session
       const user = window.AuthService.getCurrentUser();
@@ -276,6 +277,10 @@ window.App = (function() {
         await window.PartyController.loadCustomers();
         await window.PartyController.loadSuppliers();
       }
+    },
+
+    pollShellCounts() {
+      return pollShellCounts();
     },
 
     toggleTheme() {

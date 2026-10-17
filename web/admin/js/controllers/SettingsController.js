@@ -498,6 +498,9 @@ window.SettingsController = (function() {
       try {
         const res = await window.ReportService.triggerBackup();
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.NotificationService) {
+          window.NotificationService.notifyBackup(res ? res.name : 'DSE-ERP-Server.pgbackup');
+        }
         window.AppDialogService.showToast(`PostgreSQL snapshot created: ${res ? res.name : 'DSE-ERP-Server.pgbackup'}`, 'success');
         this.loadBackups();
       } catch (err) {

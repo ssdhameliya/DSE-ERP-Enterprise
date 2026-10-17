@@ -60,29 +60,47 @@ window.ReturnsController = (function() {
 
     try {
       const data = await window.OperationsService.getReturnsPage(currentType, currentPage, pageSize, q, party, status, from, to);
-      returnsList = data?.rows || [];
+      returnsList = Array.isArray(data) ? data : (data?.rows || []);
       totalRows = data?.totalRows || returnsList.length;
-      totalPages = data?.totalPages || 1;
+      totalPages = data?.totalPages || Math.max(1, Math.ceil(totalRows / pageSize));
 
       // Update KPI Cards matching SalesReturns.fxml
-      applyKpis(data?.metrics, isSales);
+      try {
+        applyKpis(data?.metrics, isSales);
+      } catch (kpiErr) {
+        console.warn('[ReturnsController] KPI parse warning:', kpiErr);
+      }
 
       // Populate Party Filter if options empty
-      populatePartyFilter(data?.parties, isSales);
+      try {
+        populatePartyFilter(data?.parties, isSales);
+      } catch (partyErr) {
+        console.warn('[ReturnsController] Party filter parse warning:', partyErr);
+      }
 
-      // Render Table Rows
+      // Render Table Rows (guaranteed execution)
       renderTable(returnsList, isSales);
 
       // Update Pagination Info
       updatePagination(isSales);
 
     } catch (err) {
-      console.error('Failed to load returns:', err);
+      console.warn('[ReturnsController] Returns load fallback:', err);
+      returnsList = [];
+      totalRows = 0;
+      totalPages = 1;
+      renderTable([], isSales);
+      updatePagination(isSales);
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--red);"><span style="font-size:1.2rem;">⚠️</span> Failed to load returns: ${err.message || 'Server error'}</td></tr>`;
-      }
-      if (window.AppDialogService) {
-        window.AppDialogService.toastError(`Failed to load ${isSales ? 'sales' : 'purchase'} returns: ` + err.message);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
+              <div style="font-size:1.8rem; margin-bottom:8px;">↩️</div>
+              <div style="font-weight:600; font-size:0.95rem; color:var(--text-main);">No ${isSales ? 'sales' : 'purchase'} returns found</div>
+              <div style="font-size:0.78rem; color:var(--text-dim); margin-top:4px;">Adjust filters or create a return from ${isSales ? 'Sales Register' : 'Purchase Register'}.</div>
+            </td>
+          </tr>
+        `;
       }
     }
   }
@@ -740,6 +758,9 @@ window.ReturnsController = (function() {
     try {
       const res = await window.OperationsService.createReturn(payload);
       const newNo = res?.returnNo || 'Return';
+      if (window.NotificationService) {
+        window.NotificationService.notifyReturn(newNo, payload.customerName || payload.supplierName || 'Party', payload.totalAmount || 0, currentType);
+      }
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`${currentType} ${newNo} created successfully!`);
       closeModal('modal-create-return');
       loadReturns(currentType, 0);

@@ -52,37 +52,6 @@ window.NotificationCenterController = (function() {
     return `${days}d ago`;
   }
 
-  return {
-    async loadNotifications() {
-      try {
-        const list = await window.ApiService.get('/api/insights/notifications?limit=50');
-        notifications = Array.isArray(list) ? list : [];
-
-        // Update header badge
-        const unreadCount = notifications.filter(n => !n.read).length;
-        const badgeEl = document.getElementById('badge-notifications');
-        if (badgeEl) {
-          badgeEl.innerText = unreadCount;
-          badgeEl.classList.toggle('zero', unreadCount === 0);
-        }
-
-        this.updateSummaryCounters();
-        this.renderCategoryRail();
-        this.renderNotificationList();
-      } catch (err) {
-        console.warn('[NotificationCenterController] Failed to load notifications:', err);
-        notifications = [];
-        this.updateSummaryCounters();
-        this.renderCategoryRail();
-        this.renderNotificationList();
-      }
-    },
-
-    updateSummaryCounters() {
-      const allCount = notifications.length;
-      const unreadCount = notifications.filter(n => !n.read).length;
-      const actionCount = notifications.filter(isActionable).length;
-
   const CATEGORIES = [
     { key: 'Approval', label: 'Approval', icon: '✔' },
     { key: 'Sales', label: 'Sales', icon: '🛒' },
@@ -138,7 +107,7 @@ window.NotificationCenterController = (function() {
   return {
     async loadNotifications() {
       try {
-        const list = await window.ApiService.get('/api/insights/notifications?limit=50');
+        const list = await window.ApiService.get('/api/insights/notifications?limit=500');
         notifications = Array.isArray(list) ? list : [];
 
         // Update header badge
@@ -471,13 +440,19 @@ window.NotificationCenterController = (function() {
       } else if (mod.includes('RETURN') || target.includes('return')) {
         window.NavigationRouter.selectNav('view-sales-returns');
       } else if (mod.includes('PAYMENT') || target.includes('payment')) {
-        window.NavigationRouter.selectNav('view-payment-receipt');
+        window.NavigationRouter.selectNav('view-bank-entry');
+      } else if (mod.includes('PROFILE') || target.includes('profile')) {
+        window.NavigationRouter.selectNav('view-profile');
+      } else if (mod.includes('BACKUP') || target.includes('backup')) {
+        window.NavigationRouter.selectNav('view-settings-backup');
+      } else if (mod.includes('SETTING') || target.includes('setting')) {
+        window.NavigationRouter.selectNav('view-settings');
       } else if (mod.includes('REMINDER') || target.includes('reminder')) {
         window.NavigationRouter.selectNav('view-reminders');
       } else if (mod.includes('COMMUNICATION') || target.includes('communication')) {
         window.NavigationRouter.selectNav('view-communication');
       } else {
-        window.AppDialogService.showToast(`Notification referenced: ${ref}`, 'info');
+        if (window.AppDialogService) window.AppDialogService.toast('info', `Notification: ${ref || item.title}`);
       }
     },
 

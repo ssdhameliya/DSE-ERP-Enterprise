@@ -547,6 +547,10 @@ window.RecordPaymentController = (function() {
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
 
+        if (window.NotificationService) {
+          window.NotificationService.notifyPayment(payload.reference || invoiceNo, partyName, amount);
+        }
+
         if (window.AppDialogService) {
           window.AppDialogService.toastSuccess(`Payment of ${formatMoney(amount)} successfully recorded! Invoice status updated to ${invoiceBalance <= 0.01 ? 'PAID' : 'PARTIAL'}.`);
         } else {

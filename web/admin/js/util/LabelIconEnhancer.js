@@ -39,8 +39,37 @@ window.LabelIconEnhancer = (function() {
   return {
     enhance(container = document) {
       if (!container) return;
-      const labels = container.querySelectorAll('label.form-label, label');
+      const labels = container.querySelectorAll('label.form-label, label, .field-label, .meta-label');
       labels.forEach(lbl => enhanceLabel(lbl));
+    },
+
+    init() {
+      this.enhance(document);
+
+      // Auto-observe dynamic modals, drawers, and tabs
+      if (window.MutationObserver) {
+        const observer = new MutationObserver((mutations) => {
+          for (const m of mutations) {
+            if (m.addedNodes && m.addedNodes.length > 0) {
+              m.addedNodes.forEach(node => {
+                if (node.nodeType === 1) { // Element node
+                  if (node.matches && (node.matches('.modal-overlay, .side-drawer, .module-view, form, .form-group') || node.querySelector('label'))) {
+                    this.enhance(node);
+                  }
+                }
+              });
+            }
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
     }
   };
 })();
+
+// Auto-run when DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => window.LabelIconEnhancer.init());
+} else {
+  window.LabelIconEnhancer.init();
+}
