@@ -135,15 +135,67 @@ window.PurchaseReconController = (function() {
           </td>
           <td><span class="pill-badge pill-neutral">${r.source || 'MANUAL'}</span></td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.openEditRecon(${r.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Recon">✏️</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.viewBankLinks(${r.id})" style="padding:2px 6px; font-size:0.72rem;" title="View Bank Links">🔗</button>
-              <button class="btn btn-danger btn-sm" onclick="window.PurchaseReconController.deleteReconRecord(${r.id})" style="padding:2px 6px; font-size:0.72rem;" title="Delete">🗑️</button>
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="recon-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:200px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PurchaseReconController.openEditRecon(${r.id})"><span style="margin-right:8px;">✏️</span> Edit Recon</div>
+                <div class="action-menu-item" onclick="window.PurchaseReconController.viewBankLinks(${r.id})"><span style="margin-right:8px;">🔗</span> Bank Statement Links</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" style="color:var(--red);" onclick="window.PurchaseReconController.deleteReconRecord(${r.id})"><span style="margin-right:8px;">🗑️</span> Delete Record</div>
+              </div>
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleActionMenu(id, event) {
+    if (event) event.stopPropagation();
+    const menuId = 'recon-action-menu-' + id;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event?.currentTarget || event?.target;
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 200;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+
+          const menuHeight = targetMenu.offsetHeight || 140;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top;
+          if (spaceBelow < menuHeight && rect.top > menuHeight) {
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = rect.bottom + 4;
+          }
+
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
+    }
   }
 
   function onReconRowClick(id, event) {
@@ -614,6 +666,7 @@ window.PurchaseReconController = (function() {
     openNewRecon,
     openEditRecon,
     onReconRowClick,
+    toggleActionMenu,
     calculateEditorTotals,
     saveReconRecord,
     deleteReconRecord,

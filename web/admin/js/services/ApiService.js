@@ -117,32 +117,7 @@ window.ApiService = (function() {
      * Fetch document PDF from canonical server generator and open in browser viewer/tab
      */
     async openPdfPreview(type, number) {
-      try {
-        const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
-        const url = `${this.BASE_URL}/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
-        const res = await fetch(url, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        if (!res.ok) {
-          throw new Error(`Failed to render document PDF (HTTP ${res.status})`);
-        }
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const win = window.open(blobUrl, '_blank');
-        if (!win) {
-          // If popup blocked, create hidden anchor to download
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = `${type}-${number}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
-      } catch (err) {
-        console.error('[ApiService] openPdfPreview failed:', err);
-        if (window.AppDialogService) window.AppDialogService.toastError(err.message || 'Could not open PDF');
-      }
+      return this.downloadDocumentPdf(type, number);
     },
 
     /**

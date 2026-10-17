@@ -522,12 +522,43 @@ window.BankStatementController = (function() {
   // 4. STATEMENT CSV IMPORT DIALOG
   // ==========================================
 
-  function openImportModal() {
+  async function openImportModal() {
     const modal = document.getElementById('modal-import-statement');
     if (!modal) return;
     document.getElementById('import-file-name').innerText = 'No file selected';
     document.getElementById('import-csv-file').value = '';
     document.getElementById('import-preview-count').innerText = '0 rows';
+
+    // Load BANK_ACCOUNT lookups from Master Data (Desktop Parity)
+    try {
+      const bankSelect = document.getElementById('import-bank-name');
+      const accInput = document.getElementById('import-bank-acc');
+      if (bankSelect && window.MasterService) {
+        const lookups = await window.MasterService.getLookups('BANK_ACCOUNT');
+        const activeAccounts = (lookups || []).filter(l => l.active !== false && (l.lookupValue || l.value));
+        if (activeAccounts.length > 0) {
+          bankSelect.innerHTML = activeAccounts.map((a, idx) => {
+            const accNo = (a.lookupValue || a.value || '').trim();
+            const bName = (a.description || a.lookupCode || 'Bank Account').trim();
+            return `<option value="${bName}" data-acc="${accNo}" ${idx === 0 ? 'selected' : ''}>${bName} (${accNo})</option>`;
+          }).join('');
+
+          if (accInput) {
+            accInput.value = (activeAccounts[0].lookupValue || activeAccounts[0].value || '').trim();
+          }
+
+          bankSelect.onchange = function() {
+            const selOpt = bankSelect.options[bankSelect.selectedIndex];
+            if (selOpt && accInput) {
+              accInput.value = selOpt.getAttribute('data-acc') || '';
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Could not populate BANK_ACCOUNT master lookups:', e);
+    }
+
     modal.style.display = 'flex';
   }
 

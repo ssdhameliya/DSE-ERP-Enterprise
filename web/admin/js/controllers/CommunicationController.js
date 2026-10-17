@@ -47,7 +47,10 @@ window.CommunicationController = (function() {
 
   function updateKpis(list) {
     const total = list.length;
-    const success = list.filter(c => (c.status || '').toUpperCase() === 'SUCCESS').length;
+    const success = list.filter(c => {
+      const s = (c.status || '').toUpperCase();
+      return s === 'SUCCESS' || s === 'SENT';
+    }).length;
     const failed = list.filter(c => (c.status || '').toUpperCase() === 'FAILED' || (c.errorMessage && c.errorMessage.trim().length > 0)).length;
     const emails = list.filter(c => (c.channel || '').toUpperCase().includes('EMAIL') || (c.channel || '').toUpperCase().includes('MAIL')).length;
     const whatsapp = list.filter(c => (c.channel || '').toUpperCase().includes('WHATSAPP')).length;
@@ -103,8 +106,9 @@ window.CommunicationController = (function() {
     }
 
     tbody.innerHTML = rows.map(c => {
-      const isSuccess = (c.status || '').toUpperCase() === 'SUCCESS';
-      const isFailed = (c.status || '').toUpperCase() === 'FAILED' || (c.errorMessage && c.errorMessage.trim().length > 0);
+      const statusUpper = (c.status || '').toUpperCase();
+      const isSuccess = statusUpper === 'SUCCESS' || statusUpper === 'SENT';
+      const isFailed = statusUpper === 'FAILED' || (c.errorMessage && c.errorMessage.trim().length > 0);
       const channel = (c.channel || 'EMAIL').toUpperCase();
 
       let chBadge = 'pill-neutral';
@@ -121,7 +125,7 @@ window.CommunicationController = (function() {
             ${c.subject || '-'}
           </td>
           <td>
-            ${isSuccess ? '<span class="pill-badge pill-success">SUCCESS</span>' : isFailed ? '<span class="pill-badge pill-danger">FAILED</span>' : '<span class="pill-badge pill-warning">PENDING</span>'}
+            ${isSuccess ? '<span class="pill-badge pill-success">SENT</span>' : isFailed ? '<span class="pill-badge pill-danger">FAILED</span>' : '<span class="pill-badge pill-warning">PENDING</span>'}
           </td>
           <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:${isFailed ? 'var(--red)' : 'var(--text-muted)'};" title="${c.errorMessage || 'Sent'}">
             ${c.errorMessage || 'Delivered to gateway'}

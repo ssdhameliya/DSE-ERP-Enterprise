@@ -229,6 +229,7 @@ window.PurchaseController = (function() {
               <div id="pur-action-menu-${invNo.replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:240px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseView('${invNo}')"><span style="margin-right:8px;">📄</span> View Purchase (Read-Only)</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.showDetails('${invNo}')"><span style="margin-right:8px;">👁️</span> View Details</div>
+                <div class="action-menu-item" onclick="window.PurchaseController.duplicatePurchase('${invNo}')"><span style="margin-right:8px;">📋</span> Duplicate Purchase</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.openPayments('${invNo}')"><span style="margin-right:8px;">💳</span> View / Record Payments</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseEditor('${invNo}')"><span style="margin-right:8px;">✏️</span> Edit Purchase</div>
                 <div class="action-menu-item" onclick="window.PurchaseController.downloadPdf('${invNo}')"><span style="margin-right:8px;">🖨️</span> Print / PDF</div>
@@ -331,11 +332,12 @@ window.PurchaseController = (function() {
   }
 
   async function openPurchaseDrawer(invoiceNo) {
-    const drawer = document.getElementById('drawer-purchase-details-inspect') || document.getElementById('drawer-purchase-details');
+    const drawer = document.getElementById('drawer-purchase-details') || document.getElementById('drawer-purchase-details-inspect');
     const overlay = document.getElementById('side-drawer-overlay');
     if (!drawer) return;
 
-    if (drawer.classList.contains('open') && selectedDrawerBillNo === invoiceNo) {
+    // Toggle close if clicking active row
+    if ((drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block') && selectedDrawerBillNo === invoiceNo) {
       closePurchaseDrawer();
       return;
     }
@@ -351,100 +353,150 @@ window.PurchaseController = (function() {
       }
     });
 
-    try {
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-      let p = purchases.find(x => x.invoiceNo === invoiceNo);
-      if (!p || !p.lines) {
-        p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
-      }
-      selectedPurchase = p;
-      currentDrawerPurchase = p;
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
-      // Populate drawer-purchase-details-inspect (Primary drawer in index.html)
-      const purNo = document.getElementById('drawer-pur-no');
-      if (purNo) purNo.innerText = p.invoiceNo || invoiceNo;
+    // 1. Instant synchronous render from memory cache
+    let p = purchases.find(x => x.invoiceNo === invoiceNo) || { invoiceNo };
+    selectedPurchase = p;
+    currentDrawerPurchase = p;
+    populatePurchaseDrawerFields(p);
 
-      const purStatus = document.getElementById('drawer-pur-status');
-      if (purStatus) {
-        const docSt = (p.documentStatus || 'APPROVED').toUpperCase();
-        purStatus.innerText = docSt;
-        purStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : 'badge-pending'}`;
-      }
+    drawer.classList.add('open');
+    drawer.style.display = 'flex';
+    if (overlay) overlay.classList.add('open');
 
-      const purPayStatus = document.getElementById('drawer-pur-pay-status');
-      if (purPayStatus) {
-        const paySt = (p.paymentStatus || 'UNPAID').toUpperCase();
-        purPayStatus.innerText = paySt;
-        purPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
-      }
-
-      const purDate = document.getElementById('drawer-pur-date');
-      if (purDate) purDate.innerText = formatDate(p.invoiceDate);
-
-      const supp = p.supplier || {};
-      const purGstin = document.getElementById('drawer-pur-supp-gstin');
-      if (purGstin) purGstin.innerText = p.billingGstin || supp.gstin || '-';
-
-      const purPhone = document.getElementById('drawer-pur-supp-phone');
-      if (purPhone) purPhone.innerText = supp.phone || p.contactPersonMobile || '-';
-
-      const purSuppName = document.getElementById('drawer-pur-supp-name');
-      if (purSuppName) purSuppName.innerText = supp.name || p.supplierName || 'Walk-in Supplier';
-
-      const tbodyInspect = document.getElementById('drawer-pur-items-tbody');
-      if (tbodyInspect) {
-        const lines = p.lines || [];
-        if (lines.length === 0) {
-          tbodyInspect.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:14px;">No inward items recorded.</td></tr>`;
-        } else {
-          tbodyInspect.innerHTML = lines.map((l, idx) => `
-            <tr>
-              <td style="color:var(--text-dim);">${idx + 1}</td>
-              <td style="font-weight:600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
-              <td>${(parseFloat(l.quantity) || 1).toFixed(2)} ${l.itemUnit || 'PCS'}</td>
-              <td>${formatMoney(l.rate || 0)}</td>
-              <td style="text-align:right; font-weight:700;">${formatMoney(l.totalAmount || 0)}</td>
-            </tr>
-          `).join('');
+    // 2. Load complete details and line items in background if missing
+    if (!p.lines || p.lines.length === 0) {
+      try {
+        const fullPurchase = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
+        if (fullPurchase && selectedDrawerBillNo === invoiceNo) {
+          selectedPurchase = fullPurchase;
+          currentDrawerPurchase = fullPurchase;
+          populatePurchaseDrawerFields(fullPurchase);
         }
+      } catch (err) {
+        console.warn('Background purchase lines fetch failed:', err);
       }
-
-      const purTaxable = document.getElementById('drawer-pur-taxable');
-      if (purTaxable) purTaxable.innerText = formatMoney(p.subtotal || p.taxableAmount || 0);
-
-      const purGst = document.getElementById('drawer-pur-gst');
-      if (purGst) purGst.innerText = formatMoney(p.gstAmount || 0);
-
-      const total = p.totalAmount != null ? p.totalAmount : 0;
-      const paid = p.paidAmount != null ? p.paidAmount : (p.paymentStatus === 'PAID' ? total : 0);
-      const balance = Math.max(0, total - paid);
-
-      const purTotal = document.getElementById('drawer-pur-total');
-      if (purTotal) purTotal.innerText = formatMoney(total);
-
-      const purPaid = document.getElementById('drawer-pur-paid');
-      if (purPaid) purPaid.innerText = formatMoney(paid);
-
-      const purBalance = document.getElementById('drawer-pur-balance');
-      if (purBalance) purBalance.innerText = formatMoney(balance);
-
-      const purPayPaidDisp = document.getElementById('drawer-pur-pay-paid-disp');
-      if (purPayPaidDisp) purPayPaidDisp.innerText = formatMoney(paid);
-
-      const purPayTotalDisp = document.getElementById('drawer-pur-pay-total-disp');
-      if (purPayTotalDisp) purPayTotalDisp.innerText = formatMoney(total);
-
-      // Default to summary tab
-      switchPurchaseDrawerTab('summary');
-
-      drawer.classList.add('open');
-      drawer.style.display = 'block';
-      if (overlay) overlay.classList.add('open');
-
-    } catch (err) {
-      console.error('Failed to load purchase details:', err);
-      if (window.AppDialogService) window.AppDialogService.toastError('Failed to load purchase details: ' + (err.message || 'Server error'));
     }
+  }
+
+  function populatePurchaseDrawerFields(p) {
+    if (!p) return;
+    const invNo = p.invoiceNo || selectedDrawerBillNo || '-';
+    const supp = p.supplier || {};
+    const suppName = supp.name || p.supplierName || 'Walk-in Supplier';
+    const total = p.totalAmount != null ? p.totalAmount : (p.amount != null ? p.amount : 0);
+    const paid = p.paidAmount != null ? p.paidAmount : (p.paymentStatus === 'PAID' ? total : 0);
+    const balance = Math.max(0, total - paid);
+    const docSt = (p.documentStatus || 'APPROVED').toUpperCase();
+    const paySt = (p.paymentStatus || (balance <= 0 ? 'PAID' : (paid > 0 ? 'PARTIAL' : 'UNPAID'))).toUpperCase();
+
+    // Primary pd-... fields in index.html (lines 2536-2608)
+    const pdInvNo = document.getElementById('pd-invoice-no');
+    if (pdInvNo) pdInvNo.innerText = invNo;
+
+    const pdSuppName = document.getElementById('pd-supplier-name');
+    if (pdSuppName) pdSuppName.innerText = suppName;
+
+    const pdAmount = document.getElementById('pd-amount');
+    if (pdAmount) pdAmount.innerText = formatMoney(total);
+
+    const pdPaid = document.getElementById('pd-paid');
+    if (pdPaid) pdPaid.innerText = formatMoney(paid);
+
+    const pdBalance = document.getElementById('pd-balance');
+    if (pdBalance) pdBalance.innerText = formatMoney(balance);
+
+    const pdDate = document.getElementById('pd-date');
+    if (pdDate) pdDate.innerText = formatDate(p.invoiceDate || p.date);
+
+    const pdDueDate = document.getElementById('pd-due-date');
+    if (pdDueDate) pdDueDate.innerText = formatDate(p.dueDate || p.paymentDueDate);
+
+    const pdTaxable = document.getElementById('pd-taxable');
+    if (pdTaxable) pdTaxable.innerText = formatMoney(p.subtotal || p.taxableAmount || 0);
+
+    const pdGst = document.getElementById('pd-gst');
+    if (pdGst) pdGst.innerText = formatMoney(p.gstAmount || p.taxAmount || 0);
+
+    const pdGstType = document.getElementById('pd-gst-type');
+    if (pdGstType) pdGstType.innerText = p.gstType || 'INTRA_STATE (CGST + SGST)';
+
+    const pdPaymentTerms = document.getElementById('pd-payment-terms');
+    if (pdPaymentTerms) pdPaymentTerms.innerText = p.paymentTerms || 'NET 30';
+
+    const pdDocStatus = document.getElementById('pd-doc-status');
+    if (pdDocStatus) {
+      pdDocStatus.innerHTML = `<span class="pill-badge ${docSt === 'APPROVED' ? 'pill-success' : 'pill-warning'}">${docSt}</span>`;
+    }
+
+    const pdPayStatus = document.getElementById('pd-pay-status');
+    if (pdPayStatus) {
+      pdPayStatus.innerHTML = `<span class="pill-badge ${paySt === 'PAID' ? 'pill-success' : (paySt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}">${paySt}</span>`;
+    }
+
+    const approvalBox = document.getElementById('pd-approval-box');
+    if (approvalBox) {
+      approvalBox.style.display = (docSt === 'PENDING_APPROVAL' || docSt === 'PENDING') ? 'block' : 'none';
+    }
+
+    const pdContactPerson = document.getElementById('pd-contact-person');
+    if (pdContactPerson) pdContactPerson.innerText = p.contactPerson || supp.contactPerson || '-';
+
+    const pdPhone = document.getElementById('pd-phone');
+    if (pdPhone) pdPhone.innerText = supp.phone || p.contactPersonMobile || p.phone || '-';
+
+    const pdEmail = document.getElementById('pd-email');
+    if (pdEmail) pdEmail.innerText = supp.email || p.contactPersonEmail || p.email || '-';
+
+    const pdGstin = document.getElementById('pd-gstin');
+    if (pdGstin) pdGstin.innerText = p.billingGstin || supp.gstin || '-';
+
+    const pdBillingAddress = document.getElementById('pd-billing-address');
+    if (pdBillingAddress) pdBillingAddress.innerText = p.billingAddress || supp.billingAddress || '-';
+
+    const pdDeliveryAddress = document.getElementById('pd-delivery-address');
+    if (pdDeliveryAddress) pdDeliveryAddress.innerText = p.deliveryAddress || supp.shippingAddress || '-';
+
+    const pdTransporter = document.getElementById('pd-transporter');
+    if (pdTransporter) pdTransporter.innerText = p.transporterName || p.transporter || '-';
+
+    const pdVehicle = document.getElementById('pd-vehicle');
+    if (pdVehicle) pdVehicle.innerText = p.vehicleNo || p.vehicleNumber || '-';
+
+    const pdNotes = document.getElementById('pd-notes');
+    if (pdNotes) pdNotes.innerText = p.notes || p.remarks || '-';
+
+    const linesTbody = document.getElementById('pd-lines-body');
+    if (linesTbody) {
+      const lines = p.lines || [];
+      if (lines.length === 0) {
+        linesTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">No items.</td></tr>`;
+      } else {
+        linesTbody.innerHTML = lines.map((l, idx) => `
+          <tr>
+            <td style="color:var(--text-dim);">${idx + 1}</td>
+            <td style="font-family:monospace; color:var(--cyan);">${l.itemCode || '-'}</td>
+            <td style="font-weight:600;">${l.itemDescription || l.description || '-'}</td>
+            <td style="text-align:right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+            <td style="text-align:right;">${formatMoney(l.rate || 0)}</td>
+            <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(l.totalAmount || 0)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Also populate legacy inspect fields if present
+    const purNo = document.getElementById('drawer-pur-no');
+    if (purNo) purNo.innerText = invNo;
+    const purSuppName = document.getElementById('drawer-pur-supp-name');
+    if (purSuppName) purSuppName.innerText = suppName;
+    const purTotal = document.getElementById('drawer-pur-total');
+    if (purTotal) purTotal.innerText = formatMoney(total);
+    const purPaid = document.getElementById('drawer-pur-paid');
+    if (purPaid) purPaid.innerText = formatMoney(paid);
+    const purBalance = document.getElementById('drawer-pur-balance');
+    if (purBalance) purBalance.innerText = formatMoney(balance);
   }
 
   function switchPurchaseDrawerTab(tabName) {
@@ -537,11 +589,11 @@ window.PurchaseController = (function() {
   }
 
   function closePurchaseDrawer() {
-    const drawer = document.getElementById('drawer-purchase-details-inspect') || document.getElementById('drawer-purchase-details');
+    const drawer = document.getElementById('drawer-purchase-details') || document.getElementById('drawer-purchase-details-inspect');
     const overlay = document.getElementById('side-drawer-overlay');
     if (drawer) {
       drawer.classList.remove('open');
-      drawer.style.display = '';
+      drawer.style.display = 'none';
     }
     if (overlay) overlay.classList.remove('open');
     document.querySelectorAll('#purchases-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
@@ -877,11 +929,31 @@ window.PurchaseController = (function() {
   }
 
   function openReturnPrompt(invoiceNo) {
-    if (window.ReturnsController) {
+    if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
       if (window.ReturnsController.setType) window.ReturnsController.setType('PURCHASE RETURN');
       window.ReturnsController.openCreateReturnModal(invoiceNo, 'PURCHASE RETURN');
     } else {
-      window.NavigationRouter.selectNav('view-purchase-returns');
+      const modal = document.getElementById('modal-create-return');
+      if (modal) {
+        modal.style.display = 'flex';
+        const inp = document.getElementById('cr-invoice-input');
+        if (inp) inp.value = invoiceNo || '';
+        const crType = document.getElementById('cr-type');
+        if (crType) crType.value = 'PURCHASE RETURN';
+      }
+    }
+  }
+
+  async function duplicatePurchase(invoiceNo) {
+    if (!invoiceNo) return;
+    try {
+      if (window.AppDialogService && window.AppDialogService.toastInfo) {
+        window.AppDialogService.toastInfo(`Duplicating purchase bill ${invoiceNo}...`);
+      }
+      await openPurchaseEditor(invoiceNo, false, true);
+    } catch (err) {
+      console.error('Failed to duplicate purchase:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to duplicate purchase: ' + err.message);
     }
   }
 
@@ -981,11 +1053,11 @@ window.PurchaseController = (function() {
 
   let isNavigatingToPurchaseEditor = false;
 
-  async function openPurchaseEditor(invoiceNo = null, isViewMode = false) {
+  async function openPurchaseEditor(invoiceNo = null, isViewMode = false, isDuplicate = false) {
     if (isNavigatingToPurchaseEditor) return;
     isNavigatingToPurchaseEditor = true;
     try {
-      editingInvoiceNo = invoiceNo;
+      editingInvoiceNo = isDuplicate ? null : invoiceNo;
       editingPurchase = null;
       pendingAttachmentFile = null;
       attachmentRemovalPending = false;
@@ -995,7 +1067,7 @@ window.PurchaseController = (function() {
       editorLines = [];
       editorCharges = [];
       selectedEditorItem = null;
-      isReadOnlyView = !!isViewMode;
+      isReadOnlyView = !!isViewMode && !isDuplicate;
 
       if (window.NavigationRouter && window.NavigationRouter.getCurrentView() !== 'view-purchase-creation') {
         window.NavigationRouter.selectNav('view-purchase-creation');
@@ -1006,12 +1078,12 @@ window.PurchaseController = (function() {
     if (titleEl) {
       titleEl.innerText = isReadOnlyView 
         ? `View Purchase Invoice • ${invoiceNo} (Read Only)` 
-        : (invoiceNo ? 'Edit Purchase Invoice' : 'Create Purchase Invoice');
+        : (isDuplicate ? `Create Purchase Invoice (Duplicate of ${invoiceNo})` : (invoiceNo ? 'Edit Purchase Invoice' : 'Create Purchase Invoice'));
     }
     if (subEl) {
       subEl.innerText = isReadOnlyView 
         ? 'Viewing historical supplier purchase in read-only mode' 
-        : (invoiceNo ? `Editing inward purchase bill ${invoiceNo}` : 'Create a supplier purchase with the same validation and calculation flow as Sales');
+        : (isDuplicate ? `Duplicated from ${invoiceNo} with next sequential bill number` : (invoiceNo ? `Editing inward purchase bill ${invoiceNo}` : 'Create a supplier purchase with the same validation and calculation flow as Sales'));
     }
 
     const banner = document.getElementById('pe-read-only-banner');
@@ -1119,7 +1191,24 @@ window.PurchaseController = (function() {
           gstPercent: parseFloat(c.gstPercent) || 18
         }));
 
-        refreshAttachmentUi(p.attachmentPath || p.attachment || null);
+        if (isDuplicate) {
+          editingPurchase = null;
+          editingInvoiceNo = null;
+          isReadOnlyView = false;
+          document.getElementById('pe-invoice-date').value = today;
+          document.getElementById('pe-po-date').value = today;
+          refreshAttachmentUi(null);
+          pendingAttachmentFile = null;
+          try {
+            const nextRes = await window.OperationsService.getNextPurchaseInvoice();
+            const nextVal = (typeof nextRes === 'string' ? nextRes : (nextRes?.value || nextRes?.invoiceNo)) || 'BILL-2026-0001';
+            document.getElementById('pe-invoice-no').value = nextVal;
+          } catch {
+            document.getElementById('pe-invoice-no').value = 'BILL-2026-0001';
+          }
+        } else {
+          refreshAttachmentUi(p.attachmentPath || p.attachment || null);
+        }
 
       } catch (e) {
         alert('Failed to load purchase for editing: ' + e.message);
@@ -1691,6 +1780,7 @@ window.PurchaseController = (function() {
     closePurchaseDrawer,
     get currentDrawerPurchase() { return currentDrawerPurchase; },
     closeDrawer,
+    duplicatePurchase,
     onRowClick,
     toggleActionMenu,
     approvePurchase,

@@ -411,12 +411,9 @@ window.SalesController = {
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
       const payBadge = isPaid ? '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399;">💳 PAID</span>' : '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24;">⏱ PENDING</span>';
       const retLabel = s.returnStatus === 'FULLY_RETURNED' ? '<span style="color:#34d399;">🔄 FULLY RET..</span>' : '<span style="color:var(--text-dim);">📄 N/A</span>';
-      const emailBtn = s.emailSent
-        ? `<button class="btn-email-sent" onclick="event.stopPropagation(); window.SalesController.openEmailModal('${invNo}')" title="Email sent. Click to view or resend">✔ Sent</button>`
-        : `<button class="btn-email-send" onclick="event.stopPropagation(); window.SalesController.openEmailModal('${invNo}')" title="Click to send invoice by Email">✉ Send</button>`;
-      const whatsappBtn = s.whatsappSent
-        ? `<button class="btn-whatsapp-sent" onclick="event.stopPropagation(); window.SalesController.sendWhatsapp('${invNo}')" title="WhatsApp sent. Click to resend">✔ Sent</button>`
-        : `<button class="btn-whatsapp-send" onclick="event.stopPropagation(); window.SalesController.sendWhatsapp('${invNo}')" title="Click to send invoice by WhatsApp">💬 Send</button>`;
+      const emailPill = s.emailSent
+        ? '<span class="pill-badge pill-success" style="font-size:0.75rem; padding: 2px 8px;">Sent</span>'
+        : '<span class="pill-badge pill-neutral" style="font-size:0.75rem; padding: 2px 8px; opacity:0.7;">Not Sent</span>';
 
       return `
         <tr style="cursor: pointer;" class="${this.selectedDrawerInvoiceNo === invNo ? 'active-selected-row' : ''}" onclick="window.SalesController.handleRowClick('${invNo}', this)">
@@ -432,8 +429,7 @@ window.SalesController = {
           <td>${docBadge}</td>
           <td>${payBadge}</td>
           <td>${retLabel}</td>
-          <td style="text-align: center;" onclick="event.stopPropagation()">${emailBtn}</td>
-          <td style="text-align: center;" onclick="event.stopPropagation()">${whatsappBtn}</td>
+          <td style="text-align: center;">${emailPill}</td>
           <td style="text-align: center;" onclick="event.stopPropagation()">
             <button class="btn-purple" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" onclick="window.SalesController.toggleRowActionsMenu(this, '${invNo}', event)" title="View Actions Menu">
               ::: Actions
@@ -2840,14 +2836,39 @@ window.SalesController = {
   async duplicateSale(sale) {
     if (!sale) return;
     try {
-      const user = (window.AuthService && window.AuthService.getCurrentUser() && window.AuthService.getCurrentUser().username) || 'admin';
-      const id = sale.id;
-      if (!id) throw new Error('Invoice ID is missing');
-      window.AppDialogService.showToast('Duplicating invoice on server...', 'info');
-      const res = await window.ApiService.post(`/api/support/sales/${encodeURIComponent(id)}/duplicate?user=${encodeURIComponent(user)}`);
-      const newInvoiceNo = (res && (res.value || res.invoiceNo)) || res;
-      window.AppDialogService.showToast(`Invoice duplicated successfully! New Invoice No: ${newInvoiceNo}`, 'success');
-      await this.loadSales();
+      window.AppDialogService.showToast('Preparing duplicate invoice in editor...', 'info');
+      let fullSale = sale;
+      if (!fullSale.lines || fullSale.lines.length === 0) {
+        try {
+          fullSale = await window.OperationsService.getSaleByInvoice(sale.invoiceNo || sale.number);
+        } catch (e) {
+          console.warn('Could not fetch full sale for duplicate:', e);
+        }
+      }
+
+      const duplicateData = {
+        ...fullSale,
+        isDuplicate: true,
+        id: null,
+        invoiceDate: new Date().toISOString().slice(0, 10),
+        attachment: null
+      };
+
+      await this.openSaleEditorTab(duplicateData, false);
+      this.editingSale = null;
+
+      try {
+        const seq = await window.OperationsService.getNextSaleInvoice();
+        const nextNo = (seq && (seq.value || seq.invoiceNo || (typeof seq === 'string' ? seq : ''))) || '';
+        if (nextNo) {
+          const invNoEl = document.getElementById('ws-inv-no');
+          if (invNoEl) invNoEl.value = nextNo;
+          const displayEl = document.getElementById('ws-inv-display');
+          if (displayEl) displayEl.innerText = nextNo;
+        }
+      } catch (_) {}
+
+      window.AppDialogService.showToast('Invoice loaded as duplicate with fresh sequence. Ready to save as a new invoice.', 'success');
     } catch (e) {
       window.AppDialogService.showToast('Could not duplicate sale: ' + e.message, 'error');
     }
@@ -2965,13 +2986,6 @@ window.SalesController = {
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       let sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invoiceNo);
-      if (!sale || !sale.lines || sale.lines.length === 0) {
-        try {
-          sale = await window.OperationsService.getSaleByInvoice(invoiceNo);
-        } catch (e) {
-          console.warn('Could not fetch full sale from API:', e);
-        }
-      }
       this.currentDrawerSale = sale || { invoiceNo };
 
       const s = this.currentDrawerSale;
@@ -3195,6 +3209,38 @@ window.SalesController = {
         }
 
         this.switchDrawerTab('summary');
+      }
+
+      // Background asynchronous lines loading if not already in memory
+      if (!sale || !sale.lines || sale.lines.length === 0) {
+        window.OperationsService.getSaleByInvoice(invoiceNo).then(fullSale => {
+          if (fullSale && this.selectedDrawerInvoiceNo === invoiceNo) {
+            this.currentDrawerSale = fullSale;
+            const tbody = document.getElementById('drawer-items-tbody');
+            const lines = fullSale.lines || [];
+            const countBadge = document.getElementById('drawer-items-count-badge');
+            if (countBadge) countBadge.innerText = `${lines.length} Items`;
+            if (tbody) {
+              if (lines.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No line item records.</td></tr>`;
+              } else {
+                tbody.innerHTML = lines.map((l, idx) => `
+                  <tr>
+                    <td style="color: var(--text-dim);">${idx + 1}</td>
+                    <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+                    <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
+                    <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+                    <td>${l.itemUnit || l.unit || 'PCS'}</td>
+                    <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+                    <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+                    <td>${l.gstPercent || l.taxRate || 18}%</td>
+                    <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
+                  </tr>
+                `).join('');
+              }
+            }
+          }
+        }).catch(e => console.warn('Background lines fetch error:', e));
       }
     } catch (err) {
       console.error('Failed to load invoice drawer:', err);

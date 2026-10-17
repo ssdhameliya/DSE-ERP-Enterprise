@@ -215,16 +215,16 @@ window.TableUiEnhancer = (function() {
         window.ItemMasterController.openEditItemModal(id);
       }
     } else if (currentView === 'view-customers' && window.PartyController) {
-      if (typeof window.PartyController.openCustomer360 === 'function') {
-        window.PartyController.openCustomer360(id);
-      } else if (typeof window.PartyController.openEditPartyModal === 'function') {
-        window.PartyController.openEditPartyModal(id);
+      if (typeof window.PartyController.onCustomerRowClick === 'function') {
+        window.PartyController.onCustomerRowClick(id);
+      } else if (typeof window.PartyController.openCustomerDrawer === 'function') {
+        window.PartyController.openCustomerDrawer(id);
       }
     } else if (currentView === 'view-suppliers' && window.PartyController) {
-      if (typeof window.PartyController.openSupplier360 === 'function') {
-        window.PartyController.openSupplier360(id);
-      } else if (typeof window.PartyController.openEditPartyModal === 'function') {
-        window.PartyController.openEditPartyModal(id);
+      if (typeof window.PartyController.onSupplierRowClick === 'function') {
+        window.PartyController.onSupplierRowClick(id);
+      } else if (typeof window.PartyController.openSupplierDrawer === 'function') {
+        window.PartyController.openSupplierDrawer(id);
       }
     } else if (currentView === 'view-purchase-recon' && window.PurchaseReconController && window.PurchaseReconController.openDrawer) {
       window.PurchaseReconController.openDrawer(id);

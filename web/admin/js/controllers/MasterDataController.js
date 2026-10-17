@@ -408,7 +408,7 @@ window.MasterDataController = (function() {
     // ==========================================
     // Lookup Values CRUD Actions
     // ==========================================
-    openAddLookupModal() {
+    async openAddLookupModal() {
       const modal = document.getElementById('modal-add-lookup');
       const catField = document.getElementById('m-lookup-category');
       const codeField = document.getElementById('m-lookup-code');
@@ -417,14 +417,36 @@ window.MasterDataController = (function() {
       const sortField = document.getElementById('m-lookup-sort');
       const titleEl = document.getElementById('modal-lookup-title');
 
-      if (titleEl) titleEl.innerText = `Add Lookup (${currentCategory || 'NEW'})`;
-      if (catField) catField.value = currentCategory || 'GENERAL';
-      if (codeField) codeField.value = '';
+      const category = currentCategory || 'GENERAL';
+      if (titleEl) titleEl.innerText = `Add Lookup (${category})`;
+      if (catField) catField.value = category;
+      if (codeField) {
+        codeField.value = 'Generating...';
+        codeField.readOnly = true;
+      }
       if (valField) valField.value = '';
       if (descField) descField.value = '';
       if (sortField) sortField.value = currentLookups.length + 1;
       if (modal) modal.style.display = 'flex';
-      if (codeField) codeField.focus();
+      if (valField) valField.focus();
+
+      try {
+        const res = await window.MasterService.getNextLookupCode(category);
+        const nextCode = (res && typeof res === 'object') ? (res.code || '') : (res || '');
+        if (codeField && codeField.value === 'Generating...') {
+          codeField.value = nextCode;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch next lookup code:', err);
+        if (codeField && codeField.value === 'Generating...') {
+          codeField.value = '';
+        }
+      }
+      if (valField) valField.focus();
+    },
+
+    submitLookupSave(e) {
+      return this.submitSaveLookup(e);
     },
 
     closeLookupModal() {

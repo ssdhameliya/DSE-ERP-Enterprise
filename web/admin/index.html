@@ -1111,12 +1111,11 @@
                       <th>Payment Status</th>
                       <th>Return Status</th>
                       <th>Email</th>
-                      <th>WhatsApp</th>
                       <th style="text-align: center;">Actions</th>
                     </tr>
                   </thead>
                   <tbody id="sales-table-tbody">
-                    <tr><td colspan="15" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading live invoices from PostgreSQL...</td></tr>
+                    <tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading live invoices from PostgreSQL...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -3164,7 +3163,10 @@
                   <tr>
                     <th style="width:36px; text-align:center;"><input type="checkbox" onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
                     <th>Item Code</th>
-                    
+                    <th>Item Name / Description</th>
+                    <th>Category</th>
+                    <th>Brand</th>
+                    <th>Material</th>
                     <th>Size</th>
                     <th>Unit</th>
                     <th>HSN Code</th>
@@ -5988,46 +5990,174 @@
                 <span style="font-size:1.6rem;">&#128202;</span>
                 <div>
                   <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Executive Reports &amp; BI Analytics</h1>
-                  <p id="report-active-desc" style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Comprehensive sales invoices, taxable value, GST split and customer breakdown</p>
+                  <p id="report-active-desc" style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Real-time financial dashboard and unified enterprise report center</p>
                 </div>
               </div>
             </div>
             <div class="view-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.ReportsController.exportExcel()">&#128202; Export to Excel</button>
-              <button class="btn btn-primary" onclick="window.ReportsController.printReport()">&#128424;&#65039; Print Report</button>
+              <button class="btn btn-secondary" onclick="window.ReportsController.refreshDashboard()">&#8634; Refresh</button>
+              <button class="btn btn-secondary" onclick="window.ReportsController.exportExcel()">&#128202; Export Excel</button>
+              <button class="btn btn-primary" onclick="window.ReportsController.printReport()">&#128424;&#65039; Print PDF</button>
             </div>
           </div>
 
-          <!-- REPORT CATALOG PILLS -->
-          <div id="report-definitions-pills" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:14px;">
-            <!-- Generated dynamically by ReportsController.js -->
+          <!-- 2-TAB SWITCHER (Reports.fxml Desktop Parity) -->
+          <div class="register-tab-strip" style="display:flex; gap:8px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px; padding-bottom:4px;">
+            <button class="register-tab-btn active" id="btn-rep-tab-dashboard" onclick="window.ReportsController.switchMainTab('dashboard')" style="padding:8px 18px; font-weight:700; border-radius:6px; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); cursor:pointer;">
+              &#128200; Dashboard
+            </button>
+            <button class="register-tab-btn" id="btn-rep-tab-center" onclick="window.ReportsController.switchMainTab('center')" style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
+              &#128196; Report Center
+            </button>
           </div>
 
-          <!-- FILTER TOOLBAR -->
-          <div class="filter-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label class="form-label" style="margin:0; font-size:0.75rem;">From:</label>
-              <input type="date" id="report-date-from" class="form-input" style="width:140px; font-size:0.8rem;">
+          <!-- TAB 1: REPORTS DASHBOARD -->
+          <div id="rep-tab-dashboard-view">
+            <!-- 6 KPI CARDS (Desktop Reports.fxml lines 54-61) -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px;">
+              <div class="standard-kpi-card kpi-blue" style="cursor:pointer;" onclick="selectNav('view-sales-register')" title="View Sales Register">
+                <div class="metric-label">ACTIVE SALES</div>
+                <div class="metric-value" id="rep-kpi-sales">&#8377; 0.00</div>
+                <div class="metric-note" style="color:var(--cyan);">View Register &rarr;</div>
+              </div>
+              <div class="standard-kpi-card kpi-indigo" style="cursor:pointer;" onclick="selectNav('view-purchase-register')" title="View Purchase Register">
+                <div class="metric-label">ACTIVE PURCHASES</div>
+                <div class="metric-value" id="rep-kpi-purchases">&#8377; 0.00</div>
+                <div class="metric-note" style="color:var(--purple);">View Bills &rarr;</div>
+              </div>
+              <div class="standard-kpi-card kpi-green">
+                <div class="metric-label">GROSS PROFIT</div>
+                <div class="metric-value" id="rep-kpi-profit">&#8377; 0.00</div>
+                <div class="metric-note" style="color:var(--green);">Margin Revenue</div>
+              </div>
+              <div class="standard-kpi-card kpi-orange" style="cursor:pointer;" onclick="selectNav('view-reminders')" title="View Debtors & Reminders">
+                <div class="metric-label">RECEIVABLES</div>
+                <div class="metric-value" id="rep-kpi-receivables">&#8377; 0.00</div>
+                <div class="metric-note" style="color:var(--yellow);">Pending Debtors &rarr;</div>
+              </div>
+              <div class="standard-kpi-card kpi-teal" style="cursor:pointer;" onclick="selectNav('view-item-master')" title="View Inventory">
+                <div class="metric-label">STOCK VALUE</div>
+                <div class="metric-value" id="rep-kpi-stock">&#8377; 0.00</div>
+                <div class="metric-note" id="rep-kpi-low-stock" style="color:var(--red);">0 low stock</div>
+              </div>
+              <div class="standard-kpi-card kpi-purple" style="cursor:pointer;" onclick="selectNav('view-customers')" title="View Customers">
+                <div class="metric-label">CUSTOMERS</div>
+                <div class="metric-value" id="rep-kpi-customers">0</div>
+                <div class="metric-note">Active Clients &rarr;</div>
+              </div>
             </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label class="form-label" style="margin:0; font-size:0.75rem;">To:</label>
-              <input type="date" id="report-date-to" class="form-input" style="width:140px; font-size:0.8rem;">
+
+            <!-- PRIMARY ROW: RECENT SALES, RECENT PURCHASES & PAYMENT SNAPSHOT -->
+            <div style="display:grid; grid-template-columns: 2fr 2fr 1fr; gap:12px; margin-bottom:14px;">
+              <!-- Recent Sales -->
+              <div class="data-panel" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">&#128722; Recent Sales Invoices</h4>
+                  <button class="btn btn-secondary btn-sm" onclick="selectNav('view-sales-register')" style="font-size:0.72rem; padding:2px 8px;">View All</button>
+                </div>
+                <table class="data-table" style="font-size:0.78rem;">
+                  <thead>
+                    <tr><th>Invoice</th><th>Date</th><th>Customer</th><th style="text-align:right;">Amount</th><th>Status</th></tr>
+                  </thead>
+                  <tbody id="rep-tbl-sales">
+                    <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-dim);">Loading sales...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Recent Purchases -->
+              <div class="data-panel" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">&#128230; Recent Purchase Bills</h4>
+                  <button class="btn btn-secondary btn-sm" onclick="selectNav('view-purchase-register')" style="font-size:0.72rem; padding:2px 8px;">View All</button>
+                </div>
+                <table class="data-table" style="font-size:0.78rem;">
+                  <thead>
+                    <tr><th>Bill No.</th><th>Date</th><th>Supplier</th><th style="text-align:right;">Amount</th><th>Status</th></tr>
+                  </thead>
+                  <tbody id="rep-tbl-purchases">
+                    <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-dim);">Loading purchases...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Payment Snapshot -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--text-main);">&#128179; Payment Snapshot</h4>
+                <div id="rep-payment-snapshot" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim); padding:10px 0;">Loading payment summary...</div>
+                </div>
+              </div>
             </div>
-            <input type="text" id="report-search-input" class="form-input" placeholder="Search by customer, invoice #, item code..." style="flex:1;">
-            <button class="btn btn-primary" onclick="window.ReportsController.runCurrentReport()">&#9654; Run Report</button>
+
+            <!-- INSIGHT ROW: TOP CUSTOMERS, TOP ITEMS & BUSINESS HEALTH -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <!-- Top Customers -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--cyan);">&#128101; Top Customers</h4>
+                <div id="rep-top-customers" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim);">Loading customer ranking...</div>
+                </div>
+              </div>
+
+              <!-- Top Items -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--yellow);">&#127991;&#65039; Top Selling Items</h4>
+                <div id="rep-top-items" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim);">Loading item ranking...</div>
+                </div>
+              </div>
+
+              <!-- Business Health -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 8px 0; font-size:0.92rem; font-weight:700; color:var(--green);">&#9879;&#65039; Business Health</h4>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.78rem;">
+                  <span>Gross Margin</span>
+                  <span id="rep-margin-val" style="font-weight:700; color:var(--green);">0.00%</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.06); height:8px; border-radius:4px; overflow:hidden; margin-bottom:10px;">
+                  <div id="rep-margin-bar" style="background:var(--green); height:100%; width:0%; transition:width 0.4s ease;"></div>
+                </div>
+                <div id="rep-stock-attention" style="font-size:0.78rem; color:var(--text-muted);">
+                  Monitoring inventory movement and financial ratios.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- DYNAMIC REPORT DATA TABLE -->
-          <div class="data-panel" style="overflow-x:auto;">
-            <table class="data-table">
-              <thead id="report-table-thead">
-                <tr><th>Column</th></tr>
-              </thead>
-              <tbody id="report-table-tbody">
-                <tr><td style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading report...</td></tr>
-              </tbody>
-              <tfoot id="report-table-tfoot"></tfoot>
-            </table>
+          <!-- TAB 2: REPORT CENTER (Catalog & Custom Execution) -->
+          <div id="rep-tab-center-view" style="display:none;">
+            <!-- REPORT CATALOG PILLS -->
+            <div id="report-definitions-pills" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:14px;">
+              <!-- Generated dynamically by ReportsController.js -->
+            </div>
+
+            <!-- FILTER TOOLBAR -->
+            <div class="filter-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label class="form-label" style="margin:0; font-size:0.75rem;">From:</label>
+                <input type="date" id="report-date-from" class="form-input" style="width:140px; font-size:0.8rem;">
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label class="form-label" style="margin:0; font-size:0.75rem;">To:</label>
+                <input type="date" id="report-date-to" class="form-input" style="width:140px; font-size:0.8rem;">
+              </div>
+              <input type="text" id="report-search-input" class="form-input" placeholder="Search by customer, invoice #, item code..." style="flex:1;">
+              <button class="btn btn-primary" onclick="window.ReportsController.runCurrentReport()">&#9654; Run Report</button>
+            </div>
+
+            <!-- DYNAMIC REPORT DATA TABLE -->
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead id="report-table-thead">
+                  <tr><th>Column</th></tr>
+                </thead>
+                <tbody id="report-table-tbody">
+                  <tr><td style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading report...</td></tr>
+                </tbody>
+                <tfoot id="report-table-tfoot"></tfoot>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -6039,36 +6169,37 @@
                 <span style="font-size:1.6rem;">&#9200;</span>
                 <div>
                   <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Reminder Center &amp; Debtors Collection</h1>
-                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Automated payment follow-ups, overdue debtor collections, and customer communication triggers</p>
+                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Database-backed reminder inbox with CRUD, completion and snooze workflows</p>
                 </div>
               </div>
             </div>
-            <div class="view-actions">
+            <div class="view-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.ReminderCenterController.refresh()">&#8634; Refresh</button>
               <button class="btn btn-primary" onclick="window.ReminderCenterController.sendBatchReminders()">&#9889; Send Batch Reminders to Overdue</button>
             </div>
           </div>
 
-          <!-- 4 REMINDER KPIS -->
+          <!-- 4 REMINDER KPIS (Desktop ReminderCenter.fxml lines 27-87 Parity) -->
           <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div class="metric-label">OPEN REMINDERS</div>
+              <div id="rc-kpi-open" class="metric-value">0</div>
+              <div class="metric-note">Active items requiring attention</div>
+            </div>
             <div class="standard-kpi-card kpi-red">
-              <div class="metric-label">OVERDUE RECEIVABLES</div>
-              <div id="rc-kpi-overdue-amt" class="metric-value">&#8377; 0.00</div>
-              <div class="metric-note">Total uncollected bills</div>
-            </div>
-            <div class="standard-kpi-card kpi-orange">
-              <div class="metric-label">OVERDUE ACCOUNTS</div>
-              <div id="rc-kpi-overdue-accounts" class="metric-value">0</div>
-              <div class="metric-note">Debtor accounts with overdue bills</div>
-            </div>
-            <div class="standard-kpi-card kpi-purple">
-              <div class="metric-label">HIGH RISK (>60 DAYS)</div>
-              <div id="rc-kpi-high-risk" class="metric-value">0</div>
-              <div class="metric-note">Urgent intervention required</div>
+              <div class="metric-label">OVERDUE</div>
+              <div id="rc-kpi-overdue" class="metric-value">0</div>
+              <div class="metric-note">Past due and still incomplete</div>
             </div>
             <div class="standard-kpi-card kpi-green">
-              <div class="metric-label">REMINDERS SENT TODAY</div>
-              <div id="rc-kpi-sent-today" class="metric-value">0</div>
-              <div class="metric-note">Dispatched via WhatsApp &amp; Email</div>
+              <div class="metric-label">DUE TODAY</div>
+              <div id="rc-kpi-due-today" class="metric-value">0</div>
+              <div class="metric-note">Scheduled for the current day</div>
+            </div>
+            <div class="standard-kpi-card kpi-orange">
+              <div class="metric-label">NEXT 7 DAYS</div>
+              <div id="rc-kpi-upcoming" class="metric-value">0</div>
+              <div class="metric-note">Upcoming workload at a glance</div>
             </div>
           </div>
 
@@ -10477,8 +10608,8 @@ Phone: +91 98250 12345 | Web: www.jasviindustries.in</textarea>
           <input type="text" id="m-lookup-category" class="form-input" disabled style="background: rgba(0,0,0,0.2);">
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
-          <label class="form-label">Lookup Code * (Unique Key)</label>
-          <input type="text" id="m-lookup-code" class="form-input" placeholder="e.g. NET30" required>
+          <label class="form-label">Lookup Code * (Auto-Generated)</label>
+          <input type="text" id="m-lookup-code" class="form-input" placeholder="Auto-generated code" readonly style="background: rgba(0,0,0,0.2); cursor: not-allowed;">
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Lookup Display Value *</label>

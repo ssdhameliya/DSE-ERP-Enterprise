@@ -380,7 +380,7 @@ window.UserAccessController = (function() {
       tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-dim);"><div class="spinner"></div> Loading permissions matrix...</td></tr>`;
 
       try {
-        const res = await window.ReportService.getPermissions();
+        const res = await window.ReportService.getPermissions('ADMIN');
         let list = [];
         if (res && res.permissions) list = res.permissions;
         else if (Array.isArray(res)) list = res;

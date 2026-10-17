@@ -234,7 +234,41 @@ window.QuotationController = (function() {
       if (m !== targetMenu) m.style.display = 'none';
     });
     if (targetMenu) {
-      targetMenu.style.display = targetMenu.style.display === 'block' ? 'none' : 'block';
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event?.currentTarget || event?.target;
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 200;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+
+          const menuHeight = targetMenu.offsetHeight || 260;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top;
+          if (spaceBelow < menuHeight && rect.top > menuHeight) {
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = rect.bottom + 4;
+          }
+
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
     }
   }
 

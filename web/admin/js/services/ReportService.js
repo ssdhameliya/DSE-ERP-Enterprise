@@ -99,8 +99,8 @@ window.ReportService = {
   async saveRole(rolePayload) {
     return await window.ApiService.post('/api/admin/roles', rolePayload);
   },
-  async getPermissions() {
-    return await window.ApiService.get('/api/admin/permissions');
+  async getPermissions(role = 'ADMIN') {
+    return await window.ApiService.get(`/api/admin/permissions?role=${encodeURIComponent(role || 'ADMIN')}`);
   },
   async savePermissions(permissionPayload) {
     return await window.ApiService.put('/api/admin/permissions', permissionPayload);
