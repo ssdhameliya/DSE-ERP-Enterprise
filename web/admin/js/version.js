@@ -3,13 +3,13 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  desktopVersion: "10.0.33",
-  webBuild: 12,
-  webVersion: "10.0.33.12",
-  tag: "web-v10.0.33.12",
-  releaseDate: "2026-10-17T20:10:00+05:30",
+  desktopVersion: "10.0.34",
+  webBuild: 1,
+  webVersion: "10.0.34.01",
+  tag: "web-v10.0.34.01",
+  releaseDate: "2026-10-17T22:20:00+05:30",
   environment: "UAT",
-  summary: "100% Desktop Parity Studio - 11 Core Audit Issues Fixed across 5 Roadmap Phases"
+  summary: "10.0.34 Enterprise Release - Master Lookup Authority, Credit/Debit Note Autocomplete & Date/Time Normalization"
 };
 
 // Automatic UI Version Injection

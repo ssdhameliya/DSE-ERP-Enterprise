@@ -38,7 +38,24 @@ window.SettingsController = (function() {
 
   function setVal(id, v) {
     const el = document.getElementById(id);
-    if (el) el.value = v != null ? v : '';
+    if (!el) return;
+    const str = v != null ? String(v) : '';
+    if (el.tagName === 'SELECT') {
+      let found = false;
+      for (let i = 0; i < el.options.length; i++) {
+        if (el.options[i].value === str) {
+          found = true;
+          break;
+        }
+      }
+      if (!found && str) {
+        const opt = document.createElement('option');
+        opt.value = str;
+        opt.textContent = str;
+        el.appendChild(opt);
+      }
+    }
+    el.value = str;
   }
 
   function chk(id) {
@@ -185,52 +202,47 @@ window.SettingsController = (function() {
     // ==========================================
     // 0. MASTER LOOKUPS PRE-LOADER
     // ==========================================
+    populateSelect(elId, result, defaultOpts) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      const currentVal = el.value;
+      let items = [];
+      if (result && result.status === 'fulfilled' && Array.isArray(result.value) && result.value.length > 0) {
+        items = result.value.map(item => {
+          const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
+          const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
+          return { code, label };
+        });
+      } else if (defaultOpts && defaultOpts.length > 0) {
+        items = defaultOpts.map(opt => typeof opt === 'string' ? { code: opt, label: opt } : opt);
+      }
+      if (items.length > 0) {
+        el.innerHTML = items.map(i => `<option value="${i.code}">${i.label}</option>`).join('');
+        if (currentVal && items.some(i => i.code === currentVal)) {
+          el.value = currentVal;
+        }
+      }
+    },
+
     async loadMasterLookups() {
       try {
-        const [accountTypes, businessTypes, industries] = await Promise.allSettled([
+        const [accountTypes, businessTypes, industries, currencies, timezones, dateFormats, timeFormats] = await Promise.allSettled([
           window.ApiService.get('/api/master/lookups/category/ACCOUNT_TYPE'),
           window.ApiService.get('/api/master/lookups/category/BUSINESS_TYPE'),
-          window.ApiService.get('/api/master/lookups/category/INDUSTRY')
+          window.ApiService.get('/api/master/lookups/category/INDUSTRY'),
+          window.ApiService.get('/api/master/lookups/category/CURRENCY'),
+          window.ApiService.get('/api/master/lookups/category/TIME_ZONE'),
+          window.ApiService.get('/api/master/lookups/category/DATE_FORMAT'),
+          window.ApiService.get('/api/master/lookups/category/TIME_FORMAT')
         ]);
 
-        if (accountTypes.status === 'fulfilled' && Array.isArray(accountTypes.value) && accountTypes.value.length > 0) {
-          const el = document.getElementById('setting-account-type');
-          if (el) {
-            const currentVal = el.value;
-            el.innerHTML = accountTypes.value.map(item => {
-              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
-              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
-              return `<option value="${code}">${label}</option>`;
-            }).join('');
-            if (currentVal) el.value = currentVal;
-          }
-        }
-
-        if (businessTypes.status === 'fulfilled' && Array.isArray(businessTypes.value) && businessTypes.value.length > 0) {
-          const el = document.getElementById('setting-business-type');
-          if (el) {
-            const currentVal = el.value;
-            el.innerHTML = businessTypes.value.map(item => {
-              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
-              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
-              return `<option value="${code}">${label}</option>`;
-            }).join('');
-            if (currentVal) el.value = currentVal;
-          }
-        }
-
-        if (industries.status === 'fulfilled' && Array.isArray(industries.value) && industries.value.length > 0) {
-          const el = document.getElementById('setting-industry');
-          if (el) {
-            const currentVal = el.value;
-            el.innerHTML = industries.value.map(item => {
-              const code = typeof item === 'string' ? item : (item.lookupValue || item.code);
-              const label = typeof item === 'string' ? item : (item.displayName || item.lookupValue || item.code);
-              return `<option value="${code}">${label}</option>`;
-            }).join('');
-            if (currentVal) el.value = currentVal;
-          }
-        }
+        this.populateSelect('setting-account-type', accountTypes, null);
+        this.populateSelect('setting-business-type', businessTypes, ["Proprietorship","Partnership","Private Limited Company","Public Limited Company","Limited Liability Partnership","Trust","Society","Other"]);
+        this.populateSelect('setting-industry', industries, ["Manufacturing","Trading","Retail","Wholesale","Construction","Engineering","Textile","Automotive","Information Technology","Professional Services","Logistics","Healthcare","Food & Beverage","Other"]);
+        this.populateSelect('setting-currency', currencies, ["INR - Indian Rupee","USD - US Dollar","EUR - Euro","GBP - British Pound","AED - UAE Dirham"]);
+        this.populateSelect('setting-timezone', timezones, ["Asia/Kolkata","Asia/Dubai","Europe/London","America/New_York","America/Los_Angeles","UTC"]);
+        this.populateSelect('setting-date-format', dateFormats, ["dd/MM/yyyy","dd-MM-yyyy","yyyy-MM-dd","MM/dd/yyyy","dd MMM yyyy"]);
+        this.populateSelect('setting-time-format', timeFormats, ["hh:mm a","hh:mm:ss a","HH:mm","HH:mm:ss"]);
         lookupsLoaded = true;
       } catch (err) {
         console.warn('[SettingsController] Lookup loading warning:', err);
@@ -412,10 +424,15 @@ window.SettingsController = (function() {
           try { profile = await window.ReportService.getProfile(); } catch (err) {}
         }
 
+        const rawDateFmt = serverSettings['company.dateFormat'] || (profile && profile.dateFormat) || 'dd/MM/yyyy';
+        const rawTimeFmt = serverSettings['company.timeFormat'] || 'hh:mm a';
+        const normDateFmt = window.FormatUtil ? window.FormatUtil.normalizeDateFormat(rawDateFmt) : rawDateFmt;
+        const normTimeFmt = window.FormatUtil ? window.FormatUtil.normalizeTimeFormat(rawTimeFmt) : rawTimeFmt;
+
         setVal('setting-currency', serverSettings['company.currency'] || (profile && profile.currency) || 'INR (₹)');
         setVal('setting-timezone', serverSettings['company.timeZone'] || (profile && profile.timezone) || 'Asia/Kolkata (IST)');
-        setVal('setting-date-format', serverSettings['company.dateFormat'] || (profile && profile.dateFormat) || 'DD-MM-YYYY');
-        setVal('setting-time-format', serverSettings['company.timeFormat'] || '12-hour');
+        setVal('setting-date-format', normDateFmt);
+        setVal('setting-time-format', normTimeFmt);
         setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged after 30 days.\n3. Subject to Morbi jurisdiction only.');
       } catch (err) {
         console.error('[SettingsController] Failed to load invoice settings:', err);
@@ -424,16 +441,25 @@ window.SettingsController = (function() {
 
     async saveInvoiceSettings(e) {
       if (e) e.preventDefault();
+      const rawDate = val('setting-date-format');
+      const rawTime = val('setting-time-format');
+      const normDate = window.FormatUtil ? window.FormatUtil.normalizeDateFormat(rawDate) : rawDate;
+      const normTime = window.FormatUtil ? window.FormatUtil.normalizeTimeFormat(rawTime) : rawTime;
+      const tzVal = val('setting-timezone');
+
       const values = {
         'company.currency': val('setting-currency'),
-        'company.timeZone': val('setting-timezone'),
-        'company.dateFormat': val('setting-date-format'),
-        'company.timeFormat': val('setting-time-format'),
+        'company.timeZone': tzVal,
+        'company.dateFormat': normDate,
+        'company.timeFormat': normTime,
         'company.terms': val('setting-invoice-terms').trim()
       };
 
       try {
         await window.ApiService.put('/api/support/settings', { values });
+        if (window.FormatUtil) {
+          window.FormatUtil.setBusinessPolicy(normDate, normTime, tzVal);
+        }
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast('Invoice regional parameters and legal terms saved to server!', 'success');
       } catch (err) {

@@ -1,16 +1,16 @@
 {
-  "desktopVersion": "10.0.33",
-  "webBuild": 12,
-  "webVersion": "10.0.33.12",
-  "tag": "web-v10.0.33.12",
-  "releaseDate": "2026-10-17T20:10:00+05:30",
+  "desktopVersion": "10.0.34",
+  "webBuild": 1,
+  "webVersion": "10.0.34.01",
+  "tag": "web-v10.0.34.01",
+  "releaseDate": "2026-10-17T22:20:00+05:30",
   "environment": "UAT",
-  "summary": "100% Desktop Parity Studio - 11 Core Audit Issues Fixed across 5 Roadmap Phases",
+  "summary": "10.0.34 Enterprise Release - Master Lookup Authority, Credit/Debit Note Autocomplete & Date/Time Normalization",
   "highlights": [
-    "Phase 1: TableUiEnhancer event guard, ApiService token resolution & authenticated downloadFile, Sales & Purchase drawer single-click toggle",
-    "Phase 2: OperationsService dynamic quotation lookup, Quotation row action styling, authenticated Excel download, Returns party ID cross-resolution & DOM row in-place mutation",
-    "Phase 3: MasterService ValuesResponse unwrapping (mock poisoning fix), authenticated Item Master export, Master Data modal containment & top toolbar parity",
-    "Phase 4: Full Finance module with server pagination, dynamic KPIs, Bank/Expense 2-column modal & inline controls; Import Studio 8 modules and Step 4 two-tab review with preflight dry-run",
-    "Phase 5: Settings Studio NotificationPreferences record alignment, pure enterprise branding uploaders, and security activity telemetry card"
+    "1. Flyway migration V10_0_34_1: Seeded Master Categories for Business Type, Industry, Currency, Timezone, Date & Time Formats, and Credit/Debit Note reasons into database lookup_master",
+    "2. Desktop & Web Settings: Replaced hardcoded dropdown lists with live Master Lookup queries with seamless fallback defaults and value preservation",
+    "3. Credit Note & Debit Note: Searchable Customer & Supplier autocomplete via PartySearchUi, cascading invoice/bill selection with auto-fill taxable totals, and Master Lookup GST rate & reasons",
+    "4. Date & Time / Timestamp: System-wide date/time normalization across headers, footers, status clocks, and PDF rendering using company.dateFormat and company.timeFormat",
+    "5. Quotations: Async background PDF/Excel generator and direct Save-PDF-To dialog with error isolation"
   ]
 }
