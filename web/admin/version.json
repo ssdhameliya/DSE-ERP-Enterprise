@@ -1,0 +1,16 @@
+{
+  "desktopVersion": "10.0.33",
+  "webBuild": 12,
+  "webVersion": "10.0.33.12",
+  "tag": "web-v10.0.33.12",
+  "releaseDate": "2026-10-17T20:10:00+05:30",
+  "environment": "UAT",
+  "summary": "100% Desktop Parity Studio - 11 Core Audit Issues Fixed across 5 Roadmap Phases",
+  "highlights": [
+    "Phase 1: TableUiEnhancer event guard, ApiService token resolution & authenticated downloadFile, Sales & Purchase drawer single-click toggle",
+    "Phase 2: OperationsService dynamic quotation lookup, Quotation row action styling, authenticated Excel download, Returns party ID cross-resolution & DOM row in-place mutation",
+    "Phase 3: MasterService ValuesResponse unwrapping (mock poisoning fix), authenticated Item Master export, Master Data modal containment & top toolbar parity",
+    "Phase 4: Full Finance module with server pagination, dynamic KPIs, Bank/Expense 2-column modal & inline controls; Import Studio 8 modules and Step 4 two-tab review with preflight dry-run",
+    "Phase 5: Settings Studio NotificationPreferences record alignment, pure enterprise branding uploaders, and security activity telemetry card"
+  ]
+}

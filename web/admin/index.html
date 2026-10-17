@@ -170,7 +170,8 @@
         <div class="auth-brand-subtitle">Business Management Suite</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Industries</div>
         <div>
-          <span class="auth-brand-version-badge">Version 10.0.33.12</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.33.12</span>
+          <div id="auth-desktop-baseline" style="font-size: 0.68rem; color: #94a3b8; margin-top: 4px; font-weight: 500;">Desktop Baseline: v10.0.33</div>
         </div>
       </div>
 
@@ -420,6 +421,7 @@
           <div class="brand-title">JASVI <span>INDUSTRIES</span></div>
         </div>
         <span id="env-badge" class="env-tag uat">UAT STAGING</span>
+        <span id="header-app-version-badge" class="env-tag" style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.3); font-weight: 600;" title="Web Studio Build 10.0.33.12">v10.0.33.12</span>
         <div style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title" style="font-size: 0.95rem; font-weight: 700; font-family: 'Space Grotesk'; color: var(--text-main);">Dashboard</div>
           <div id="header-breadcrumb" style="font-size: 0.72rem; color: var(--text-muted);">Executive Command Center</div>
@@ -514,6 +516,7 @@
             <div class="profile-menu-item logout" onclick="performLogout()">
               <span class="item-icon">&#128682;</span> <span>Sign Out</span>
             </div>
+            <div id="menu-version-footer" style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);"><span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.33.12</span></div>
           </div>
         </div>
       </div>
@@ -10741,6 +10744,9 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
 
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
+  <!-- 0. Centralized Runtime Version Registry -->
+  <script src="js/version.js?v=10.0.33.12"></script>
+
   <!-- 1. Utilities matching org.example.util -->
   <script src="js/util/FormatUtil.js?v=10.0.33.12"></script>
   <script src="js/util/AmountInWordsConverter.js?v=10.0.33.12"></script>
