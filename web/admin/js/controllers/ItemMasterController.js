@@ -1063,7 +1063,16 @@ window.ItemMasterController = (function() {
     drawerStockHistory,
     drawerEditFromInv,
 
-    exportItems() { window.open('/api/master/items/export/excel', '_blank'); },
+    async exportItems() {
+      try {
+        await window.ApiService.downloadFile('/api/master/items/export/excel', `Item_Master_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      } catch (err) {
+        console.error('Failed to export items:', err);
+        if (window.Toast && window.Toast.error) window.Toast.error('Export Failed', err.message || 'Could not export items');
+        else if (window.AppDialogService && window.AppDialogService.toastError) window.AppDialogService.toastError('Export Failed: ' + (err.message || 'Could not export items'));
+        else alert('Export Failed: ' + (err.message || 'Could not export items'));
+      }
+    },
     importItems() { if (window.NavigationRouter) window.NavigationRouter.selectNav('view-import'); }
   };
 })();

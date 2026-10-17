@@ -69,6 +69,26 @@ window.ImportController = (function() {
       { key: 'Lookup Value', label: 'Lookup Display Value', required: true },
       { key: 'Lookup Code', label: 'Internal Code / Key', required: false },
       { key: 'Description', label: 'Description', required: false }
+    ],
+    'Purchase Recon': [
+      { key: 'Invoice No', label: 'Supplier Invoice / Bill #', required: true },
+      { key: 'Invoice Date', label: 'Invoice Date (YYYY-MM-DD)', required: true },
+      { key: 'Supplier Name', label: 'Supplier / Vendor Trade Name', required: true },
+      { key: 'GSTIN', label: 'Supplier GSTIN (15 Digits)', required: true },
+      { key: 'Taxable Amount', label: 'Taxable Value (₹)', required: true },
+      { key: 'IGST Amount', label: 'Integrated GST (₹)', required: false },
+      { key: 'CGST Amount', label: 'Central GST (₹)', required: false },
+      { key: 'SGST Amount', label: 'State GST (₹)', required: false },
+      { key: 'Total Amount', label: 'Total Invoice Value (₹)', required: true }
+    ],
+    'Bank Statement': [
+      { key: 'Txn Date', label: 'Transaction Date (YYYY-MM-DD)', required: true },
+      { key: 'Value Date', label: 'Value / Clearance Date', required: false },
+      { key: 'Description', label: 'Narration / Description', required: true },
+      { key: 'Ref / Cheque No', label: 'Cheque / Reference / UTR #', required: false },
+      { key: 'Debit', label: 'Withdrawal / Debit Amount (₹)', required: false },
+      { key: 'Credit', label: 'Deposit / Credit Amount (₹)', required: false },
+      { key: 'Balance', label: 'Running Account Balance (₹)', required: false }
     ]
   };
 
@@ -193,6 +213,32 @@ window.ImportController = (function() {
       columnMapping[targetKey] = fileHeader;
     },
 
+    activeReviewTab: 'preview',
+    dryRunEnabled: false,
+    validationResults: [],
+
+    toggleDryRun(checked) {
+      this.dryRunEnabled = checked;
+      const btn = document.getElementById('btn-execute-import');
+      if (btn) {
+        btn.innerText = checked ? 'Validate Dataset (Dry Run)' : `✓ Execute Import (${parsedData.rows.length} Records)`;
+      }
+    },
+
+    switchReviewTab(tab) {
+      this.activeReviewTab = tab;
+      const tabPreview = document.getElementById('tab-import-preview');
+      const tabValid = document.getElementById('tab-import-validation');
+      const panePreview = document.getElementById('pane-import-preview');
+      const paneValid = document.getElementById('pane-import-validation');
+
+      if (tabPreview) tabPreview.className = tab === 'preview' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+      if (tabValid) tabValid.className = tab === 'validation' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+
+      if (panePreview) panePreview.style.display = tab === 'preview' ? 'block' : 'none';
+      if (paneValid) paneValid.style.display = tab === 'validation' ? 'block' : 'none';
+    },
+
     proceedToValidation() {
       const targetFields = MODULE_FIELDS[selectedModule] || [];
       const missingRequired = targetFields.filter(f => f.required && !columnMapping[f.key]);
@@ -202,19 +248,14 @@ window.ImportController = (function() {
       }
 
       this.renderPreviewTable();
+      this.validateDataset();
+      this.switchReviewTab('preview');
       this.goToStep(4);
     },
 
     renderPreviewTable() {
-      const summaryTotal = document.getElementById('lbl-import-total-count');
-      const summaryValid = document.getElementById('lbl-import-valid-count');
-      const summaryInvalid = document.getElementById('lbl-import-invalid-count');
       const thead = document.getElementById('import-preview-thead');
       const tbody = document.getElementById('import-preview-tbody');
-
-      if (summaryTotal) summaryTotal.innerText = parsedData.rows.length;
-      if (summaryValid) summaryValid.innerText = parsedData.rows.length;
-      if (summaryInvalid) summaryInvalid.innerText = '0';
 
       const targetFields = MODULE_FIELDS[selectedModule] || [];
       if (thead) {
@@ -231,7 +272,7 @@ window.ImportController = (function() {
           return `
             <tr>
               <td style="text-align:center; color:var(--text-dim);">${idx + 1}</td>
-              <td style="text-align:center;"><span class="badge badge-paid">VALID</span></td>
+              <td style="text-align:center;"><span class="badge badge-paid">READY</span></td>
               ${targetFields.map(f => {
                 const header = columnMapping[f.key];
                 const colIdx = parsedData.headers.indexOf(header);
@@ -244,7 +285,81 @@ window.ImportController = (function() {
       }
     },
 
+    validateDataset() {
+      const targetFields = MODULE_FIELDS[selectedModule] || [];
+      const results = [];
+      let validCount = 0;
+      let errorCount = 0;
+
+      parsedData.rows.forEach((row, rowIdx) => {
+        const rowNum = rowIdx + 1;
+        const rowErrors = [];
+
+        targetFields.forEach(f => {
+          const header = columnMapping[f.key];
+          const colIdx = parsedData.headers.indexOf(header);
+          const val = (colIdx >= 0 ? (row[colIdx] || '') : '').trim();
+
+          if (f.required && !val) {
+            rowErrors.push({ row: rowNum, field: f.key, type: 'ERROR', message: `Required field "${f.label}" is missing or empty.` });
+          } else if (val) {
+            const keyLower = f.key.toLowerCase();
+            if (keyLower.includes('rate') || keyLower.includes('price') || keyLower.includes('amount') || keyLower.includes('stock') || keyLower.includes('qty') || f.key === 'Debit' || f.key === 'Credit') {
+              const num = parseFloat(val.replace(/,/g, ''));
+              if (isNaN(num)) {
+                rowErrors.push({ row: rowNum, field: f.key, type: 'ERROR', message: `Field "${f.label}" expected number, found "${val}".` });
+              }
+            }
+          }
+        });
+
+        if (rowErrors.length > 0) {
+          errorCount++;
+          results.push(...rowErrors);
+        } else {
+          validCount++;
+        }
+      });
+
+      this.validationResults = results;
+      const summaryTotal = document.getElementById('lbl-import-total-count');
+      const summaryValid = document.getElementById('lbl-import-valid-count');
+      const summaryInvalid = document.getElementById('lbl-import-invalid-count');
+
+      if (summaryTotal) summaryTotal.innerText = parsedData.rows.length;
+      if (summaryValid) summaryValid.innerText = validCount;
+      if (summaryInvalid) summaryInvalid.innerText = errorCount;
+
+      const validTbody = document.getElementById('import-validation-tbody');
+      if (validTbody) {
+        if (results.length === 0) {
+          validTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--accent-green); font-weight:600;">✓ All ${parsedData.rows.length} records passed validation! No schema or constraint errors found.</td></tr>`;
+        } else {
+          validTbody.innerHTML = results.slice(0, 50).map(r => `
+            <tr>
+              <td style="text-align:center; font-weight:700;">Row ${r.row}</td>
+              <td style="text-align:center;"><span class="badge badge-unpaid">${r.type}</span></td>
+              <td style="font-family:monospace; color:var(--cyan); font-weight:600;">${r.field}</td>
+              <td style="color:var(--text-main); font-size:0.8rem;">${r.message}</td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      return { validCount, errorCount, total: parsedData.rows.length };
+    },
+
     async runImport() {
+      if (this.dryRunEnabled) {
+        const stats = this.validateDataset();
+        this.switchReviewTab('validation');
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) {
+          window.AppDialogService.toastInfo(`Dry Run Finished: ${stats.validCount} valid, ${stats.errorCount} errors. Uncheck "Validate only" to ingest.`);
+        }
+        return;
+      }
+
       const btn = document.getElementById('btn-execute-import');
       if (btn) {
         btn.setAttribute('disabled', 'true');

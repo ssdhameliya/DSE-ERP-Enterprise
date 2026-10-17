@@ -158,12 +158,14 @@ window.MasterService = (function() {
         if (cached) return cached;
       }
       const data = await window.ApiService.get(`/api/master/lookups/values?type=${encodeURIComponent(type)}`);
-      setCached(cacheKey, data);
-      return data;
+      const unwrapped = (data && Array.isArray(data.values)) ? data.values : (Array.isArray(data) ? data : []);
+      setCached(cacheKey, unwrapped);
+      return unwrapped;
     },
 
     async getLookupValuesByCategoryCode(categoryCode) {
-      return await window.ApiService.get(`/api/master/lookups/values-by-category-code?code=${encodeURIComponent(categoryCode)}`);
+      const res = await window.ApiService.get(`/api/master/lookups/values-by-category-code?code=${encodeURIComponent(categoryCode)}`);
+      return (res && Array.isArray(res.values)) ? res.values : (Array.isArray(res) ? res : []);
     },
 
     async saveLookup(lookupDto) {

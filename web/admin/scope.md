@@ -1,315 +1,452 @@
-# DSE ERP SETTINGS STUDIO: FULL IMPLEMENTATION & SYNCHRONIZATION SCOPE
+# DSE ERP WEB APPLICATION — COMPREHENSIVE INVESTIGATION & PARITY SCOPE
+## Complete End-to-End Analysis: Desktop JavaFX Baseline vs. Web Studio Runtime
 
 > **Target Baseline**: Desktop ERP `DSE-ERP-10.0.25` (`c:\Users\JATIN DHAMELIYA\Downloads\DSE-ERP-10.0.25-INTELLIJ-READY-FINAL-V19\DSE-ERP-10.0.25`)  
-> **Working Directory (Web)**: `d:\ERP Website\admin`  
+> **Web Working Directory**: `d:\ERP Website\admin`  
 > **Release Staging (Web)**: `D:\GitHub\ReleaseSource Website\admin`  
 > **Repository Target (Web)**: `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`)  
 > **Repository Target (Desktop/Server)**: `D:\GitHub\DSE-ERP-Primary` (`ssdhameliya/DSE-ERP`)  
 > **Live UAT Runtime**: `https://erp-uat.jasviindustries.in/admin/`  
-> **Live PROD Runtime**: `https://erp.jasviindustries.in/admin/`  
-> **Date**: October 17, 2026  
+> **Investigation Date**: October 17, 2026  
+> **Status**: **INVESTIGATION & SCOPE DEFINITION ONLY — NO CODE ALTERED OR BUILT**
 
 ---
 
-## 1. Release Versions & Environment Identification
+## 1. Executive Summary
 
-| Component | Current Live Version | Target Release Version | Deployment Mechanism |
-|---|---|---|---|
-| **Desktop Application** | `v10.0.32` | `v10.0.33` | GitHub Actions &rarr; MSI/EXE/DMG installer & pre-login auto-updater gateway |
-| **Backend API Server** | `v10.0.32` | `v10.0.33` | GitHub Actions &rarr; Oracle Cloud VM (`deploy-oracle-release.sh`) |
-| **Web Application Studio**| `10.0.32` | `10.0.33.11` (Cache Tag) | Git push to `DSE-ERP-Enterprise` (`web/admin`) &rarr; Cloud Web Server |
-| **PostgreSQL Database** | Port `55432` | Schema Version 10.x | Managed PostgreSQL cluster (`dse_erp_uat` / `dse_erp`) |
+This scope document provides a definitive, end-to-end investigation of the **11 core issues** reported across the DSE ERP Web Application. Every issue has been audited directly against the source code of the Desktop application:
+- **JavaFX FXML layouts & controls** (`desktop/src/main/resources/fxml/`)
+- **Java Controllers & Event Handlers** (`desktop/src/main/java/org/example/controller/`)
+- **Desktop API Clients & Shared Services** (`org.example.api.*`, `org.example.service.*`)
+- **Spring Boot Server REST Controllers, Services & DTOs** (`server/src/main/java/org/example/server/`)
+- **Web SPA JavaScript Controllers & Markup** (`d:\ERP Website\admin\js\`, `index.html`)
+
+For each issue, this document establishes:
+1. **Desktop Baseline**: Exactly how JavaFX, FXML, and the backend server operate.
+2. **Web Failure Mechanism**: Line-by-line identification of *why* the web application fails, stutters, throws errors, or produces corrupted files.
+3. **Proposed Parity Architecture**: The concrete implementation plan to achieve exact 1:1 functional and visual alignment.
 
 ---
 
-## 2. End-to-End Build & Deployment Flow (UAT & PROD)
+## 2. Deep Dive: Issue-by-Issue Root Cause Analysis & Parity Plan
 
-```text
-                                [ Developer / Antigravity ]
-                                             │
-                      ┌──────────────────────┴──────────────────────┐
-                      ▼                                             ▼
-         [ Desktop & Server Pipeline ]                      [ Web Studio Pipeline ]
-         Repo: `ssdhameliya/DSE-ERP`                        Repo: `DSE-ERP-Enterprise`
-                      │                                             │
-                      ▼ (Tag: `v10.0.33`)                           ▼ (Commit: `web/admin`)
-         GitHub Actions: "Build Native Release"             Auto-Deployed to Web Server
-         • Compiles Spring `server.jar`                     • Static assets copied to web root
-         • Builds Windows x64 (.msi/.exe)                   • Version tag `?v=10.0.33.11`
-         • Builds macOS Apple Silicon (.dmg)                • Instant UAT access upon Ctrl+F5
-                      │
-         ┌────────────┴────────────┐
-         ▼                         ▼
-  [ UAT Environment ]       [ PROD Environment ]
-  • Oracle VM (`dse_erp_uat`) • Oracle VM (`dse_erp`)
-  • Auto-deploys via SSH    • Gated: Requires Admin Approval
-  • Verifies health         • Verifies UAT health first
-  • Auto-rollback ready     • Deploys verified JAR
-                            • Promotes Release to "Latest"
-                            • Desktop clients auto-update
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           INVESTIGATION MATRIX                              │
+├────┬─────────────────────────────┬──────────────────────────────────────────┤
+│ #  │ Issue Title                 │ Root Cause Summary                       │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 1  │ Sales Register Double Event,│ Dual listeners (inline onclick + 300ms   │
+│    │ Drawer Flicker & Bad PDF    │ TableUiEnhancer debounce) & token key bug│
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 2  │ Purchase & Quotation Side   │ Drawer markup missing desktop sections;  │
+│    │ Panel Discrepancies         │ action button styling & layout drift     │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 3  │ Purchase Register Auto-Hide │ Double click trigger: inline opens drawer│
+│    │ on Single Click             │ then 300ms debounce immediately closes it│
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 4  │ Sales Return Navigation vs  │ Action list navigates to view instead of │
+│    │ Modal & Data Loading        │ opening return item selection dialog     │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 5  │ Purchase Return Popup Broken│ Missing partyId mapping, strict paid-only│
+│    │ & Empty Line Items          │ server validation, and unhandled 500s    │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 6  │ Quotation Actions: Button   │ Secondary CSS class, unauthenticated     │
+│    │ Color, 401 Excel, SMTP & 500│ window.open(), String id passed to Long  │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 7  │ Item Master Dropdowns &     │ ValuesResponse DTO shape mismatch,       │
+│    │ 401 Export Excel Error      │ unauthenticated download URL             │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 8  │ Master Lookup Modal Clipped │ CSS modal-box overflow missing; top      │
+│    │ & Missing Toolbar Actions   │ toolbar buttons replaced by table column │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 9  │ Bank & Expense Entry UI     │ Split-screen FXML replaced with separate │
+│    │ Disparity vs Desktop        │ views; missing KPI metrics & form dialog │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 10 │ Data Import: 8 Loaders vs 6 │ Missing Purchase Recon & Bank Statement; │
+│    │ & Step 4 Validation Engine  │ missing Step 4 dry-run & validation tab  │
+├────┼─────────────────────────────┼──────────────────────────────────────────┤
+│ 11 │ Settings Studio 7 Screens   │ Missing branding uploaders, mock data    │
+│    │ Parity & Server Sync        │ fallbacks, Notification DTO type mismatch│
+└────┴─────────────────────────────┴──────────────────────────────────────────┘
 ```
 
-### Desktop & Server Deployment Detail
-1. **Repository Authority**: `ssdhameliya/DSE-ERP` is the sole deployment authority for backend and desktop builds.
-2. **UAT Auto-Deploy**:
-   - Pushing tag `v10.0.33` triggers `.github/workflows/deploy-prod.yml`.
-   - The workflow compiles the canonical server JAR and native desktop installers, uploads them to the GitHub Release, and streams the verified artifact over SSH to the UAT Oracle VM.
-   - It performs an automatic PostgreSQL snapshot before applying database migrations and verifies `/api/runtime/health`.
-3. **PROD Promotion Gate**:
-   - The same workflow run pauses before entering the protected `production` environment.
-   - Once approved by the administrator, the exact checksum-verified artifact is promoted to PROD, health-verified, and marked as `Latest`.
-4. **Desktop Updates**:
-   - Desktop apps poll the server's private gateway `/api/updates/releases/latest`.
-   - Connected desktop users receive an in-app update prompt with zero manual file transfers.
+---
 
-### Web Studio Deployment Detail
-1. **Source & Staging**: Changes are developed in `d:\ERP Website\admin`, synced to `D:\GitHub\ReleaseSource Website\admin`, and pushed to `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`).
-2. **Instant Refresh**: The web server serves static HTML/JS/CSS. Bumping asset links to `?v=10.0.33.11` forces all browsers to fetch fresh code on `Ctrl + F5`.
+### Issue 1: Sales Register Double Sound, Panel Auto-Unhide & Corrupted PDF
+
+#### A. Desktop Baseline
+- **Event Handling**: In `desktop/src/main/resources/fxml/pages/SalesList.fxml` and `SalesListController.java`, row selection is bound to a single JavaFX `TableRow.setOnMouseClicked` handler. A single primary click selects the row and triggers `RegisterDetailDrawer.showRecord(...)`. Subsequent clicks on the already-selected row close the drawer (`closeInvoiceDrawer`). There is zero debouncing timer or artificial delay.
+- **Document Rendering**: `CanonicalDocumentService.java` renders PDF output via `GET /api/documents/render?type=SALES_INVOICE&number=...&format=PDF`. The request requires `Authorization: Bearer <token>`. The server streams raw binary `application/pdf` with header `Content-Disposition: inline; filename="...pdf"`.
+
+#### B. Web Failure Mechanism
+1. **The Double Sound & Stuck Rendering**:
+   - In `d:\ERP Website\admin\js\controllers\SalesController.js` (line 419):
+     ```html
+     <tr onclick="window.SalesController.handleRowClick(...)">
+     ```
+     When clicked, `handleRowClick` runs immediately, plays `AudioSynthesizer.playNav()` (**Sound 1**), and opens the drawer.
+   - In `d:\ERP Website\admin\js\util\TableUiEnhancer.js` (lines 295–319):
+     `TableUiEnhancer` binds a second `table.addEventListener('click', ...)` listener to the entire table. It initiates a `setTimeout(..., 300)` debounce timer.
+   - At 300ms, `TableUiEnhancer` fires `triggerRowSingleClick(row, table)` &rarr; calling `SalesController.openInvoiceDrawer(id)`.
+   - `openInvoiceDrawer` plays `AudioSynthesizer.playNav()` a second time (**Sound 2**) and re-renders the drawer!
+2. **Auto-Unhide Flapping**:
+   - When the user clicks a row to *close* the drawer, the inline handler closes it.
+   - Exactly 300ms later, the debounced `TableUiEnhancer` click event fires and forcibly calls `openInvoiceDrawer()`, snapping the drawer back open!
+3. **Corrupted PDF (`QUOTATION-QT-2026-0021.pdf` or Sales PDF error)**:
+   - In `d:\ERP Website\admin\js\services\ApiService.js` (line 128):
+     ```javascript
+     const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
+     ```
+     The web app actually stores its JWT token under `dse_access_token`! As a result, `token` resolved to `null`.
+   - When fetching the PDF, the server rejected the unauthenticated request with **HTTP 401 Unauthorized**:
+     ```json
+     {"status":401,"code":"AUTH_TOKEN_MISSING","message":"Authentication required"}
+     ```
+   - In addition, if a quotation document was rendered via the canonical endpoint, `CanonicalDocumentService.java` line 186 strictly threw:
+     ```
+     IllegalArgumentException: Canonical output is currently supported for Sales Invoice and Purchase Invoice.
+     ```
+   - `ApiService.downloadDocumentPdf` took the 401/500 JSON error string, wrapped it inside a `Blob([text], {type: 'application/pdf'})`, and saved it as a `.pdf` file.
+   - When opened in Adobe Acrobat or browser reader, Acrobat displayed: *"Adobe Acrobat could not open because it is either not a supported file type or because the file has been damaged."*
+
+#### C. Proposed Parity Architecture
+1. **Unify Row Event Dispatching**: Remove redundant inline `<tr onclick>` from `SalesController.js` and designate `TableUiEnhancer.js` as the single event coordinator, or disable `TableUiEnhancer` row click interception on registers that have explicit drawer controllers.
+2. **Correct Auth Token Retrieval**: Fix `ApiService.js` to look up `dse_access_token` so all download endpoints send valid bearer credentials.
+3. **Verify HTTP Status Before Blob Download**: Update `downloadDocumentPdf` to check `response.ok`. If status is not 200, parse the JSON error body and show a toast alert rather than saving error text as a corrupted PDF file.
+4. **Quotation Canonical Support**: Ensure quotations use `/api/quotations/{id}/pdf` or update `CanonicalDocumentService.java` to support quotation rendering.
 
 ---
 
-## 3. Storage Audit & Bidirectional Server Synchronization
+### Issue 2 & 3: Purchase Register & Quotation Side Panels & Snap-Closed Bug
 
-### The Vulnerability in Existing Desktop Code
-In Desktop's `ConfigManager.java`:
-```java
-private static boolean shouldUseServerSetting(String key) {
-    if (getConfiguredDeploymentMode() != DeploymentMode.SHARED_CLIENT || key == null || org.example.api.ApiSession.token() == null) 
-        return false;
-    return key.startsWith("company.") || key.startsWith("payment.") || key.startsWith("invoice.") ...
-}
-```
-* **Problem**: In `LOCAL` or `STANDALONE` mode, Desktop writes settings **only to `config.properties` on the local hard disk**. It never pushes them to PostgreSQL!
-* **Consequence**: Web reads from PostgreSQL `application_setting`, which remains empty, causing Desktop and Web settings to diverge.
+#### A. Desktop Baseline
+- **Desktop Purchase Drawer (`PurchaseList.fxml` lines 60–104)** contains:
+  - **Header**: Document Number, Audit Trail button, Close `✕` button.
+  - **Identity**: Supplier Firm Name, Purchase Date, Bill Status badge, Supplier Bill Number.
+  - **Amount & Tax**: Net Amount, Paid Amount, Balance Due, Due Date, GST Amount, Additional Charges, GST Type (IGST/CGST+SGST), Payment Terms.
+  - **Supplier Details**: Contact Person, Phone, Email, GSTIN, Principal Billing Address, Delivery Warehouse Address.
+  - **Transport & Logistics**: Transporter Name, Vehicle Number, LR / Tracking Number, Notes, Attachment download.
+  - **Quick Action Strip**: `Send Email`, `Edit Purchase`, `Record Payment`, `View / Download Excel`, `Inward Barcode`.
+- **Desktop Quotation Drawer (`Quotations.fxml`)** contains:
+  - Quotation No., Customer Name, Quotation Date, Validity Date, Salesperson, Follow-Up Date, Stage/Status.
+  - Subtotal, Discount, GST, Grand Total.
+  - Quick Actions: `Send Email`, `Download PDF`, `Download Excel`, `Schedule Follow-Up`, `Convert to Sales Invoice`, `Duplicate Quotation`.
 
-### The Unified Server-Authoritative Solution
-1. **Desktop Fix**: Modify `ConfigManager.java` so that whenever an authenticated API session exists (`ApiSession.token() != null`), Desktop **always reads from and writes to the server database**, regardless of the deployment mode string.
-2. **Server Endpoints (Single Source of Truth for Both Desktop and Web)**:
-   - **General Business Settings**:
-     - `GET /api/support/settings/{key}` &rarr; Fetch single configuration key.
-     - `PUT /api/support/settings` &rarr; Batch upsert `SupportDtos.SettingsBatch` (`Map<String, String>`) into PostgreSQL `application_setting` table.
-   - **Corporate Email (SMTP)**:
-     - `GET /api/authority/email/settings` &rarr; Returns SMTP host, port, sending email, and configured status.
-     - `PUT /api/authority/email/settings` &rarr; Encrypts and persists SMTP credentials on server.
-     - `POST /api/authority/email/test` &rarr; Tests live SMTP delivery directly from the server.
-   - **Notification Preferences**:
-     - `GET /api/insights/notification-preferences` &rarr; Returns per-user category toggles.
-     - `PUT /api/insights/notification-preferences` &rarr; Persists notification preferences on server.
-   - **Branding & Image Assets**:
-     - `PUT /api/authority/resources/BUSINESS_ASSET/{key}` &rarr; Uploads raw binary bytes (Logo, Signature, QR, Banners).
-     - `GET /api/authority/resources/BUSINESS_ASSET/{key}` &rarr; Serves image bytes directly.
+#### B. Web Failure Mechanism
+1. **Purchase Register Auto-Hide / Snap-Closed Bug**:
+   - In `PurchaseController.js` (line 210), table rows have inline `<tr onclick="window.PurchaseController.onRowClick(this, ...)">`.
+   - `onRowClick` executes immediately, setting `selectedDrawerBillNo = invoiceNo` and adding CSS class `.open` to `#purchase-drawer`.
+   - Exactly 300ms later, `TableUiEnhancer.js` line 195 fires `triggerRowSingleClick` &rarr; calls `PurchaseController.showDetails(id)`.
+   - `showDetails` line 340 checks:
+     ```javascript
+     if (drawer.classList.contains('open') && selectedDrawerBillNo === invoiceNo) {
+       this.closePurchaseDrawer(); // SNAPS CLOSED!
+       return;
+     }
+     ```
+   - The drawer opens on initial click and is snapped shut 300ms later by the debounced enhancer, making it impossible to keep the panel open.
+2. **Side Panel Markup Drifts**:
+   - Web `PurchaseController.js` drawer omitted the Audit Trail button in the header, skipped Additional Charges, lacked the Attachment row, and substituted Quick Actions with an ad-hoc layout missing Email, Excel, and Inward Barcode.
+   - Web `QuotationController.js` drawer had mismatched field labels and was missing follow-up and conversion action shortcuts present in Desktop.
 
----
-
-## 4. Submenus Scope Separation (Desktop vs Web)
-
-| # | Submenu Title | Desktop App Status | Web App Status | Rationale |
-|---|---|---|---|---|
-| **1** | Company & Billing | **Retained** | **Retained** | Core business identity and legal tax details. |
-| **2** | Payment & Bank | **Retained** | **Retained** | Bank accounts, IFSC, UPI ID, and QR code. |
-| **3** | Invoice & Delivery | **Retained** | **Retained** | Address, GST place of supply, logo, and signature. |
-| **4** | Notifications | **Retained** | **Retained** | 16 activity categories & toast preferences. |
-| **5** | Email Settings | **Retained** | **Retained** | SMTP delivery, signature, and message templates. |
-| **6** | Security & Session | **Retained** | **Retained** | Inactivity timeout, warning, and MFA policy. |
-| **7** | Workspace & Storage | **Retained** | ❌ **Removed from Web** | Desktop-only local folder pickers & diagnostic disk cleanup. |
-| **8** | Keyboard Shortcuts | **Retained** | ❌ **Removed from Web** | Desktop-only JavaFX OS keyboard accelerator registry. |
-| **9** | Application Updates | **Retained** | ❌ **Removed from Web** | Desktop-only JAR/EXE auto-updater & GitHub release tag checker. |
-| **10**| Module Activation | **Retained** | **Retained** | GL, GST engine, 3-way match, daily briefing, serial tracking. |
-
-### Settings Dual Entry Points
-Both entry points will share the exact same DOM view and controller state:
-1. **Left-hand Sidebar Accordion (`#grp-settings`)**: Shows the 7 web submenus. Clicking any submenu opens `#view-settings` and activates that tab immediately.
-2. **Top Header User Dropdown**: Avatar click &rarr; "Settings" navigates to `#view-settings` and defaults to Section 1 (**Company & Billing**).
+#### C. Proposed Parity Architecture
+1. **Deduplicate Event Listeners**: Align `PurchaseController.js` and `QuotationController.js` event handling to eliminate the dual-invocation race condition. Prevent the drawer toggle logic from mistaking the 300ms enhancer trigger for a second user click.
+2. **Port Full Desktop Drawer Layouts**: Synchronize the HTML drawer structures in `index.html` to replicate the desktop sections: Audit Trail header, full tax breakdown, logistics details, attachment downloads, and the 5 standard quick action buttons.
 
 ---
 
-## 5. Field-by-Field Specification Across All 7 Web Screens
+### Issue 4 & 5: Sales Return & Purchase Return Loading & Navigation Failure
 
-### Screen 1: Company & Billing (`CompanySettingsPanel.fxml`)
-* **Legal Identity Controls**:
-  - `txtCompanyName` &mdash; Official Registered Business Name.
-  - `txtPhone` &mdash; Primary Contact Phone Number.
-  - `txtEmail` &mdash; Official Corporate Email Address.
-  - `txtGstin` &mdash; 15-character GSTIN (Auto-uppercased).
-  - `txtCompanyPan` &mdash; 10-character PAN (Auto-uppercased).
-  - `cmbBusinessType` &mdash; *Private Limited, Partnership, Sole Proprietorship, LLP, Public Limited*.
-  - `cmbIndustry` &mdash; *Manufacturing, Engineering & Tooling, Textile & Apparel, Wholesale & Distribution, Services*.
-  - `dpFinancialYearStart` &mdash; Financial Year Start Date (Default: `01/04`).
-* **Application Branding Controls**:
-  - `txtApplicationName` &mdash; Display Title (Mirrors Company Name by default).
-  - `txtApplicationTagline` &mdash; Subtitle Tagline.
-  - `txtApplicationStartingText` &mdash; Splash and Sign-in Welcome Message.
-* **Branding Assets (Server Resource Upload)**:
-  - Application Banner (`application.brandPath` &mdash; 1600 &times; 320 image, Upload / Preview / Remove).
-  - Application Mark (`application.markPath` &mdash; 512 &times; 512 icon, Upload / Preview / Remove).
-
-### Screen 2: Payment & Bank (`PaymentSettingsPanel.fxml`)
-* **Banking Controls**:
-  - `txtUpiId` &mdash; Corporate UPI VPA ID (e.g. `company@icici`).
-  - `txtAccountHolder` &mdash; Bank Account Holder Name.
-  - `txtBankName` &mdash; Banking Institution Name.
-  - `txtAccountNumber` &mdash; Bank Account / Overdraft Number.
-  - `txtIfsc` &mdash; 11-character IFSC Code (Auto-uppercased).
-  - `txtBranch` &mdash; Bank Branch Location.
-  - `txtBankMatchRoundingTolerance` &mdash; Reconciliation round-off tolerance (Numeric, max ₹5.00).
-* **Master Data Dynamic Lookup**:
-  - `cmbAccountType` &mdash; **Dynamically loaded from server** via `GET /api/master/lookups?type=ACCOUNT_TYPE`.
-  - Populates all user-created Master Data account types (*Savings, Current, Overdraft, Cash Credit, Escrow*).
-  - Fallback safety preserves any legacy configured value.
-* **Asset**:
-  - UPI Payment QR Code (`payment.qrImagePath` &mdash; Upload / Preview / Remove; prints dynamically on tax invoices & payment vouchers).
-
-### Screen 3: Invoice & Delivery (`InvoiceSettingsPanel.fxml`)
-* **Address & Regional Formatting**:
-  - `txtCompanyAddress` &mdash; Principal Place of Business / Registered Office.
-  - `txtShipAddress` &mdash; Default Warehouse / Dispatch Address.
-  - `cmbCompanyState` &mdash; State Name & GST State Code (Bound to GST State master codes, e.g. *24-Gujarat*).
-  - `cmbCurrency` &mdash; *INR (₹), USD ($), EUR (€), GBP (£)*.
-  - `cmbTimeZone` &mdash; *Asia/Kolkata (IST), UTC, America/New_York (EST)*.
-  - `cmbDateFormat` &mdash; *dd/MM/yyyy, yyyy-MM-dd, dd-MMM-yyyy*.
-  - `cmbTimeFormat` &mdash; *12-hour AM/PM, 24-hour*.
-  - `txtCompanyWebsite` &mdash; Official Website URL.
-  - `txtCompanyTagline` &mdash; Sub-Header Tagline.
-  - `txtInvoiceTerms` &mdash; Standard Commercial Terms & Jurisdiction Conditions.
-* **Branding Assets**:
-  - Invoice Brand Logo (`company.logoPath` &mdash; Transparent PNG logo used on all generated PDFs).
-  - Authorized Signature (`company.signaturePath` &mdash; Digital signature stamp for document sign-off).
-
-### Screen 4: Notifications (`NotificationsSettingsPanel.fxml`)
-* **Master Preferences**:
-  - `chkNotifications` &mdash; Show Application Notifications.
-  - `chkNotificationToasts` &mdash; Show Desktop / Web Toast Alerts.
-* **16 Activity Categories (Backed by `/api/insights/notification-preferences`)**:
-  - Sales & Invoices (`sales`), Purchases (`purchases`), Quotations (`quotations`), Returns (`returns`), Payments (`payments`), Inventory (`inventory`), Banking (`banking`), Reports (`reports`), Reminders (`reminders`), Communication (`communication`), Approvals (`approval`), Imports (`imports`), Backup (`backup`), Updates (`update`), System (`system`), and Security (`security` &mdash; locked checked).
-
-### Screen 5: Email Settings (`EmailSettingsPanel.fxml`)
-* **SMTP Delivery Configuration**:
-  - `txtSmtpHost` &mdash; SMTP Server Host.
-  - `txtSmtpPort` &mdash; Port (`587` TLS / `465` SSL).
-  - `txtSmtpEmail` &mdash; Authenticated Email Address.
-  - `txtSmtpPassword` &mdash; App Password (Masked with toggle).
-  - `btnTestEmail` &mdash; Sends test email verification to current user via `POST /api/authority/email/test`.
-* **Corporate Email Signature**:
-  - `txtEmailSignature` &mdash; HTML / Plaintext corporate signature block.
-* **Document Message & Email Templates**:
-  - Document Selector: *Sales Invoice, Quotation, Purchase Order, Payment Receipt, Credit Note, Debit Note, Reminder*.
-  - Subject Template & Body Template.
-  - Dynamic Tokens: `{CustomerName}`, `{DocumentNo}`, `{DocumentDate}`, `{TotalAmount}`, `{BalanceAmount}`, `{Signature}`.
-  - Live Preview & Reset to Default buttons.
-
-### Screen 6: Security & Session (`SecuritySettingsPanel.fxml`)
-* **Controls**:
-  - `txtSessionTimeoutMinutes` &mdash; Inactivity auto-logout timeout (Allowed: 5 to 120 mins).
-  - `txtSessionWarningMinutes` &mdash; Pre-logout warning popup duration (1 to 10 mins).
-  - `cmbMfaPolicy` &mdash; Multi-Factor Authentication Policy (*Required*, *Admin Controlled*, *Disabled*).
-  - `chkUiDiagnostics` &mdash; Enable Diagnostic Logging & UI Audit Trails.
-
-### Screen 7: Module Activation (`ModulesSettingsPanel.fxml`)
-* **Controls**:
-  - **General Ledger**: Enable GL (`module.gl.enabled`), Auto-post Journal Vouchers (`module.gl.autoPost`), Live Trial Balance (`module.gl.trialBalance`).
-  - **GST Statutory Engine**: Enable GST (`module.gst.enabled`), Auto-Reconcile GSTR-2B (`module.gst.auto2bMatch`), Strict Place of Supply Gating (`module.gst.posGating`), TDS Withholding (`module.tds.enabled`).
-  - **Smart Operational Automations**: Smart 3-Way Matching (`module.automation.threeWayMatch`), Auto-draft Debit Notes (`module.automation.autoDraftDebitNote`), Safety Stock Alerts (`module.automation.stockAutoReorder`), Credit Hard Stop (`module.automation.creditHardStop`).
-  - **Executive 8:00 PM Daily Briefing**: Enable Briefing (`module.briefing.enabled`), WhatsApp Channel, Email Channel, Mobile Number (`txtBriefingPhone`).
-  - **Multi-Warehouse & Serial Registry**: Batch, Expiry (FEFO), and Serial Tracking (`module.inventory.batchSerialTracking`).
-
----
-
-## 6. Authentication, MFA Recovery & Session Persistence Scope (Desktop & Web)
-
-### 6.1 Desktop: Authenticator Recovery (Lost / Replaced Phone) Flow Polish
-* **Root Cause Identified**:
-  - The self-service lost-phone recovery flow is fundamentally a **two-step security process**:
-    1. **Step 1 (Registered Email OTP)**: Validates identity and revokes the old phone's TOTP secret (`completeLoginMfaRecovery`).
-    2. **Step 2 (New Authenticator Enrollment)**: Generates a replacement QR code / manual key (`showAuthenticatorEnrollment`). The user **must scan the QR code into Google/Microsoft Authenticator and enter the new 6-digit TOTP code**.
-  - **The "Login to ERP" Loop**: Users often believe the Email verification code was the final step. When the second dialog opens with the new QR code, entering the Email OTP again or closing the dialog leaves enrollment incomplete.
-  - Dismissing the QR dialog immediately reverts the desktop UI to the primary `"LOGIN"` button, leaving the user with the impression that sign-in failed.
-  - Server-side security contract: `tokens.revokeUser(userId)` explicitly revokes active sessions during recovery; no valid session exists until the newly provisioned authenticator is verified.
-* **Scope of Fix**:
-  - **Clear Multi-Step Modal Guidance**: Update `LoginController.java` to display an intermediate confirmation dialog between Step 1 and Step 2: *"Registered email verified. Old authenticator invalidated. You must now scan the new QR code below to complete sign-in."*
-  - **Enrollment Persistence**: Prevent resetting `btnLogin` back to `"LOGIN"` if the user temporarily minimizes the enrollment dialog. Keep the enrollment challenge active and display an explicit *"Continue Enrollment"* action.
-  - **Safe Session Establishment**: Ensure `completeLogin()` handles post-recovery session tokens cleanly without spurious `AuthenticationRequiredException` rollbacks.
-
----
-
-### 6.2 Web: "Remember Me" Credential & Session Persistence
-* **Root Cause Identified**:
-  - **Checkbox State Not Saved**: The `#login-remember` checkbox in `index.html` is never saved to or loaded from `localStorage` (`dse_remember_me`). On page reload, it always reverts to default.
-  - **Password / Token Not Remembered**: Desktop saves encrypted credentials in OS preferences (`PREF_PASSWORD`). Web only stored `dse_saved_identity` and `dse_saved_role`, forcing manual password entry on every login.
-  - **Role Selection Wipe**: When `window.loadLoginRoles()` asynchronously fetches `/api/auth/login-roles` from the server, replacing `roleSelect.innerHTML` wipes out the user's saved role and resets it back to `ADMIN`.
-  - **Aggressive 401 Session Clearing**: In `ApiService.js`, any transient 401 on background requests removes `dse_access_token` and displays `#auth-overlay` with a blank form.
-* **Scope of Fix**:
-  - **Persist Checkbox State**: Store and restore `dse_remember_me` in `localStorage`.
-  - **Safe Asynchronous Role Restoration**: Modify `loadLoginRoles()` to ensure the saved role (`dse_saved_role`) is re-selected after `roleSelect.innerHTML` is dynamically populated.
-  - **Session Keep-Alive & Token Storage**: Allow persistent session tokens when "Remember Me" is enabled, preventing accidental overlay prompts on browser reloads.
-  - **Refined 401 Interception**: Distinguish between expired main sessions and benign resource-level unauthorized responses so the auth overlay is only shown when the session is truly invalid.
-
----
-
-### 6.3 Web: Non-Admin User OTP Login & Role-Aware Startup
-* **Root Cause Identified**:
-  - **Post-Login Hardcoded Admin Calls Crash Login**:
-    In `app.js` (`handleLoginSubmit` lines 538–540), immediately after `window.AuthService.completeMfa(otp)` succeeds, the client unconditionally executes:
-    ```javascript
-    if (window.DashboardController && window.DashboardController.refresh) await window.DashboardController.refresh();
-    if (window.ItemMasterController && window.ItemMasterController.loadItems) await window.ItemMasterController.loadItems();
-    if (window.PartyController && window.PartyController.loadCustomers) await window.PartyController.loadCustomers();
+#### A. Desktop Baseline
+- **Desktop Return Initiation**:
+  - In `SalesListController.java` (`onReturn()`) and `PurchaseListController.java` (`onReturn()`):
+  - Clicking "Return" from the row action menu does **NOT** navigate away from the register.
+  - Instead, it opens `ReturnDialog.fxml` as a modal dialog pre-loaded with the specific invoice's line items.
+  - The dialog displays: Document Number, Party Name, Date, and an editable line items table where the user selects items, specifies return quantity, selects return reason, and clicks "Submit Return".
+- **Backend Rules (`ReturnService.java`)**:
+  - `ReturnService.java` lines 550 & 564 enforce strict document eligibility:
+    ```java
+    if (!"PAID".equalsIgnoreCase(source.paymentStatus()) && !"SETTLED".equalsIgnoreCase(source.paymentStatus())) {
+        throw new IllegalStateException("Return is available only after the source document is fully paid. Pending, Partial and Over Due documents cannot be returned.");
+    }
     ```
-    Non-admin users (e.g. `USER`, `SALES`, `PURCHASE`, `ACCOUNTANT`, `STAFF`) lack permissions for `/api/insights/dashboard` or `/api/operations/purchases`.
-    The server rejects these calls with **HTTP 403 Forbidden**.
-    `DashboardController.refresh()` throws an unhandled `403 Insufficient permission` error.
-    The enclosing `catch (err)` block in `handleLoginSubmit` catches this 403, assumes MFA verification failed, and displays `alertEl.innerText = err.message || 'MFA verification failed.'` on the login card!
-    The non-admin user is trapped on the login overlay despite entering the 100% correct OTP.
-  - **Startup Crash on Page Reload**:
-    In `app.js` (`window.App.init()` lines 273–279), the exact same unconditional admin calls are executed on page load, crashing the script for any authenticated non-admin user.
-  - **Role Dropdown Mismatch Trap**:
-    `#login-role` defaults to `ADMIN`. If a non-admin enters credentials without changing the dropdown, `AuthService.login()` rejects them with `roleMismatch: true` before MFA even starts.
-* **Scope of Fix**:
-  - **Auto-Detect User Role**: Auto-select the user's role from the server response payload instead of forcing the user to manually match the dropdown.
-  - **Role-Aware Safe Post-Login Execution**:
-    - Wrap `DashboardController.refresh()`, `loadItems()`, and `loadCustomers()` in role-permission checks and safe `try/catch` blocks so missing administrative permissions never fail the login or display MFA errors.
-  - **Role-Appropriate Default View Routing**:
-    - If a non-admin user lacks `DASHBOARD.VIEW` permission, safely route them to their role's authorized landing view (e.g., Sales Register for `SALES`, Purchase Register for `PURCHASE`, or My Profile for `USER`).
-  - **Safe Startup Initialization**:
-    - Patch `window.App.init()` to respect user permissions during initial data loading.
+  - In addition, returns are queried via `/api/returns?type=SALES+RETURN` or `PURCHASE+RETURN`.
+
+#### B. Web Failure Mechanism
+1. **Sales Return Navigation Bug**:
+   - In `SalesController.js` line 2828:
+     ```javascript
+     openCreateReturnModal(invoiceNo) {
+       // ... If line items fail or modal is missing, fallback:
+       window.NavigationRouter.navigate('view-sales-returns');
+     }
+     ```
+     When the user clicks "Create Sales Return", instead of opening the return item selector popup, it navigated the user to the blank `#view-sales-returns` register view.
+2. **Purchase Return Broken Popup**:
+   - In `ReturnsController.js` line 547:
+     `currentInvoicePartyId = pur.supplier?.id || pur.supplierId || 0;`
+     If the supplier object structure differed, `currentInvoicePartyId` resolved to `0`.
+   - The server rejected line item fetching with `400 Bad Request` (`partyId != expectedParty`).
+   - `selectedReturnableLines` remained empty, leaving all checkboxes disabled and causing the submit button to alert *"Please select at least one item to return."*
+3. **Registers Showing "Loading..." Forever**:
+   - In `ReturnsController.js` lines 55–87, the error catch block for `loadReturns()` failed to reset UI loading states on API failure, leaving the table permanently showing *"Loading return data..."*.
+
+#### C. Proposed Parity Architecture
+1. **Dedicated Return Modal Component**: Ensure clicking "Create Return" in Sales or Purchase registers opens `#modal-create-return` without navigating away from the current view.
+2. **Safe DTO Field Resolution**: Resolve `partyId`, `invoiceLines`, quantities, and unit rates safely across all source document DTO variations.
+3. **Eligible Invoice Validation**: Check the source document's payment status before opening the return dialog, displaying an informative toast if the document is unpaid rather than failing silently on server submission.
 
 ---
 
-## 7. One-Shot Execution Steps
+### Issue 6: Quotation Actions Button, 401 Excel, SMTP & 500 ID Mismatch
+
+#### A. Desktop Baseline
+- **Desktop Quotation Screen (`Quotations.fxml`)**:
+  - Table action menu button uses `approved-row-action` styling with purple theme accents matching Sales and Purchase registers.
+  - Excel download calls `/api/documents/render?type=QUOTATION&number=...&format=EXCEL` with Bearer token.
+  - Follow-up scheduling: If `quotation.converted` is true, Desktop strictly warns: *"Converted quotations are read-only. Duplicate the quotation to create a new revision with active follow-ups."*
+  - Re-clicking a record passes `quotation.id` (integer) to `GET /api/quotations/{id}`.
+
+#### B. Web Failure Mechanism
+1. **Action Button Styling**: `QuotationController.js` line 174 used generic `btn btn-secondary btn-sm` instead of the standard purple table action menu button.
+2. **Excel 401 Error**: Line 434 used raw `window.open('/api/documents/render?type=QUOTATION&number=' + no + '&format=EXCEL', '_blank')` without the `Authorization` header, causing the server to return 401 `AUTH_TOKEN_MISSING`.
+3. **Email Delivery Error**: Server's `SmtpMailService` threw `EmailDeliveryException.business` ("Email delivery is temporarily unavailable") because SMTP credentials had not been configured or failed TLS handshake.
+4. **Follow-Up on Converted Quotation**: Web allowed submitting follow-ups against converted quotations. The server threw 400/500, which web displayed as an unhandled script error.
+5. **Re-click "Failed to load details" 500**:
+   - `QuotationController.showDetails(id)` expects an integer ID (e.g. `21`).
+   - In `TableUiEnhancer.js` line 167, the enhancer extracted the first column text string (`"QT-2026-0021"`) and passed it to `showDetails("QT-2026-0021")`.
+   - The server endpoint `@GetMapping("/{id}")` requires `Long id`. Spring threw `MethodArgumentTypeMismatchException`, returning HTTP 500 *"The ERP server could not complete this operation"*.
+
+#### C. Proposed Parity Architecture
+1. **Style Synchronization**: Apply `btn-purple` / `table-action-menu` to Quotation action buttons.
+2. **Authenticated File Download**: Route Excel exports through `ApiService.downloadFile` with JWT bearer authorization.
+3. **Quotation ID Resolution**: Ensure `TableUiEnhancer` extracts the numeric `data-id` attribute rather than the formatted document string.
+4. **Read-Only Converted Quotation Guard**: Prevent follow-up modal submission if `converted` is truthy, matching Desktop's prompt to duplicate the quotation.
+
+---
+
+### Issue 7: Item Master Dropdowns & Export 401
+
+#### A. Desktop Baseline
+- **Desktop Item Master (`ItemMasterController.java`)**:
+  - Category, Unit of Measurement (UOM), and Tax Rate dropdowns are dynamically loaded from `LookupService.getValuesByCategoryCode("ITEM_CATEGORY")` and `"UNIT"`.
+  - Export to Excel calls `GET /api/master/items/export/excel` with Bearer auth.
+
+#### B. Web Failure Mechanism
+1. **Mock Dropdown Fallbacks**:
+   - In `ItemMasterController.js` lines 370–375:
+     ```javascript
+     const res = await window.MasterService.getLookupValuesByCategoryCode('ITEM_CATEGORY');
+     ```
+   - The server returns `MasterDtos.ValuesResponse(List<String> values)` which is a JSON object `{ "values": ["PIPE", "FLANGE", ...] }`, **not** an array!
+   - `res.length` evaluated to `undefined`, causing the `if (categories && categories.length > 0)` check to evaluate to `false`.
+   - The controller unconditionally fell back to hardcoded mock arrays (`['PIPE', 'FLANGE', 'VALVE']`).
+2. **Export 401 Error**:
+   - Line 1066: `exportItems() { window.open('/api/master/items/export/excel', '_blank'); }`
+   - Unauthenticated browser tab request rejected with 401 `AUTH_TOKEN_MISSING`.
+
+#### C. Proposed Parity Architecture
+1. **Handle DTO Object Wrapping**: Update `MasterService.getLookupValuesByCategoryCode` to unwrap `res.values || res` so the actual master database lookups populate the dropdowns.
+2. **Authenticated Export Download**: Replace `window.open` with `ApiService.downloadFile('/api/master/items/export/excel', 'Item_Master.xlsx')`.
+
+---
+
+### Issue 8: Master Data Modal Clipping & Missing Desktop Toolbar
+
+#### A. Desktop Baseline
+- **Desktop Master Data Screen (`Masterdata.fxml`)**:
+  - Has a left-hand Category Rail (Category list with Add/Edit category buttons).
+  - Above the main values table (`tblLookup`), there is a dedicated **Top Action Toolbar**:
+    - `Add Value` (opens `lookupDialog.fxml`)
+    - `Edit Value`
+    - `Deactivate / Activate`
+    - `Refresh`
+  - There is NO row-level action column inside the table.
+- **Lookup Dialog (`lookupDialog.fxml`)**:
+  - Clean dialog with Category, Lookup Code (auto-generated uppercase key), Lookup Value, Sort Order, Active toggle, and Description.
+
+#### B. Web Failure Mechanism
+1. **Modal Clipping**:
+   - In `index.html` line 10483, `<div class="modal-box" style="max-width: 480px;">` is used for the Add Lookup modal.
+   - `.modal-box` lacks `max-height: 85vh; overflow-y: auto;` in `app.css`. On standard laptop resolutions (768p), the dialog is clipped at the bottom, cutting off action buttons.
+2. **Missing Desktop Toolbar Buttons**:
+   - Web omitted the top toolbar (`Add`, `Edit`, `Toggle Status`, `Refresh`) above the table and placed an ad-hoc action menu on every individual row instead.
+3. **Lookup Code Key Generation**:
+   - Web required manual typing of the internal lookup code instead of auto-generating uppercase snake_case slugs from the value (e.g. `"Finished Goods"` &rarr; `"FINISHED_GOODS"`).
+
+#### C. Proposed Parity Architecture
+1. **Fix Modal Styles**: Replace `.modal-box` with standard responsive `.modal-card` with `max-height: 85vh; overflow-y: auto;`.
+2. **Restore Top Toolbar Layout**: Add the 4 standard desktop buttons (`Add`, `Edit`, `Activate/Deactivate`, `Refresh`) above the values table.
+3. **Auto-Generate Lookup Keys**: Implement Desktop's automatic slug generation for the lookup code field on input.
+
+---
+
+### Issue 9: Bank Entry & Expense Entry UI Disparity vs Desktop
+
+#### A. Desktop Baseline (`BankExpense.fxml` & `BankExpenseController.java`)
+- **Unified Screen with Mode Switching**:
+  - Header has mode buttons: `Bank Entry`, `Expense Entry`, and `Bank Reconciliation`.
+  - 4 Standard KPI Cards:
+    - **Bank Mode**: Bank Balance, Deposits, Withdrawals, Pending Reconcile.
+    - **Expense Mode**: Total Expenses (This Month), Total Expenses (This Year), Top Category, Pending Reconcile.
+- **Search & Filters Toolbar**:
+  - Search input ("Search reference, description...")
+  - Type Filter:
+    - Bank Mode: `"All Types"`, `"Deposit"`, `"Withdrawal"`.
+    - Expense Mode: `"All Categories"`, followed by categories loaded from `EXPENSE_CATEGORY`.
+  - Date Range pickers: From Date and To Date (defaulting to current FY).
+  - Reset, Refresh, and Add Entry / Add Expense buttons.
+- **Table Columns**:
+  - `Date`, `Type / Category`, `Description`, `Account`, `Mode` (hidden for Bank, shown for Expense), `Reference`, `Amount` (colored green for deposits, red for withdrawals/expenses), `Match / Link` (hyperlink to linked Bank Statement or ERP record), `Actions` menu button.
+- **Modal Entry Form (`entryFormPanel` 820px dialog)**:
+  - 2-column layout:
+    - Date, Bank Account (`BANK_ACCOUNT` lookups), Type (Radio buttons: Deposit / Withdrawal) or Category (`EXPENSE_CATEGORY` lookups), Payment Mode (`PAYMENT_MODE` lookups).
+    - Reference No., Description, Amount, Upload Bill (for expense mode).
+    - Save Entry and Clear buttons.
+
+#### B. Web Failure Mechanism
+- Web split Bank Entry and Expense Entry into two completely disconnected full-width module views (`#view-bank-entry` and `#view-expense-entry`).
+- In `FinanceController.js` line 77, Web calls `OperationsService.getVouchers(0, 200)` (`/api/operations/vouchers`) instead of the server's dedicated finance endpoints:
+  - `GET /api/operations/finance/page`
+  - `GET /api/operations/finance/metrics`
+- Web manually computes approximate mock KPIs from voucher lists instead of displaying server-authoritative financial metrics.
+- Web lacks the mode switcher, proper Master Lookup dropdown bindings, and the 2-column modal form dialog.
+
+#### C. Proposed Parity Architecture
+1. **Unify View Layout**: Align `#view-bank-entry` and `#view-expense-entry` to follow `BankExpense.fxml`, with top mode buttons, 4 standard KPI cards, and filter toolbar.
+2. **Connect Authoritative Server Endpoints**: Update `FinanceController.js` to call `/api/operations/finance/page` and `/api/operations/finance/metrics`.
+3. **Implement Full Entry Dialog**: Replicate the 2-column entry dialog with dynamic account lookups, radio buttons, and bill attachments.
+
+---
+
+### Issue 10: Data Import: 8 Loaders vs 6 & Step 4 Review/Validation Parity
+
+#### A. Desktop Baseline (`Import.fxml` & `ImportController.java`)
+- **Step 1 (Select Data)**:
+  Desktop presents an exact **4 &times; 2 Grid of 8 Loaders**:
+  1. `Item Master`
+  2. `Customers / CRM`
+  3. `Suppliers / HRM`
+  4. `Master Categories & Values`
+  5. `Sales`
+  6. `Purchases`
+  7. `Purchase Recon` (auto-creates missing Recon Suppliers)
+  8. `Bank Statement` (CSV statement parser)
+  Each card has a `Select` button and a `Download Template` button.
+- **Step 4 (Review & Import)**:
+  - Desktop features a **two-tab interface**:
+    1. `Data Preview` tab (`tblPreview`): Displays parsed rows mapped into domain columns with semantic header icons.
+    2. `Validation Results` tab (`tblValidation`): Displays line-by-line validation errors, warnings, invalid dates, missing foreign keys, or duplicate flags.
+  - Controls:
+    - `Existing records` dropdown (Skip duplicates, Overwrite existing).
+    - `chkDryRun`: **"Validate only (do not save)"** checkbox.
+    - `btnRunImport`: "Import Records" button with animated progress bar (`progressBar`).
+    - On completion: Displays `importCompletedPanel` with summary statistics and 3 actions (`View Imported Records`, `Start Another Import`, `Close Import`).
+
+#### B. Web Failure Mechanism
+1. **Only 6 Loaders in Web**:
+   In `index.html` lines 5228–5295 and `ImportController.js` lines 12–73:
+   Web only built 6 cards. `Purchase Recon` and `Bank Statement` were completely omitted!
+2. **Step 4 Validation Engine Missing**:
+   - In `ImportController.js` lines 230–245, Web hardcodes `<span class="badge badge-paid">VALID</span>` on every single row without performing any validation checks.
+   - Web has no `chkDryRun` (dry run validation mode).
+   - Web has no `Validation Results` tab to report problematic rows.
+   - Web has no progress tracking or post-import summary panel.
+
+#### C. Proposed Parity Architecture
+1. **Add Missing Loaders**: Add `Purchase Recon` and `Bank Statement` cards to Step 1 in `index.html` and define their field mapping contracts in `ImportController.js`.
+2. **Port Step 4 Two-Tab Interface**: Implement the `Data Preview` and `Validation Results` tabs.
+3. **Implement Preflight Dry-Run**: Implement client-side validation for dates, numbers, GSTIN format, and required fields before sending data to the server, populating the validation tab with specific row/column error notes.
+
+---
+
+### Issue 11: Settings Studio 7 Screens Parity & Server Sync
+
+#### A. Desktop Baseline (`desktop/.../fxml/pages/settings/`)
+1. **Company Profile (`CompanySettingsPanel.fxml`)**:
+   - Core legal & contact fields.
+   - Application Banner (1600 &times; 320 artwork) with `Add/Replace`, `Preview`, `Remove`.
+   - Application Mark / Splash Logo (512 &times; 512 square mark) with `Add/Replace`, `Preview`, `Remove`.
+2. **Payment & Bank (`PaymentSettingsPanel.fxml`)**:
+   - Bank Name, Account Holder, Account Number, IFSC, Branch, Account Type (from `ACCOUNT_TYPE` lookups).
+   - Round-off Tolerance (numeric).
+   - UPI Payment QR: Dedicated preview card with `Add/Replace`, `Preview`, `Remove`.
+3. **Notifications (`NotificationsSettingsPanel.fxml`)**:
+   - Backed by `/api/insights/notification-preferences`:
+     `record NotificationPreferences(boolean enabled, boolean toasts, Map<String, Boolean> categories) {}`
+4. **Email Settings (`EmailSettingsPanel.fxml`)**:
+   - Backed by `/api/authority/email/settings`:
+     `record Settings(String email, String appPassword, String host, Integer port, boolean passwordConfigured) {}`
+5. **Security & Session (`SecuritySettingsPanel.fxml`)**:
+   - Session Timeout (minutes), Warning Before Logout (minutes), MFA Policy, Enable UI Diagnostics.
+   - **NOTE**: Desktop has **NO password update box** in Security Settings; password change belongs strictly to User Profile / My Account.
+6. **Module Activation (`ModulesSettingsPanel.fxml`)**:
+   - Toggles for GL, GST Statutory Engine, 3-Way Match, Daily Briefing, and Serial/Batch Tracking via `/api/support/settings`.
+
+#### B. Web Failure Mechanism
+1. **Missing Branding Asset Uploaders**:
+   Web omitted the Application Banner and Application Mark upload boxes entirely from the Company screen.
+2. **Payment Bank Mock Data & Missing QR Controls**:
+   - Web filled empty fields with hardcoded mock strings (`'STATE BANK OF INDIA'`, `'382910482910'`, `'SBIN0001234'`, `'MORBI MAIN BRANCH'`).
+   - Web replaced the UPI QR upload component with a static emoji `📱` inside a plain div, with no file chooser or upload handler.
+3. **Notification Preferences 400/500 Error**:
+   - `InsightDtos.NotificationPreferences` expects `Map<String, Boolean> categories` and `boolean toasts`.
+   - Web `SettingsController.js` sent `categories` as a JSON **array of strings** (`['SALES', 'PURCHASE']`) and `toastsEnabled`.
+   - Spring Boot Jackson threw `HttpMessageNotReadableException`, failing the request with an ERP server error.
+4. **Email Settings Payload Discrepancy**:
+   - Web sent extra unmapped fields (`fromName`, `startTls`) directly to `/api/authority/email/settings` while omitting required password handling.
+5. **Misplaced Update Password Box**:
+   - Web rendered an "Update Account Password" card inside Security Settings. This conflicted with the desktop security panel and confused users who expected company-wide security policies.
+
+#### C. Proposed Parity Architecture
+1. **Port Branding & QR Asset Uploaders**: Add asset preview and upload cards for Application Banner (`application.brandPath`), Application Mark (`application.markPath`), and Payment QR (`payment.qrImagePath`) using `/api/authority/resources/BUSINESS_ASSET/{key}`.
+2. **Remove Hardcoded Mock Fallbacks**: Bind payment fields to live server data or clean empty states.
+3. **Correct Notification Payload**: Format `categories` as `{"SALES": true, "PURCHASE": true, ...}` and use property name `toasts`.
+4. **Clean Up Security Screen**: Remove the misplaced password change form from Security Settings and align fields with Desktop's session timeout, warning, and MFA policy controls.
+
+---
+
+## 3. Scope Boundaries & Implementation Rules
+
+1. **Investigation Only**: This document concludes the investigation phase. **No application code, FXML, Java classes, JavaScript controllers, or HTML templates have been modified.**
+2. **Desktop Authoritative Standard**: All forthcoming implementations will strictly mirror the JavaFX desktop codebase. No ad-hoc web features or unverified endpoints will be introduced.
+3. **Staging Workflow Compliance**:
+   - Development will occur exclusively in `d:\ERP Website\admin`.
+   - Upon completion and local verification, changes will sync to `D:\GitHub\ReleaseSource Website\admin`.
+   - Pull Requests and release tags will only be submitted after explicit user review and confirmation.
+
+---
+
+## 4. One-Shot Implementation Roadmap (Awaiting User Go-Ahead)
 
 ```text
-Step 1: Desktop Settings & MFA Recovery Polish
-        ├── File: desktop/src/main/java/org/example/config/ConfigManager.java
-        │   └── Ensure Desktop writes all 7 settings sections to PostgreSQL `application_setting` table.
-        └── File: desktop/src/main/java/org/example/controller/LoginController.java
-            └── Add clear transition guidance between Email OTP (Step 1) and QR code enrollment (Step 2).
-            └── Prevent premature reset to "LOGIN" button if QR dialog is minimized.
+Phase 1: Registers & Event Handling Parity (Issues 1, 2, 3)
+  ├── Remove conflicting inline onclick handlers and deduplicate TableUiEnhancer events
+  ├── Fix dse_access_token retrieval and validate PDF blob responses
+  └── Port full desktop drawer sections to Sales, Purchase, and Quotation side panels
 
-Step 2: Web Navigation Clean-Up
-        ├── File: index.html & js/navigation/NavigationRouter.js
-        └── Remove Workspace, Shortcuts, and Updates from Web. Keep only 7 submenus.
+Phase 2: Returns & Operations Integrity (Issues 4, 5, 6)
+  ├── Implement modal return dialog pre-loaded with eligible source invoice lines
+  ├── Fix supplier partyId resolution and paid-status validation
+  ├── Style Quotation action button with purple theme
+  └── Fix Quotation numeric ID resolution to prevent 500 error
 
-Step 3: Web Settings Studio HTML Markup Port
-        ├── File: index.html (#view-settings)
-        └── Port exact FXML layouts, inputs, asset preview boxes, and buttons for all 7 screens.
+Phase 3: Master Data & Lookups (Issues 7, 8)
+  ├── Unwrap ValuesResponse DTO in MasterService to populate Item Master dropdowns
+  ├── Route item exports through authenticated download helper
+  ├── Fix Add Lookup modal clipping with responsive .modal-card styling
+  └── Add desktop top action toolbar (Add, Edit, Deactivate, Refresh) to Master Data
 
-Step 4: Web SettingsController & Master Lookup Service
-        ├── File: js/controllers/SettingsController.js
-        └── Connect to /api/support/settings, /api/master/lookups, /api/authority/email, /api/insights.
+Phase 4: Finance & Data Import Modules (Issues 9, 10)
+  ├── Unify Bank & Expense entry under BankExpense.fxml layout with mode strip & KPIs
+  ├── Connect FinanceController to /api/operations/finance/page and metrics
+  ├── Add Purchase Recon and Bank Statement loaders to Data Import (total 8 loaders)
+  └── Implement Step 4 two-tab Review interface with dry-run preflight validation
 
-Step 5: Web Authentication & Session Hardening
-        ├── File: js/services/AuthService.js, js/services/ApiService.js, js/app.js
-        └── Fix "Remember Me" checkbox & role persistence in localStorage.
-        └── Implement auto-role detection from server credentials.
-        └── Wrap post-login data loading in permission guards so non-admin OTP login never crashes.
-        └── Route non-admin users to authorized default views (Sales, Purchase, Profile).
-
-Step 6: Syntax & Delimiter Audit
-        └── Run automated lexer script across all JS files. Zero unclosed braces or syntax errors.
-
-Step 7: Three-Way Repository Synchronization & Verification
-        └── Sync from `d:\ERP Website\admin` to `ReleaseSource` and `DSE-ERP-Enterprise` (`web/admin`).
-        └── Push to GitHub `main` branch to trigger live UAT update.
-        └── Test bidirectional settings sync between Desktop and Web.
-        └── Validate MFA recovery in Desktop and Non-Admin OTP login in Web.
+Phase 5: Settings Studio Enterprise Hardening (Issue 11)
+  ├── Add Application Banner, Application Mark, and Payment QR upload components
+  ├── Remove hardcoded payment mock fallbacks and connect live lookups
+  ├── Fix NotificationPreferences payload structure (Map<String, Boolean> categories)
+  └── Remove misplaced Update Password box from Security Settings to match Desktop
 ```
-

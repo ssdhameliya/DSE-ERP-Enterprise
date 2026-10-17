@@ -416,7 +416,7 @@ window.SalesController = {
         : '<span class="pill-badge pill-neutral" style="font-size:0.75rem; padding: 2px 8px; opacity:0.7;">Not Sent</span>';
 
       return `
-        <tr style="cursor: pointer;" class="${this.selectedDrawerInvoiceNo === invNo ? 'active-selected-row' : ''}" onclick="window.SalesController.handleRowClick('${invNo}', this)">
+        <tr style="cursor: pointer;" class="${this.selectedDrawerInvoiceNo === invNo ? 'active-selected-row' : ''}" data-id="${invNo}" data-invoice-no="${invNo}" onclick="window.SalesController.handleRowClick('${invNo}', this)">
           <td style="font-weight: 700; color: var(--cyan);">${invNo}</td>
           <td>${window.FormatUtil.formatDate(s.invoiceDate || s.date)}</td>
           <td style="font-weight: 600;">${custName}</td>
@@ -2947,10 +2947,12 @@ window.SalesController = {
   // =========================================================================
   handleRowClick(invoiceNo, trEl) {
     const inlineDrawer = document.getElementById('sales-inline-drawer');
+    const modalDrawer = document.getElementById('drawer-invoice-details');
     const isInlineOpen = inlineDrawer && inlineDrawer.style.display !== 'none' && inlineDrawer.style.display !== '';
+    const isModalOpen = modalDrawer && modalDrawer.classList.contains('open');
 
     // Desktop parity: if drawer is visible and user clicks the same row again -> close drawer and deselect
-    if (isInlineOpen && this.selectedDrawerInvoiceNo === invoiceNo) {
+    if ((isInlineOpen || isModalOpen) && this.selectedDrawerInvoiceNo === invoiceNo) {
       this.closeInvoiceDrawer();
       return;
     }

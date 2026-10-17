@@ -207,7 +207,7 @@ window.PurchaseController = (function() {
       const pendingBalance = Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0));
 
       return `
-        <tr onclick="window.PurchaseController.onRowClick('${invNo}', event)" style="cursor:pointer;">
+        <tr onclick="window.PurchaseController.onRowClick('${invNo}', event)" style="cursor:pointer;" data-id="${invNo}" data-invoice-no="${invNo}" class="${selectedDrawerBillNo === invNo ? 'active-selected-row' : ''}">
           <td style="font-family:'Space Grotesk', monospace; font-weight:700; color:var(--cyan);">${invNo}</td>
           <td>${formatDate(p.invoiceDate)}</td>
           <td style="font-weight:600; color:var(--text-main);">${suppName}</td>

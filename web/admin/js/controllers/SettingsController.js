@@ -52,6 +52,38 @@ window.SettingsController = (function() {
   }
 
   return {
+    uploadBrandingAsset(assetKey, fileInput) {
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const base64Data = evt.target.result;
+        try {
+          const values = {};
+          values[assetKey] = base64Data;
+          await window.ApiService.put('/api/support/settings', { values });
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          window.AppDialogService.showToast(`Asset "${assetKey}" uploaded successfully!`, 'success');
+        } catch (err) {
+          window.AppDialogService.showToast('Failed to save asset: ' + err.message, 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    },
+
+    async clearBrandingAsset(assetKey) {
+      try {
+        const values = {};
+        values[assetKey] = '';
+        await window.ApiService.put('/api/support/settings', { values });
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast(`Asset "${assetKey}" cleared.`, 'info');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to clear asset: ' + err.message, 'error');
+      }
+    },
+
+    
     activeSection: 'COMPANY',
 
     init(initialSection) {
@@ -321,14 +353,14 @@ window.SettingsController = (function() {
           try { profile = await window.ReportService.getProfile(); } catch (err) {}
         }
 
-        setVal('setting-bank-name', serverSettings['payment.bankName'] || (profile && profile.bankName) || 'STATE BANK OF INDIA');
-        setVal('setting-account-holder', serverSettings['payment.accountHolder'] || (profile && profile.accountHolder) || 'JASVI INDUSTRIES');
-        setVal('setting-account-number', serverSettings['payment.accountNumber'] || (profile && profile.accountNumber) || '382910482910');
-        setVal('setting-ifsc', serverSettings['payment.ifsc'] || (profile && profile.ifsc) || 'SBIN0001234');
-        setVal('setting-branch', serverSettings['payment.branch'] || (profile && profile.branch) || 'MORBI MAIN BRANCH');
+        setVal('setting-bank-name', serverSettings['payment.bankName'] || (profile && profile.bankName) || '');
+        setVal('setting-account-holder', serverSettings['payment.accountHolder'] || (profile && profile.accountHolder) || '');
+        setVal('setting-account-number', serverSettings['payment.accountNumber'] || (profile && profile.accountNumber) || '');
+        setVal('setting-ifsc', serverSettings['payment.ifsc'] || (profile && profile.ifsc) || '');
+        setVal('setting-branch', serverSettings['payment.branch'] || (profile && profile.branch) || '');
         setVal('setting-account-type', serverSettings['payment.accountType'] || (profile && profile.accountType) || 'CURRENT');
-        setVal('setting-upi-id', serverSettings['payment.upiId'] || (profile && profile.upiId) || 'jasviindustries@sbi');
-        setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '1.00');
+        setVal('setting-upi-id', serverSettings['payment.upiId'] || (profile && profile.upiId) || '');
+        setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '0.00');
       } catch (err) {
         console.error('[SettingsController] Failed to load payment settings:', err);
       }
@@ -418,7 +450,8 @@ window.SettingsController = (function() {
         cachedNotificationPrefs = prefs;
         if (prefs) {
           setChk('chkNotifications', prefs.enabled !== false);
-          setChk('chkNotificationToasts', prefs.toastsEnabled !== false);
+          setChk('chkNotificationToasts', prefs.toasts !== false && prefs.toastsEnabled !== false);
+          const catMap = prefs.categories || {};
           if (Array.isArray(prefs.categories)) {
             const catSet = new Set(prefs.categories.map(c => c.toUpperCase()));
             setChk('chkNotifySales', catSet.has('SALES') || catSet.has('INVOICE'));
@@ -436,6 +469,22 @@ window.SettingsController = (function() {
             setChk('chkNotifyBackup', catSet.has('BACKUP'));
             setChk('chkNotifySystem', catSet.has('SYSTEM'));
             setChk('chkNotifySecurity', catSet.has('SECURITY'));
+          } else if (typeof catMap === 'object') {
+            setChk('chkNotifySales', catMap['SALES'] !== false);
+            setChk('chkNotifyPurchases', catMap['PURCHASE'] !== false);
+            setChk('chkNotifyQuotations', catMap['QUOTATION'] !== false);
+            setChk('chkNotifyReturns', catMap['RETURN'] !== false);
+            setChk('chkNotifyPayments', catMap['PAYMENT'] !== false);
+            setChk('chkNotifyInventory', catMap['INVENTORY'] !== false);
+            setChk('chkNotifyBanking', catMap['BANKING'] !== false);
+            setChk('chkNotifyReports', catMap['REPORTS'] !== false);
+            setChk('chkNotifyReminders', catMap['REMINDERS'] !== false);
+            setChk('chkNotifyCommunication', catMap['COMMUNICATION'] !== false);
+            setChk('chkNotifyApproval', catMap['APPROVAL'] !== false);
+            setChk('chkNotifyImports', catMap['IMPORTS'] !== false);
+            setChk('chkNotifyBackup', catMap['BACKUP'] !== false);
+            setChk('chkNotifySystem', catMap['SYSTEM'] !== false);
+            setChk('chkNotifySecurity', catMap['SECURITY'] !== false);
           }
         }
       } catch (e) {
@@ -445,28 +494,29 @@ window.SettingsController = (function() {
 
     async saveNotificationsSettings(e) {
       if (e) e.preventDefault();
-      const categories = [];
-      if (chk('chkNotifySales')) categories.push('SALES');
-      if (chk('chkNotifyPurchases')) categories.push('PURCHASE');
-      if (chk('chkNotifyQuotations')) categories.push('QUOTATION');
-      if (chk('chkNotifyReturns')) categories.push('RETURN');
-      if (chk('chkNotifyPayments')) categories.push('PAYMENT');
-      if (chk('chkNotifyInventory')) categories.push('INVENTORY');
-      if (chk('chkNotifyBanking')) categories.push('BANKING');
-      if (chk('chkNotifyReports')) categories.push('REPORTS');
-      if (chk('chkNotifyReminders')) categories.push('REMINDERS');
-      if (chk('chkNotifyCommunication')) categories.push('COMMUNICATION');
-      if (chk('chkNotifyApproval')) categories.push('APPROVAL');
-      if (chk('chkNotifyImports')) categories.push('IMPORTS');
-      if (chk('chkNotifyBackup')) categories.push('BACKUP');
-      if (chk('chkNotifySystem')) categories.push('SYSTEM');
-      if (chk('chkNotifySecurity')) categories.push('SECURITY');
+      const catMap = {
+        SALES: chk('chkNotifySales'),
+        PURCHASE: chk('chkNotifyPurchases'),
+        QUOTATION: chk('chkNotifyQuotations'),
+        RETURN: chk('chkNotifyReturns'),
+        PAYMENT: chk('chkNotifyPayments'),
+        INVENTORY: chk('chkNotifyInventory'),
+        BANKING: chk('chkNotifyBanking'),
+        REPORTS: chk('chkNotifyReports'),
+        REMINDERS: chk('chkNotifyReminders'),
+        COMMUNICATION: chk('chkNotifyCommunication'),
+        APPROVAL: chk('chkNotifyApproval'),
+        IMPORTS: chk('chkNotifyImports'),
+        BACKUP: chk('chkNotifyBackup'),
+        SYSTEM: chk('chkNotifySystem'),
+        SECURITY: chk('chkNotifySecurity')
+      };
 
+      // Authoritative Spring DTO: record NotificationPreferences(boolean enabled, boolean toasts, Map<String, Boolean> categories)
       const payload = {
         enabled: chk('chkNotifications'),
-        toastsEnabled: chk('chkNotificationToasts'),
-        soundEnabled: true,
-        categories: categories
+        toasts: chk('chkNotificationToasts'),
+        categories: catMap
       };
 
       try {

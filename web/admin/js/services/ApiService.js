@@ -114,6 +114,49 @@ window.ApiService = (function() {
     },
 
     /**
+     * Download any file from server with Bearer auth, verifying HTTP status before saving
+     */
+    async downloadFile(endpoint, filename) {
+      try {
+        const token = localStorage.getItem('dse_access_token');
+        const url = endpoint.startsWith('http') ? endpoint : (BASE_URL + endpoint);
+        const res = await fetch(url, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) {
+          let errorMsg = `Download failed (HTTP ${res.status})`;
+          try {
+            const errData = await res.json();
+            if (errData && (errData.message || errData.error)) {
+              errorMsg = errData.message || errData.error;
+            }
+          } catch (_) {
+            const text = await res.text().catch(() => '');
+            if (text && text.length < 200) errorMsg = text;
+          }
+          throw new Error(errorMsg);
+        }
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename || 'download';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      } catch (err) {
+        console.error('[ApiService] downloadFile failed:', err);
+        if (window.AppDialogService) {
+          window.AppDialogService.toastError(err.message || 'Could not download file');
+        } else {
+          alert('Download error: ' + (err.message || 'Could not download file'));
+        }
+        throw err;
+      }
+    },
+
+    /**
      * Fetch document PDF from canonical server generator and open in browser viewer/tab
      */
     async openPdfPreview(type, number) {
@@ -121,29 +164,12 @@ window.ApiService = (function() {
     },
 
     /**
-     * Download document PDF directly
+     * Download document PDF directly using valid JWT credentials
      */
     async downloadDocumentPdf(type, number) {
-      try {
-        const token = localStorage.getItem('erp_token') || sessionStorage.getItem('erp_token');
-        const url = `${this.BASE_URL}/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
-        const res = await fetch(url, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        if (!res.ok) throw new Error(`Failed to download PDF (HTTP ${res.status})`);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `${type}-${number}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-      } catch (err) {
-        console.error('[ApiService] downloadDocumentPdf failed:', err);
-        if (window.AppDialogService) window.AppDialogService.toastError(err.message || 'Could not download PDF');
-      }
+      const filename = `${type}-${number}.pdf`;
+      const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
+      return this.downloadFile(endpoint, filename);
     }
   };
 })();

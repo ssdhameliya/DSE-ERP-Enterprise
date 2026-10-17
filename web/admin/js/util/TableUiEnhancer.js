@@ -299,6 +299,10 @@ window.TableUiEnhancer = (function() {
       // Guard: Ignore interactive controls inside the row
       if (isInteractiveTarget(e.target, row)) return;
 
+      // Guard: If row has an explicit onclick handler, the register controller manages clicks directly.
+      // Do not duplicate the single-click event or fight the drawer toggle logic.
+      if (row.hasAttribute('onclick')) return;
+
       // Handle Double Click vs Single Click debouncing (300ms window)
       const lastClick = rowClickTimers.get(row) || 0;
       const now = Date.now();

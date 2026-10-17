@@ -159,7 +159,7 @@ window.QuotationController = (function() {
       const isRejectedExpired = (q.status || '').toUpperCase() === 'REJECTED' || (q.status || '').toUpperCase() === 'EXPIRED';
 
       return `
-        <tr onclick="window.QuotationController.onRowClick(${q.id}, event)" style="cursor:pointer;">
+        <tr onclick="window.QuotationController.onRowClick(${q.id}, event)" style="cursor:pointer;" data-id="${q.id}" data-no="${q.no}" class="${selectedQuote && selectedQuote.id === q.id ? 'active-selected-row' : ''}">
           <td style="font-family:'Space Grotesk', monospace; font-weight:700; color:var(--cyan);">${q.no}</td>
           <td>${formatDate(q.date)}</td>
           <td style="font-weight:600; color:var(--text-main);">${q.customer || '-'}</td>
@@ -171,8 +171,8 @@ window.QuotationController = (function() {
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(q.amount)}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.toggleActionMenu(${q.id}, event)" style="padding:2px 8px; font-size:0.75rem; height:26px;">
-                Actions ▼
+              <button class="btn-purple" onclick="window.QuotationController.toggleActionMenu(${q.id}, event)" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" title="View Actions Menu">
+                ::: Actions
               </button>
               <div id="quote-action-menu-${q.id}" class="action-dropdown-menu" style="display:none; position:absolute; right:0; top:100%; z-index:999; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:190px; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.QuotationController.showDetails(${q.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
@@ -182,7 +182,7 @@ window.QuotationController = (function() {
                 <div class="action-menu-item" onclick="window.QuotationController.downloadExcel('${q.no}')"><span style="margin-right:8px;">📊</span> View / Download Excel</div>
                 <div class="action-menu-item" onclick="window.QuotationController.sendEmailPrompt(${q.id}, '${q.no}', '${(q.email || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">✉️</span> Send Email</div>
                 <div class="action-menu-item" onclick="window.QuotationController.sendWhatsappPrompt(${q.id}, '${q.no}', '${(q.phone || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">💬</span> Send WhatsApp</div>
-                <div class="action-menu-item" onclick="window.QuotationController.openFollowUpModal(${q.id}, '${q.no}', '${q.followUp || ''}', ${q.rowVersion || 0})"><span style="margin-right:8px;">⏰</span> Create Follow Up</div>
+                <div class="action-menu-item" onclick="window.QuotationController.openFollowUpModal(${q.id}, '${q.no}', '${q.followUp || ''}', ${q.rowVersion || 0}, ${isConverted})"><span style="margin-right:8px;">⏰</span> Create Follow Up</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
                 ${!isConverted && !isRejectedExpired ? `
                   <div class="action-menu-item" style="color:var(--green); font-weight:600;" onclick="window.QuotationController.convertToSale(${q.id}, '${q.no}', ${q.rowVersion || 0})">
@@ -219,7 +219,7 @@ window.QuotationController = (function() {
   function onRowClick(id, event) {
     if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
     const drawer = document.getElementById('quote-detail-drawer');
-    if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedQuote && selectedQuote.id === id) {
+    if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedQuote && (selectedQuote.id === id || selectedQuote.no === id)) {
       closeDrawer();
       return;
     }
@@ -430,9 +430,14 @@ window.QuotationController = (function() {
     }
   }
 
-  function downloadExcel(no) {
-    const url = `/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=EXCEL`;
-    window.open(url, '_blank');
+  async function downloadExcel(no) {
+    if (!no) return;
+    try {
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting quotation ${no} to Excel...`);
+      await window.ApiService.downloadFile(`/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=EXCEL`, `Quotation_${no}.xlsx`);
+    } catch (err) {
+      console.warn('Direct quotation render export failed:', err);
+    }
   }
 
   function sendEmailPrompt(id, no, recipientEmail) {
@@ -464,7 +469,15 @@ window.QuotationController = (function() {
     loadQuotations(currentPage);
   }
 
-  function openFollowUpModal(id, no, currentFollowUp, rowVersion) {
+  function openFollowUpModal(id, no, currentFollowUp, rowVersion, isConverted = false) {
+    if (isConverted) {
+      if (window.AppDialogService) {
+        window.AppDialogService.toastWarning('Converted quotations are read-only. Duplicate the quotation if a new follow-up/revision is required.');
+      } else {
+        alert('Converted quotations are read-only. Duplicate the quotation if a new follow-up/revision is required.');
+      }
+      return;
+    }
     const modal = document.getElementById('modal-quote-followup');
     if (!modal) return;
     document.getElementById('qf-id').value = id;

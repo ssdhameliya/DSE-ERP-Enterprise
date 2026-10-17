@@ -1117,11 +1117,11 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                   <div class="pagination-bar" id="sales-pagination-controls">
-                    <button type="button" class="btn-page" id="sr-btn-first" onclick="window.SalesController.goToPage('first')" title="First Page">&laquo;</button>
-                    <button type="button" class="btn-page" id="sr-btn-prev" onclick="window.SalesController.goToPage('prev')" title="Previous Page">&lsaquo;</button>
+                    <button type="button" class="btn-page" id="sales-btn-first" onclick="window.SalesController.goToPage('first')" title="First Page">&laquo;</button>
+                    <button type="button" class="btn-page" id="sales-reg-btn-prev" onclick="window.SalesController.goToPage('prev')" title="Previous Page">&lsaquo;</button>
                     <span class="page-indicator" id="sr-page-display">Page 1 of 1</span>
-                    <button type="button" class="btn-page" id="sr-btn-next" onclick="window.SalesController.goToPage('next')" title="Next Page">&rsaquo;</button>
-                    <button type="button" class="btn-page" id="sr-btn-last" onclick="window.SalesController.goToPage('last')" title="Last Page">&raquo;</button>
+                    <button type="button" class="btn-page" id="sales-reg-btn-next" onclick="window.SalesController.goToPage('next')" title="Next Page">&rsaquo;</button>
+                    <button type="button" class="btn-page" id="sales-btn-last" onclick="window.SalesController.goToPage('last')" title="Last Page">&raquo;</button>
                   </div>
                   <div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted);">
                     <span>Rows per page</span>
@@ -2587,9 +2587,12 @@
               </div>
               <div class="drawer-footer" style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">Print PDF</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">Edit</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">Close</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">🖨️ View / Download PDF</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">📊 View / Download Excel</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">✉️ Send Email</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">✏️ Edit Purchase</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">🏷️ Inward Barcode</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">✕ Close</button>
               </div>
             </div>
           </div>
@@ -3325,13 +3328,18 @@
               <!-- Master Lookups Workspace (Docked Inline Split) -->
               <div class="register-workspace" id="masters-register-workspace">
                 <div class="register-table-panel data-panel" style="padding: 16px; overflow-x:auto;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px;">
-                    <h3 id="masters-selected-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">Lookup Values</h3>
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <h3 id="masters-selected-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">Lookup Values</h3>
                       <input type="text" id="masters-lookup-search" class="filter-input" placeholder="Search lookup records..." 
                              oninput="window.MasterDataController.applyLookupFilter(this.value)"
-                             style="width: 260px; height: 34px; font-size: 0.8rem;">
-                      <button class="btn btn-primary" style="height: 34px; padding: 0 14px; font-size: 0.78rem;" onclick="window.MasterDataController.openAddLookupModal()">+ Add Lookup</button>
+                             style="width: 220px; height: 34px; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <button id="btn-master-add-lookup" class="btn btn-primary" style="height: 34px; padding: 0 14px; font-size: 0.78rem;" onclick="window.MasterDataController.openAddLookupModal()">+ Add Value</button>
+                      <button id="btn-master-edit-lookup" class="btn btn-secondary" style="height: 34px; padding: 0 12px; font-size: 0.78rem;" onclick="window.MasterDataController.openEditSelectedLookup()" disabled>Edit Value</button>
+                      <button id="btn-master-toggle-lookup" class="btn btn-secondary" style="height: 34px; padding: 0 12px; font-size: 0.78rem;" onclick="window.MasterDataController.toggleSelectedLookupActive()" disabled>Deactivate</button>
+                      <button id="btn-master-refresh-lookup" class="btn btn-secondary" style="height: 34px; padding: 0 12px; font-size: 0.78rem;" onclick="window.MasterDataController.refreshCurrentCategory()">&#8635; Refresh</button>
                     </div>
                   </div>
 
@@ -3508,6 +3516,8 @@
               <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                 <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">&#128220; View In GL</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">&#128203; Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">&#9999;&#65039; Edit Entry</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()" style="color:#f87171;">&#128465;&#65039; Delete</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">&#128424;&#65039; Print Voucher</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">&#10006; Close</button>
               </div>
@@ -3617,6 +3627,8 @@
               <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                 <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">&#128220; View In GL</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">&#128203; Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">&#9999;&#65039; Edit Expense</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()" style="color:#f87171;">&#128465;&#65039; Delete</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">&#128424;&#65039; Print Voucher</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">&#10006; Close</button>
               </div>
@@ -3860,32 +3872,32 @@
           <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(6, 1fr); gap:12px; margin-bottom:20px;">
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label">TOTAL RECORDS</span><span class="kpi-badge">PRC</span></div>
-              <div class="kpi-value" id="pr-kpi-total">0</div>
+              <div class="kpi-value" id="recon-kpi-total">0</div>
               <div class="kpi-meta">All purchase recon records</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label" style="color:var(--red);">OPEN</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Open</span></div>
-              <div class="kpi-value" id="pr-kpi-open" style="color:var(--red);">0</div>
+              <div class="kpi-value" id="recon-kpi-open" style="color:var(--red);">0</div>
               <div class="kpi-meta">Not yet linked to bank</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">PARTIAL</span><span class="kpi-badge" style="background:rgba(234,179,8,0.15); color:var(--yellow);">Partial</span></div>
-              <div class="kpi-value" id="pr-kpi-partial" style="color:var(--yellow);">0</div>
+              <div class="kpi-value" id="recon-kpi-partial" style="color:var(--yellow);">0</div>
               <div class="kpi-meta">Partially reconciled</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label" style="color:var(--green);">RECONCILED</span><span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Done</span></div>
-              <div class="kpi-value" id="pr-kpi-done" style="color:var(--green);">0</div>
+              <div class="kpi-value" id="recon-kpi-done" style="color:var(--green);">0</div>
               <div class="kpi-meta">Fully linked to bank</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">NEEDS REVIEW</span><span class="kpi-badge" style="background:rgba(234,179,8,0.15); color:var(--yellow);">Review</span></div>
-              <div class="kpi-value" id="pr-kpi-review" style="color:var(--yellow);">0</div>
+              <div class="kpi-value" id="recon-kpi-review" style="color:var(--yellow);">0</div>
               <div class="kpi-meta">Tax difference review</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header"><span class="kpi-label" style="color:var(--purple);">OUTSTANDING</span><span class="kpi-badge">Balance</span></div>
-              <div class="kpi-value" id="pr-kpi-outstanding" style="color:var(--purple); font-size:1.15rem;">&#8377; 0.00</div>
+              <div class="kpi-value" id="recon-kpi-outstanding" style="color:var(--purple); font-size:1.15rem;">&#8377; 0.00</div>
               <div class="kpi-meta">Awaiting bank linkage</div>
             </div>
           </div>
@@ -3931,8 +3943,8 @@
               <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-top:none; border-radius:0 0 8px 8px; font-size:0.85rem;">
                 <span id="pr-page-info" style="color:var(--text-muted);">Showing 0 of 0 records</span>
                 <div style="display:flex; gap:8px;">
-                  <button id="pr-btn-prev" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.prevPage()">Previous</button>
-                  <button id="pr-btn-next" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.nextPage()">Next</button>
+                  <button id="recon-btn-prev" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.prevPage()">Previous</button>
+                  <button id="recon-btn-next" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.nextPage()">Next</button>
                 </div>
               </div>
             </div>
@@ -5292,6 +5304,28 @@
                   <button class="btn btn-secondary btn-sm" onclick="window.ImportController.downloadTemplate('Master Categories & Values')">Template</button>
                 </div>
               </div>
+              <div class="data-panel" style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128269;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Purchase Recon (2B)</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">GSTR-2B inward supplies for ITC matching and reconciliation.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;" onclick="window.ImportController.selectModule('Purchase Recon')">Select</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.ImportController.downloadTemplate('Purchase Recon')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel" style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#127974;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Bank Statement</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Statement lines, bank deposits, withdrawals, and UTR references.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;" onclick="window.ImportController.selectModule('Bank Statement')">Select</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.ImportController.downloadTemplate('Bank Statement')">Template</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -5361,7 +5395,7 @@
           <!-- STEP 4: REVIEW & IMPORT -->
           <div id="import-stage-step-4" style="display:none;">
             <div class="data-panel" style="padding:20px; border:1px solid var(--border-subtle); border-radius:8px;">
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:20px;">
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:16px;">
                 <div class="standard-kpi-card kpi-blue" style="padding:14px;">
                   <div class="metric-label">TOTAL ROWS</div>
                   <div id="lbl-import-total-count" class="metric-value" style="font-size:1.5rem;">0</div>
@@ -5376,23 +5410,55 @@
                 </div>
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h4 style="margin:0; font-size:0.95rem;">First 10 Rows Preview</h4>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <label class="form-label" style="margin:0; font-size:0.78rem;">Import Policy:</label>
-                  <select id="import-mode-select" class="form-select form-select-sm" style="width:180px;">
-                    <option value="UPSERT" selected>UPSERT (Create or Update)</option>
-                    <option value="INSERT_ONLY">INSERT ONLY (Skip Existing)</option>
-                    <option value="UPDATE_NON_BLANK">UPDATE NON-BLANK ONLY</option>
-                  </select>
+              <!-- Top Review Controls & Tabs -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; gap:8px;">
+                  <button id="tab-import-preview" class="btn btn-primary btn-sm" onclick="window.ImportController.switchReviewTab('preview')">&#128196; Data Preview</button>
+                  <button id="tab-import-validation" class="btn btn-secondary btn-sm" onclick="window.ImportController.switchReviewTab('validation')">&#9989; Validation Results</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8rem; color:var(--text-main); font-weight:600;">
+                    <input type="checkbox" id="chkDryRun" onchange="window.ImportController.toggleDryRun(this.checked)" style="accent-color:var(--cyan); cursor:pointer;">
+                    Validate only (Dry run)
+                  </label>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <label class="form-label" style="margin:0; font-size:0.78rem;">Import Policy:</label>
+                    <select id="import-mode-select" class="form-select form-select-sm" style="width:180px;">
+                      <option value="UPSERT" selected>UPSERT (Create or Update)</option>
+                      <option value="INSERT_ONLY">INSERT ONLY (Skip Existing)</option>
+                      <option value="UPDATE_NON_BLANK">UPDATE NON-BLANK ONLY</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div style="overflow-x:auto; max-height:300px; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:20px;">
-                <table class="data-table">
-                  <thead id="import-preview-thead"></thead>
-                  <tbody id="import-preview-tbody"></tbody>
-                </table>
+              <!-- Pane 1: Data Preview -->
+              <div id="pane-import-preview" style="display:block;">
+                <div style="overflow-x:auto; max-height:300px; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:20px;">
+                  <table class="data-table">
+                    <thead id="import-preview-thead"></thead>
+                    <tbody id="import-preview-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Pane 2: Validation Results -->
+              <div id="pane-import-validation" style="display:none;">
+                <div style="overflow-x:auto; max-height:300px; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:20px;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:90px; text-align:center;">Row #</th>
+                        <th style="width:100px; text-align:center;">Status</th>
+                        <th style="width:180px;">Target Field</th>
+                        <th>Validation Details / Error Message</th>
+                      </tr>
+                    </thead>
+                    <tbody id="import-validation-tbody">
+                      <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-dim);">No validation issues found.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div id="import-completed-panel" style="display:none; background:rgba(0,255,163,0.08); border:1px solid var(--accent-green); padding:16px; border-radius:6px; margin-bottom:20px;">
@@ -6899,9 +6965,29 @@
                         <input type="text" id="setting-app-tagline" class="form-input form-input-sm" value="Enterprise Production &amp; Distribution">
                       </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom:10px;">
                       <label class="form-label" style="font-size:0.7rem;">Sign-in Welcome Text</label>
                       <input type="text" id="setting-app-starting-text" class="form-input form-input-sm" value="Welcome to Jasvi Industries ERP System">
+                    </div>
+
+                    <!-- Branding Asset Uploaders (CompanySettingsPanel.fxml Parity) -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; border-top:1px dashed var(--border-subtle); padding-top:10px;">
+                      <div class="form-group">
+                        <label class="form-label" style="font-size:0.7rem;">Application Banner (5:1, 1600 &times; 320)</label>
+                        <input type="file" id="file-app-banner" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.banner', this)">
+                        <div style="display:flex; gap:6px;">
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-banner').click()" style="font-size:0.72rem;">&#128194; Upload Banner</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.banner')" style="font-size:0.72rem;">Clear</button>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" style="font-size:0.7rem;">Application Mark (512 &times; 512 PNG)</label>
+                        <input type="file" id="file-app-mark" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.mark', this)">
+                        <div style="display:flex; gap:6px;">
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-mark').click()" style="font-size:0.72rem;">&#128194; Upload Mark</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.mark')" style="font-size:0.72rem;">Clear</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -6915,20 +7001,20 @@
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Primary Commercial Banking</h3>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Bank Name *</label>
-                    <input type="text" id="setting-bank-name" class="form-input form-input-sm" value="STATE BANK OF INDIA">
+                    <input type="text" id="setting-bank-name" class="form-input form-input-sm" placeholder="e.g. State Bank of India">
                   </div>
                   <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="font-size:0.75rem;">Account Beneficiary / Holder *</label>
-                    <input type="text" id="setting-account-holder" class="form-input form-input-sm" value="JASVI INDUSTRIES">
+                    <input type="text" id="setting-account-holder" class="form-input form-input-sm" placeholder="e.g. Jasvi Industries">
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">Account Number *</label>
-                      <input type="text" id="setting-account-number" class="form-input form-input-sm" value="382910482910">
+                      <input type="text" id="setting-account-number" class="form-input form-input-sm" placeholder="Account Number">
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size:0.75rem;">IFSC Code *</label>
-                      <input type="text" id="setting-ifsc" class="form-input form-input-sm" value="SBIN0001234">
+                      <input type="text" id="setting-ifsc" class="form-input form-input-sm" placeholder="IFSC Code">
                     </div>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -7208,22 +7294,25 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
                 </div>
 
                 <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Update My Password</h3>
-                  <form onsubmit="window.SettingsController.handlePasswordChange(event)">
-                    <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">Current Password *</label>
-                      <input type="password" id="pw-current" class="form-input form-input-sm" required>
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Inactivity Timeout Policy &amp; Telemetry</h3>
+                  <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:12px; margin-bottom:14px; font-size:0.8rem; line-height:1.5; color:var(--text-muted);">
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                      <span style="color:var(--cyan); font-size:1.1rem;">&#128172;</span>
+                      <div>
+                        <strong>Owned Dialog Standard:</strong>
+                        <div>The timeout warning uses the same owned-dialog presentation standard as other ERP modal dialogs. Background data refreshes and polling do not count as user keyboard/mouse activity.</div>
+                      </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:10px;">
-                      <label class="form-label" style="font-size:0.75rem;">New Password (8+ chars) *</label>
-                      <input type="password" id="pw-new" class="form-input form-input-sm" required minlength="8">
+                  </div>
+                  <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:12px; font-size:0.8rem; line-height:1.5; color:var(--text-muted);">
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                      <span style="color:var(--accent-green); font-size:1.1rem;">&#128737;&#65039;</span>
+                      <div>
+                        <strong>MFA Enforcement Semantics:</strong>
+                        <div><strong>Required:</strong> non-Admin MFA remains strictly mandatory.<br><strong>Admin Controlled:</strong> the MFA checkbox in User Access is authoritative.<br><strong>Disabled:</strong> password-only login for all users.</div>
+                      </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:12px;">
-                      <label class="form-label" style="font-size:0.75rem;">Confirm New Password *</label>
-                      <input type="password" id="pw-confirm" class="form-input form-input-sm" required minlength="8">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
-                  </form>
+                  </div>
                 </div>
               </div>
             </div>
@@ -10480,23 +10569,23 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
   </div>
 
   <div class="modal-overlay" id="modal-add-lookup" style="display: none;">
-    <div class="modal-box" style="max-width: 480px;">
+    <div class="modal-box" style="max-width: 480px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;">
       <div class="modal-header">
         <h3 id="modal-lookup-title">Add Lookup Entry</h3>
         <button class="modal-close" onclick="window.MasterDataController.closeLookupModal()">&times;</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="overflow-y: auto; flex: 1;">
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Target Category</label>
           <input type="text" id="m-lookup-category" class="form-input" disabled style="background: rgba(0,0,0,0.2);">
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
-          <label class="form-label">Lookup Code * (Auto-Generated)</label>
-          <input type="text" id="m-lookup-code" class="form-input" placeholder="Auto-generated code" readonly style="background: rgba(0,0,0,0.2); cursor: not-allowed;">
+          <label class="form-label">Lookup Code * (Uppercase Key)</label>
+          <input type="text" id="m-lookup-code" class="form-input" placeholder="e.g. NET_30_DAYS" style="background: rgba(0,0,0,0.2);">
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Lookup Display Value *</label>
-          <input type="text" id="m-lookup-value" class="form-input" placeholder="e.g. Net 30 Days" required>
+          <input type="text" id="m-lookup-value" class="form-input" placeholder="e.g. Net 30 Days" oninput="window.MasterDataController.onLookupValueInput(this.value)" required>
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Description / Remarks</label>
@@ -10511,6 +10600,120 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
         <button type="button" class="btn btn-secondary" onclick="window.MasterDataController.closeLookupModal()">Cancel</button>
         <button type="button" class="btn btn-primary" onclick="window.MasterDataController.submitLookupSave()">Save Lookup</button>
       </div>
+    </div>
+  </div>
+
+  <!-- UNIFIED BANK & EXPENSE ENTRY MODAL (BankExpense.fxml PARITY) -->
+  <div class="modal-overlay" id="modal-finance-entry" style="display: none;">
+    <div class="modal-box" style="max-width: 720px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h3 id="finance-modal-title" style="margin: 0; font-size: 1.1rem; color: #fff;">Finance Journal Entry</h3>
+          <p id="finance-modal-subtitle" style="margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted);">Record bank deposits, withdrawals and operating expenses into General Ledger</p>
+        </div>
+        <button class="modal-close" onclick="window.FinanceController.closeFinanceModal()">&times;</button>
+      </div>
+
+      <form id="form-finance-entry" onsubmit="window.FinanceController.submitFinanceSave(event)">
+        <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+          <input type="hidden" id="f-entry-id" value="">
+          <input type="hidden" id="f-entry-version" value="0">
+
+          <!-- Mode Selector Segment -->
+          <div style="margin-bottom: 16px;">
+            <label class="form-label" style="margin-bottom: 6px; display: block;">Entry Type *</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <button type="button" id="btn-fmode-deposit" class="btn btn-primary" onclick="window.FinanceController.switchModalMode('BANK DEPOSIT')" style="font-weight: 700;">
+                &#128176; Bank Deposit
+              </button>
+              <button type="button" id="btn-fmode-withdrawal" class="btn btn-secondary" onclick="window.FinanceController.switchModalMode('BANK WITHDRAWAL')" style="font-weight: 700;">
+                &#128179; Bank Withdrawal
+              </button>
+              <button type="button" id="btn-fmode-expense" class="btn btn-secondary" onclick="window.FinanceController.switchModalMode('EXPENSE')" style="font-weight: 700;">
+                &#128184; Operating Expense
+              </button>
+            </div>
+          </div>
+
+          <!-- 2-Column Responsive Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Column 1: Transaction Coordinates -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Posting Date *</label>
+                <input type="date" id="f-entry-date" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" id="lbl-f-account">Bank Account *</label>
+                <select id="f-entry-account" class="form-select form-input" required>
+                  <option value="HDFC Bank - Current">HDFC Bank - Current (50200012345678)</option>
+                  <option value="State Bank of India - OD">State Bank of India - OD (30123456789)</option>
+                  <option value="ICICI Bank - Current">ICICI Bank - Current (000405012345)</option>
+                  <option value="Cash / General">Cash Account / Petty Cash</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-f-category" style="display: none;">
+                <label class="form-label">Expense Head / Category *</label>
+                <select id="f-entry-category" class="form-select form-input">
+                  <option value="OFFICE EXPENSES">OFFICE EXPENSES</option>
+                  <option value="RENT">RENT & PREMISES</option>
+                  <option value="SALARY">SALARY & WAGES</option>
+                  <option value="UTILITIES & ELECTRICITY">UTILITIES & ELECTRICITY</option>
+                  <option value="COURIER & FREIGHT">COURIER & FREIGHT</option>
+                  <option value="MAINTENANCE & REPAIR">MAINTENANCE & REPAIR</option>
+                  <option value="PRINTING & STATIONERY">PRINTING & STATIONERY</option>
+                  <option value="TRAVEL & CONVEYANCE">TRAVEL & CONVEYANCE</option>
+                  <option value="LEGAL & PROFESSIONAL">LEGAL & PROFESSIONAL</option>
+                  <option value="FACTORY CONSUMABLES">FACTORY CONSUMABLES</option>
+                  <option value="MISCELLANEOUS EXPENSES">MISCELLANEOUS EXPENSES</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" id="lbl-f-party">Counterparty / Payee / Paid To</label>
+                <input type="text" id="f-entry-party" class="form-input" placeholder="e.g. Jasvi Engineering / Power Corp / Vendor">
+              </div>
+            </div>
+
+            <!-- Column 2: Financials & Settlement -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Amount (₹) *</label>
+                <input type="number" step="0.01" min="0.01" id="f-entry-amount" class="form-input" placeholder="0.00" required style="font-weight: 700; font-size: 1.05rem; color: var(--cyan);">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Payment / Settlement Mode *</label>
+                <select id="f-entry-mode" class="form-select form-input" required>
+                  <option value="NEFT/RTGS">NEFT / RTGS</option>
+                  <option value="UPI">UPI / QR Code</option>
+                  <option value="CHEQUE">Cheque / Demand Draft</option>
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Credit / Debit Card</option>
+                  <option value="NETBANKING">Internet Banking</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" id="lbl-f-ref">Reference / UTR / Cheque #</label>
+                <input type="text" id="f-entry-ref" class="form-input" placeholder="e.g. UTR-8923748293 / CHQ-104928">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Narration / Particulars</label>
+                <textarea id="f-entry-notes" class="form-input" rows="2" placeholder="Notes, remarks or voucher particulars..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn btn-secondary" onclick="window.FinanceController.closeFinanceModal()">Cancel</button>
+          <button type="submit" id="btn-f-submit" class="btn btn-primary">Save Journal Entry</button>
+        </div>
+      </form>
     </div>
   </div>
 

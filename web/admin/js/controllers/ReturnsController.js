@@ -528,27 +528,34 @@ window.ReturnsController = (function() {
       alert('Please enter or select an invoice number.');
       return;
     }
+    const typeInput = document.getElementById('cr-type')?.value;
+    if (typeInput) currentType = typeInput;
+
     const tbody = document.getElementById('cr-lines-body');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading returnable items from invoice ${inv}...</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading returnable items from invoice ${inv}...</td></tr>`;
 
     const isSales = currentType === 'SALES RETURN';
     try {
       // 1. Resolve exact source party ID so that backend validation (d.partyId() == expectedParty) succeeds
       currentInvoicePartyId = 0;
       if (isSales) {
-        try {
-          const sale = await window.OperationsService.getSaleByInvoice(inv);
-          if (sale) {
-            currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
-          }
-        } catch (_) {}
+        let sale = null;
+        try { sale = await window.OperationsService.getSaleByInvoice(inv); } catch (_) {}
+        if (!sale && window.SalesController && window.SalesController.sales) {
+          sale = window.SalesController.sales.find(s => (s.invoiceNo || s.number) === inv);
+        }
+        if (sale) {
+          currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
+        }
       } else {
-        try {
-          const pur = await window.OperationsService.getPurchaseByInvoice(inv);
-          if (pur) {
-            currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
-          }
-        } catch (_) {}
+        let pur = null;
+        try { pur = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) {}
+        if (!pur && window.PurchaseController && window.PurchaseController.purchases) {
+          pur = window.PurchaseController.purchases.find(p => p.invoiceNo === inv);
+        }
+        if (pur) {
+          currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
+        }
       }
 
       let lines = [];
@@ -595,27 +602,32 @@ window.ReturnsController = (function() {
         }
       }
 
-      selectedReturnableLines = (lines || []).map(l => ({
-        sourceLineId: l.sourceLineId,
-        code: l.code,
-        description: l.description,
-        invoicedQty: parseFloat(l.quantity) || 0,
-        alreadyReturnedQty: parseFloat(l.returnedQuantity) || 0,
-        availableQty: Math.max(0, (parseFloat(l.quantity) || 0) - (parseFloat(l.returnedQuantity) || 0)),
-        rate: parseFloat(l.rate) || 0,
-        taxPercent: parseFloat(l.taxPercent) || 0,
-        lineTotal: parseFloat(l.lineTotal) || 0,
-        returnQty: 0,
-        returnAmount: 0,
-        reason: 'Return requested',
-        selected: false
-      }));
+      selectedReturnableLines = (lines || []).map(l => {
+        const invoiced = parseFloat(l.quantity) || 0;
+        const already = parseFloat(l.returnedQuantity) || 0;
+        const avail = Math.max(0, invoiced - already);
+        return {
+          sourceLineId: l.sourceLineId || l.id,
+          code: l.code || l.itemCode,
+          description: l.description || l.itemDescription || l.code,
+          invoicedQty: invoiced,
+          alreadyReturnedQty: already,
+          availableQty: avail,
+          rate: parseFloat(l.rate) || 0,
+          taxPercent: parseFloat(l.taxPercent || l.gstPercent) || 0,
+          lineTotal: parseFloat(l.lineTotal || l.totalAmount) || 0,
+          returnQty: 0,
+          returnAmount: 0,
+          reason: 'Return requested',
+          selected: false
+        };
+      });
 
       renderReturnableLines();
 
     } catch (err) {
       console.error('Failed to load returnable lines:', err);
-      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--red);">⚠️ Could not load returnable items: ${err.message || 'Invoice not found or no items available'}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--red);">⚠️ Could not load returnable items: ${err.message || 'Invoice not found or no items available'}</td></tr>`;
     }
   }
 
@@ -685,7 +697,18 @@ window.ReturnsController = (function() {
     line.returnQty = Math.min(qty, line.availableQty);
     line.selected = line.returnQty > 0;
     calcLineAmount(line);
-    renderReturnableLines();
+
+    // Update DOM row in-place without rebuilding table so user doesn't lose input focus!
+    const tbody = document.getElementById('cr-lines-body');
+    if (tbody && tbody.children[idx]) {
+      const row = tbody.children[idx];
+      const chk = row.querySelector('input[type="checkbox"]');
+      if (chk) chk.checked = line.selected;
+      if (row.cells && row.cells.length >= 8) {
+        row.cells[7].innerText = formatMoney(line.returnAmount);
+      }
+    }
+    recalcReturnTotals();
   }
 
   function onReturnReasonChange(idx, val) {
@@ -738,14 +761,30 @@ window.ReturnsController = (function() {
       }
     }
 
+    // Verify partyId before sending to prevent server 400
+    if (!currentInvoicePartyId || currentInvoicePartyId <= 0) {
+      if (currentType === 'SALES RETURN') {
+        const sale = await window.OperationsService.getSaleByInvoice(invoiceNo).catch(() => null);
+        if (sale) currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
+      } else {
+        const pur = await window.OperationsService.getPurchaseByInvoice(invoiceNo).catch(() => null);
+        if (pur) currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
+      }
+    }
+
+    if (!currentInvoicePartyId || currentInvoicePartyId <= 0) {
+      alert('Could not resolve original customer/supplier ID for this invoice. Please refresh and try again.');
+      return;
+    }
+
     const payload = {
       type: currentType,
       invoiceNo: invoiceNo,
-      partyId: currentInvoicePartyId || 0,
+      partyId: currentInvoicePartyId,
       returnDate: returnDate,
       lines: selectedLines.map(l => ({
         code: l.code,
-        sourceLineId: l.sourceLineId,
+        sourceLineId: l.sourceLineId || null,
         quantity: l.returnQty,
         amount: l.returnAmount,
         reason: l.reason.trim()

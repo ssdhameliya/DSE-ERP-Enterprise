@@ -74,12 +74,12 @@ window.PurchaseReconController = (function() {
 
   function updateReconKpis(m) {
     if (!m) return;
-    const totalEl = document.getElementById('pr-kpi-total');
-    const openEl = document.getElementById('pr-kpi-open');
-    const partialEl = document.getElementById('pr-kpi-partial');
-    const doneEl = document.getElementById('pr-kpi-done');
-    const reviewEl = document.getElementById('pr-kpi-review');
-    const outEl = document.getElementById('pr-kpi-outstanding');
+    const totalEl = document.getElementById('recon-kpi-total');
+    const openEl = document.getElementById('recon-kpi-open');
+    const partialEl = document.getElementById('recon-kpi-partial');
+    const doneEl = document.getElementById('recon-kpi-done');
+    const reviewEl = document.getElementById('recon-kpi-review');
+    const outEl = document.getElementById('recon-kpi-outstanding');
 
     if (totalEl) totalEl.innerText = (m.total || 0).toLocaleString();
     if (openEl) openEl.innerText = (m.open || 0).toLocaleString();
@@ -211,8 +211,8 @@ window.PurchaseReconController = (function() {
 
   function updatePagination() {
     const lbl = document.getElementById('pr-page-info');
-    const btnPrev = document.getElementById('pr-btn-prev');
-    const btnNext = document.getElementById('pr-btn-next');
+    const btnPrev = document.getElementById('recon-btn-prev');
+    const btnNext = document.getElementById('recon-btn-next');
 
     const start = totalRows === 0 ? 0 : currentPage * pageSize + 1;
     const end = Math.min(totalRows, (currentPage + 1) * pageSize);

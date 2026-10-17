@@ -63,6 +63,9 @@ window.OperationsService = {
     return await window.ApiService.get(url);
   },
   async getQuotation(id) {
+    if (typeof id === 'string' && isNaN(Number(id))) {
+      return await window.ApiService.get(`/api/quotations/by-number?no=${encodeURIComponent(id)}`);
+    }
     return await window.ApiService.get(`/api/quotations/${id}`);
   },
   async getQuotationBootstrap(id = null) {
@@ -220,21 +223,44 @@ window.OperationsService = {
     return await window.ApiService.post(`/api/operations/purchases/email-sent/${id}`, {});
   },
 
-  // Finance & Banking
-  async getVouchers(page = 0, size = 50, type = '', q = '') {
+  // Finance & Banking (Desktop Parity with BusinessOperationsController.java)
+  async getFinancePage(page = 0, size = 50, mode = '', period = '', type = '', q = '', from = '', to = '') {
     let url = `/api/operations/finance/page?page=${page}&size=${size}`;
+    if (mode) url += `&mode=${encodeURIComponent(mode)}`;
+    if (period) url += `&period=${encodeURIComponent(period)}`;
     if (type && type !== 'ALL') url += `&type=${encodeURIComponent(type)}`;
     if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
     return await window.ApiService.get(url);
+  },
+  async getFinanceMetrics() {
+    return await window.ApiService.get('/api/operations/finance/metrics');
+  },
+  async getFinanceById(id) {
+    return await window.ApiService.get(`/api/operations/finance/${id}`);
   },
   async getNextVoucher() {
     return await window.ApiService.get('/api/operations/finance/next-voucher');
   },
+  async saveFinance(financeDto) {
+    return await window.ApiService.post('/api/operations/finance', financeDto);
+  },
+  async updateFinance(financeDto) {
+    return await window.ApiService.put('/api/operations/finance', financeDto);
+  },
+  async deleteFinance(id, rowVersion = -1) {
+    return await window.ApiService.delete(`/api/operations/finance/${id}?rowVersion=${rowVersion}`);
+  },
+  // Backward compatibility alias
+  async getVouchers(page = 0, size = 50, type = '', q = '') {
+    return this.getFinancePage(page, size, '', '', type, q);
+  },
   async createVoucher(voucherData) {
-    return await window.ApiService.post('/api/operations/finance', voucherData);
+    return this.saveFinance(voucherData);
   },
   async deleteVoucher(id) {
-    return await window.ApiService.delete(`/api/operations/finance/${id}`);
+    return this.deleteFinance(id, -1);
   },
 
   // Inventory & Stock Adjustments
