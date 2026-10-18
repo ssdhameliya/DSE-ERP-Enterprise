@@ -212,7 +212,11 @@ window.BankStatementController = (function() {
             <span class="pill-badge ${badgeClass}">${status}</span>
           </td>
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--purple);" title="${t.matchLink || t.linkedDocumentNo || ''}">
-            ${t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-')}
+            ${(t.linkedDocumentNo || t.matchLink) ? `
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${(t.linkedDocumentNo || t.matchLink).replace(/'/g, "\\'")}')" style="color:var(--cyan); text-decoration:underline; font-weight:600;">
+                🔗 ${t.linkedDocumentNo || t.matchLink}
+              </a>
+            ` : (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-')}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
@@ -397,9 +401,31 @@ window.BankStatementController = (function() {
     loadBatch(currentBatchId);
   }
 
+  async function getExpenseCategoryChoice(defaultCat = 'Bank Charges') {
+    let categories = ['Bank Charges', 'Utility', 'Office Expenses', 'Factory Consumables', 'Courier & Freight', 'Rent & Premises', 'Professional Fees', 'General Expense'];
+    if (window.MasterService) {
+      try {
+        const cats = await window.MasterService.getLookupValues('EXPENSE_CATEGORY');
+        if (Array.isArray(cats) && cats.length > 0) categories = cats;
+      } catch (ignored) {}
+    }
+
+    const catPrompt = `Select or Enter Expense Category:\n\nAvailable Categories:\n` +
+      categories.slice(0, 10).map((c, i) => `${i + 1}. ${c}`).join('\n') +
+      `\n\nEnter category name or number (1-${Math.min(categories.length, 10)}):`;
+    
+    const choice = prompt(catPrompt, defaultCat);
+    if (!choice) return null;
+    const num = parseInt(choice.trim(), 10);
+    if (!isNaN(num) && num >= 1 && num <= categories.length) {
+      return categories[num - 1];
+    }
+    return choice.trim();
+  }
+
   async function moveSelectedToExpense() {
     if (selectedTxnIds.size === 0) return;
-    const category = prompt('Enter Expense Category (e.g., Bank Charges, Utility, Office Expenses):', 'Bank Charges');
+    const category = await getExpenseCategoryChoice('Bank Charges');
     if (!category) return;
 
     try {
@@ -520,7 +546,7 @@ window.BankStatementController = (function() {
   }
 
   async function quickMoveExpense(txnId, amount) {
-    const cat = prompt(`Move debit of ${formatMoney(amount)} to Expense Category:`, 'Factory Consumables / Miscellaneous');
+    const cat = await getExpenseCategoryChoice('Bank Charges');
     if (!cat) return;
 
     try {
@@ -580,34 +606,41 @@ window.BankStatementController = (function() {
     document.getElementById('import-csv-file').value = '';
     document.getElementById('import-preview-count').innerText = '0 rows';
 
-    // Load BANK_ACCOUNT lookups from Master Data (Desktop Parity)
+    // Load BANK_NAME and BANK_ACCOUNT lookups from Master Data (Desktop Parity)
     try {
       const bankSelect = document.getElementById('import-bank-name');
       const accInput = document.getElementById('import-bank-acc');
       if (bankSelect && window.MasterService) {
-        const lookups = await window.MasterService.getLookups('BANK_ACCOUNT');
-        const activeAccounts = (lookups || []).filter(l => l.active !== false && (l.lookupValue || l.value));
-        if (activeAccounts.length > 0) {
-          bankSelect.innerHTML = activeAccounts.map((a, idx) => {
-            const accNo = (a.lookupValue || a.value || '').trim();
-            const bName = (a.description || a.lookupCode || 'Bank Account').trim();
-            return `<option value="${bName}" data-acc="${accNo}" ${idx === 0 ? 'selected' : ''}>${bName} (${accNo})</option>`;
-          }).join('');
+        const [bankNames, bankAccounts] = await Promise.all([
+          window.MasterService.getLookupValues('BANK_NAME').catch(() => []),
+          window.MasterService.getLookups('BANK_ACCOUNT').catch(() => [])
+        ]);
 
-          if (accInput) {
+        const banks = (bankNames && bankNames.length > 0) ? bankNames : ['Kotak Mahindra Bank', 'HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 'Bank of Baroda'];
+        const activeAccounts = Array.isArray(bankAccounts) ? bankAccounts.filter(l => l.active !== false && (l.lookupValue || l.value)) : [];
+
+        bankSelect.innerHTML = banks.map(b => `<option value="${b}">${b}</option>`).join('');
+
+        const updateAccForBank = (selectedBank) => {
+          if (!accInput) return;
+          const matchingAcc = activeAccounts.filter(a => {
+            const desc = (a.description || a.lookupCode || '').toLowerCase();
+            return desc.includes(selectedBank.toLowerCase()) || selectedBank.toLowerCase().includes(desc);
+          });
+          if (matchingAcc.length > 0) {
+            accInput.value = (matchingAcc[0].lookupValue || matchingAcc[0].value || '').trim();
+          } else if (activeAccounts.length > 0) {
             accInput.value = (activeAccounts[0].lookupValue || activeAccounts[0].value || '').trim();
           }
+        };
 
-          bankSelect.onchange = function() {
-            const selOpt = bankSelect.options[bankSelect.selectedIndex];
-            if (selOpt && accInput) {
-              accInput.value = selOpt.getAttribute('data-acc') || '';
-            }
-          };
-        }
+        bankSelect.onchange = function() {
+          updateAccForBank(bankSelect.value);
+        };
+        updateAccForBank(bankSelect.value);
       }
     } catch (e) {
-      console.warn('Could not populate BANK_ACCOUNT master lookups:', e);
+      console.warn('Could not populate BANK_NAME and BANK_ACCOUNT master lookups:', e);
     }
 
     modal.style.display = 'flex';
@@ -875,7 +908,14 @@ window.BankStatementController = (function() {
     const elBal = document.getElementById('bsd-balance');
     if (elBal) elBal.innerText = formatMoney(balance);
     const elLink = document.getElementById('bsd-link');
-    if (elLink) elLink.innerText = t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `Suggested (${t.suggestedConfidence.toFixed(0)}%)` : 'Unlinked');
+    if (elLink) {
+      const doc = t.linkedDocumentNo || t.matchLink;
+      if (doc) {
+        elLink.innerHTML = `<a href="javascript:void(0)" onclick="window.BankStatementController.openLinkedDocument('${doc.replace(/'/g, "\\'")}')" style="color:var(--cyan); text-decoration:underline; font-weight:600;">🔗 ${doc}</a>`;
+      } else {
+        elLink.innerText = t.suggestedConfidence ? `Suggested (${t.suggestedConfidence.toFixed(0)}%)` : 'Unlinked';
+      }
+    }
     const elNarr = document.getElementById('bsd-narration');
     if (elNarr) elNarr.innerText = t.description || '-';
 
@@ -925,6 +965,42 @@ window.BankStatementController = (function() {
     }
   }
 
+  function openLinkedDocument(docRef) {
+    if (!docRef) return;
+    const ref = docRef.trim().toUpperCase();
+    if (ref.startsWith('INV') || ref.startsWith('SAL')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-sales-register');
+      setTimeout(() => {
+        const searchInput = document.getElementById('sales-search');
+        if (searchInput) {
+          searchInput.value = docRef;
+          if (window.SalesController) window.SalesController.applyFilters();
+        }
+      }, 250);
+    } else if (ref.startsWith('PO') || ref.startsWith('PUR') || ref.startsWith('BILL')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-purchase-register');
+      setTimeout(() => {
+        const searchInput = document.getElementById('purchase-search');
+        if (searchInput) {
+          searchInput.value = docRef;
+          if (window.PurchaseController) window.PurchaseController.applyFilters();
+        }
+      }, 250);
+    } else if (ref.startsWith('PAY') || ref.startsWith('REC')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-record-payment');
+    } else if (ref.startsWith('EXP') || ref.startsWith('VCH') || ref.startsWith('BANK')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-expense');
+      setTimeout(() => {
+        if (window.FinanceController) {
+          if (ref.startsWith('EXP')) window.FinanceController.loadExpenseMode();
+          else window.FinanceController.loadBankMode();
+        }
+      }, 250);
+    } else {
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Linked document: ${docRef}`);
+    }
+  }
+
   return {
     loadStatementWorkspace,
     onBatchSelected,
@@ -965,7 +1041,8 @@ window.BankStatementController = (function() {
     closeStatementDrawer,
     drawerMatch,
     drawerMoveExpense,
-    drawerMoveBankEntry
+    drawerMoveBankEntry,
+    openLinkedDocument
   };
 })();
 

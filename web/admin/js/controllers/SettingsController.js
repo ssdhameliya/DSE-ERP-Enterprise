@@ -603,9 +603,7 @@ window.SettingsController = (function() {
         host,
         port,
         email,
-        appPassword: password,
-        fromName,
-        startTls
+        appPassword: password
       };
 
       const docCategory = val('email-template-doc') || 'Sales Invoice (Email)';
@@ -614,6 +612,8 @@ window.SettingsController = (function() {
       templateDrafts[docCategory] = { subject, body };
 
       const settingValues = {
+        'email.fromName': fromName,
+        'email.startTls': String(startTls),
         'email.signature': signature,
         [`email.template.${encodeURIComponent(docCategory)}.subject`]: subject,
         [`email.template.${encodeURIComponent(docCategory)}.body`]: body
@@ -818,3 +818,90 @@ window.SettingsController = (function() {
     }
   };
 })();
+
+// Desktop Parity: SessionFocusManager (Client-side Idle Timeout & Warning Modal)
+window.SessionFocusManager = {
+  timeoutMinutes: 60,
+  warningSeconds: 60,
+  lastActivity: Date.now(),
+  checkInterval: null,
+  countdownInterval: null,
+  isWarningShown: false,
+
+  init(timeoutMin = 60, warningSec = 60) {
+    this.timeoutMinutes = timeoutMin;
+    this.warningSeconds = warningSec;
+    this.lastActivity = Date.now();
+    
+    const resetActivity = () => {
+      if (!this.isWarningShown) {
+        this.lastActivity = Date.now();
+      }
+    };
+
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetActivity, { passive: true });
+    });
+
+    if (this.checkInterval) clearInterval(this.checkInterval);
+    this.checkInterval = setInterval(() => this.checkIdle(), 10000);
+  },
+
+  checkIdle() {
+    if (this.isWarningShown) return;
+    const idleMs = Date.now() - this.lastActivity;
+    const timeoutMs = this.timeoutMinutes * 60 * 1000;
+    const warningThresholdMs = timeoutMs - (this.warningSeconds * 1000);
+
+    if (idleMs >= warningThresholdMs) {
+      this.showWarning();
+    }
+  },
+
+  showWarning() {
+    this.isWarningShown = true;
+    const modal = document.getElementById('session-timeout-modal');
+    const countEl = document.getElementById('session-countdown-seconds');
+    if (modal) modal.style.display = 'flex';
+
+    let remaining = this.warningSeconds;
+    if (countEl) countEl.innerText = remaining;
+
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      remaining--;
+      if (countEl) countEl.innerText = remaining;
+      if (remaining <= 0) {
+        clearInterval(this.countdownInterval);
+        this.logoutUser();
+      }
+    }, 1000);
+  },
+
+  extendSession() {
+    this.isWarningShown = false;
+    this.lastActivity = Date.now();
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    const modal = document.getElementById('session-timeout-modal');
+    if (modal) modal.style.display = 'none';
+    if (window.AppDialogService) window.AppDialogService.toastSuccess('Session active and renewed.');
+  },
+
+  logoutUser() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    if (this.checkInterval) clearInterval(this.checkInterval);
+    const modal = document.getElementById('session-timeout-modal');
+    if (modal) modal.style.display = 'none';
+    if (window.AuthService && window.AuthService.logout) {
+      window.AuthService.logout();
+    } else {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.reload();
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.SessionFocusManager.init(60, 60);
+});

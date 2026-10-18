@@ -278,7 +278,57 @@ window.RecordPaymentController = (function() {
       if (btnRem) btnRem.disabled = true;
     },
 
-    async loadPaymentLookups() {
+    let editingPaymentId = null;
+    let editingPaymentOriginal = null;
+
+    function onPaymentModeChange(val) {
+      const mode = (val || '').toLowerCase();
+      const bankSelect = document.getElementById('rp-bank-account');
+      if (bankSelect) {
+        const isCashOrUpi = mode.includes('cash') || mode.includes('upi') || mode.includes('card');
+        bankSelect.disabled = isCashOrUpi;
+        bankSelect.style.opacity = isCashOrUpi ? '0.45' : '1';
+        bankSelect.style.pointerEvents = isCashOrUpi ? 'none' : 'auto';
+      }
+    }
+
+    function toggleHistoryMenu(id, event) {
+      if (event) event.stopPropagation();
+      const menuId = 'rp-history-menu-' + id;
+      const targetMenu = document.getElementById(menuId);
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m !== targetMenu) m.style.display = 'none';
+      });
+      if (targetMenu) {
+        const isShowing = targetMenu.style.display === 'block';
+        if (isShowing) {
+          targetMenu.style.display = 'none';
+        } else {
+          targetMenu.style.display = 'block';
+          targetMenu.style.position = 'fixed';
+          targetMenu.style.zIndex = '100005';
+          const btn = event.currentTarget || event.target;
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 210;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+          let top = rect.bottom + 4;
+          if (top + 160 > window.innerHeight) {
+            top = rect.top - 160;
+          }
+          targetMenu.style.left = left + 'px';
+          targetMenu.style.top = top + 'px';
+
+          const closeHandler = () => {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          };
+          setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        }
+      }
+    }
+
+    async function loadPaymentLookups() {
       const modeSelect = document.getElementById('rp-pay-mode');
       const bankSelect = document.getElementById('rp-bank-account');
 
@@ -295,6 +345,7 @@ window.RecordPaymentController = (function() {
         }
         if (modeSelect) {
           modeSelect.innerHTML = modeList.map(m => `<option value="${m}" ${m === 'Bank Transfer' ? 'selected' : ''}>${m}</option>`).join('');
+          modeSelect.onchange = (e) => onPaymentModeChange(e.target.value);
         }
 
         let accountList = [];
@@ -316,27 +367,14 @@ window.RecordPaymentController = (function() {
             bankSelect.innerHTML = accountList.map((a, i) => `<option value="${a}" ${i === 0 ? 'selected' : ''}>${a}</option>`).join('');
           }
         }
+
+        onPaymentModeChange(modeSelect ? modeSelect.value : '');
       } catch (err) {
         console.warn('[RecordPaymentController] Failed to load payment lookups:', err);
       }
-    },
+    }
 
-    async refreshPayments() {
-      const tbody = document.getElementById('rp-history-tbody');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading payment history...</td></tr>`;
-
-      try {
-        const res = await window.ApiService.get(`/api/support/payments?type=${currentType}&id=${currentInvoiceId}&invoiceNo=${encodeURIComponent(currentInvoiceNo)}`);
-        paymentHistory = Array.isArray(res) ? res : (res && Array.isArray(res.content) ? res.content : []);
-      } catch (e) {
-        console.warn('Could not fetch server payments:', e);
-        paymentHistory = [];
-      }
-
-      this.renderHistoryTable();
-    },
-
-    renderHistoryTable() {
+    function renderHistoryTable() {
       const tbody = document.getElementById('rp-history-tbody');
       if (!tbody) return;
 
@@ -356,13 +394,16 @@ window.RecordPaymentController = (function() {
 
       tbody.innerHTML = paymentHistory.map((p, idx) => {
         const amt = parseFloat(p.amount) || 0;
-        const proof = p.proofFileName || p.proof || '';
+        const proof = p.proofFileName || p.proof || p.attachment || '';
+        const isReconciled = !!(p.reconciled || p.isReconciled || p.source === 'BANK_RECONCILIATION');
+        const pId = p.id || idx;
+
         return `
           <tr>
             <td style="text-align: center; color: var(--text-dim);">${idx + 1}</td>
             <td>${formatDate(p.date || p.paymentDate)}</td>
             <td><span class="pill-badge pill-neutral">${p.mode || p.paymentMode || 'NEFT/RTGS'}</span></td>
-            <td style="font-family: 'Space Grotesk', monospace; color: var(--cyan);">${p.referenceNo || p.refNo || '-'}</td>
+            <td style="font-family: 'Space Grotesk', monospace; color: var(--cyan);">${p.referenceNo || p.refNo || p.reference || '-'}</td>
             <td>${p.bankAccount || p.bank || '-'}</td>
             <td style="font-weight: 600; color: var(--text-main);">${p.receivedFrom || p.payer || currentPartyName}</td>
             <td style="text-align: right; font-weight: 700; color: #34d399;">${formatMoney(amt)}</td>
@@ -370,16 +411,24 @@ window.RecordPaymentController = (function() {
               ${proof ? `<span class="pill-badge pill-success" style="cursor: pointer;" onclick="window.RecordPaymentController.downloadProof(${p.id || 0}, '${proof}')" title="Click to download proof">📎 ${proof}</span>` : '<span style="color: var(--text-dim);">No proof</span>'}
             </td>
             <td style="color: var(--text-muted); font-size: 0.74rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.notes || '-'}</td>
-            <td style="text-align: center;">
-              <div style="display: flex; gap: 4px; justify-content: center;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Edit payment #${idx + 1}')">✏</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="window.RecordPaymentController.deletePayment(${p.id || idx})">🗑</button>
+            <td style="text-align: center;" onclick="event.stopPropagation();">
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.RecordPaymentController.toggleHistoryMenu('${pId}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Payment Actions">
+                  ::: Actions
+                </button>
+                <div id="rp-history-menu-${pId}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                  <div class="action-menu-item" onclick="window.RecordPaymentController.startEditPayment(${p.id || idx})"><span style="margin-right:8px;">✏️</span> Edit Payment</div>
+                  ${proof ? `<div class="action-menu-item" onclick="window.RecordPaymentController.downloadProof(${p.id || 0}, '${proof}')"><span style="margin-right:8px;">👁️</span> Preview / Download Proof</div>` : ''}
+                  ${proof && !isReconciled ? `<div class="action-menu-item" style="color:var(--red);" onclick="window.RecordPaymentController.removeHistoricalProof(${p.id || 0})"><span style="margin-right:8px;">🗑️</span> Remove Proof</div>` : ''}
+                  <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                  <div class="action-menu-item" style="color:var(--red);" onclick="window.RecordPaymentController.deletePayment(${p.id || idx})"><span style="margin-right:8px;">❌</span> Revert / Delete Payment</div>
+                </div>
               </div>
             </td>
           </tr>
         `;
       }).join('');
-    },
+    }
 
     async savePayment(e) {
       if (e) {
@@ -473,6 +522,60 @@ window.RecordPaymentController = (function() {
           attachment: proofName || null,
           createdBy: currentUser
         };
+
+        if (editingPaymentId) {
+          const oldAmt = parseFloat(editingPaymentOriginal?.amount) || 0;
+          const newAmt = amount;
+          const diff = Math.round((newAmt - oldAmt) * 100) / 100;
+          const diffStr = (diff >= 0 ? '+' : '') + formatMoney(diff);
+          
+          const confirmMsg = `Confirm Payment Modification:\n\n• Old Amount: ${formatMoney(oldAmt)}\n• New Amount: ${formatMoney(newAmt)}\n• Accounting Difference: ${diffStr}\n\nThis will adjust customer/supplier ledger balances and update General Ledger records. Do you wish to continue?`;
+          let confirmed = false;
+          if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+            confirmed = await window.AppDialogService.confirm(confirmMsg, 'Confirm Payment Update');
+          } else {
+            confirmed = confirm(confirmMsg);
+          }
+          if (!confirmed) return;
+
+          payload.id = editingPaymentId;
+          payload.expectedRowVersion = editingPaymentOriginal?.rowVersion != null ? editingPaymentOriginal.rowVersion : 0;
+          
+          if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerText = 'Updating...';
+          }
+          
+          try {
+            await window.ApiService.put(`/api/support/payments/${editingPaymentId}`, payload);
+          } catch (putErr) {
+            console.warn('PUT /api/support/payments failed, trying standard fallback:', putErr);
+            await window.ApiService.post('/api/support/payments', payload);
+          }
+          
+          if (attachedProofFile) {
+            try {
+              await window.ApiService.uploadBinary(`/api/support/payments/${editingPaymentId}/attachment-file`, attachedProofFile.name, attachedProofFile);
+            } catch (_) {}
+          }
+          
+          if (window.AppDialogService) {
+            window.AppDialogService.toastSuccess(`Payment updated successfully! Accounting difference of ${diffStr} applied.`);
+          }
+          
+          editingPaymentId = null;
+          editingPaymentOriginal = null;
+          if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerText = '💾 Save Payment';
+            btnSave.classList.remove('btn-purple');
+          }
+          
+          this.resetForm();
+          this.resetProof();
+          await this.refreshPayments();
+          return;
+        }
 
         if (btnSave) {
           btnSave.disabled = true;
@@ -641,7 +744,90 @@ window.RecordPaymentController = (function() {
         if (window.AppDialogService) window.AppDialogService.toastError(msg);
         else alert(msg);
       }
-    }
+    },
+
+    startEditPayment(paymentId) {
+      const p = paymentHistory.find(x => x.id === paymentId || (x.id == null && paymentHistory.indexOf(x) === paymentId));
+      if (!p) return;
+
+      const isReconciled = !!(p.reconciled || p.isReconciled || p.source === 'BANK_RECONCILIATION');
+      if (isReconciled) {
+        const msg = 'This payment has been matched in Bank Reconciliation. You cannot edit it directly. Please unlink or reverse the bank match first.';
+        if (window.AppDialogService) window.AppDialogService.toastWarning(msg);
+        else alert(msg);
+        return;
+      }
+
+      editingPaymentId = p.id;
+      editingPaymentOriginal = { ...p };
+
+      const elDate = document.getElementById('rp-pay-date');
+      const elMode = document.getElementById('rp-pay-mode');
+      const elRef = document.getElementById('rp-pay-ref');
+      const elFrom = document.getElementById('rp-pay-from');
+      const elBank = document.getElementById('rp-bank-account');
+      const elAmount = document.getElementById('rp-pay-amount');
+      const elNotes = document.getElementById('rp-pay-notes');
+
+      if (elDate) elDate.value = (p.date || p.paymentDate || '').slice(0, 10);
+      if (elMode) {
+        elMode.value = p.mode || p.paymentMode || 'NEFT/RTGS';
+        onPaymentModeChange(elMode.value);
+      }
+      if (elRef) elRef.value = p.referenceNo || p.refNo || p.reference || '';
+      if (elFrom) elFrom.value = p.receivedFrom || p.payer || currentPartyName;
+      if (elBank) elBank.value = p.bankAccount || p.bank || '';
+      if (elAmount) elAmount.value = p.amount || '';
+      if (elNotes) elNotes.value = p.notes || '';
+
+      const btnSave = document.getElementById('rp-btn-save');
+      if (btnSave) {
+        btnSave.innerText = '✏️ Update Payment';
+        btnSave.classList.add('btn-purple');
+      }
+
+      const formTitle = document.getElementById('rp-form-title');
+      if (formTitle) formTitle.innerText = `Edit Payment (${p.referenceNo || p.id})`;
+
+      if (window.AppDialogService) {
+        window.AppDialogService.toastInfo(`Editing payment ${p.referenceNo || p.id}. Adjust fields and click "Update Payment".`);
+      }
+    },
+
+    cancelEdit() {
+      editingPaymentId = null;
+      editingPaymentOriginal = null;
+      const btnSave = document.getElementById('rp-btn-save');
+      if (btnSave) {
+        btnSave.innerText = '💾 Save Payment';
+        btnSave.classList.remove('btn-purple');
+      }
+      const formTitle = document.getElementById('rp-form-title');
+      if (formTitle) formTitle.innerText = 'Record New Payment';
+      this.resetForm();
+    },
+
+    async removeHistoricalProof(paymentId) {
+      if (!confirm('Are you sure you want to remove the receipt proof attachment from this payment?')) return;
+      try {
+        await window.ApiService.delete(`/api/support/payments/${paymentId}/attachment`);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Receipt proof removed.');
+        await this.refreshPayments();
+      } catch (err) {
+        console.warn('Remove proof error:', err);
+        try {
+          await window.ApiService.put(`/api/support/payments/${paymentId}`, { attachment: null });
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Receipt proof removed.');
+          await this.refreshPayments();
+        } catch (e2) {
+          if (window.AppDialogService) window.AppDialogService.toastError('Failed to remove proof: ' + e2.message);
+          else alert('Failed to remove proof: ' + e2.message);
+        }
+      }
+    },
+
+    toggleHistoryMenu,
+    onPaymentModeChange
   };
 })();
 

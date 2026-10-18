@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 2,
-  webVersion: "10.0.34.02",
-  tag: "web-v10.0.34.02",
-  releaseDate: "2026-10-18T11:30:00+05:30",
+  webBuild: 3,
+  webVersion: "10.0.34.03",
+  tag: "web-v10.0.34.03",
+  releaseDate: "2026-10-18T14:15:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.02 Enterprise Release - Full Parity & Defect Correction (22-Item Suite)"
+  summary: "10.0.34.03 Enterprise Release - Full Desktop 10.0.34 Parity & 26-Item Defect Correction Suite"
 };
 
 // Automatic UI Version Injection

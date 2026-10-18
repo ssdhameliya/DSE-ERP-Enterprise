@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.02">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.03">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -4293,10 +4293,11 @@
                     <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
                     <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
                     <th style="width:130px; text-align:right;">RUNNING BAL (&#8377;)</th>
+                    <th style="width:100px; text-align:center;">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody id="ledger-table-tbody">
-                  <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading General Ledger...</td></tr>
+                  <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading General Ledger...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -6315,6 +6316,7 @@
                 <option value="CSV">CSV</option>
               </select>
               <button class="btn btn-secondary" onclick="window.ReportsController.loadSchedules()">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.ReportsController.openNewScheduleModal()">+ New Schedule</button>
             </div>
 
             <!-- SCHEDULES TABLE -->
@@ -6359,7 +6361,6 @@
             </div>
             <div class="view-actions" style="display:flex; gap:8px;">
               <button class="btn btn-secondary" onclick="window.ReminderCenterController.refresh()">&#8634; Refresh</button>
-              <button class="btn btn-primary" onclick="window.ReminderCenterController.sendBatchReminders()">&#9889; Send Batch Reminders to Overdue</button>
             </div>
           </div>
 
@@ -10705,7 +10706,7 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
   </div>
 
   <div class="modal-overlay" id="modal-add-lookup" style="display: none;">
-    <div class="modal-box" style="max-width: 480px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;">
+    <div class="modal-box" style="max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;">
       <div class="modal-header">
         <h3 id="modal-lookup-title">Add Lookup Entry</h3>
         <button class="modal-close" onclick="window.MasterDataController.closeLookupModal()">&times;</button>
@@ -10875,70 +10876,152 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
     </div>
   </div>
 
+  <!-- MODAL: NEW / EDIT REPORT SCHEDULE -->
+  <div class="modal-overlay" id="modal-new-schedule" style="display: none;">
+    <div class="modal-box" style="max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3 id="sch-modal-title">Create Report Schedule</h3>
+        <button class="modal-close" onclick="window.ReportsController.closeNewScheduleModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-y: auto; flex: 1;">
+        <input type="hidden" id="sch-form-id">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Schedule Name *</label>
+          <input type="text" id="sch-form-name" class="form-input" placeholder="e.g. Daily Sales Register Digest" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Select Report Template *</label>
+          <select id="sch-form-report" class="form-select">
+            <option value="sales-register">Sales Register (Tax Invoices)</option>
+            <option value="purchase-register">Purchase Register (Inward Bills)</option>
+            <option value="debtors-aging">Debtors Overdue &amp; Aging Summary</option>
+            <option value="stock-summary">Inventory Stock &amp; Valuation</option>
+            <option value="gstr1">GST Outward Supplies (GSTR-1 Digest)</option>
+            <option value="gstr3b">Monthly Tax Summary (GSTR-3B)</option>
+            <option value="expense-summary">Operating Expense Analysis</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div class="form-group">
+            <label class="form-label">Frequency *</label>
+            <select id="sch-form-freq" class="form-select">
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly (Mondays)</option>
+              <option value="MONTHLY">Monthly (1st Day)</option>
+              <option value="QUARTERLY">Quarterly</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dispatch Time</label>
+            <input type="time" id="sch-form-time" class="form-input" value="08:00">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Export Format *</label>
+          <select id="sch-form-format" class="form-select">
+            <option value="PDF">PDF (Formatted Printable Document)</option>
+            <option value="EXCEL">Excel (.xlsx Spreadsheets)</option>
+            <option value="CSV">CSV (Data Raw Export)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Recipient Email Addresses (Comma Separated)</label>
+          <input type="text" id="sch-form-recipients" class="form-input" placeholder="e.g. finance@jasviindustries.in, director@jasviindustries.in">
+          <small style="color: var(--text-muted); font-size: 0.72rem;">Server background worker dispatches reports automatically.</small>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="window.ReportsController.closeNewScheduleModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.ReportsController.submitSaveSchedule(event)">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SESSION TIMEOUT WARNING (Desktop Session Inactivity Parity) -->
+  <div class="modal-overlay" id="session-timeout-modal" style="display: none; z-index: 1000000;">
+    <div class="modal-box" style="max-width: 440px; width: 100%; text-align: center; border: 1px solid var(--purple-accent, #7c3aed); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+      <div style="font-size: 2.8rem; margin-bottom: 8px;">⏳</div>
+      <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Session Inactivity Warning</h3>
+      <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.4;">
+        Your ERP session has been idle and will automatically expire in:
+      </p>
+      <div style="font-size: 2.4rem; font-weight: 800; color: var(--yellow, #f59e0b); margin-bottom: 16px; font-family: monospace;">
+        <span id="session-countdown-seconds">60</span>s
+      </div>
+      <p style="margin: 0 0 20px 0; color: var(--text-dim); font-size: 0.75rem;">
+        To safeguard business data and financial transactions, inactive sessions are safely terminated.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" onclick="window.SessionFocusManager.logoutUser()" style="flex: 1;">Sign Out Now</button>
+        <button type="button" class="btn btn-primary" onclick="window.SessionFocusManager.extendSession()" style="flex: 1.5; background: var(--purple-accent, #7c3aed);">Stay Signed In</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.02"></script>
+  <script src="js/version.js?v=10.0.34.03"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.02"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.02"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.02"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.02"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.02"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.02"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.02"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.02"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.02"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.02"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.02"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.02"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.02"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.02"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.02"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.03"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.03"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.03"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.03"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.03"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.03"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.03"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.03"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.03"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.03"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.03"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.03"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.03"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.03"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.03"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.02"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.02"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.02"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.02"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.02"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.02"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.02"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.02"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.02"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.03"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.03"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.03"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.03"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.03"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.03"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.03"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.03"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.03"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.02"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.02"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.03"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.02"></script>
-  <script src="js/app.js?v=10.0.34.02"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.03"></script>
+  <script src="js/app.js?v=10.0.34.03"></script>
 </body>
 </html>
 

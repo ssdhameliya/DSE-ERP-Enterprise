@@ -1173,8 +1173,20 @@ window.PartyController = (function() {
     drawerSupplierLedger,
     drawerNewPurchase,
 
-    exportCustomers() { window.open('/api/master/parties/export?type=CUSTOMER', '_blank'); },
-    exportSuppliers() { window.open('/api/master/parties/export?type=SUPPLIER', '_blank'); }
+    exportCustomers() {
+      if (window.ApiService && typeof window.ApiService.downloadFile === 'function') {
+        window.ApiService.downloadFile('/api/master/parties/export?type=CUSTOMER', 'Customers_Master.xlsx');
+      } else {
+        window.open('/api/master/parties/export?type=CUSTOMER', '_blank');
+      }
+    },
+    exportSuppliers() {
+      if (window.ApiService && typeof window.ApiService.downloadFile === 'function') {
+        window.ApiService.downloadFile('/api/master/parties/export?type=SUPPLIER', 'Suppliers_Master.xlsx');
+      } else {
+        window.open('/api/master/parties/export?type=SUPPLIER', '_blank');
+      }
+    }
   };
 })();
 

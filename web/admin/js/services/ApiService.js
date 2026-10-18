@@ -157,10 +157,51 @@ window.ApiService = (function() {
     },
 
     /**
+     * Open any authenticated file stream in a new browser tab using blob URL
+     */
+    async viewFile(endpoint) {
+      try {
+        const token = localStorage.getItem('dse_access_token');
+        const url = endpoint.startsWith('http') ? endpoint : (BASE_URL + endpoint);
+        const res = await fetch(url, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) {
+          let errorMsg = `Preview failed (HTTP ${res.status})`;
+          try {
+            const errData = await res.json();
+            if (errData && (errData.message || errData.error)) errorMsg = errData.message || errData.error;
+          } catch (_) {}
+          throw new Error(errorMsg);
+        }
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (err) {
+        console.error('[ApiService] viewFile failed:', err);
+        if (window.AppDialogService) {
+          window.AppDialogService.toastError(err.message || 'Could not preview file');
+        } else {
+          alert('Preview error: ' + (err.message || 'Could not preview file'));
+        }
+        throw err;
+      }
+    },
+
+    /**
      * Fetch document PDF from canonical server generator and open in browser viewer/tab
      */
     async openPdfPreview(type, number) {
-      return this.downloadDocumentPdf(type, number);
+      return this.viewDocumentPdf(type, number);
+    },
+
+    /**
+     * View document PDF in browser tab directly using valid JWT credentials
+     */
+    async viewDocumentPdf(type, number) {
+      const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
+      return this.viewFile(endpoint);
     },
 
     /**

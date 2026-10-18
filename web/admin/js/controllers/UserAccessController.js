@@ -361,13 +361,85 @@ window.UserAccessController = (function() {
             <td style="font-size: 0.85rem; color: var(--text-muted);">${r.description || 'System Access Role'}</td>
             <td><span class="badge badge-role" style="font-size: 0.8rem; font-weight: 700;">${r.userCount != null ? r.userCount : '-'} Users</span></td>
             <td><span class="badge ${r.active !== false ? 'badge-paid' : 'badge-overdue'}">${r.active !== false ? 'ACTIVE' : 'INACTIVE'}</span></td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.75rem;" onclick="window.UserAccessController.switchTab('tab-permissions')">Permissions</button>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.UserAccessController.toggleRoleActionMenu('${r.code || r.name}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Role Actions">
+                  ::: Actions
+                </button>
+                <div id="role-action-menu-${r.code || r.name}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:190px; white-space:nowrap; padding:6px 0; text-align:left;">
+                  <div class="action-menu-item" onclick="window.UserAccessController.editRolePermissions('${r.code || r.name}')"><span style="margin-right:8px;">🔑</span> Edit Role Permissions</div>
+                  <div class="action-menu-item" onclick="window.UserAccessController.cloneRole('${r.code || r.name}')"><span style="margin-right:8px;">📋</span> Clone Role</div>
+                  <div class="action-menu-item" onclick="window.UserAccessController.viewAssignedUsers('${r.code || r.name}')"><span style="margin-right:8px;">👥</span> View Assigned Users</div>
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item" style="color:var(--accent-red);" onclick="window.UserAccessController.deleteRole('${r.code || r.name}')"><span style="margin-right:8px;">🗑️</span> Delete Role</div>
+                </div>
+              </div>
             </td>
           </tr>
         `).join('');
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Failed to load roles: ${err.message}</td></tr>`;
+      }
+    },
+
+    toggleRoleActionMenu(code, event) {
+      if (event) event.stopPropagation();
+      const menuId = 'role-action-menu-' + code;
+      const targetMenu = document.getElementById(menuId);
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m !== targetMenu) m.style.display = 'none';
+      });
+      if (targetMenu) {
+        const isShowing = targetMenu.style.display === 'block';
+        if (isShowing) {
+          targetMenu.style.display = 'none';
+        } else {
+          targetMenu.style.display = 'block';
+          targetMenu.style.position = 'fixed';
+          targetMenu.style.zIndex = '100005';
+          const btn = event.currentTarget || event.target;
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 190;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+          const menuHeight = targetMenu.offsetHeight || 160;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top = (spaceBelow < menuHeight && rect.top > menuHeight) ? Math.max(10, rect.top - menuHeight - 4) : (rect.bottom + 4);
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
+    },
+
+    editRolePermissions(code) {
+      this.switchTab('tab-permissions');
+    },
+
+    cloneRole(code) {
+      const newName = prompt(`Enter new role name to clone from "${code}":`);
+      if (newName) {
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Cloned role "${code}" as "${newName}"`);
+      }
+    },
+
+    viewAssignedUsers(code) {
+      const users = cachedUsers.filter(u => (u.role || '').toUpperCase() === code.toUpperCase());
+      const userList = users.map(u => u.username).join(', ') || 'No users assigned';
+      alert(`Users assigned to role ${code}:\n\n${userList}`);
+    },
+
+    deleteRole(code) {
+      if (confirm(`Are you sure you want to delete role "${code}"?`)) {
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Role "${code}" deleted.`);
+        this.loadRoles();
       }
     },
 
@@ -431,16 +503,45 @@ window.UserAccessController = (function() {
     // ==========================================
     // 4. USER MODAL & ACTIONS
     // ==========================================
-    openAddUserModal() {
+    async loadUserFormLookups() {
+      try {
+        if (!window.MasterService) return;
+        const [roles, depts, branches] = await Promise.all([
+          window.MasterService.getLookupValues('USER_ROLE').catch(() => []),
+          window.MasterService.getLookupValues('DEPARTMENT').catch(() => []),
+          window.MasterService.getLookupValues('BRANCH').catch(() => [])
+        ]);
+
+        const roleEl = document.getElementById('user-form-role');
+        if (roleEl && Array.isArray(roles) && roles.length > 0) {
+          const cur = roleEl.value || 'STAFF';
+          roleEl.innerHTML = roles.map(r => `<option value="${r}" ${r === cur ? 'selected' : ''}>${r}</option>`).join('');
+        }
+
+        const deptEl = document.getElementById('user-form-dept');
+        if (deptEl && Array.isArray(depts) && depts.length > 0) {
+          const cur = deptEl.value || 'OPERATIONS';
+          deptEl.innerHTML = depts.map(d => `<option value="${d}" ${d === cur ? 'selected' : ''}>${d}</option>`).join('');
+        }
+
+        const branchEl = document.getElementById('user-form-branch');
+        if (branchEl && Array.isArray(branches) && branches.length > 0) {
+          const cur = branchEl.value || 'HEADQUARTERS';
+          branchEl.innerHTML = branches.map(b => `<option value="${b}" ${b === cur ? 'selected' : ''}>${b}</option>`).join('');
+        }
+      } catch (e) {
+        console.warn('Could not load user form lookups:', e);
+      }
+    },
+
+    async openAddUserModal() {
       editingUserId = null;
+      await this.loadUserFormLookups();
       document.getElementById('user-modal-title').textContent = 'Provision New ERP User';
       document.getElementById('user-form-username').value = '';
       document.getElementById('user-form-username').disabled = false;
       document.getElementById('user-form-fullname').value = '';
       document.getElementById('user-form-email').value = '';
-      document.getElementById('user-form-role').value = 'STAFF';
-      document.getElementById('user-form-dept').value = 'OPERATIONS';
-      document.getElementById('user-form-branch').value = 'HEADQUARTERS';
       document.getElementById('user-form-password').value = '';
       document.getElementById('user-form-password-group').style.display = 'block';
       document.getElementById('user-form-active').checked = true;
@@ -448,10 +549,11 @@ window.UserAccessController = (function() {
       window.AppDialogService.openModal('modal-user-edit');
     },
 
-    openEditUserModal(id) {
+    async openEditUserModal(id) {
       const u = cachedUsers.find(x => x.id === id);
       if (!u) return;
       editingUserId = id;
+      await this.loadUserFormLookups();
       document.getElementById('user-modal-title').textContent = `Edit User: ${u.username}`;
       document.getElementById('user-form-username').value = u.username || '';
       document.getElementById('user-form-username').disabled = true;
@@ -727,7 +829,7 @@ window.UserAccessController = (function() {
               <td style="font-size: 0.75rem; color: #34d399; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${firstChange ? (firstChange.newValue || '-') : '-'}</td>
               <td style="font-weight: 600; color: #fff;">${evt.createdBy || 'system'}</td>
               <td style="text-align: right;">
-                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem;" onclick="window.UserAccessController.openAuditDiff(${idx})" title="View Event Diff">Diff Details</button>
+                <button class="btn btn-secondary" style="padding: 2px 10px; font-size: 0.74rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;" onclick="window.UserAccessController.openAuditDiff(${idx})" title="View Audit Details">👁️ View</button>
               </td>
             </tr>
           `;

@@ -269,6 +269,30 @@ window.SalesController = {
       this.serverMetrics = res.metrics || null;
       this.serverFilteredTotals = res.filteredTotals || null;
 
+      // Batch query authoritative return settlements matching Desktop SalesService.java
+      try {
+        const invNos = list.map(s => s.invoiceNo || s.number).filter(Boolean);
+        if (invNos.length > 0 && window.ApiService) {
+          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=SALES_RETURN&invoices=${encodeURIComponent(invNos.join(','))}`);
+          const settlements = Array.isArray(settlementsRes) ? settlementsRes : (settlementsRes && (settlementsRes.data || settlementsRes.rows || [])) || [];
+          const settMap = {};
+          settlements.forEach(st => {
+            const k = st.invoiceNo || st.sourceInvoiceNo || st.originalInvoiceNo;
+            if (k) settMap[k] = st.returnStatus || st.status;
+          });
+          list.forEach(s => {
+            const inv = s.invoiceNo || s.number;
+            if (settMap[inv]) {
+              s.returnStatus = settMap[inv];
+            } else if (!s.returnStatus) {
+              s.returnStatus = 'N/A';
+            }
+          });
+        }
+      } catch (stErr) {
+        console.warn('Could not batch query sales return settlements:', stErr);
+      }
+
       // Update Register 6-Card KPI Summary Strip
       this.updateRegisterKpis(list, this.serverMetrics);
 
@@ -410,7 +434,17 @@ window.SalesController = {
       const dueLabel = isCancelled ? '<span style="color:#f87171;">✕ Cancelled</span>' : (pending === 0 ? '<span style="color:#34d399;">✔ Settled</span>' : '<span style="color:#fbbf24;">Pending</span>');
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
       const payBadge = isPaid ? '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399;">💳 PAID</span>' : '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24;">⏱ PENDING</span>';
-      const retLabel = s.returnStatus === 'FULLY_RETURNED' ? '<span style="color:#34d399;">🔄 FULLY RET..</span>' : '<span style="color:var(--text-dim);">📄 N/A</span>';
+      
+      const rStatus = (s.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
+      let retLabel = '<span class="badge" style="background:rgba(148,163,184,0.15); color:var(--text-dim); border:1px solid rgba(148,163,184,0.25);">📄 N/A</span>';
+      if (rStatus === 'FULLY RETURNED') {
+        retLabel = '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">🔄 FULLY RET..</span>';
+      } else if (rStatus === 'PARTIALLY RETURNED') {
+        retLabel = '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24; border:1px solid rgba(251,191,36,0.35);">🔄 PARTIAL RET..</span>';
+      } else if (rStatus === 'PENDING APPROVAL') {
+        retLabel = '<span class="badge" style="background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.35);">⏳ PEND APPROV..</span>';
+      }
+
       const emailPill = s.emailSent
         ? '<span class="pill-badge pill-success" style="font-size:0.75rem; padding: 2px 8px;">Sent</span>'
         : '<span class="pill-badge pill-neutral" style="font-size:0.75rem; padding: 2px 8px; opacity:0.7;">Not Sent</span>';
@@ -645,11 +679,12 @@ window.SalesController = {
 
       // Return status matching
       if (retStatus && retStatus !== 'All' && retStatus !== '') {
-        const r = (s.returnStatus || 'N/A').toUpperCase();
-        if (retStatus === 'N/A') {
-          if (r !== 'N/A' && r !== '' && r !== 'NONE') return false;
+        const normRet = (s.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ').trim();
+        const targetRet = retStatus.toUpperCase().replace(/_/g, ' ').trim();
+        if (targetRet === 'N/A') {
+          if (normRet !== 'N/A' && normRet !== '' && normRet !== 'NONE' && normRet !== 'NO RETURN' && normRet !== 'NOT RETURNED') return false;
         } else {
-          if (r !== retStatus.toUpperCase()) return false;
+          if (normRet !== targetRet) return false;
         }
       }
 
@@ -2342,27 +2377,47 @@ window.SalesController = {
   },
 
   // =========================================================================
-  // 13. EMAIL INVOICE (REAL MODAL & SMTP OUTPUT)
-  // =========================================================================
-  openEmailModal(invoiceNo, isPurchase = false, customDetails = null) {
+  openEmailModal(invoiceNo, docTypeOrIsPurchase = false, customDetails = null) {
     let docId = 0;
     let recipientEmail = '';
     let partyName = 'Valued Partner';
     let amountStr = '₹ 0.00';
-    let docType = isPurchase ? 'PURCHASE' : 'SALE';
+    let docType = 'SALE';
 
-    if (isPurchase) {
-      const p = customDetails || (window.PurchaseController && window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache().find(x => x.invoiceNo === invoiceNo));
+    if (typeof docTypeOrIsPurchase === 'string') {
+      docType = docTypeOrIsPurchase.toUpperCase();
+    } else if (docTypeOrIsPurchase === true) {
+      docType = 'PURCHASE';
+    }
+
+    if (docType === 'SALES_RETURN') {
+      const retList = (window.ReturnsController && (window.ReturnsController.salesReturnsCache || [])) || [];
+      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number) === invoiceNo);
+      docId = (r && r.id) || 0;
+      recipientEmail = (r && r.customer && r.customer.email) || (r && r.email) || '';
+      partyName = (r && r.customer && r.customer.name) || (r && r.customerName) || 'Customer';
+      amountStr = window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0);
+    } else if (docType === 'PURCHASE_RETURN') {
+      const retList = (window.ReturnsController && (window.ReturnsController.purchaseReturnsCache || [])) || [];
+      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number) === invoiceNo);
+      docId = (r && r.id) || 0;
+      recipientEmail = (r && r.supplier && r.supplier.email) || (r && r.email) || '';
+      partyName = (r && r.supplier && r.supplier.name) || (r && r.supplierName) || 'Supplier';
+      amountStr = window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0);
+    } else if (docType === 'PURCHASE') {
+      const pList = (window.PurchaseController && (typeof window.PurchaseController.getPurchasesCache === 'function' ? window.PurchaseController.getPurchasesCache() : window.PurchaseController.purchases)) || [];
+      const p = customDetails || pList.find(x => (x.invoiceNo || x.number) === invoiceNo);
       docId = (p && p.id) || 0;
       recipientEmail = (p && p.supplier && p.supplier.email) || (p && p.email) || '';
       partyName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
       amountStr = window.FormatUtil.formatRupees((p && p.totalAmount) || 0);
     } else {
-      const sale = this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
+      docType = 'SALE';
+      const sale = customDetails || this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
       if (!sale) return;
       docId = sale.id;
       const cust = sale.customer || {};
-      recipientEmail = cust.email || '';
+      recipientEmail = cust.email || sale.email || '';
       partyName = cust.name || sale.customerName || 'Valued Customer';
       amountStr = window.FormatUtil.formatRupees(sale.totalAmount || 0);
     }
@@ -2383,24 +2438,49 @@ window.SalesController = {
     if (inpDocType) inpDocType.value = docType;
     if (inpRecipient) inpRecipient.value = recipientEmail || '';
     if (inpSubject) {
-      inpSubject.value = isPurchase 
-        ? `Purchase Inward Bill - ${invoiceNo} | Jasvi Industries`
-        : `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
+      if (docType === 'SALES_RETURN') {
+        inpSubject.value = `Credit Note / Sales Return - ${invoiceNo} | Jasvi Industries`;
+      } else if (docType === 'PURCHASE_RETURN') {
+        inpSubject.value = `Debit Note / Purchase Return - ${invoiceNo} | Jasvi Industries`;
+      } else if (docType === 'PURCHASE') {
+        inpSubject.value = `Purchase Inward Bill - ${invoiceNo} | Jasvi Industries`;
+      } else {
+        inpSubject.value = `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
+      }
     }
     if (lblAttach) {
-      lblAttach.innerText = isPurchase 
-        ? `Purchase_Bill_${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`
-        : `Tax_Invoice_${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`;
+      const cleanNo = invoiceNo.replace(/[^A-Za-z0-9]/g, '_');
+      if (docType === 'SALES_RETURN') {
+        lblAttach.innerText = `Sales_Return_${cleanNo}.pdf`;
+      } else if (docType === 'PURCHASE_RETURN') {
+        lblAttach.innerText = `Purchase_Return_${cleanNo}.pdf`;
+      } else if (docType === 'PURCHASE') {
+        lblAttach.innerText = `Purchase_Bill_${cleanNo}.pdf`;
+      } else {
+        lblAttach.innerText = `Tax_Invoice_${cleanNo}.pdf`;
+      }
     }
     if (subTitle) {
-      subTitle.innerText = isPurchase 
-        ? 'Direct SMTP transmission to supplier billing contact'
-        : 'Direct SMTP delivery to customer billing contact';
+      if (docType === 'SALES_RETURN') {
+        subTitle.innerText = 'Direct SMTP delivery of credit memo to customer';
+      } else if (docType === 'PURCHASE_RETURN') {
+        subTitle.innerText = 'Direct SMTP delivery of debit memo to supplier';
+      } else if (docType === 'PURCHASE') {
+        subTitle.innerText = 'Direct SMTP transmission to supplier billing contact';
+      } else {
+        subTitle.innerText = 'Direct SMTP delivery to customer billing contact';
+      }
     }
     if (inpBody) {
-      inpBody.value = isPurchase
-        ? `Dear ${partyName},\n\nPlease find attached the official Purchase Inward Bill #${invoiceNo} for ${amountStr}.\n\nThis inward entry has been recorded in our Jasvi Industries ERP system.\n\nThank you for your partnership.\n\nBest regards,\nProcurement & Inventory Division\nJasvi Industries`
-        : `Dear ${partyName},\n\nPlease find attached the official GST Tax Invoice #${invoiceNo} for ${amountStr}.\n\nKindly process the remittance as per the agreed credit terms.\n\nThank you for your business.\n\nBest regards,\nAccounts & Dispatch Division\nJasvi Industries`;
+      if (docType === 'SALES_RETURN') {
+        inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Sales Return Credit Note #${invoiceNo} for ${amountStr}.\n\nThe credit adjustment has been posted into your ledger balance.\n\nThank you for your business.\n\nBest regards,\nAccounts & Returns Division\nJasvi Industries`;
+      } else if (docType === 'PURCHASE_RETURN') {
+        inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Purchase Return Debit Note #${invoiceNo} for ${amountStr}.\n\nThe debit adjustment has been posted into your supplier ledger.\n\nThank you for your cooperation.\n\nBest regards,\nProcurement & Inventory Division\nJasvi Industries`;
+      } else if (docType === 'PURCHASE') {
+        inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Purchase Inward Bill #${invoiceNo} for ${amountStr}.\n\nThis inward entry has been recorded in our Jasvi Industries ERP system.\n\nThank you for your partnership.\n\nBest regards,\nProcurement & Inventory Division\nJasvi Industries`;
+      } else {
+        inpBody.value = `Dear ${partyName},\n\nPlease find attached the official GST Tax Invoice #${invoiceNo} for ${amountStr}.\n\nKindly process the remittance as per the agreed credit terms.\n\nThank you for your business.\n\nBest regards,\nAccounts & Dispatch Division\nJasvi Industries`;
+      }
     }
 
     window.AppDialogService.openModal('modal-email-invoice');
@@ -2531,8 +2611,11 @@ window.SalesController = {
       return;
     }
     const docType = (document.getElementById('mei-doc-type') || {}).value || 'SALE';
+    let docTypeParam = 'SALES_INVOICE';
+    if (docType === 'PURCHASE') docTypeParam = 'PURCHASE';
+    else if (docType === 'SALES_RETURN') docTypeParam = 'SALES_RETURN';
+    else if (docType === 'PURCHASE_RETURN') docTypeParam = 'PURCHASE_RETURN';
     const isPurchase = docType === 'PURCHASE';
-    const docTypeParam = isPurchase ? 'PURCHASE' : 'SALES_INVOICE';
     const token = localStorage.getItem('dse_access_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     try {

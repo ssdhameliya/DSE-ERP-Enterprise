@@ -451,8 +451,12 @@ window.ReturnsController = (function() {
   function downloadPdf(no) {
     const isSales = currentType === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
-    const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(no)}&format=PDF`;
-    window.open(url, '_blank');
+    if (window.ApiService && window.ApiService.downloadDocumentPdf) {
+      window.ApiService.downloadDocumentPdf(typeCode, no);
+    } else {
+      const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(no)}&format=PDF`;
+      window.ApiService.downloadFile(url, `${typeCode}-${no}.pdf`);
+    }
   }
 
   function downloadExcel(no) {
@@ -460,7 +464,7 @@ window.ReturnsController = (function() {
     const isSales = currentType === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
     const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(no)}&format=EXCEL`;
-    window.open(url, '_blank');
+    window.ApiService.downloadFile(url, `${typeCode}-${no}.xlsx`);
   }
 
   function exportExcel(type) {
@@ -473,7 +477,7 @@ window.ReturnsController = (function() {
     const from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
     const to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
     const url = `/api/documents/export?type=${typeCode}&q=${encodeURIComponent(q)}&party=${encodeURIComponent(party)}&status=${encodeURIComponent(status)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&format=EXCEL`;
-    window.open(url, '_blank');
+    window.ApiService.downloadFile(url, `${typeCode}_Register.xlsx`);
   }
 
   function sendEmailPrompt(no) {
@@ -881,6 +885,27 @@ window.ReturnsController = (function() {
         amtInp.max = balance.toFixed(2);
       }
 
+      // Populate dynamic lookups from MasterService
+      try {
+        const modeEl = document.getElementById('rr-mode');
+        if (modeEl && window.MasterService) {
+          const modes = await window.MasterService.getLookupValues('PAYMENT_MODE');
+          const modeList = (modes && modes.length > 0) ? modes : ['Bank Transfer', 'Cash', 'Cheque', 'UPI', 'Card', 'NEFT', 'RTGS', 'Other'];
+          const currentMode = modeEl.value || 'Bank Transfer';
+          modeEl.innerHTML = modeList.map(m => `<option value="${m}" ${m === currentMode ? 'selected' : ''}>${m}</option>`).join('');
+        }
+        const bankEl = document.getElementById('rr-bank-account');
+        if (bankEl && window.MasterService) {
+          const accounts = await window.MasterService.getLookups('BANK_ACCOUNT');
+          const acctList = Array.isArray(accounts) ? accounts.filter(a => a.active !== false) : [];
+          bankEl.innerHTML = acctList.length > 0
+            ? acctList.map(a => `<option value="${a.lookupValue}">${a.lookupValue}${a.description ? ' - ' + a.description : ''}</option>`).join('')
+            : '<option value="">Default Operating Bank</option>';
+        }
+      } catch (lkErr) {
+        console.warn('Could not populate refund lookups:', lkErr);
+      }
+
       updateRefundPreview();
       onRefundModeChange();
 
@@ -896,10 +921,10 @@ window.ReturnsController = (function() {
   }
 
   function onRefundModeChange() {
-    const mode = document.getElementById('rr-mode')?.value || '';
+    const mode = (document.getElementById('rr-mode')?.value || '').toLowerCase();
     const bankSelect = document.getElementById('rr-bank-account');
     if (!bankSelect) return;
-    const isBank = mode.toLowerCase().includes('bank') || mode === 'UPI' || mode === 'NEFT' || mode === 'RTGS';
+    const isBank = mode.includes('bank') || mode === 'neft' || mode === 'rtgs';
     bankSelect.disabled = !isBank;
     if (!isBank) bankSelect.value = '';
   }
@@ -938,6 +963,33 @@ window.ReturnsController = (function() {
     onRefundModeChange();
   }
 
+  function toggleRefundRowActionMenu(id, event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById(`refund-row-menu-${id}`);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== menu) m.style.display = 'none';
+    });
+    if (menu) {
+      const isVisible = menu.style.display === 'block';
+      if (isVisible) {
+        menu.style.display = 'none';
+      } else {
+        menu.style.display = 'block';
+        menu.style.position = 'fixed';
+        const rect = event.target.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.left = `${Math.max(10, rect.right - 180)}px`;
+        const close = (e) => {
+          if (!menu.contains(e.target)) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', close);
+          }
+        };
+        document.addEventListener('click', close);
+      }
+    }
+  }
+
   async function loadRefundHistory(returnNo) {
     const tbody = document.getElementById('rr-history-tbody');
     if (!tbody) return;
@@ -949,23 +1001,47 @@ window.ReturnsController = (function() {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:12px; color:var(--text-dim);">No previous refund vouchers recorded for this return.</td></tr>`;
         return;
       }
-      tbody.innerHTML = refunds.map(r => `
-        <tr>
-          <td>${formatDate(r.date)}</td>
-          <td style="font-weight:600; color:var(--cyan);">#${r.id || '-'}</td>
-          <td><span class="badge badge-paid">${r.mode || 'Bank'}</span></td>
-          <td>${r.reference || '-'}</td>
-          <td>${r.refundedParty || '-'}</td>
-          <td style="text-align:right; font-weight:700; color:var(--green);">${formatMoney(r.amount)}</td>
-          <td>
-            ${r.attachment ? `
-              <button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.72rem;" onclick="window.ReturnsController.downloadRefundProof(${r.id})">📎 Proof</button>
-            ` : '—'}
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = refunds.map(r => {
+        const hasProof = !!r.attachment;
+        const isBankRecon = (r.refundType || '').toUpperCase() === 'BANK_RECONCILIATION';
+        return `
+          <tr>
+            <td>${formatDate(r.date)}</td>
+            <td style="font-weight:600; color:var(--cyan);">#${r.id || '-'}</td>
+            <td><span class="badge badge-paid">${r.mode || 'Bank'}</span></td>
+            <td>${r.reference || '-'}</td>
+            <td>${r.refundedParty || '-'}</td>
+            <td style="text-align:right; font-weight:700; color:var(--green);">${formatMoney(r.amount)}</td>
+            <td style="text-align:center;">
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button type="button" class="btn-purple" onclick="window.ReturnsController.toggleRefundRowActionMenu(${r.id}, event)" style="padding:2px 8px; font-size:0.72rem; cursor:pointer;">
+                  ::: Actions
+                </button>
+                <div id="refund-row-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100025; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; padding:4px 0; text-align:left;">
+                  ${hasProof ? `
+                    <div class="action-menu-item" style="padding:6px 12px; cursor:pointer;" onclick="window.ReturnsController.downloadRefundProof(${r.id})">👁 Preview Proof</div>
+                    ${!isBankRecon ? `<div class="action-menu-item" style="color:var(--red); padding:6px 12px; cursor:pointer;" onclick="window.ReturnsController.removeRefundProof(${r.id})">🗑 Remove Proof</div>` : ''}
+                  ` : `<div class="action-menu-item" style="opacity:0.5; cursor:default; padding:6px 12px;">📄 No Proof Attached</div>`}
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:12px; color:var(--red);">Failed to load history: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function removeRefundProof(refundId) {
+    if (!confirm('Remove the saved proof from this refund?')) return;
+    try {
+      await window.ApiService.delete(`/api/support/return-refunds/${refundId}/attachment`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Refund proof removed successfully.');
+      if (activeRefundDetails) await loadRefundHistory(activeRefundDetails.no);
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to remove proof: ' + err.message);
+      else alert('Failed to remove proof: ' + err.message);
     }
   }
 
@@ -1004,6 +1080,10 @@ window.ReturnsController = (function() {
     if (!returnNo) { alert('Return number is missing.'); return; }
     if (amount <= 0) { alert('Refund amount must be greater than zero.'); return; }
     if (!date) { alert('Refund date is required.'); return; }
+    if (proofFile && proofFile.size > 25 * 1024 * 1024) {
+      alert('Attachment is larger than 25 MB.');
+      return;
+    }
 
     const remaining = Math.max(0, (activeRefundDetails.total || 0) - (activeRefundDetails.refund || 0));
     if (amount > remaining + 0.01) {

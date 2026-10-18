@@ -180,14 +180,16 @@ window.MasterService = (function() {
       return res;
     },
 
-    async deleteLookup(id, rowVersion = -1) {
-      const res = await window.ApiService.delete(`/api/master/lookups/${id}?rowVersion=${rowVersion}`);
+    async deleteLookup(id, rowVersion = 0) {
+      const ver = (rowVersion == null || rowVersion < 0) ? 0 : rowVersion;
+      const res = await window.ApiService.delete(`/api/master/lookups/${id}?rowVersion=${ver}`);
       invalidateCache('master_lookup');
       return res;
     },
 
-    async setLookupActive(id, active, rowVersion = -1) {
-      const res = await window.ApiService.put(`/api/master/lookups/${id}/active?active=${active}&rowVersion=${rowVersion}`);
+    async setLookupActive(id, active, rowVersion = 0) {
+      const ver = (rowVersion == null || rowVersion < 0) ? 0 : rowVersion;
+      const res = await window.ApiService.put(`/api/master/lookups/${id}/active?active=${active}&rowVersion=${ver}`);
       invalidateCache('master_lookup');
       return res;
     },

@@ -1,3 +1,4 @@
+
 /**
  * Jasvi Industries ERP - ReportsController
  * Desktop Parity with org.example.controller.ReportsController & Reports.fxml
@@ -534,11 +535,20 @@ window.ReportsController = (function() {
             <td title="${s.recipients || ''}">${s.delivery || 'EMAIL'}</td>
             <td>${s.nextRun || '-'}</td>
             <td>${statusBadge}</td>
-            <td style="text-align:right;">
-              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.runScheduleNow(${s.id})" title="Trigger Report Now" style="padding:2px 8px; font-size:0.75rem;">&#9654; Run</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.toggleScheduleStatus(${s.id}, '${isActive ? 'pause' : 'resume'}')" style="padding:2px 8px; font-size:0.75rem;">${isActive ? 'Pause' : 'Resume'}</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.duplicateSchedule(${s.id})" title="Duplicate Schedule" style="padding:2px 8px; font-size:0.75rem;">&#128203;</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.deleteSchedule(${s.id})" title="Delete Schedule" style="padding:2px 8px; font-size:0.75rem; color:var(--accent-red);">&#128465;</button>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.ReportsController.toggleScheduleActionMenu(${s.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Schedule Actions">
+                  ::: Actions
+                </button>
+                <div id="sch-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:180px; white-space:nowrap; padding:6px 0; text-align:left;">
+                  <div class="action-menu-item" onclick="window.ReportsController.runScheduleNow(${s.id})"><span style="margin-right:8px;">▶</span> Run Now</div>
+                  <div class="action-menu-item" onclick="window.ReportsController.toggleScheduleStatus(${s.id}, '${isActive ? 'pause' : 'resume'}')"><span style="margin-right:8px;">${isActive ? '⏸️' : '▶️'}</span> ${isActive ? 'Pause' : 'Resume'}</div>
+                  <div class="action-menu-item" onclick="window.ReportsController.duplicateSchedule(${s.id})"><span style="margin-right:8px;">📋</span> Duplicate</div>
+                  <div class="action-menu-item" onclick="window.ReportsController.openEditScheduleModal(${s.id})"><span style="margin-right:8px;">✏️</span> Edit Schedule</div>
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item" style="color:var(--accent-red);" onclick="window.ReportsController.deleteSchedule(${s.id})"><span style="margin-right:8px;">🗑️</span> Delete Schedule</div>
+                </div>
+              </div>
             </td>
           </tr>
         `;
@@ -583,6 +593,130 @@ window.ReportsController = (function() {
         await this.loadSchedules();
       } catch (err) {
         alert('Delete Error: ' + err.message);
+      }
+    },
+
+    toggleScheduleActionMenu(id, event) {
+      if (event) event.stopPropagation();
+      const menuId = 'sch-action-menu-' + id;
+      const targetMenu = document.getElementById(menuId);
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m !== targetMenu) m.style.display = 'none';
+      });
+      if (targetMenu) {
+        const isShowing = targetMenu.style.display === 'block';
+        if (isShowing) {
+          targetMenu.style.display = 'none';
+        } else {
+          targetMenu.style.display = 'block';
+          targetMenu.style.position = 'fixed';
+          targetMenu.style.zIndex = '100005';
+          const btn = event.currentTarget || event.target;
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 190;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+          const menuHeight = targetMenu.offsetHeight || 160;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top = (spaceBelow < menuHeight && rect.top > menuHeight) ? Math.max(10, rect.top - menuHeight - 4) : (rect.bottom + 4);
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
+    },
+
+    openNewScheduleModal() {
+      const modal = document.getElementById('modal-new-schedule');
+      if (!modal) return;
+      const titleEl = document.getElementById('sch-modal-title');
+      if (titleEl) titleEl.innerText = 'Create Report Schedule';
+      const idEl = document.getElementById('sch-form-id');
+      if (idEl) idEl.value = '';
+      const nameEl = document.getElementById('sch-form-name');
+      if (nameEl) nameEl.value = '';
+      const recEl = document.getElementById('sch-form-recipients');
+      if (recEl) recEl.value = '';
+      const timeEl = document.getElementById('sch-form-time');
+      if (timeEl) timeEl.value = '08:00';
+      modal.style.display = 'flex';
+    },
+
+    openEditScheduleModal(id) {
+      const s = allSchedules.find(x => x.id === id);
+      if (!s) return;
+      const modal = document.getElementById('modal-new-schedule');
+      if (!modal) return;
+      const titleEl = document.getElementById('sch-modal-title');
+      if (titleEl) titleEl.innerText = `Edit Schedule #${id}`;
+      const idEl = document.getElementById('sch-form-id');
+      if (idEl) idEl.value = id;
+      const nameEl = document.getElementById('sch-form-name');
+      if (nameEl) nameEl.value = s.name || '';
+      const repEl = document.getElementById('sch-form-report');
+      if (repEl) repEl.value = s.savedReport || s.reportId || 'sales-register';
+      const freqEl = document.getElementById('sch-form-freq');
+      if (freqEl) freqEl.value = s.frequency || 'DAILY';
+      const timeEl = document.getElementById('sch-form-time');
+      if (timeEl) timeEl.value = s.time || '08:00';
+      const fmtEl = document.getElementById('sch-form-format');
+      if (fmtEl) fmtEl.value = s.format || 'PDF';
+      const recEl = document.getElementById('sch-form-recipients');
+      if (recEl) recEl.value = s.recipients || '';
+      modal.style.display = 'flex';
+    },
+
+    closeNewScheduleModal() {
+      const modal = document.getElementById('modal-new-schedule');
+      if (modal) modal.style.display = 'none';
+    },
+
+    async submitSaveSchedule(e) {
+      if (e) e.preventDefault();
+      const id = document.getElementById('sch-form-id')?.value;
+      const name = document.getElementById('sch-form-name')?.value?.trim();
+      const report = document.getElementById('sch-form-report')?.value;
+      const frequency = document.getElementById('sch-form-freq')?.value;
+      const time = document.getElementById('sch-form-time')?.value;
+      const format = document.getElementById('sch-form-format')?.value;
+      const recipients = document.getElementById('sch-form-recipients')?.value?.trim();
+
+      if (!name) {
+        alert('Please enter a schedule name.');
+        return;
+      }
+
+      const payload = {
+        name,
+        savedReport: report,
+        reportTitle: report,
+        frequency,
+        time,
+        format,
+        delivery: 'EMAIL',
+        recipients: recipients || 'finance@jasviindustries.in',
+        status: 'ACTIVE'
+      };
+
+      try {
+        if (id) {
+          await window.ApiService.put(`/api/reporting/schedules/${id}`, payload);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Schedule updated successfully!');
+        } else {
+          await window.ApiService.post('/api/reporting/schedules', payload);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('New report schedule created!');
+        }
+        this.closeNewScheduleModal();
+        await this.loadSchedules();
+      } catch (err) {
+        alert('Save Error: ' + err.message);
       }
     },
 

@@ -981,15 +981,88 @@
     .footer-left { display: flex; align-items: center; gap: 18px; }
     .footer-right { display: flex; align-items: center; gap: 18px; }
 
+    .modal-box {
+      background: #0f172a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+    }
+    body.light-theme .modal-box {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: rgba(148, 163, 184, 0.35);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    }
+
     @media print {
-      body * { visibility: hidden !important; }
-      #printable-invoice-modal, #printable-invoice-modal * { visibility: visible !important; }
-      #printable-invoice-modal {
-        position: fixed; left: 0; top: 0; width: 100%; height: 100%;
-        background: #ffffff !important; display: block !important; padding: 0 !important; z-index: 999999 !important;
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
       }
-      .tax-invoice-sheet { box-shadow: none !important; border-radius: 0 !important; padding: 16px !important; max-width: 100% !important; }
-      .no-print { display: none !important; }
+      html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #printable-invoice-modal,
+      #printable-invoice-modal * {
+        visibility: visible !important;
+      }
+      #printable-invoice-modal {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        inset: auto !important;
+      }
+      #printable-invoice-modal .modal-card,
+      #printable-invoice-modal .modal-box,
+      #printable-invoice-modal .modal-body {
+        position: static !important;
+        display: block !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      #printable-invoice-modal .modal-header,
+      #printable-invoice-modal .modal-footer,
+      #printable-invoice-modal .btn-close,
+      .no-print {
+        display: none !important;
+      }
+      .tax-invoice-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+      }
     }
 
     /* STOCK POSITION INDICATOR STYLES */

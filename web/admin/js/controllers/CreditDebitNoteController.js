@@ -408,18 +408,91 @@ window.CreditDebitNoteController = (function() {
   function downloadPdf(noteNo, isCredit = true) {
     const typeCode = isCredit ? 'CREDIT_NOTE' : 'DEBIT_NOTE';
     const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(noteNo)}&format=PDF`;
-    window.open(url, '_blank');
+    if (window.ApiService && typeof window.ApiService.downloadFile === 'function') {
+      window.ApiService.downloadFile(url, `${noteNo}.pdf`);
+    } else {
+      window.open(url, '_blank');
+    }
   }
 
   // 5. CREATE NOTE MODALS
-  function openCreateCreditModal() {
+  async function openCreateCreditModal() {
     const modal = document.getElementById('modal-create-credit-note');
     if (!modal) return;
-    document.getElementById('m-cn-party').value = '';
-    document.getElementById('m-cn-invoice').value = '';
-    document.getElementById('m-cn-taxable').value = '';
-    document.getElementById('m-cn-gst-rate').value = '18';
-    document.getElementById('m-cn-adjust-stock').checked = true;
+    const inpParty = document.getElementById('m-cn-party');
+    const inpInv = document.getElementById('m-cn-invoice');
+    const inpTax = document.getElementById('m-cn-taxable');
+    const selReason = document.getElementById('m-cn-reason');
+    const selGst = document.getElementById('m-cn-gst-rate');
+    const chkStock = document.getElementById('m-cn-adjust-stock');
+
+    if (inpParty) inpParty.value = '';
+    if (inpInv) inpInv.value = '';
+    if (inpTax) inpTax.value = '';
+    if (chkStock) chkStock.checked = true;
+
+    // 1. Dynamic Master Lookups for Reason and GST Rate
+    try {
+      if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+        const reasons = await window.MasterService.getLookupsByCategoryCode('CREDIT_NOTE_REASON').catch(() => []);
+        if (Array.isArray(reasons) && reasons.length > 0 && selReason) {
+          selReason.innerHTML = reasons.filter(r => r.active !== false).map(r => `<option value="${r.lookupValue}">${r.lookupValue}</option>`).join('');
+        }
+        const gstRates = await window.MasterService.getLookupsByCategoryCode('GST_RATE').catch(() => []);
+        if (Array.isArray(gstRates) && gstRates.length > 0 && selGst) {
+          selGst.innerHTML = gstRates.filter(g => g.active !== false).map(g => `<option value="${parseFloat(g.lookupValue) || 18}">${g.lookupValue}% (${g.description || 'Standard'})</option>`).join('');
+        }
+      }
+    } catch (e) {
+      console.warn('Could not populate Credit Note master lookups:', e);
+    }
+
+    // 2. Setup Party Autocomplete & Cascading Invoices
+    try {
+      if (window.MasterService && window.MasterService.getParties) {
+        const customers = await window.MasterService.getParties('CUSTOMER');
+        let dl = document.getElementById('dl-cn-customers');
+        if (!dl) {
+          dl = document.createElement('datalist');
+          dl.id = 'dl-cn-customers';
+          document.body.appendChild(dl);
+        }
+        dl.innerHTML = (customers || []).map(c => `<option value="${c.name || c.partyName}" data-id="${c.id}">${c.name || c.partyName}</option>`).join('');
+        if (inpParty) {
+          inpParty.setAttribute('list', 'dl-cn-customers');
+          inpParty.onchange = async () => {
+            const pName = inpParty.value.trim().toLowerCase();
+            const matched = (customers || []).find(c => (c.name || c.partyName || '').toLowerCase() === pName);
+            if (matched && window.OperationsService && window.OperationsService.getSalesPage) {
+              try {
+                const sRes = await window.OperationsService.getSalesPage(0, 50, '', '', matched.id);
+                const sList = sRes.rows || sRes.content || [];
+                let dlInv = document.getElementById('dl-cn-invoices');
+                if (!dlInv) {
+                  dlInv = document.createElement('datalist');
+                  dlInv.id = 'dl-cn-invoices';
+                  document.body.appendChild(dlInv);
+                }
+                dlInv.innerHTML = sList.map(s => `<option value="${s.invoiceNo || s.number}" data-taxable="${s.taxableAmount || s.subtotal || s.totalAmount}">${s.invoiceNo || s.number} - ₹ ${(s.totalAmount || 0).toLocaleString()}</option>`).join('');
+                if (inpInv) {
+                  inpInv.setAttribute('list', 'dl-cn-invoices');
+                  inpInv.onchange = () => {
+                    const selInv = sList.find(s => (s.invoiceNo || s.number) === inpInv.value.trim());
+                    if (selInv && inpTax && !inpTax.value) {
+                      inpTax.value = selInv.taxableAmount || selInv.subtotal || selInv.totalAmount || '';
+                      recalcCreditTax();
+                    }
+                  };
+                }
+              } catch (_) {}
+            }
+          };
+        }
+      }
+    } catch (e2) {
+      console.warn('Could not populate Credit Note party datalist:', e2);
+    }
+
     recalcCreditTax();
     modal.style.display = 'flex';
   }
@@ -497,14 +570,83 @@ window.CreditDebitNoteController = (function() {
     }
   }
 
-  function openCreateDebitModal() {
+  async function openCreateDebitModal() {
     const modal = document.getElementById('modal-create-debit-note');
     if (!modal) return;
-    document.getElementById('m-dn-supplier').value = '';
-    document.getElementById('m-dn-bill').value = '';
-    document.getElementById('m-dn-taxable').value = '';
-    document.getElementById('m-dn-gst-rate').value = '18';
-    document.getElementById('m-dn-adjust-stock').checked = true;
+    const inpSupp = document.getElementById('m-dn-supplier');
+    const inpBill = document.getElementById('m-dn-bill');
+    const inpTax = document.getElementById('m-dn-taxable');
+    const selReason = document.getElementById('m-dn-reason');
+    const selGst = document.getElementById('m-dn-gst-rate');
+    const chkStock = document.getElementById('m-dn-adjust-stock');
+
+    if (inpSupp) inpSupp.value = '';
+    if (inpBill) inpBill.value = '';
+    if (inpTax) inpTax.value = '';
+    if (chkStock) chkStock.checked = true;
+
+    // 1. Dynamic Master Lookups for Reason and GST Rate
+    try {
+      if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+        const reasons = await window.MasterService.getLookupsByCategoryCode('DEBIT_NOTE_REASON').catch(() => []);
+        if (Array.isArray(reasons) && reasons.length > 0 && selReason) {
+          selReason.innerHTML = reasons.filter(r => r.active !== false).map(r => `<option value="${r.lookupValue}">${r.lookupValue}</option>`).join('');
+        }
+        const gstRates = await window.MasterService.getLookupsByCategoryCode('GST_RATE').catch(() => []);
+        if (Array.isArray(gstRates) && gstRates.length > 0 && selGst) {
+          selGst.innerHTML = gstRates.filter(g => g.active !== false).map(g => `<option value="${parseFloat(g.lookupValue) || 18}">${g.lookupValue}% (${g.description || 'Standard'})</option>`).join('');
+        }
+      }
+    } catch (e) {
+      console.warn('Could not populate Debit Note master lookups:', e);
+    }
+
+    // 2. Setup Supplier Autocomplete & Cascading Bills
+    try {
+      if (window.MasterService && window.MasterService.getParties) {
+        const suppliers = await window.MasterService.getParties('SUPPLIER');
+        let dl = document.getElementById('dl-dn-suppliers');
+        if (!dl) {
+          dl = document.createElement('datalist');
+          dl.id = 'dl-dn-suppliers';
+          document.body.appendChild(dl);
+        }
+        dl.innerHTML = (suppliers || []).map(s => `<option value="${s.name || s.partyName}" data-id="${s.id}">${s.name || s.partyName}</option>`).join('');
+        if (inpSupp) {
+          inpSupp.setAttribute('list', 'dl-dn-suppliers');
+          inpSupp.onchange = async () => {
+            const sName = inpSupp.value.trim().toLowerCase();
+            const matched = (suppliers || []).find(s => (s.name || s.partyName || '').toLowerCase() === sName);
+            if (matched && window.OperationsService && window.OperationsService.getPurchasesPage) {
+              try {
+                const pRes = await window.OperationsService.getPurchasesPage(0, 50, '', matched.id);
+                const pList = pRes.rows || pRes.content || [];
+                let dlBill = document.getElementById('dl-dn-bills');
+                if (!dlBill) {
+                  dlBill = document.createElement('datalist');
+                  dlBill.id = 'dl-dn-bills';
+                  document.body.appendChild(dlBill);
+                }
+                dlBill.innerHTML = pList.map(p => `<option value="${p.invoiceNo || p.billNo || p.number}" data-taxable="${p.taxableAmount || p.subtotal || p.totalAmount}">${p.invoiceNo || p.billNo || p.number} - ₹ ${(p.totalAmount || 0).toLocaleString()}</option>`).join('');
+                if (inpBill) {
+                  inpBill.setAttribute('list', 'dl-dn-bills');
+                  inpBill.onchange = () => {
+                    const selBill = pList.find(p => (p.invoiceNo || p.billNo || p.number) === inpBill.value.trim());
+                    if (selBill && inpTax && !inpTax.value) {
+                      inpTax.value = selBill.taxableAmount || selBill.subtotal || selBill.totalAmount || '';
+                      recalcDebitTax();
+                    }
+                  };
+                }
+              } catch (_) {}
+            }
+          };
+        }
+      }
+    } catch (e2) {
+      console.warn('Could not populate Debit Note supplier datalist:', e2);
+    }
+
     recalcDebitTax();
     modal.style.display = 'flex';
   }

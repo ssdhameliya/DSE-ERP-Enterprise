@@ -77,11 +77,23 @@ window.PurchaseController = (function() {
   }
 
   function getStatusBadge(status) {
-    const s = (status || '').toUpperCase();
+    const s = (status || '').toUpperCase().trim();
+    if (s === 'FULLY RETURNED' || s === 'FULLY_RETURNED') {
+      return `<span class="pill-badge pill-success">🔄 FULLY RET..</span>`;
+    }
+    if (s === 'PARTIALLY RETURNED' || s === 'PARTIALLY_RETURNED') {
+      return `<span class="pill-badge pill-warning">🔄 PARTIAL RET..</span>`;
+    }
+    if (s === 'PENDING APPROVAL' || s === 'PENDING_APPROVAL') {
+      return `<span class="pill-badge pill-danger">⏳ PEND APPROV..</span>`;
+    }
+    if (s === 'NOT_RETURNED' || s === 'N/A' || s === 'NO_RETURN' || s === 'NONE') {
+      return `<span class="pill-badge pill-neutral">📄 N/A</span>`;
+    }
     if (s === 'APPROVED' || s === 'ACCEPTED' || s === 'PAID') {
       return `<span class="pill-badge pill-success">${s}</span>`;
     }
-    if (s === 'PENDING' || s === 'PENDING APPROVAL' || s === 'PARTIAL') {
+    if (s === 'PENDING' || s === 'PARTIAL') {
       return `<span class="pill-badge pill-warning">${s}</span>`;
     }
     if (s === 'REJECTED' || s === 'CANCELLED' || s === 'OVERDUE' || s === 'UNPAID') {
@@ -132,6 +144,31 @@ window.PurchaseController = (function() {
       if (payStatus === 'PAYABLES') {
         purchases = purchases.filter(p => ((p.totalAmount || 0) - (p.paidAmount || 0)) > 0.005);
       }
+
+      // Batch query authoritative purchase return settlements matching Desktop PurchaseService.java
+      try {
+        const invNos = purchases.map(p => p.invoiceNo || p.billNo || p.number).filter(Boolean);
+        if (invNos.length > 0 && window.ApiService) {
+          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=PURCHASE_RETURN&invoices=${encodeURIComponent(invNos.join(','))}`);
+          const settlements = Array.isArray(settlementsRes) ? settlementsRes : (settlementsRes && (settlementsRes.data || settlementsRes.rows || [])) || [];
+          const settMap = {};
+          settlements.forEach(st => {
+            const k = st.invoiceNo || st.sourceInvoiceNo || st.originalInvoiceNo;
+            if (k) settMap[k] = st.returnStatus || st.status;
+          });
+          purchases.forEach(p => {
+            const inv = p.invoiceNo || p.billNo || p.number;
+            if (settMap[inv]) {
+              p.returnStatus = settMap[inv];
+            } else if (!p.returnStatus) {
+              p.returnStatus = 'N/A';
+            }
+          });
+        }
+      } catch (stErr) {
+        console.warn('Could not batch query purchase return settlements:', stErr);
+      }
+
       totalRows = res?.totalRows || purchases.length;
       totalPages = Math.max(1, res?.totalPages || Math.ceil(totalRows / pageSize));
 

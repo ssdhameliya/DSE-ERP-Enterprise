@@ -203,12 +203,17 @@ window.ReminderCenterController = (function() {
                   ::: Actions
                 </button>
                 <div id="rc-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:220px; white-space:nowrap; padding:6px 0; text-align:left;">
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.openReminderDrawer(${idx})"><span style="margin-right:8px;">👁️</span> View Overdue Details</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'WHATSAPP')"><span style="margin-right:8px;">📱</span> Send WhatsApp Follow-up</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'EMAIL')"><span style="margin-right:8px;">✉️</span> Send Official Email Notice</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.logCall(${item.id}, '${item.party.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📞</span> Log Call Commitment</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.openReminderDrawer(${idx})"><span style="margin-right:8px;">👁️</span> View Details</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.editReminder(${idx})"><span style="margin-right:8px;">✏️</span> Edit Reminder</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.markComplete(${idx})"><span style="margin-right:8px;">✅</span> Mark Complete</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.snooze(${idx})"><span style="margin-right:8px;">⏰</span> Snooze Reminder</div>
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.logCall(${item.id}, '${item.party.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📞</span> Log Call</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'WHATSAPP')"><span style="margin-right:8px;">📱</span> Send WhatsApp</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'EMAIL')"><span style="margin-right:8px;">✉️</span> Send Email</div>
                   <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
                   <div class="action-menu-item" onclick="window.NavigationRouter?.selectNav('view-sales-register')"><span style="margin-right:8px;">🛒</span> Open in Sales Register</div>
+                  <div class="action-menu-item" style="color:var(--accent-red);" onclick="window.ReminderCenterController.deleteReminder(${idx})"><span style="margin-right:8px;">🗑️</span> Delete Reminder</div>
                 </div>
               </div>
             </td>
@@ -399,6 +404,74 @@ window.ReminderCenterController = (function() {
       const notes = prompt(`Log follow-up phone call for ${partyName}:\nEnter client commitment date or notes:`);
       if (notes) {
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Logged telephonic note for ${partyName}: "${notes}"`);
+      }
+    },
+
+    editReminder(idx) {
+      const item = overdueList[idx];
+      if (!item) return;
+      const newNotes = prompt(`Edit collection notes for ${item.party}:`, item.notes || '');
+      if (newNotes !== null) {
+        item.notes = newNotes;
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Updated notes for ${item.party}`);
+      }
+    },
+
+    async markComplete(idx) {
+      const item = overdueList[idx];
+      if (!item) return;
+      if (!confirm(`Mark payment reminder for "${item.party}" as complete?`)) return;
+      try {
+        if (window.ApiService && item.id) {
+          await window.ApiService.post(`/api/insights/reminders/${item.id}/resolve`, {}).catch(() => null);
+        }
+        item.status = 'COMPLETED';
+        this.updateKpis(overdueList);
+        this.renderTable(overdueList);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Reminder for ${item.party} marked as Complete.`);
+      } catch (err) {
+        alert('Action Failed: ' + err.message);
+      }
+    },
+
+    async snooze(idx) {
+      const item = overdueList[idx];
+      if (!item) return;
+      const daysStr = prompt(`Snooze reminder for ${item.party} by how many days?`, '7');
+      if (!daysStr) return;
+      const days = parseInt(daysStr, 10);
+      if (isNaN(days) || days <= 0) return;
+      try {
+        if (window.ApiService && item.id) {
+          await window.ApiService.post(`/api/insights/reminders/${item.id}/snooze?days=${days}`, {}).catch(() => null);
+        }
+        const curDate = new Date(item.dueDate || new Date());
+        curDate.setDate(curDate.getDate() + days);
+        item.dueDate = curDate.toISOString().slice(0, 10);
+        item.days = Math.max(0, item.days - days);
+        this.updateKpis(overdueList);
+        this.renderTable(overdueList);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Snoozed reminder for ${item.party} by ${days} days.`);
+      } catch (err) {
+        alert('Snooze Failed: ' + err.message);
+      }
+    },
+
+    async deleteReminder(idx) {
+      const item = overdueList[idx];
+      if (!item) return;
+      if (!confirm(`Are you sure you want to delete the reminder for "${item.party}"?`)) return;
+      try {
+        if (window.ApiService && item.id) {
+          await window.ApiService.delete(`/api/insights/reminders/${item.id}`).catch(() => null);
+        }
+        overdueList.splice(idx, 1);
+        this.updateKpis(overdueList);
+        this.renderTable(overdueList);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Deleted reminder for ${item.party}.`);
+      } catch (err) {
+        alert('Delete Failed: ' + err.message);
       }
     },
 

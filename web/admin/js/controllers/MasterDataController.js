@@ -9,6 +9,7 @@ window.MasterDataController = (function() {
   let currentLookups = [];
   let filteredLookups = [];
   let selectedLookupId = null;
+  let selectedLookupRowVersion = 0;
   let selectedMasterId = null;
   let selectedMasterItem = null;
 
@@ -497,6 +498,8 @@ window.MasterDataController = (function() {
       const item = currentLookups.find(l => String(l.id) === String(targetId) || String(l.lookupCode) === String(targetId));
       if (!item) return;
 
+      selectedLookupRowVersion = item.rowVersion != null ? item.rowVersion : 0;
+
       const modal = document.getElementById('modal-add-lookup');
       const catField = document.getElementById('m-lookup-category');
       const codeField = document.getElementById('m-lookup-code');
@@ -543,7 +546,8 @@ window.MasterDataController = (function() {
         lookupValue: val,
         description: desc,
         sortOrder: sort,
-        active: true
+        active: true,
+        rowVersion: selectedLookupRowVersion != null ? selectedLookupRowVersion : 0
       };
 
       try {
@@ -585,7 +589,7 @@ window.MasterDataController = (function() {
 
       const newStatus = !(item.active !== false);
       try {
-        await window.MasterService.setLookupActive(item.id, newStatus);
+        await window.MasterService.setLookupActive(item.id, newStatus, item.rowVersion != null ? item.rowVersion : 0);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Lookup status updated to ${newStatus ? 'Active' : 'Inactive'}`, 'success');
         await this.selectCategory(currentCategory);
@@ -613,7 +617,7 @@ window.MasterDataController = (function() {
       if (!confirm(`Are you sure you want to delete lookup "${item.lookupValue || item.name}"?`)) return;
 
       try {
-        await window.MasterService.deleteLookup(item.id);
+        await window.MasterService.deleteLookup(item.id, item.rowVersion != null ? item.rowVersion : 0);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast('Lookup deleted successfully.', 'success');
         await this.selectCategory(currentCategory);
