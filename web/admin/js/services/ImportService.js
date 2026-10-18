@@ -1214,7 +1214,9 @@ window.ImportService = (function() {
         try {
           const req = {
             sourceFileName: 'Purchase_Recon_Import.xlsx',
+            sourceFingerprint: `PRC-FP-${Date.now()}`,
             fingerprint: `PRC-FP-${Date.now()}`,
+            importNote: 'Imported via Data Import Studio',
             note: 'Imported via Data Import Studio',
             dryRun: false,
             rows: reconRows

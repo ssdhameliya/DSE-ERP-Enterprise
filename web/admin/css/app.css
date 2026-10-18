@@ -355,6 +355,33 @@
     .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
     .btn-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-purple {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+      cursor: pointer;
+    }
+    .btn-purple:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+      box-shadow: 0 6px 18px rgba(139, 92, 246, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-purple:active {
+      transform: translateY(0);
+    }
+
+    /* MATCH LINK PULSATING HIGHLIGHT */
+    @keyframes rowPulsateHighlight {
+      0% { background: rgba(139, 92, 246, 0.42) !important; outline: 2px solid #8b5cf6 !important; }
+      50% { background: rgba(56, 189, 248, 0.42) !important; outline: 2px solid #38bdf8 !important; }
+      100% { background: rgba(139, 92, 246, 0.18) !important; outline: 1px solid rgba(139, 92, 246, 0.6) !important; }
+    }
+    .row-match-highlight {
+      animation: rowPulsateHighlight 1.6s ease-in-out infinite alternate !important;
+      position: relative;
+      z-index: 5;
+    }
 
     /* KPI GRIDS & 3D CARDS */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; margin-bottom: 24px; }

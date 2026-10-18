@@ -8,9 +8,13 @@ window.App = (function() {
       const now = new Date();
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const day = days[now.getDay()];
-      const dateFormatted = window.FormatUtil ? window.FormatUtil.formatDate(now) : `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-      const timeFormatted = window.FormatUtil ? window.FormatUtil.formatTime(now) : now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
-      const tzAbbr = window.FormatUtil ? window.FormatUtil.getTimeZoneAbbr() : 'IST';
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[now.getMonth()];
+      const dayNum = String(now.getDate()).padStart(2, '0');
+      const year = now.getFullYear();
+      const dateFormatted = `${dayNum} ${month} ${year}`;
+      const timeFormatted = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const tzAbbr = 'IST';
       const clockText = `${day}, ${dateFormatted} | ${timeFormatted} | ${tzAbbr}`;
 
       const el = document.getElementById('clock-display');
@@ -26,6 +30,52 @@ window.App = (function() {
     tick();
     setInterval(tick, 1000);
   }
+
+  async function syncFooterCompanyProfile() {
+    try {
+      let profile = null;
+      if (window.AuthService && window.AuthService.getCurrentUser) {
+        const u = window.AuthService.getCurrentUser();
+        if (u && u.companyProfile) profile = u.companyProfile;
+      }
+      if (!profile && window.ApiService) {
+        profile = await window.ApiService.get('/api/authority/business-profile').catch(() => null);
+      }
+      if (!profile && window.MasterService && window.MasterService.getCompanyProfile) {
+        profile = await window.MasterService.getCompanyProfile().catch(() => null);
+      }
+      if (profile) {
+        const nameEl = document.getElementById('footer-company-name');
+        const phoneEl = document.getElementById('footer-phone');
+        const emailEl = document.getElementById('footer-email');
+        const webEl = document.getElementById('footer-website');
+
+        const compName = profile.legalName || profile.tradeName || profile.companyName || 'Jasvi Industries';
+        if (nameEl) nameEl.innerHTML = `🏢 ${compName}`;
+
+        const ph = profile.phone || profile.mobile || '9099939193';
+        if (phoneEl) {
+          phoneEl.innerHTML = `📞 ${ph}`;
+          phoneEl.style.display = ph ? 'inline' : 'none';
+        }
+
+        const em = profile.email || 'info@jasviindustries.in';
+        if (emailEl) {
+          emailEl.innerHTML = `✉️ ${em}`;
+          emailEl.style.display = em ? 'inline' : 'none';
+        }
+
+        const web = profile.website || 'https://jasviindustries.in';
+        if (webEl) {
+          const webUrl = web.startsWith('http') ? web : 'https://' + web;
+          const webDisplay = web.replace(/^https?:\/\//, '');
+          webEl.innerHTML = `<a href="${webUrl}" target="_blank" style="color:inherit; text-decoration:none;">🌐 ${webDisplay}</a>`;
+          webEl.style.display = web ? 'inline' : 'none';
+        }
+      }
+    } catch (_) {}
+  }
+  window.syncFooterCompanyProfile = syncFooterCompanyProfile;
 
   function setupEnvironment() {
     const isUat = window.location.hostname.includes('-uat');
@@ -241,6 +291,7 @@ window.App = (function() {
       startClock();
       setupEnvironment();
       setupAuthForms();
+      syncFooterCompanyProfile();
 
       if (window.ShortcutManager) window.ShortcutManager.init();
       if (window.NavigationRouter) window.NavigationRouter.init();

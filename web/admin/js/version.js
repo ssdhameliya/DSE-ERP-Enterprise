@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 14,
-  webVersion: "10.0.34.14",
-  tag: "web-v10.0.34.14",
-  releaseDate: "2026-10-18T21:15:00+05:30",
-  "environment": "UAT",
-  summary: "10.0.34.14 Enterprise Release - Full Desktop Parity for All 8 Import Modules: Native .xlsx Multi-Sheet Templates, SheetJS Parsing, Pre-Flight Master Validation Pipeline, True DB Persistence, Completion Dialog, and Audit Result Reports"
+  webBuild: 15,
+  webVersion: "10.0.34.15",
+  tag: "web-v10.0.34.15",
+  releaseDate: "2026-10-18T21:55:00+05:30",
+  environment: "UAT",
+  summary: "10.0.34.15 Enterprise Release - 4-Tab Reporting Desktop Parity, Dynamic Business Footer with IST Clock, Match Link Deep Navigation, Purple Action Badges, and Import Audio Guard"
 };
 
 // Automatic UI Version Injection

@@ -136,7 +136,7 @@ window.PurchaseReconController = (function() {
           <td><span class="pill-badge pill-neutral">${r.source || 'MANUAL'}</span></td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:2px 8px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
+              <button class="btn btn-purple btn-sm" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:4px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
                 Actions ▼
               </button>
               <div id="recon-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:200px; padding:6px 0; text-align:left;">

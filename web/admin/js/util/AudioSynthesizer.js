@@ -88,6 +88,26 @@ window.AudioSynthesizer = (function() {
       } catch (_) {}
     },
 
+    playNotification() {
+      if (!audioEnabled || shouldThrottle()) return;
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        [659.25, 880].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.03, audioCtx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.08 + 0.14);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.08);
+          osc.stop(audioCtx.currentTime + idx * 0.08 + 0.14);
+        });
+      } catch (_) {}
+    },
+
     playClose() {
       if (!audioEnabled || shouldThrottle()) return;
       initAudio();

@@ -363,7 +363,13 @@ window.ImportController = (function() {
       if (dryRunEnabled) {
         const stats = await this.validateDataset();
         this.switchReviewTab('validation');
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AudioSynthesizer) {
+          try {
+            if (typeof window.AudioSynthesizer.playSuccess === 'function') {
+              window.AudioSynthesizer.playSuccess();
+            }
+          } catch (_) {}
+        }
         if (window.AppDialogService) {
           window.AppDialogService.toastInfo(
             `Dry Run Finished: ${stats.passedCount} valid, ${stats.failedCount} errors, ${stats.skippedCount} skipped. Uncheck "Validate only" to ingest into database.`
@@ -394,8 +400,17 @@ window.ImportController = (function() {
         lastImportResult = res;
 
         if (window.AudioSynthesizer) {
-          if (res.failed === 0) window.AudioSynthesizer.playSuccess();
-          else window.AudioSynthesizer.playNotification();
+          try {
+            if (res && res.failed === 0 && typeof window.AudioSynthesizer.playSuccess === 'function') {
+              window.AudioSynthesizer.playSuccess();
+            } else if (typeof window.AudioSynthesizer.playNotification === 'function') {
+              window.AudioSynthesizer.playNotification();
+            } else if (typeof window.AudioSynthesizer.playNav === 'function') {
+              window.AudioSynthesizer.playNav();
+            }
+          } catch (audioErr) {
+            console.warn('Audio feedback failed (ignored):', audioErr);
+          }
         }
 
         // Show page completion banner
