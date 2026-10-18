@@ -100,20 +100,38 @@ window.SettingsController = (function() {
            localStorage.getItem('auth_token');
   }
 
-  async function resolveAssetUrl(val) {
-    if (!val || typeof val !== 'string') return '';
+  async function resolveAssetUrl(val, assetKey) {
+    if (!val || typeof val !== 'string') {
+      if (assetKey) {
+        val = 'server-resource:' + assetKey;
+      } else {
+        return '';
+      }
+    }
     if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
       return val;
     }
+    
+    // If it's a server-resource pointer or disk path or raw asset key
+    let key = '';
     if (val.startsWith('server-resource:')) {
-      const key = val.replace('server-resource:', '');
+      key = val.replace('server-resource:', '').trim();
+    } else if (val.includes(':\\') || val.startsWith('/') || val.startsWith('\\')) {
+      if (assetKey) key = assetKey;
+    } else if (assetKey) {
+      key = assetKey;
+    }
+
+    if (key) {
       try {
         const token = getAuthToken();
         const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
         const resp = await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(key)}`, { headers });
         if (resp.ok) {
           const blob = await resp.blob();
-          return URL.createObjectURL(blob);
+          if (blob && blob.size > 0) {
+            return URL.createObjectURL(blob);
+          }
         }
       } catch (err) {
         console.warn('Failed to resolve server-resource ' + key, err);
@@ -122,23 +140,48 @@ window.SettingsController = (function() {
     return val;
   }
 
-  async function setAssetPreview(imgId, phId, base64OrUrl, defaultImg) {
+  async function setAssetPreview(imgId, phId, base64OrUrl, defaultImg, statusId, assetKey) {
     const img = document.getElementById(imgId);
     const ph = document.getElementById(phId);
+    const statusEl = statusId ? document.getElementById(statusId) : null;
     if (!img) return;
-    const resolved = await resolveAssetUrl(base64OrUrl);
+
+    img.onload = function() {
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      if (statusEl) {
+        const name = assetKey || img.alt || 'Asset';
+        statusEl.textContent = `${name} • ${img.naturalWidth || 0} × ${img.naturalHeight || 0} px`;
+        statusEl.style.color = '#4ade80';
+      }
+    };
+
+    img.onerror = function() {
+      if (defaultImg && img.src !== defaultImg && !img.src.endsWith(defaultImg)) {
+        img.src = defaultImg;
+        return;
+      }
+      img.style.display = 'none';
+      if (ph) ph.style.display = 'block';
+      if (statusEl) {
+        statusEl.textContent = 'No image selected';
+        statusEl.style.color = '#64748b';
+      }
+    };
+
+    const resolved = await resolveAssetUrl(base64OrUrl, assetKey);
     if (resolved && resolved.trim() !== '') {
       img.src = resolved;
-      img.style.display = 'block';
-      if (ph) ph.style.display = 'none';
     } else if (defaultImg) {
       img.src = defaultImg;
-      img.style.display = 'block';
-      if (ph) ph.style.display = 'none';
     } else {
       img.src = '';
       img.style.display = 'none';
       if (ph) ph.style.display = 'block';
+      if (statusEl) {
+        statusEl.textContent = 'No image selected';
+        statusEl.style.color = '#64748b';
+      }
     }
   }
 
@@ -276,15 +319,7 @@ window.SettingsController = (function() {
         await window.ApiService.put('/api/support/settings', { values });
 
         // 3. Set preview directly using ObjectURL
-        setAssetPreview(previewImgId, placeholderId, URL.createObjectURL(file));
-
-        if (statusId) {
-          const statusEl = document.getElementById(statusId);
-          if (statusEl) {
-            statusEl.textContent = file.name + ' • preserved on server';
-            statusEl.style.color = '#4ade80';
-          }
-        }
+        setAssetPreview(previewImgId, placeholderId, URL.createObjectURL(file), null, statusId, canonicalKey);
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" saved to server!`, 'success');
@@ -346,15 +381,7 @@ window.SettingsController = (function() {
           'application.markImagePath': 'assets/brand-mark.png'
         };
         const defImg = defaultImgs[canonicalKey] || defaultImgs[assetKey] || '';
-        setAssetPreview(previewImgId, placeholderId, '', defImg);
-
-        if (statusId) {
-          const statusEl = document.getElementById(statusId);
-          if (statusEl) {
-            statusEl.textContent = 'No image selected';
-            statusEl.style.color = '#64748b';
-          }
-        }
+        setAssetPreview(previewImgId, placeholderId, '', defImg, statusId, canonicalKey);
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" removed.`, 'info');
@@ -557,10 +584,10 @@ window.SettingsController = (function() {
         setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
 
         const bannerVal = serverSettings['application.brandImagePath'] || serverSettings['application.banner'];
-        setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, 'assets/brand-banner.png');
+        setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, 'assets/brand-banner.png', 'status-app-banner', 'application.brandImagePath');
 
         const markVal = serverSettings['application.markImagePath'] || serverSettings['application.mark'];
-        setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, 'assets/brand-mark.png');
+        setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, 'assets/brand-mark.png', 'status-app-mark', 'application.markImagePath');
       } catch (err) {
         console.error('[SettingsController] Failed to load company settings:', err);
       }
@@ -650,9 +677,7 @@ window.SettingsController = (function() {
         setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '0.00');
 
         const qrVal = serverSettings['payment.qrImagePath'] || serverSettings['payment.upi.qr'];
-        if (qrVal) {
-          setAssetPreview('preview-upi-qr', 'placeholder-upi-qr', qrVal);
-        }
+        setAssetPreview('preview-upi-qr', 'placeholder-upi-qr', qrVal, null, 'status-upi-qr', 'payment.qrImagePath');
       } catch (err) {
         console.error('[SettingsController] Failed to load payment settings:', err);
       }
@@ -739,12 +764,10 @@ window.SettingsController = (function() {
         } catch (e) {}
 
         const logoVal = invoiceSettings['company.logoPath'] || invoiceSettings['invoice.header.logo'];
-        setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', logoVal, 'assets/brand-banner.png');
+        setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', logoVal, 'assets/brand-banner.png', 'status-invoice-logo', 'company.logoPath');
 
         const sealVal = invoiceSettings['company.signaturePath'] || invoiceSettings['invoice.digital.seal'];
-        if (sealVal) {
-          setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', sealVal);
-        }
+        setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', sealVal, null, 'status-invoice-seal', 'company.signaturePath');
       } catch (err) {
         console.error('[SettingsController] Failed to load invoice settings:', err);
       }

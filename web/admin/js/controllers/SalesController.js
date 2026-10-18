@@ -1168,6 +1168,23 @@ window.SalesController = {
     }
   },
 
+  onBillingAddressInput(val) {
+    const chkSame = document.getElementById('ws-same-address');
+    if (chkSame && chkSame.checked) {
+      const dAddr = document.getElementById('ws-delivery-address');
+      if (dAddr) dAddr.value = val || '';
+    }
+  },
+
+  onBillingGstinInput(val) {
+    const chkSame = document.getElementById('ws-same-address');
+    if (chkSame && chkSame.checked) {
+      const dGst = document.getElementById('ws-delivery-gstin');
+      if (dGst) dGst.value = val || '';
+    }
+    this.suggestGstTypeFromGstin(val);
+  },
+
   onTransporterChange(selectEl) {
     const opt = selectEl.options[selectEl.selectedIndex];
     const gstinEl = document.getElementById('ws-trans-gstin');

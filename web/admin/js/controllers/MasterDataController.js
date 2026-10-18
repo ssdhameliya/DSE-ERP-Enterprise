@@ -490,15 +490,12 @@ window.MasterDataController = (function() {
         }
         return;
       }
-      selectedLookupId = targetId;
-      selectedMasterId = targetId;
+      selectedLookupId = item.id != null ? Number(item.id) : targetId;
+      selectedMasterId = selectedLookupId;
       const menu = document.getElementById('masters-row-actions-menu');
       if (menu) menu.classList.remove('show');
 
-      const item = currentLookups.find(l => String(l.id) === String(targetId) || String(l.lookupCode) === String(targetId));
-      if (!item) return;
-
-      selectedLookupRowVersion = item.rowVersion != null ? item.rowVersion : 0;
+      selectedLookupRowVersion = item.rowVersion != null ? Number(item.rowVersion) : 0;
 
       const modal = document.getElementById('modal-add-lookup');
       const catField = document.getElementById('m-lookup-category');
@@ -518,7 +515,7 @@ window.MasterDataController = (function() {
       }
       if (valField) valField.value = item.lookupValue || item.name || item.value || '';
       if (descField) descField.value = item.description || '';
-      if (sortField) sortField.value = item.sortOrder || 1;
+      if (sortField) sortField.value = item.displayOrder != null ? item.displayOrder : (item.sortOrder || 1);
       if (modal) modal.style.display = 'flex';
       if (valField) valField.focus();
     },
@@ -540,19 +537,22 @@ window.MasterDataController = (function() {
       }
 
       const payload = {
-        type: currentCategory,
+        id: selectedLookupId ? Number(selectedLookupId) : null,
+        lookupType: currentCategory,
         categoryCode: currentCategory,
+        type: currentCategory,
         lookupCode: code,
         lookupValue: val,
         description: desc,
+        displayOrder: sort,
         sortOrder: sort,
         active: true,
-        rowVersion: selectedLookupRowVersion != null ? selectedLookupRowVersion : 0
+        rowVersion: selectedLookupRowVersion != null ? Number(selectedLookupRowVersion) : 0
       };
 
       try {
         if (selectedLookupId) {
-          payload.id = selectedLookupId;
+          payload.id = Number(selectedLookupId);
           await window.MasterService.updateLookup(payload);
           window.AppDialogService.showToast(`Lookup "${val}" updated successfully!`, 'success');
         } else {

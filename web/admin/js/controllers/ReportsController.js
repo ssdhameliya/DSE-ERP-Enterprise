@@ -29,6 +29,11 @@ window.ReportsController = (function() {
   // Schedule Modal State
   let savedReportOptions = [];
 
+  // Saved Reports Catalog State
+  let allSavedReports = [];
+  let savedReportsSearchQuery = '';
+  let activeViewerSubView = 'viewer';
+
   const FALLBACK_DEFINITIONS = [
     { id: 'SALES_REGISTER', title: 'Sales Register', category: 'SALES', description: 'Comprehensive sales invoices, taxable value, GST split, and customer breakdown.', icon: '🛒', supportedFilters: ['party', 'item', 'salesperson', 'status', 'payment', 'gstrate', 'amount'] },
     { id: 'PURCHASE_REGISTER', title: 'Purchase Register', category: 'PURCHASE', description: 'Procurement bills, supplier input tax credit, and payable breakdown.', icon: '📦', supportedFilters: ['party', 'item', 'status', 'payment', 'gstrate', 'amount'] },
@@ -144,9 +149,10 @@ window.ReportsController = (function() {
 
   return {
     async init() {
-      this.loadSavedFavorites();
+      await this.loadSavedFavorites();
       await this.loadFilterOptions();
       await this.loadDefinitions();
+      await this.loadSavedReports();
       this.renderCategoryPills();
 
       // Set initial dates for "This Month"
@@ -166,7 +172,33 @@ window.ReportsController = (function() {
       await this.applyDashboardFilters();
     },
 
-    loadSavedFavorites() {
+    async loadSavedFavorites() {
+      try {
+        if (window.ApiService) {
+          const views = await window.ApiService.get('/api/support/saved-views?screen=REPORT_FAVORITES').catch(() => null);
+          if (Array.isArray(views)) {
+            const serverFavs = new Set();
+            for (const v of views) {
+              if (v && v.name === '__favorites__' && v.data) {
+                v.data.split(',').forEach(id => {
+                  const trimmed = id.trim();
+                  if (trimmed) serverFavs.add(trimmed);
+                });
+              }
+            }
+            if (serverFavs.size > 0) {
+              favoriteReportIds = serverFavs;
+              this.renderCategoryPills();
+              if (activeCenterCategory === 'FAVORITES') {
+                this.renderReportCards();
+              }
+              return;
+            }
+          }
+        }
+      } catch (_) {}
+
+      // Fallback: localStorage
       try {
         const saved = localStorage.getItem('dse_fav_reports');
         if (saved) {
@@ -178,9 +210,17 @@ window.ReportsController = (function() {
       } catch (_) {}
     },
 
-    persistFavorites() {
+    async persistFavorites() {
       try {
+        const payload = Array.from(favoriteReportIds).join(',');
         localStorage.setItem('dse_fav_reports', JSON.stringify(Array.from(favoriteReportIds)));
+        if (window.ApiService) {
+          await window.ApiService.post('/api/support/saved-views', {
+            screen: 'REPORT_FAVORITES',
+            name: '__favorites__',
+            data: payload
+          }).catch(err => console.warn('[ReportsController] POST /api/support/saved-views REPORT_FAVORITES failed:', err));
+        }
       } catch (_) {}
     },
 
@@ -331,6 +371,7 @@ window.ReportsController = (function() {
         if (titleEl) titleEl.innerText = this.currentDefinition?.title || 'Report Viewer';
         if (descEl) descEl.innerText = this.currentDefinition?.description || 'Dynamic tabular report viewer with multi-level filtering and export capabilities';
         if (pageIcon) pageIcon.innerText = this.currentDefinition?.icon || '📊';
+        this.loadSavedReports();
         this.reflowViewerFilterGrid();
         if (!currentResult) this.applyViewerFilters();
       } else if (tabName === 'scheduler') {
@@ -347,6 +388,7 @@ window.ReportsController = (function() {
       } else if (activeMainTab === 'center') {
         this.loadDefinitions().then(() => this.renderReportCards());
       } else if (activeMainTab === 'viewer') {
+        this.loadSavedReports();
         this.applyViewerFilters();
       } else if (activeMainTab === 'scheduler') {
         this.loadSchedules();
@@ -739,6 +781,7 @@ window.ReportsController = (function() {
       currentReportId = reportId;
       this.currentDefinition = definitions.find(d => d.id === reportId) || definitions[0];
       this.switchMainTab('viewer');
+      this.switchViewerSubView('viewer');
       this.reflowViewerFilterGrid();
       this.applyViewerFilters();
     },
@@ -761,22 +804,41 @@ window.ReportsController = (function() {
       if (titleEl) titleEl.innerText = def.title;
       if (iconEl) iconEl.innerText = def.icon || '📄';
 
-      const supp = new Set(def.supportedFilters || ['party', 'item', 'status', 'amount']);
+      this.configureFilterVisibility(def);
+    },
+
+    configureFilterVisibility(defOrId) {
+      let def = defOrId;
+      if (!def || typeof def === 'string') {
+        const id = def || currentReportId;
+        def = definitions.find(d => d.id === id) || this.currentDefinition || definitions[0];
+      }
+      if (!def) return;
+
+      const supported = new Set((def.supportedFilters || ['party', 'item', 'status', 'amount']).map(f => (f || '').toString().trim().toUpperCase()));
+      const fallback = supported.size === 0;
 
       const toggleBox = (id, show) => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'block' : 'none';
       };
 
-      toggleBox('box-v-party', supp.has('party'));
-      toggleBox('box-v-item', supp.has('item'));
-      toggleBox('box-v-salesperson', supp.has('salesperson'));
-      toggleBox('box-v-docstatus', supp.has('status'));
-      toggleBox('box-v-payment', supp.has('payment'));
-      toggleBox('box-v-returns', supp.has('returns'));
-      toggleBox('box-v-gstrate', supp.has('gstrate'));
-      toggleBox('box-v-minamt', supp.has('amount'));
-      toggleBox('box-v-maxamt', supp.has('amount'));
+      const showPeriod = fallback || supported.has('PERIOD') || supported.has('DATE');
+      toggleBox('box-v-period', showPeriod);
+      toggleBox('box-v-from', showPeriod);
+      toggleBox('box-v-to', showPeriod);
+
+      toggleBox('box-v-party', fallback || supported.has('PARTY') || supported.has('CUSTOMER') || supported.has('SUPPLIER'));
+      toggleBox('box-v-item', fallback || supported.has('ITEM'));
+      toggleBox('box-v-salesperson', fallback || supported.has('SALESPERSON'));
+      toggleBox('box-v-docstatus', fallback || supported.has('DOCUMENT STATUS') || supported.has('STATUS'));
+      toggleBox('box-v-payment', fallback || supported.has('PAYMENT STATUS') || supported.has('PAYMENT'));
+      toggleBox('box-v-returns', fallback || supported.has('RETURN STATUS') || supported.has('RETURNS'));
+      toggleBox('box-v-gstrate', fallback || supported.has('GST RATE') || supported.has('GSTRATE'));
+
+      const showAmount = fallback || supported.has('AMOUNT');
+      toggleBox('box-v-minamt', showAmount);
+      toggleBox('box-v-maxamt', showAmount);
     },
 
     toggleViewerFilterCollapse() {
@@ -1125,9 +1187,296 @@ window.ReportsController = (function() {
       window.print();
     },
 
-    saveCurrentReportConfig() {
+    async saveCurrentReportConfig() {
+      const def = this.currentDefinition || definitions[0];
+      const preset = document.getElementById('v-filter-period')?.value || 'This Month';
+      const defaultName = `${def?.title || 'Report'} (${preset})`;
+      const name = prompt('Enter a name for this Saved Report configuration:', defaultName);
+      if (!name || !name.trim()) return;
+
+      const req = {
+        reportId: def?.id || currentReportId,
+        fromDate: document.getElementById('v-filter-from')?.value || '',
+        toDate: document.getElementById('v-filter-to')?.value || '',
+        party: document.getElementById('v-filter-party')?.value || '',
+        item: document.getElementById('v-filter-item')?.value || '',
+        salesperson: document.getElementById('v-filter-salesperson')?.value || '',
+        status: document.getElementById('v-filter-docstatus')?.value || '',
+        paymentStatus: document.getElementById('v-filter-payment')?.value || '',
+        returnStatus: document.getElementById('v-filter-returns')?.value || '',
+        gstRate: document.getElementById('v-filter-gstrate')?.value || '',
+        minAmount: document.getElementById('v-filter-minamt')?.value || '',
+        maxAmount: document.getElementById('v-filter-maxamt')?.value || '',
+        groupBy: document.getElementById('viewer-groupby')?.value || 'None',
+        sortBy: document.getElementById('viewer-sortby')?.value || 'Date',
+        sortDirection: document.getElementById('viewer-direction')?.value || 'Descending',
+        search: viewerSearchQuery || '',
+        page: 0,
+        size: viewerPageSize || 25,
+        visibleColumns: []
+      };
+
+      const payload = "REPORT_V2:" + JSON.stringify({
+        version: 2,
+        name: name.trim(),
+        datePreset: preset,
+        request: req
+      });
+
+      try {
+        if (window.ApiService) {
+          await window.ApiService.post('/api/support/saved-views', {
+            screen: 'REPORT_CENTER',
+            name: name.trim(),
+            data: payload
+          });
+        }
+        if (window.AppDialogService) {
+          window.AppDialogService.toastSuccess(`Saved Report '${name.trim()}' persisted to server! Dynamic date preset '${preset}' will advance automatically.`);
+        } else {
+          alert(`Saved Report '${name.trim()}' persisted to server!`);
+        }
+        await this.loadSavedReports();
+      } catch (err) {
+        console.error('[ReportsController] saveCurrentReportConfig failed:', err);
+        alert('Failed to save report to server: ' + (err.message || err));
+      }
+    },
+
+    async loadSavedReports() {
+      try {
+        if (window.ApiService) {
+          const views = await window.ApiService.get('/api/support/saved-views?screen=REPORT_CENTER').catch(() => null);
+          if (Array.isArray(views)) {
+            allSavedReports = [];
+            for (const v of views) {
+              if (!v || !v.name) continue;
+              let config = null;
+              let req = null;
+              let preset = 'Custom';
+              if (v.data && v.data.startsWith('REPORT_V2:')) {
+                try {
+                  config = JSON.parse(v.data.substring('REPORT_V2:'.length()));
+                  req = config?.request;
+                  preset = config?.datePreset || 'Custom';
+                } catch (_) {}
+              } else if (v.data && v.data.includes('|')) {
+                const parts = v.data.split('|');
+                if (parts.length >= 6) {
+                  const repId = parts[0].trim().toUpperCase() === 'PURCHASE' ? 'PURCHASE_REGISTER' :
+                    parts[0].trim().toUpperCase() === 'INVENTORY' ? 'STOCK_SUMMARY' :
+                    parts[0].trim().toUpperCase() === 'PAYMENTS' ? 'RECEIVABLE_AGEING' : 'SALES_REGISTER';
+                  req = {
+                    reportId: repId,
+                    fromDate: parts[4] || '',
+                    toDate: parts[5] || '',
+                    party: parts[1] === 'ALL' ? '' : parts[1] || '',
+                    item: parts[2] === 'ALL' ? '' : parts[2] || '',
+                    salesperson: parts[3] === 'ALL' ? '' : parts[3] || '',
+                    groupBy: 'None',
+                    sortBy: 'Date',
+                    sortDirection: 'Descending'
+                  };
+                  preset = 'Custom';
+                }
+              }
+
+              if (req) {
+                const def = definitions.find(d => d.id === req.reportId);
+                const baseTitle = def?.title || req.reportId;
+                const group = req.groupBy && req.groupBy !== 'None' ? req.groupBy : 'None';
+                const sortStr = (req.sortBy || 'Date') + ' ' + (req.sortDirection === 'ASC' ? '↑' : '↓');
+                const cols = req.visibleColumns && req.visibleColumns.length > 0 ? `${req.visibleColumns.length} selected` : 'Standard';
+
+                allSavedReports.push({
+                  name: v.name,
+                  baseReport: baseTitle,
+                  datePreset: preset,
+                  grouping: group,
+                  sorting: sortStr,
+                  columns: cols,
+                  status: 'Saved',
+                  request: req,
+                  raw: v
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[ReportsController] loadSavedReports failed:', err);
+      }
+
+      this.renderSavedReportsTable();
+      this.populateViewerSavedDropdown();
+    },
+
+    renderSavedReportsTable() {
+      const tbody = document.getElementById('saved-reports-tbody');
+      if (!tbody) return;
+
+      let list = allSavedReports;
+      if (savedReportsSearchQuery) {
+        const q = savedReportsSearchQuery.toLowerCase();
+        list = list.filter(r =>
+          (r.name || '').toLowerCase().includes(q) ||
+          (r.baseReport || '').toLowerCase().includes(q) ||
+          (r.datePreset || '').toLowerCase().includes(q) ||
+          (r.grouping || '').toLowerCase().includes(q)
+        );
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-dim);">No saved reports found. Configure report filters in Viewer and click "Save Report".</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map((r, idx) => `
+        <tr>
+          <td style="font-weight:700; color:var(--text-main);">${r.name}</td>
+          <td style="color:var(--cyan); font-weight:600;">${r.baseReport}</td>
+          <td><span class="pill-badge pill-purple" style="font-size:0.7rem;">${r.datePreset}</span></td>
+          <td>${r.grouping}</td>
+          <td>${r.sorting}</td>
+          <td>${r.columns}</td>
+          <td><span class="pill-badge pill-success" style="font-size:0.7rem;">Ready</span></td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button class="btn btn-purple btn-sm" onclick="window.ReportsController.applySavedReportByIndex(${idx})" style="font-size:0.75rem; padding:3px 10px; margin-right:4px;">👁️ Open Report</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.scheduleSavedReportByIndex(${idx})" style="font-size:0.75rem; padding:3px 8px;">⏱️ Schedule</button>
+          </td>
+        </tr>
+      `).join('');
+    },
+
+    onSavedSearch(val) {
+      savedReportsSearchQuery = (val || '').trim();
+      this.renderSavedReportsTable();
+    },
+
+    populateViewerSavedDropdown() {
+      const select = document.getElementById('viewer-saved-reports-dropdown');
+      if (!select) return;
+      select.innerHTML = `<option value="">-- Load Saved Report --</option>` +
+        allSavedReports.map(r => `<option value="${r.name}">${r.name} (${r.baseReport} • ${r.datePreset})</option>`).join('');
+    },
+
+    onSavedDropdownChange(name) {
+      if (!name) return;
+      const saved = allSavedReports.find(r => r.name === name);
+      if (saved) {
+        this.applySavedReport(saved);
+      }
+    },
+
+    applySavedReportByIndex(idx) {
+      const saved = allSavedReports[idx];
+      if (saved) this.applySavedReport(saved);
+    },
+
+    scheduleSavedReportByIndex(idx) {
+      const saved = allSavedReports[idx];
+      if (!saved) return;
+      this.switchMainTab('scheduler');
+      this.openNewScheduleModal(saved.name);
+    },
+
+    applySavedReport(saved) {
+      if (!saved || !saved.request) return;
+      const req = saved.request;
+      currentReportId = req.reportId;
+      this.currentDefinition = definitions.find(d => d.id === currentReportId) || definitions[0];
+
+      this.switchMainTab('viewer');
+      this.switchViewerSubView('viewer');
+
+      const periodEl = document.getElementById('v-filter-period');
+      const preset = saved.datePreset || 'Custom';
+      if (periodEl) periodEl.value = preset;
+
+      if (preset && preset !== 'Custom') {
+        const dates = calculatePresetDates(preset);
+        if (dates) {
+          const f = document.getElementById('v-filter-from');
+          const t = document.getElementById('v-filter-to');
+          if (f) f.value = dates.from;
+          if (t) t.value = dates.to;
+        }
+      } else {
+        const f = document.getElementById('v-filter-from');
+        const t = document.getElementById('v-filter-to');
+        if (f && req.fromDate) f.value = req.fromDate;
+        if (t && req.toDate) t.value = req.toDate;
+      }
+
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val != null ? val : '';
+      };
+      setVal('v-filter-party', req.party);
+      setVal('v-filter-item', req.item);
+      setVal('v-filter-salesperson', req.salesperson);
+      setVal('v-filter-docstatus', req.status);
+      setVal('v-filter-payment', req.paymentStatus);
+      setVal('v-filter-returns', req.returnStatus);
+      setVal('v-filter-gstrate', req.gstRate);
+      setVal('v-filter-minamt', req.minAmount);
+      setVal('v-filter-maxamt', req.maxAmount);
+
+      setVal('viewer-groupby', req.groupBy || 'None');
+      setVal('viewer-sortby', req.sortBy || 'Date');
+      setVal('viewer-direction', req.sortDirection || 'Descending');
+
+      const searchEl = document.getElementById('viewer-search');
+      if (searchEl) searchEl.value = req.search || '';
+      viewerSearchQuery = req.search || '';
+      viewerPage = 0;
+
+      this.reflowViewerFilterGrid();
+      this.applyViewerFilters();
+
       if (window.AppDialogService) {
-        window.AppDialogService.toastSuccess(`Report view saved! Dynamic date preset '${document.getElementById('v-filter-period')?.value || 'This Month'}' will advance automatically.`);
+        window.AppDialogService.toastSuccess(`Restored Saved Report '${saved.name}' with fresh server data.`);
+      }
+    },
+
+    switchViewerSubView(subView) {
+      activeViewerSubView = subView;
+      const catView = document.getElementById('rep-subview-catalog');
+      const viewerSub = document.getElementById('rep-subview-viewer');
+      const btnCat = document.getElementById('btn-rep-sub-saved');
+      const btnViewer = document.getElementById('btn-rep-sub-viewer');
+
+      if (catView) catView.style.display = subView === 'catalog' ? 'block' : 'none';
+      if (viewerSub) viewerSub.style.display = subView === 'viewer' ? 'block' : 'none';
+
+      if (btnCat) {
+        if (subView === 'catalog') {
+          btnCat.style.background = 'rgba(56,189,248,0.15)';
+          btnCat.style.color = 'var(--cyan)';
+          btnCat.style.borderColor = 'rgba(56,189,248,0.3)';
+          btnCat.style.fontWeight = '700';
+        } else {
+          btnCat.style.background = 'transparent';
+          btnCat.style.color = 'var(--text-muted)';
+          btnCat.style.borderColor = 'transparent';
+          btnCat.style.fontWeight = '600';
+        }
+      }
+      if (btnViewer) {
+        if (subView === 'viewer') {
+          btnViewer.style.background = 'rgba(56,189,248,0.15)';
+          btnViewer.style.color = 'var(--cyan)';
+          btnViewer.style.borderColor = 'rgba(56,189,248,0.3)';
+          btnViewer.style.fontWeight = '700';
+        } else {
+          btnViewer.style.background = 'transparent';
+          btnViewer.style.color = 'var(--text-muted)';
+          btnViewer.style.borderColor = 'transparent';
+          btnViewer.style.fontWeight = '600';
+        }
+      }
+      if (subView === 'catalog') {
+        this.renderSavedReportsTable();
       }
     },
 
@@ -1361,7 +1710,7 @@ window.ReportsController = (function() {
     },
 
     // Modal: New Schedule (Image 5 Parity)
-    async openNewScheduleModal() {
+    async openNewScheduleModal(preselectedReport = null) {
       const modal = document.getElementById('modal-new-schedule');
       if (!modal) return;
 
@@ -1372,7 +1721,7 @@ window.ReportsController = (function() {
       if (idEl) idEl.value = '';
 
       const nameEl = document.getElementById('sch-form-name');
-      if (nameEl) nameEl.value = '';
+      if (nameEl) nameEl.value = preselectedReport ? `Schedule - ${preselectedReport}` : '';
 
       const recEl = document.getElementById('sch-form-recipients');
       if (recEl) recEl.value = '';
@@ -1384,7 +1733,7 @@ window.ReportsController = (function() {
       if (submitBtn) submitBtn.innerHTML = `<span>✔</span> Create Schedule`;
 
       // Load saved reports dropdown
-      await this.populateSavedReportsInModal();
+      await this.populateSavedReportsInModal(preselectedReport);
 
       modal.style.display = 'flex';
     },
@@ -1445,17 +1794,28 @@ window.ReportsController = (function() {
       } catch (_) {}
 
       if (savedReportOptions.length === 0) {
-        savedReportOptions = definitions.map(d => ({
-          id: d.id,
-          label: d.title,
-          preset: 'This Month'
-        }));
+        if (allSavedReports.length > 0) {
+          savedReportOptions = allSavedReports.map(s => ({
+            name: s.name,
+            reportId: s.request?.reportId || '',
+            title: s.baseReport || s.name,
+            datePreset: s.datePreset || 'This Month'
+          }));
+        } else {
+          savedReportOptions = definitions.map(d => ({
+            name: d.title,
+            reportId: d.id,
+            title: d.title,
+            datePreset: 'This Month'
+          }));
+        }
       }
 
       repSelect.innerHTML = savedReportOptions.map(opt => {
-        const val = opt.id || opt.code || opt.label;
-        const isSel = selectedVal ? (val === selectedVal || opt.label === selectedVal) : false;
-        return `<option value="${val}" ${isSel ? 'selected' : ''}>${opt.label || val}</option>`;
+        const val = opt.name || opt.title || opt.id || opt.reportId;
+        const labelText = opt.name ? `${opt.name} (${opt.title || opt.reportId || ''})` : (opt.title || val);
+        const isSel = selectedVal ? (val === selectedVal || opt.name === selectedVal || opt.title === selectedVal) : false;
+        return `<option value="${val}" ${isSel ? 'selected' : ''}>${labelText}</option>`;
       }).join('');
     },
 

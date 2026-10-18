@@ -882,6 +882,8 @@ window.ImportService = (function() {
             const hsnVal = getVal(row, 'hsn') || '7306';
 
             const payload = {
+              id: isExisting && existing ? existing.id : null,
+              rowVersion: isExisting && existing && existing.rowVersion !== undefined ? existing.rowVersion : 0,
               itemCode: code,
               description: getVal(row, 'description') || 'Item',
               category: getVal(row, 'category') || 'GENERAL',
@@ -923,18 +925,31 @@ window.ImportService = (function() {
               }
             }
 
-            // Desktop Parity: Use bulkSaveItems (POST /api/master/items/bulk) which executes
-            // MasterDataService.saveItems() - atomic server-side findByItemCode().orElseGet(ItemEntity::new)
-            // Completely immune to duplicate key constraint violations and rowVersion lockouts.
-            await window.MasterService.bulkSaveItems([payload]);
-            existingItems.set(code.toUpperCase(), payload);
-
-            if (isExisting) {
+            if (isExisting && existing) {
+              await window.MasterService.updateItem(payload);
               updated++;
+              existingItems.set(code.toUpperCase(), payload);
               details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated successfully' });
             } else {
-              imported++;
-              details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
+              try {
+                await window.MasterService.createItem(payload);
+                imported++;
+                existingItems.set(code.toUpperCase(), payload);
+                details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
+              } catch (createErr) {
+                const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+                const match = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                if (match) {
+                  payload.id = match.id;
+                  payload.rowVersion = Number(match.rowVersion || 0);
+                  await window.MasterService.updateItem(payload);
+                  updated++;
+                  existingItems.set(code.toUpperCase(), payload);
+                  details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated after conflict resolution' });
+                } else {
+                  throw createErr;
+                }
+              }
             }
           } catch (err) {
             failed++;

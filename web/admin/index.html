@@ -1613,22 +1613,22 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Billing Address *</label>
-                    <input type="text" id="ws-billing-address" class="form-input" placeholder="Billing address..." style="height: 36px;">
+                    <input type="text" id="ws-billing-address" class="form-input" placeholder="Billing address..." oninput="window.SalesController.onBillingAddressInput(this.value)" style="height: 36px;">
                   </div>
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Delivery Address *</label>
-                    <input type="text" id="ws-delivery-address" class="form-input" placeholder="Enter delivery address..." style="height: 36px;">
+                    <input type="text" id="ws-delivery-address" class="form-input" placeholder="Enter delivery address..." readonly style="height: 36px;">
                   </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Billing GSTIN</label>
-                    <input type="text" id="ws-billing-gstin" class="form-input" placeholder="Billing GSTIN..." maxlength="15" style="height: 36px;">
+                    <input type="text" id="ws-billing-gstin" class="form-input" placeholder="Billing GSTIN..." maxlength="15" oninput="window.SalesController.onBillingGstinInput(this.value)" style="height: 36px;">
                   </div>
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Delivery GSTIN</label>
-                    <input type="text" id="ws-delivery-gstin" class="form-input" placeholder="Delivery GSTIN..." maxlength="15" style="height: 36px;">
+                    <input type="text" id="ws-delivery-gstin" class="form-input" placeholder="Delivery GSTIN..." maxlength="15" readonly style="height: 36px;">
                   </div>
                 </div>
 
@@ -1682,11 +1682,11 @@
 
                 <!-- Fast Item Search Strip with Desktop-Grade Autocomplete (Purchase-style spacious layout) -->
                 <div class="item-entry-strip" id="ws-item-entry-strip" style="display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; flex-wrap: nowrap;">
-                  <div style="position: relative; flex: 3.5; min-width: 260px;">
+                  <div style="position: relative; flex: 5; min-width: 280px;">
                     <input type="text" id="ws-fast-item-search" class="form-input" placeholder="Search item by description, code, or HSN... [F2]" autocomplete="off" oninput="window.SalesController.filterFastItems(this.value)" onfocus="window.SalesController.filterFastItems(this.value)" onkeydown="window.SalesController.onFastSearchKeyDown(event)" style="height: 36px; font-size: 0.82rem; width: 100%;">
                     <div id="ws-fast-item-results" class="fast-item-autocomplete-popup" style="display: none;"></div>
                   </div>
-                  <select id="ws-fast-item-select" class="form-select" onchange="window.SalesController.onFastItemSelect(this)" style="height: 36px; font-size: 0.78rem; flex: 1.5; min-width: 140px;">
+                  <select id="ws-fast-item-select" class="form-select" onchange="window.SalesController.onFastItemSelect(this)" style="display: none;">
                     <option value="">Select Item Master...</option>
                   </select>
                   <input type="number" id="ws-fast-qty" class="form-input" min="0.01" step="any" placeholder="Qty" oninput="window.SalesController.updateStockPositionUi()" style="height: 36px; font-size: 0.8rem; width: 75px; flex-shrink: 0;">
@@ -2732,7 +2732,7 @@
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                   <div class="form-group">
                     <label class="form-label">Billing Address *</label>
-                    <textarea id="pe-billing-address" class="form-input" rows="2" placeholder="Supplier billing address..."></textarea>
+                    <textarea id="pe-billing-address" class="form-input" rows="2" placeholder="Supplier billing address..." oninput="window.PurchaseController.onBillingAddressInput(this.value)"></textarea>
                   </div>
                   <div class="form-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -2741,18 +2741,18 @@
                         <input type="checkbox" id="pe-same-as-billing" checked onchange="window.PurchaseController.onSameAsBillingToggle(this.checked)"> Same as Billing
                       </label>
                     </div>
-                    <textarea id="pe-delivery-address" class="form-input" rows="2" placeholder="Warehouse delivery address..."></textarea>
+                    <textarea id="pe-delivery-address" class="form-input" rows="2" placeholder="Warehouse delivery address..." readonly></textarea>
                   </div>
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                   <div class="form-group">
                     <label class="form-label">Billing GSTIN</label>
-                    <input type="text" id="pe-billing-gstin" class="form-input" placeholder="Supplier GSTIN">
+                    <input type="text" id="pe-billing-gstin" class="form-input" placeholder="Supplier GSTIN" oninput="window.PurchaseController.onBillingGstinInput(this.value)">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Delivery GSTIN</label>
-                    <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN">
+                    <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN" readonly>
                   </div>
                 </div>
 
@@ -6346,52 +6346,70 @@
             <!-- 6 KPI CARDS (Desktop Image 1 Parity) -->
             <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px;">
               <div class="standard-kpi-card kpi-blue" style="cursor:pointer;" onclick="selectNav('view-sales-register')" title="View Sales Register">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>ACTIVE SALES</span>
-                  <span class="pill-badge pill-neutral" style="font-size:0.65rem;">Sales</span>
+                <div class="standard-kpi-icon">📈</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE SALES</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Sales</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-sales">₹ 0.00</div>
+                  <div class="metric-note" style="color:var(--cyan); font-weight:600;">View Register &rarr;</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-sales">₹ 0.00</div>
-                <div class="metric-note" style="color:var(--cyan); font-weight:600;">View Register &rarr;</div>
               </div>
               <div class="standard-kpi-card kpi-indigo" style="cursor:pointer;" onclick="selectNav('view-purchase-register')" title="View Purchase Register">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>ACTIVE PURCHASES</span>
-                  <span class="pill-badge pill-neutral" style="font-size:0.65rem;">Bills</span>
+                <div class="standard-kpi-icon">📦</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE PURCHASES</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Bills</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-purchases">₹ 0.00</div>
+                  <div class="metric-note" style="color:var(--purple); font-weight:600;">View Bills &rarr;</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-purchases">₹ 0.00</div>
-                <div class="metric-note" style="color:var(--purple); font-weight:600;">View Bills &rarr;</div>
               </div>
               <div class="standard-kpi-card kpi-green">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>GROSS PROFIT</span>
-                  <span class="pill-badge pill-success" style="font-size:0.65rem;">Margin</span>
+                <div class="standard-kpi-icon">💰</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">GROSS PROFIT</span>
+                    <span class="pill-badge pill-success metric-trend-pill">Margin</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-profit">₹ 0.00</div>
+                  <div class="metric-note" style="color:var(--green); font-weight:600;">Margin Revenue</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-profit">₹ 0.00</div>
-                <div class="metric-note" style="color:var(--green); font-weight:600;">Margin Revenue</div>
               </div>
               <div class="standard-kpi-card kpi-orange" style="cursor:pointer;" onclick="selectNav('view-reminders')" title="View Debtors & Reminders">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>RECEIVABLES</span>
-                  <span class="pill-badge pill-warning" style="font-size:0.65rem;">Pending</span>
+                <div class="standard-kpi-icon">⏳</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">RECEIVABLES</span>
+                    <span class="pill-badge pill-warning metric-trend-pill">Pending</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-receivables">₹ 0.00</div>
+                  <div class="metric-note" style="color:var(--yellow); font-weight:600;">Pending Debtors &rarr;</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-receivables">₹ 0.00</div>
-                <div class="metric-note" style="color:var(--yellow); font-weight:600;">Pending Debtors &rarr;</div>
               </div>
               <div class="standard-kpi-card kpi-teal" style="cursor:pointer;" onclick="selectNav('view-item-master')" title="View Inventory">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>STOCK VALUE</span>
-                  <span class="pill-badge pill-neutral" style="font-size:0.65rem;">Assets</span>
+                <div class="standard-kpi-icon">📊</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">STOCK VALUE</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Assets</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-stock">₹ 0.00</div>
+                  <div class="metric-note" id="rep-kpi-low-stock" style="color:var(--red); font-weight:600;">0 low stock items</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-stock">₹ 0.00</div>
-                <div class="metric-note" id="rep-kpi-low-stock" style="color:var(--red); font-weight:600;">0 low stock items</div>
               </div>
               <div class="standard-kpi-card kpi-purple" style="cursor:pointer;" onclick="selectNav('view-customers')" title="View Customers">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>CUSTOMERS</span>
-                  <span class="pill-badge pill-purple" style="font-size:0.65rem;">Active</span>
+                <div class="standard-kpi-icon">👥</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">CUSTOMERS</span>
+                    <span class="pill-badge pill-purple metric-trend-pill">Active</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-customers">0</div>
+                  <div class="metric-note" style="color:var(--cyan); font-weight:600;">Active Clients &rarr;</div>
                 </div>
-                <div class="metric-value" id="rep-kpi-customers">0</div>
-                <div class="metric-note" style="color:var(--cyan); font-weight:600;">Active Clients &rarr;</div>
               </div>
             </div>
 
@@ -6506,8 +6524,61 @@
 
           <!-- TAB 3: SAVED REPORTS / DYNAMIC REPORT VIEWER (Image 3 Parity) -->
           <div id="rep-tab-viewer-view" style="display:none;">
-            <!-- Top Advanced Collapsible Filters Panel -->
-            <div class="data-panel" style="padding:14px; margin-bottom:14px; background:rgba(15,23,42,0.95);">
+            <!-- Sub-view navigation bar: Saved Catalog vs Active Report Viewer -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; gap:6px;">
+                <button id="btn-rep-sub-viewer" class="btn btn-secondary btn-sm" onclick="window.ReportsController.switchViewerSubView('viewer')" style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:rgba(56,189,248,0.15); color:var(--cyan); border-color:rgba(56,189,248,0.3);">📊 Dynamic Viewer</button>
+                <button id="btn-rep-sub-saved" class="btn btn-secondary btn-sm" onclick="window.ReportsController.switchViewerSubView('catalog')" style="font-size:0.78rem; font-weight:600; padding:6px 14px;">📋 Saved Reports Catalog</button>
+              </div>
+              <div id="viewer-saved-quick-bar" style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.75rem; color:var(--text-muted); margin:0;">Saved Views:</label>
+                <select id="viewer-saved-reports-dropdown" class="form-select" onchange="window.ReportsController.onSavedDropdownChange(this.value)" style="font-size:0.75rem; padding:4px 8px; width:220px;">
+                  <option value="">-- Load Saved Report --</option>
+                </select>
+                <button class="btn btn-purple btn-sm" onclick="window.ReportsController.saveCurrentReportConfig()" style="font-size:0.75rem; padding:4px 12px; white-space:nowrap;">💾 Save Report</button>
+              </div>
+            </div>
+
+            <!-- Sub-view 1: Saved Reports Catalog Table (Desktop Reports.fxml Tab 3 Parity) -->
+            <div id="rep-subview-catalog" style="display:none;">
+              <div class="data-panel" style="padding:14px; margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:400px;">
+                    <input type="text" id="rep-saved-search" class="form-input" placeholder="Search saved reports..." oninput="window.ReportsController.onSavedSearch(this.value)" style="width:100%; font-size:0.8rem; padding:6px 12px;">
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.loadSavedReports()" style="font-size:0.75rem; padding:4px 10px;">↻ Refresh</button>
+                    <button class="btn btn-purple btn-sm" onclick="window.ReportsController.switchMainTab('center')" style="font-size:0.75rem; padding:4px 12px;">+ Create from Report Center</button>
+                  </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                  <table class="data-table" id="saved-reports-table" style="font-size:0.78rem;">
+                    <thead>
+                      <tr>
+                        <th>Saved Report</th>
+                        <th>Base Report</th>
+                        <th>Date Preset</th>
+                        <th>Grouping</th>
+                        <th>Sorting</th>
+                        <th>Columns</th>
+                        <th>Schedule</th>
+                        <th style="text-align:right;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="saved-reports-tbody">
+                      <tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading saved reports...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-dim); margin-top:8px;">Saved Reports store configuration only. Opening one restores the filters and runs fresh server data.</div>
+              </div>
+            </div>
+
+            <!-- Sub-view 2: Dynamic Report Viewer -->
+            <div id="rep-subview-viewer" style="display:block;">
+              <!-- Top Advanced Collapsible Filters Panel -->
+              <div class="data-panel" style="padding:14px; margin-bottom:14px; background:rgba(15,23,42,0.95);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span id="viewer-header-icon" style="font-size:1.1rem; color:var(--cyan);">📄</span>
@@ -6701,6 +6772,7 @@
               </div>
             </div>
           </div>
+        </div>
 
           <!-- TAB 4: SCHEDULED REPORTS (Image 4 Parity) -->
           <div id="rep-tab-scheduler-view" style="display:none;">
@@ -6716,36 +6788,48 @@
             <!-- 4 KPI CARDS (Desktop Image 4 Parity) -->
             <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
               <div class="standard-kpi-card kpi-blue">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>ACTIVE SCHEDULES</span>
-                  <span class="pill-badge pill-success" style="font-size:0.65rem;">Jobs</span>
+                <div class="standard-kpi-icon">⏰</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE SCHEDULES</span>
+                    <span class="pill-badge pill-success metric-trend-pill">Jobs</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-active">0</div>
+                  <div class="metric-note" style="color:var(--accent-green);">Enabled schedules</div>
                 </div>
-                <div class="metric-value" id="rep-sch-kpi-active">0</div>
-                <div class="metric-note" style="color:var(--accent-green);">Enabled schedules</div>
               </div>
               <div class="standard-kpi-card kpi-cyan">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>NEXT RUN</span>
-                  <span class="pill-badge pill-neutral" style="font-size:0.65rem;">Queue</span>
+                <div class="standard-kpi-icon">🚀</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">NEXT RUN</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Queue</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-next" style="font-size:0.95rem;">None Scheduled</div>
+                  <div class="metric-note" id="rep-sch-kpi-next-name" style="color:var(--cyan);">-</div>
                 </div>
-                <div class="metric-value" id="rep-sch-kpi-next" style="font-size:1.1rem; margin:12px 0 6px 0;">None Scheduled</div>
-                <div class="metric-note" id="rep-sch-kpi-next-name" style="color:var(--cyan);">-</div>
               </div>
               <div class="standard-kpi-card kpi-purple">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>REPORTS THIS MONTH</span>
-                  <span class="pill-badge pill-purple" style="font-size:0.65rem;">Count</span>
+                <div class="standard-kpi-icon">📅</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">REPORTS THIS MONTH</span>
+                    <span class="pill-badge pill-purple metric-trend-pill">Count</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-month">0</div>
+                  <div class="metric-note" style="color:var(--accent-purple);">Generated</div>
                 </div>
-                <div class="metric-value" id="rep-sch-kpi-month">0</div>
-                <div class="metric-note" style="color:var(--accent-purple);">Generated</div>
               </div>
               <div class="standard-kpi-card kpi-amber">
-                <div class="metric-label" style="display:flex; justify-content:space-between;">
-                  <span>FAILURES</span>
-                  <span class="pill-badge pill-danger" style="font-size:0.65rem;">Alert</span>
+                <div class="standard-kpi-icon">⚠️</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">FAILURES</span>
+                    <span class="pill-badge pill-danger metric-trend-pill">Alert</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-failures">0</div>
+                  <div class="metric-note" style="color:var(--accent-red);">Last 30 days</div>
                 </div>
-                <div class="metric-value" id="rep-sch-kpi-failures">0</div>
-                <div class="metric-note" style="color:var(--accent-red);">Last 30 days</div>
               </div>
             </div>
 

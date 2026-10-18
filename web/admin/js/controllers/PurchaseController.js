@@ -1514,8 +1514,33 @@ window.PurchaseController = (function() {
     const delAddr = document.getElementById('pe-delivery-address');
     const delGstin = document.getElementById('pe-delivery-gstin');
     if (checked) {
-      if (delAddr) delAddr.value = document.getElementById('pe-billing-address')?.value || '';
-      if (delGstin) delGstin.value = document.getElementById('pe-billing-gstin')?.value || '';
+      if (delAddr) {
+        delAddr.value = document.getElementById('pe-billing-address')?.value || '';
+        delAddr.setAttribute('readonly', 'readonly');
+      }
+      if (delGstin) {
+        delGstin.value = document.getElementById('pe-billing-gstin')?.value || '';
+        delGstin.setAttribute('readonly', 'readonly');
+      }
+    } else {
+      if (delAddr) delAddr.removeAttribute('readonly');
+      if (delGstin) delGstin.removeAttribute('readonly');
+    }
+  }
+
+  function onBillingAddressInput(val) {
+    const chkSame = document.getElementById('pe-same-as-billing');
+    if (chkSame && chkSame.checked) {
+      const delAddr = document.getElementById('pe-delivery-address');
+      if (delAddr) delAddr.value = val || '';
+    }
+  }
+
+  function onBillingGstinInput(val) {
+    const chkSame = document.getElementById('pe-same-as-billing');
+    if (chkSame && chkSame.checked) {
+      const delGstin = document.getElementById('pe-delivery-gstin');
+      if (delGstin) delGstin.value = val || '';
     }
   }
 
@@ -1943,6 +1968,8 @@ window.PurchaseController = (function() {
     getPurchasesCache() { return purchases; },
     onEditorSupplierChange,
     onSameAsBillingToggle,
+    onBillingAddressInput,
+    onBillingGstinInput,
     searchEditorItems,
     selectEditorItem,
     addEditorLine,

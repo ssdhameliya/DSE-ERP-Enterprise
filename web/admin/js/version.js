@@ -3,13 +3,13 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  desktopVersion: "10.0.34",
-  webBuild: 20,
-  webVersion: "10.0.34.20",
-  tag: "web-v10.0.34.20",
-  releaseDate: "2026-10-19T02:20:00+05:30",
-  environment: "UAT",
-  summary: "10.0.34.20 Enterprise Release - Desktop Baseline Parity, Data Import Validation Error Transparency, Settings 5-Asset API Fix & Authentic Auth Split Layout"
+  desktopVersion: "10.0.35",
+  webBuild: 1,
+  webVersion: "10.0.35.01",
+  tag: "web-v10.0.35.01",
+  releaseDate: "2026-10-19T04:15:00+05:30",
+  environment: "Production / Enterprise",
+  summary: "10.0.35.01 Enterprise Release - Full Parity Fixes for Data Import Loaders DTO Contracts, Reporting KPI Cards & Saved Views 2-Way Persistence, Settings 5 Lifetime Database Business Assets, Master Lookup Edit, Permission Matrix Optimistic Locking, and Address Interlocking"
 };
 
 // Automatic UI Version Injection

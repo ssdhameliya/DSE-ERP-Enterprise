@@ -1053,7 +1053,7 @@ window.UserAccessController = (function() {
         let list = [];
         if (res && res.permissions) {
           list = res.permissions;
-          permissionRowVersion = res.rowVersion || 0;
+          permissionRowVersion = Number(res.rowVersion != null ? res.rowVersion : 0);
         } else if (Array.isArray(res)) {
           list = res;
           permissionRowVersion = 0;
@@ -1454,7 +1454,7 @@ window.UserAccessController = (function() {
         const payload = {
           role: currentPermRole,
           permissions: cachedPermissions.map(p => ({ id: p.id, allowed: !!p.allowed })),
-          rowVersion: permissionRowVersion
+          rowVersion: Number(permissionRowVersion || 0)
         };
 
         const res = await window.ReportService.savePermissions(payload);
