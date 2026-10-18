@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 7,
-  webVersion: "10.0.34.07",
-  tag: "web-v10.0.34.07",
-  releaseDate: "2026-10-18T17:05:00+05:30",
+  webBuild: 10,
+  webVersion: "10.0.34.10",
+  tag: "web-v10.0.34.10",
+  releaseDate: "2026-10-18T18:15:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.07 Enterprise Release - Notification Center complete Desktop parity (3-column layout, 16 categories, 10-verb actionable engine, deep-linking)"
+  summary: "10.0.34.10 Enterprise Release - Complete Desktop Parity for Payment Due Status & Return Workflows across Sales & Purchase Registers"
 };
 
 // Automatic UI Version Injection

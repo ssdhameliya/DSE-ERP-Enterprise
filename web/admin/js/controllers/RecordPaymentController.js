@@ -40,7 +40,10 @@ window.RecordPaymentController = (function() {
     }
   }
 
-  function getStatusBadge(status) {
+  function getStatusBadge(status, record = null) {
+    if (window.FormatUtil && window.FormatUtil.renderPaymentStatusBadge) {
+      return window.FormatUtil.renderPaymentStatusBadge(record || { paymentStatus: status });
+    }
     const s = (status || 'UNPAID').toUpperCase();
     if (s === 'PAID' || s === 'SETTLED') return '<span class="pill-badge pill-success">PAID</span>';
     if (s === 'PARTIAL' || s === 'PARTIALLY PAID') return '<span class="pill-badge pill-warning">PARTIAL</span>';
@@ -158,9 +161,12 @@ window.RecordPaymentController = (function() {
 
       if (elInvNo) elInvNo.innerText = currentInvoiceNo;
       if (elInvDate) elInvDate.innerText = formatDate(invDate);
-      if (elDueDate) elDueDate.innerText = formatDate(dueDate);
+      if (elDueDate) {
+        const dueInfo = window.FormatUtil ? window.FormatUtil.getDueInfo(extraDetails || { dueDate, paymentStatus: status, totalAmount: invoiceTotal, paidAmount: invoicePaid, balanceAmount: invoiceBalance }) : null;
+        elDueDate.innerText = dueInfo ? `${formatDate(dueDate)} • ${dueInfo.text}` : formatDate(dueDate);
+      }
       if (elTopTotal) elTopTotal.innerText = formatMoney(invoiceTotal);
-      if (elStatusBadge) elStatusBadge.innerHTML = getStatusBadge(status);
+      if (elStatusBadge) elStatusBadge.innerHTML = getStatusBadge(status, extraDetails || { paymentStatus: status, dueDate, totalAmount: invoiceTotal, paidAmount: invoicePaid, balanceAmount: invoiceBalance });
 
       // 3. Populate Summary Card
       this.updateSummaryCard();

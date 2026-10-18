@@ -204,6 +204,131 @@
       if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
       if (b < 1024 * 1024 * 1024) return (b / (1024 * 1024)).toFixed(2) + ' MB';
       return (b / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    },
+
+    /**
+     * Canonical Due Status calculation matching Desktop SalesListController.java:dueLabel
+     * and PurchaseListController.java:due.
+     */
+    getDueInfo(record) {
+      if (!record) return { text: 'Not set', pillClass: 'pill-neutral', icon: '📅' };
+      const doc = String(record.documentStatus || '').toUpperCase();
+      if (doc.includes('DELETE')) return { text: 'Deleted', pillClass: 'pill-danger', icon: '🗑️' };
+      if (doc.includes('CANCEL')) return { text: 'Cancelled', pillClass: 'pill-danger', icon: '✕' };
+
+      // Return Workflow payment status check (matches Desktop dueLabel & due)
+      const payment = String(record.paymentStatus || (record.returnSettlement && record.returnSettlement.status) || '').toUpperCase().trim();
+      if (payment === 'RETURN APPROVAL PENDING' || payment.includes('APPROVAL PENDING')) {
+        return { text: 'Awaiting Approval', pillClass: 'pill-warning', icon: '⏰' };
+      }
+      if (payment === 'RETURN PAID') {
+        return { text: 'Settled', pillClass: 'pill-success', icon: '✔' };
+      }
+      if (payment === 'RETURN PENDING' || payment === 'RETURN PARTIAL' || (record.hasReturnSettlement && (Number(record.returnPendingAmount || 0) > 0 || record.returnDueDate))) {
+        const rDueStr = record.returnDueDate || (record.returnSettlement && (record.returnSettlement.dueDate || record.returnSettlement.returnDueDate));
+        if (!rDueStr) return { text: 'Return Due', pillClass: 'pill-warning', icon: '⏰' };
+        try {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const rDue = new Date(rDueStr); rDue.setHours(0,0,0,0);
+          if (isNaN(rDue.getTime())) return { text: 'Return Due', pillClass: 'pill-warning', icon: '⏰' };
+          const d = Math.round((rDue - today) / (1000 * 60 * 60 * 24));
+          if (d < 0) {
+            return { text: `Return Overdue by ${Math.abs(d)} days`, pillClass: 'pill-danger', icon: '⚠️' };
+          } else if (d === 0) {
+            return { text: 'Return Due Today', pillClass: 'pill-warning', icon: '📅' };
+          } else if (d <= 7) {
+            return { text: `Return Due in ${d} Days`, pillClass: 'pill-warning', icon: '⏰' };
+          } else {
+            return { text: `Return Due in ${d} Days`, pillClass: 'pill-info', icon: '📅' };
+          }
+        } catch (_) {
+          return { text: 'Return Due', pillClass: 'pill-warning', icon: '⏰' };
+        }
+      }
+
+      // Normal invoice balance check
+      const grandTotal = Number(record.totalAmount != null ? record.totalAmount : (record.total != null ? record.total : (record.amount != null ? record.amount : 0)));
+      const paid = Number(record.paidAmount != null ? record.paidAmount : (payment === 'PAID' ? grandTotal : 0));
+      const balance = Number(record.balanceAmount != null ? record.balanceAmount : Math.max(0, grandTotal - paid));
+      if (balance <= 0.01) {
+        return { text: 'Settled', pillClass: 'pill-success', icon: '✔' };
+      }
+
+      const dueStr = record.dueDate || record.paymentDueDate;
+      if (!dueStr) {
+        return { text: 'Not set', pillClass: 'pill-neutral', icon: '📅' };
+      }
+
+      try {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const invDue = new Date(dueStr); invDue.setHours(0,0,0,0);
+        if (isNaN(invDue.getTime())) return { text: 'Not set', pillClass: 'pill-neutral', icon: '📅' };
+        const d = Math.round((invDue - today) / (1000 * 60 * 60 * 24));
+        if (d < 0) {
+          return { text: `Overdue by ${Math.abs(d)} days`, pillClass: 'pill-danger', icon: '⚠️' };
+        } else if (d === 0) {
+          return { text: 'Due today', pillClass: 'pill-warning', icon: '📅' };
+        } else if (d <= 7) {
+          return { text: `Due in ${d} days`, pillClass: 'pill-warning', icon: '⏰' };
+        } else {
+          return { text: `Due in ${d} days`, pillClass: 'pill-info', icon: '📅' };
+        }
+      } catch (_) {
+        return { text: 'Not set', pillClass: 'pill-neutral', icon: '📅' };
+      }
+    },
+
+    /**
+     * Renders exact SemanticTableCells.dueDate() pill badge
+     */
+    renderDueBadge(record) {
+      const info = this.getDueInfo(record);
+      return `<span class="pill-badge ${info.pillClass}" style="white-space:nowrap;">${info.icon} ${info.text}</span>`;
+    },
+
+    /**
+     * Canonical Payment Status string matching Desktop paymentStatusDisplay
+     */
+    getPaymentStatusDisplay(record) {
+      if (!record) return '';
+      const raw = String(record.paymentStatus || (record.returnSettlement && record.returnSettlement.status) || '').trim().toUpperCase();
+      if (raw === 'RETURN APPROVAL PENDING') return 'Return Pending Approval';
+      if (raw === 'RETURN PAID') return 'Return Paid';
+      if (raw === 'RETURN PARTIAL') return 'Return Partial';
+      if (raw === 'RETURN PENDING') return 'Return Pending';
+      if (raw) return raw;
+      const total = Number(record.totalAmount != null ? record.totalAmount : (record.total != null ? record.total : (record.amount != null ? record.amount : 0)));
+      const paid = Number(record.paidAmount != null ? record.paidAmount : 0);
+      const bal = Number(record.balanceAmount != null ? record.balanceAmount : Math.max(0, total - paid));
+      if (bal <= 0.01) return 'PAID';
+      if (paid > 0.01) return 'PARTIAL';
+      if (record.dueDate) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const d = new Date(record.dueDate); d.setHours(0,0,0,0);
+        if (!isNaN(d.getTime()) && d < today) return 'OVERDUE';
+      }
+      return 'PENDING';
+    },
+
+    /**
+     * Renders exact SemanticTableCells.status("payment") pill badge
+     */
+    renderPaymentStatusBadge(record) {
+      const display = this.getPaymentStatusDisplay(record);
+      const v = display.toUpperCase();
+      if (v.includes('OVERDUE') || v.includes('FAIL')) {
+        return `<span class="pill-badge pill-danger" style="white-space:nowrap;">⚠️ ${display}</span>`;
+      }
+      if (v.includes('PAID') || v.includes('SETTLED') || v.includes('COMPLETE')) {
+        return `<span class="pill-badge pill-success" style="white-space:nowrap;">💳 ${display}</span>`;
+      }
+      if (v.includes('PARTIAL')) {
+        return `<span class="pill-badge pill-info" style="white-space:nowrap;">🌗 ${display}</span>`;
+      }
+      if (v.includes('PENDING') || v.includes('OPEN') || v.includes('DUE') || v.includes('WAIT')) {
+        return `<span class="pill-badge pill-warning" style="white-space:nowrap;">⏱ ${display}</span>`;
+      }
+      return `<span class="pill-badge pill-neutral" style="white-space:nowrap;">${display || 'UNPAID'}</span>`;
     }
   };
 })();

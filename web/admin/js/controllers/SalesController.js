@@ -285,14 +285,18 @@ window.SalesController = {
             const st = settMap[inv];
             if (st) {
               s.returnSettlement = st;
-              s.returnStatus = st.returnStatus || st.status || 'N/A';
+              s.returnStatus = st.returnStatus || 'N/A';
               s.refundStatus = st.refundStatus || '';
               s.approvedReturnAmount = Number(st.approvedReturnAmount || st.settledAmount || 0);
               s.returnPendingAmount = Number(st.returnPendingAmount || st.pendingAmount || 0);
               s.returnedQuantity = Number(st.returnedQuantity || 0);
               s.originalQuantity = Number(st.originalQuantity || 0);
-              s.returnDueDate = st.returnDueDate || st.dueDate || null;
+              s.returnDueDate = st.dueDate || st.returnDueDate || null;
               s.hasReturnSettlement = true;
+              if (st.status) {
+                s.basePaymentStatus = s.basePaymentStatus || s.paymentStatus || 'PENDING';
+                s.paymentStatus = st.status;
+              }
             } else if (!s.returnStatus) {
               s.returnStatus = 'N/A';
             }
@@ -440,46 +444,11 @@ window.SalesController = {
       const paid = isCancelled ? 0 : (s.paidAmount != null ? s.paidAmount : (isPaid ? grandTotal : 0));
       const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
 
-      // Dynamic Due / Return Settlement Label matching Desktop TableCell
-      let dueLabel = '<span style="color:#fbbf24;">Pending</span>';
-      if (isCancelled) {
-        dueLabel = '<span style="color:#f87171;">✕ Cancelled</span>';
-      } else if (s.returnDueDate && (s.returnPendingAmount > 0 || (s.returnStatus && s.returnStatus !== 'N/A' && s.refundStatus !== 'SETTLED'))) {
-        try {
-          const today = new Date(); today.setHours(0,0,0,0);
-          const rDue = new Date(s.returnDueDate); rDue.setHours(0,0,0,0);
-          const diffDays = Math.round((rDue - today) / (1000 * 60 * 60 * 24));
-          if (diffDays < 0) {
-            dueLabel = `<span style="color:#f87171; font-weight:600;" title="Return Refund Overdue">Return Overdue by ${Math.abs(diffDays)}d</span>`;
-          } else if (diffDays === 0) {
-            dueLabel = '<span style="color:#fbbf24; font-weight:600;" title="Return Refund Due Today">Return Due Today</span>';
-          } else {
-            dueLabel = `<span style="color:#38bdf8; font-weight:600;" title="Return Refund Due in ${diffDays}d">Return Due in ${diffDays}d</span>`;
-          }
-        } catch {
-          dueLabel = '<span style="color:#38bdf8; font-weight:600;">Return Due</span>';
-        }
-      } else if (pending <= 0.01) {
-        dueLabel = '<span style="color:#34d399;">✔ Settled</span>';
-      } else if (s.dueDate) {
-        try {
-          const today = new Date(); today.setHours(0,0,0,0);
-          const invDue = new Date(s.dueDate); invDue.setHours(0,0,0,0);
-          const diffDays = Math.round((invDue - today) / (1000 * 60 * 60 * 24));
-          if (diffDays < 0) {
-            dueLabel = `<span style="color:#f87171; font-weight:600;">Overdue by ${Math.abs(diffDays)}d</span>`;
-          } else if (diffDays === 0) {
-            dueLabel = '<span style="color:#fbbf24; font-weight:600;">Due Today</span>';
-          } else {
-            dueLabel = `<span style="color:#fbbf24;">Due in ${diffDays}d</span>`;
-          }
-        } catch {
-          dueLabel = '<span style="color:#fbbf24;">Pending</span>';
-        }
-      }
+      // Dynamic Due / Return Settlement Label matching Desktop SemanticTableCells.dueDate()
+      const dueLabel = window.FormatUtil.renderDueBadge(s);
 
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
-      const payBadge = isPaid ? '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399;">💳 PAID</span>' : '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24;">⏱ PENDING</span>';
+      const payBadge = window.FormatUtil.renderPaymentStatusBadge(s);
       
       const rStatus = (s.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
       let retLabel = '<span class="badge pill-badge pill-neutral" style="background:rgba(148,163,184,0.15); color:var(--text-dim); border:1px solid rgba(148,163,184,0.25); white-space:nowrap;">📄 N/A</span>';
@@ -3253,8 +3222,8 @@ window.SalesController = {
         const elSideDue = document.getElementById('side-amt-due');
         if (elSideDue) {
           const dueStr = s.dueDate ? window.FormatUtil.formatDate(s.dueDate) : 'Not set';
-          const dueStatus = isCancelled ? 'Cancelled' : (pending <= 0.01 ? 'Settled' : 'Pending');
-          elSideDue.innerText = `${dueStr} • ${dueStatus}`;
+          const dueInfo = window.FormatUtil.getDueInfo(s);
+          elSideDue.innerText = `${dueStr} • ${dueInfo.text}`;
         }
 
         const elSideGst = document.getElementById('side-amt-gst');
@@ -3344,7 +3313,11 @@ window.SalesController = {
         if (elInvDate) elInvDate.innerText = window.FormatUtil.formatDate(s.invoiceDate);
 
         const elInvDue = document.getElementById('drawer-inv-due');
-        if (elInvDue) elInvDue.innerText = s.dueDate ? window.FormatUtil.formatDate(s.dueDate) : 'Not set';
+        if (elInvDue) {
+          const dueStr = s.dueDate ? window.FormatUtil.formatDate(s.dueDate) : 'Not set';
+          const dueInfo = window.FormatUtil.getDueInfo(s);
+          elInvDue.innerText = `${dueStr} • ${dueInfo.text}`;
+        }
 
         const elInvTerms = document.getElementById('drawer-inv-terms');
         if (elInvTerms) elInvTerms.innerText = s.paymentTerms || '15 Days';

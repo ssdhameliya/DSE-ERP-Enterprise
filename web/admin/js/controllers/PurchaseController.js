@@ -161,14 +161,18 @@ window.PurchaseController = (function() {
             const st = settMap[inv];
             if (st) {
               p.returnSettlement = st;
-              p.returnStatus = st.returnStatus || st.status || 'N/A';
+              p.returnStatus = st.returnStatus || 'N/A';
               p.refundStatus = st.refundStatus || '';
               p.approvedReturnAmount = Number(st.approvedReturnAmount || st.settledAmount || 0);
               p.returnPendingAmount = Number(st.returnPendingAmount || st.pendingAmount || 0);
               p.returnedQuantity = Number(st.returnedQuantity || 0);
               p.originalQuantity = Number(st.originalQuantity || 0);
-              p.returnDueDate = st.returnDueDate || st.dueDate || null;
+              p.returnDueDate = st.dueDate || st.returnDueDate || null;
               p.hasReturnSettlement = true;
+              if (st.status) {
+                p.basePaymentStatus = p.basePaymentStatus || p.paymentStatus || 'UNPAID';
+                p.paymentStatus = st.status;
+              }
             } else if (!p.returnStatus) {
               p.returnStatus = 'N/A';
             }
@@ -255,22 +259,6 @@ window.PurchaseController = (function() {
       const suppGstin = (p.supplier && p.supplier.gstin) || p.supplierGstin || p.gstin || '-';
       const pendingBalance = Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0));
 
-      let dueDisplay = formatDate(p.dueDate);
-      if (p.returnDueDate && (p.returnPendingAmount > 0 || (p.returnStatus && p.returnStatus !== 'N/A' && p.refundStatus !== 'SETTLED'))) {
-        try {
-          const today = new Date(); today.setHours(0,0,0,0);
-          const rDue = new Date(p.returnDueDate); rDue.setHours(0,0,0,0);
-          const diffDays = Math.round((rDue - today) / (1000 * 60 * 60 * 24));
-          if (diffDays < 0) {
-            dueDisplay = `<span style="color:#f87171; font-weight:600;" title="Return Refund Overdue">Ret: -${Math.abs(diffDays)}d</span>`;
-          } else if (diffDays === 0) {
-            dueDisplay = `<span style="color:#fbbf24; font-weight:600;" title="Return Refund Due Today">Ret: Today</span>`;
-          } else {
-            dueDisplay = `<span style="color:#38bdf8; font-weight:600;" title="Return Refund Due in ${diffDays}d">Ret: in ${diffDays}d</span>`;
-          }
-        } catch {}
-      }
-
       return `
         <tr onclick="window.PurchaseController.onRowClick('${invNo}', event)" style="cursor:pointer;" data-id="${invNo}" data-invoice-no="${invNo}" class="${selectedDrawerBillNo === invNo ? 'active-selected-row' : ''}">
           <td style="font-family:'Space Grotesk', monospace; font-weight:700; color:var(--cyan);">${invNo}</td>
@@ -281,9 +269,9 @@ window.PurchaseController = (function() {
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(p.totalAmount)}</td>
           <td style="text-align:right; font-weight:600; color:var(--green);">${formatMoney(p.paidAmount)}</td>
           <td style="text-align:right; font-weight:600; color:${pendingBalance > 0 ? 'var(--red)' : 'var(--text-dim)'};">${formatMoney(pendingBalance)}</td>
-          <td>${dueDisplay}</td>
+          <td>${window.FormatUtil.renderDueBadge(p)}</td>
           <td>${getStatusBadge(p.documentStatus || 'APPROVED')}</td>
-          <td>${getStatusBadge(p.paymentStatus || 'UNPAID')}</td>
+          <td>${window.FormatUtil.renderPaymentStatusBadge(p)}</td>
           <td>${getStatusBadge(p.returnStatus || 'NOT_RETURNED')}</td>
           <td>${p.emailSent ? '<span class="pill-badge pill-success">SENT</span>' : '<span class="pill-badge pill-neutral">NOT SENT</span>'}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
@@ -480,7 +468,11 @@ window.PurchaseController = (function() {
     if (pdDate) pdDate.innerText = formatDate(p.invoiceDate || p.date);
 
     const pdDueDate = document.getElementById('pd-due-date');
-    if (pdDueDate) pdDueDate.innerText = formatDate(p.dueDate || p.paymentDueDate);
+    if (pdDueDate) {
+      const dueStr = p.dueDate ? formatDate(p.dueDate) : 'Not set';
+      const dueInfo = window.FormatUtil.getDueInfo(p);
+      pdDueDate.innerText = `${dueStr} • ${dueInfo.text}`;
+    }
 
     const pdTaxable = document.getElementById('pd-taxable');
     if (pdTaxable) pdTaxable.innerText = formatMoney(p.subtotal || p.taxableAmount || 0);
@@ -501,7 +493,7 @@ window.PurchaseController = (function() {
 
     const pdPayStatus = document.getElementById('pd-pay-status');
     if (pdPayStatus) {
-      pdPayStatus.innerHTML = `<span class="pill-badge ${paySt === 'PAID' ? 'pill-success' : (paySt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}">${paySt}</span>`;
+      pdPayStatus.innerHTML = window.FormatUtil.renderPaymentStatusBadge(p);
     }
 
     // Populate Return Settlement card in Purchase Drawer (Desktop Parity)
