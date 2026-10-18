@@ -583,38 +583,62 @@ window.UserAccessController = (function() {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-dim);"><div class="spinner"></div> Loading pending registrations...</td></tr>`;
 
       try {
-        const res = await window.ReportService.getRegistrations('PENDING_ADMIN_APPROVAL');
-        cachedRegistrations = Array.isArray(res) ? res : [];
+        const [pendingAdmin, pendingMfa] = await Promise.all([
+          window.ReportService.getRegistrations('PENDING_ADMIN_APPROVAL').catch(() => []),
+          window.ReportService.getRegistrations('MFA_ENROLLMENT_PENDING').catch(() => [])
+        ]);
+        const listAdmin = Array.isArray(pendingAdmin) ? pendingAdmin : [];
+        const listMfa = Array.isArray(pendingMfa) ? pendingMfa : [];
+        const seen = new Set();
+        cachedRegistrations = [...listAdmin, ...listMfa].filter(item => {
+          if (!item || !item.id || seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
 
         if (cachedRegistrations.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-dim);">No pending user registrations awaiting approval.</td></tr>`;
           return;
         }
 
-        tbody.innerHTML = cachedRegistrations.map(r => `
-          <tr>
-            <td style="font-weight: 700; color: #fff;">${r.fullName || r.username}</td>
-            <td style="color: var(--cyan); font-family: monospace;">${r.username}</td>
-            <td style="font-size: 0.85rem; color: var(--text-muted);">${r.email}</td>
-            <td><span class="badge badge-role">${r.requestedRole || 'STAFF'}</span></td>
-            <td><span class="badge ${r.emailVerified ? 'badge-paid' : 'badge-pending'}">${r.emailVerified ? 'VERIFIED' : 'UNVERIFIED'}</span></td>
-            <td style="font-size: 0.75rem; color: var(--text-dim);">${window.FormatUtil.formatDateTime(r.requestedAt)}</td>
-            <td style="text-align: right; white-space: nowrap;">
-              <button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.UserAccessController.approveRegistration(${r.id}, '${r.requestedRole}')">Approve</button>
-              <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; color: #f87171;" onclick="window.UserAccessController.rejectRegistration(${r.id})">Reject</button>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = cachedRegistrations.map(r => {
+          const isMfaPending = r.status === 'MFA_ENROLLMENT_PENDING';
+          const emailBadge = r.emailVerified ? '<span class="badge badge-paid">EMAIL VERIFIED</span>' : '<span class="badge badge-pending">EMAIL UNVERIFIED</span>';
+          const statusBadge = isMfaPending 
+            ? '<span class="badge badge-pending" style="margin-left: 4px;">2FA SETUP PENDING</span>' 
+            : '<span class="badge badge-paid" style="margin-left: 4px;">AWAITING APPROVAL</span>';
+
+          const approveBtn = !isMfaPending
+            ? `<button class="btn btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="window.UserAccessController.approveRegistration(${r.id}, '${r.requestedRole || 'STAFF'}', ${r.rowVersion || 0})">Approve</button>`
+            : `<button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px; opacity: 0.5; cursor: not-allowed;" title="Requires user 2FA completion before approval" disabled>Approve</button>`;
+
+          return `
+            <tr>
+              <td style="font-weight: 700; color: #fff;">${r.fullName || r.username}</td>
+              <td style="color: var(--cyan); font-family: monospace;">${r.username}</td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">${r.email}</td>
+              <td><span class="badge badge-role">${r.requestedRole || 'STAFF'}</span></td>
+              <td>${emailBadge}${statusBadge}</td>
+              <td style="font-size: 0.75rem; color: var(--text-dim);">${window.FormatUtil.formatDateTime(r.requestedAt)}</td>
+              <td style="text-align: right; white-space: nowrap;">
+                ${approveBtn}
+                <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; color: #f87171;" onclick="window.UserAccessController.rejectRegistration(${r.id}, ${r.rowVersion || 0})">Reject</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171; padding: 20px;">Failed to load registrations: ${err.message}</td></tr>`;
       }
     },
 
-    async approveRegistration(id, defaultRole) {
+    async approveRegistration(id, defaultRole, rowVersion) {
       const assignedRole = prompt(`Confirm approved role for this registration:`, defaultRole || 'STAFF');
       if (!assignedRole) return;
+      const reg = cachedRegistrations.find(x => x.id === id);
+      const ver = rowVersion !== undefined ? rowVersion : (reg?.rowVersion || 0);
       try {
-        await window.ReportService.approveRegistration(id, { role: assignedRole, reason: 'Approved by administrator', rowVersion: 1 });
+        await window.ReportService.approveRegistration(id, { role: assignedRole, reason: 'Approved by administrator', rowVersion: ver });
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast('Registration approved successfully!', 'success');
         this.openRegistrationApprovals();
@@ -624,11 +648,13 @@ window.UserAccessController = (function() {
       }
     },
 
-    async rejectRegistration(id) {
-      const reason = prompt('Specify rejection reason for the applicant:');
+    async rejectRegistration(id, rowVersion) {
+      const reason = prompt('Specify rejection reason for the applicant (this will unblock the email/username):', 'Registration cancelled by administrator');
       if (!reason) return;
+      const reg = cachedRegistrations.find(x => x.id === id);
+      const ver = rowVersion !== undefined ? rowVersion : (reg?.rowVersion || 0);
       try {
-        await window.ReportService.rejectRegistration(id, { role: '', reason, rowVersion: 1 });
+        await window.ReportService.rejectRegistration(id, { role: '', reason, rowVersion: ver });
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast('Registration rejected.', 'info');
         this.openRegistrationApprovals();

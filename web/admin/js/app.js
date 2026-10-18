@@ -8,15 +8,14 @@ window.App = (function() {
       const now = new Date();
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const day = days[now.getDay()];
-      const d = String(now.getDate()).padStart(2, '0');
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const y = now.getFullYear();
-      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
-      const clockText = `${day}, ${d}/${m}/${y} | ${timeStr} | IST`;
+      const dateFormatted = window.FormatUtil ? window.FormatUtil.formatDate(now) : `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const timeFormatted = window.FormatUtil ? window.FormatUtil.formatTime(now) : now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+      const tzAbbr = window.FormatUtil ? window.FormatUtil.getTimeZoneAbbr() : 'IST';
+      const clockText = `${day}, ${dateFormatted} | ${timeFormatted} | ${tzAbbr}`;
 
       const el = document.getElementById('clock-display');
       if (el) {
-        el.innerText = `${day.slice(0, 3)}, ${d}/${m}/${y} | ${timeStr} IST`;
+        el.innerText = `${day.slice(0, 3)}, ${dateFormatted} | ${timeFormatted} ${tzAbbr}`;
         el.title = clockText;
       }
       const footerClock = document.getElementById('footer-live-clock');
@@ -48,12 +47,21 @@ window.App = (function() {
 
   window.applyUserToHeader = function(user) {
     if (!user) return;
+    const name = user.fullName || user.username || 'User';
+    const role = (user.role || 'USER').toUpperCase();
+    const avatar = (user.fullName || user.username || 'U')[0].toUpperCase();
+
     const nameEl = document.getElementById('header-user-name');
     const roleEl = document.getElementById('header-user-role');
     const avatarEl = document.getElementById('header-user-avatar');
-    if (nameEl) nameEl.innerText = user.fullName || user.username || 'User';
-    if (roleEl) roleEl.innerText = (user.role || 'USER').toUpperCase();
-    if (avatarEl) avatarEl.innerText = (user.fullName || user.username || 'U')[0].toUpperCase();
+    if (nameEl) nameEl.innerText = name;
+    if (roleEl) roleEl.innerText = role;
+    if (avatarEl) avatarEl.innerText = avatar;
+
+    const menuName = document.getElementById('menu-user-name');
+    const menuRole = document.getElementById('menu-user-role');
+    if (menuName) menuName.innerText = name;
+    if (menuRole) menuRole.innerText = role;
   };
   function applyUserToHeader(user) { window.applyUserToHeader(user); }
 
@@ -255,6 +263,20 @@ window.App = (function() {
 
       // Initial shell counts poll and background timer only when session is authenticated
       if (window.AuthService.isAuthenticated()) {
+        try {
+          if (window.ApiService && window.FormatUtil) {
+            const companySettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+            if (companySettings) {
+              window.FormatUtil.setBusinessPolicy(
+                companySettings['company.dateFormat'],
+                companySettings['company.timeFormat'],
+                companySettings['company.timeZone']
+              );
+            }
+          }
+        } catch (e) {
+          console.warn('[App] Could not load company format policy on boot:', e.message);
+        }
         await pollShellCounts();
         setInterval(pollShellCounts, 30000);
       }
@@ -530,6 +552,22 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
     } else {
       window.NavigationRouter.selectNav('view-profile');
     }
+  }
+
+  // Synchronize company date/time policy into FormatUtil
+  try {
+    if (window.ApiService && window.FormatUtil) {
+      const companySettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+      if (companySettings) {
+        window.FormatUtil.setBusinessPolicy(
+          companySettings['company.dateFormat'],
+          companySettings['company.timeFormat'],
+          companySettings['company.timeZone']
+        );
+      }
+    }
+  } catch (e) {
+    console.warn('[App] Could not sync company format settings on login:', e.message);
   }
 
   // Safe guarded post-login pre-loading: never let 403 or network exceptions throw out of login!
@@ -929,6 +967,8 @@ window.handleAuthenticatorSetupClose = function() {
   if (currentAuthenticatorSetupMode === 'login' && window.AuthService && window.AuthService.getPendingMfaChallenge()) {
     window.updateLoginMode();
     window.AppDialogService.showToast('Authenticator enrollment is not complete. Click Get Help to reopen the QR code and setup key.', 'info');
+  } else if (currentAuthenticatorSetupMode === 'registration') {
+    window.AppDialogService.showToast('Authenticator configuration is required to submit your registration for Admin approval.', 'warning');
   }
 };
 
@@ -1084,18 +1124,23 @@ window.handleVerifyRegistrationEmail = async function() {
     if (res && (res.registrationId || res.manualSecret)) {
       currentRegistrationId = res.registrationId;
 
-      // Populate Authenticator Setup Modal
-      const secretEl = document.getElementById('auth-setup-secret');
-      const qrImgEl = document.getElementById('auth-setup-qr-img');
-      const errEl = document.getElementById('auth-setup-error');
+      alertEl.className = 'auth-alert success';
+      alertEl.innerText = '✓ Email verified! Please scan the QR code to configure your Authenticator app and complete enrollment.';
+      alertEl.style.display = 'block';
 
-      if (secretEl) secretEl.value = res.manualSecret || '';
-      if (qrImgEl && res.provisioningUri) {
-        qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
+      if (window.openAuthenticatorSetupModal) {
+        window.openAuthenticatorSetupModal(res, 'registration');
+      } else {
+        const secretEl = document.getElementById('auth-setup-secret');
+        const qrImgEl = document.getElementById('auth-setup-qr-img');
+        const errEl = document.getElementById('auth-setup-error');
+        if (secretEl) secretEl.value = res.manualSecret || '';
+        if (qrImgEl && res.provisioningUri) {
+          qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.provisioningUri)}`;
+        }
+        if (errEl) errEl.style.display = 'none';
+        window.AppDialogService.openModal('modal-authenticator-setup');
       }
-      if (errEl) errEl.style.display = 'none';
-
-      window.AppDialogService.openModal('modal-authenticator-setup');
       setTimeout(() => {
         const totpIn = document.getElementById('auth-setup-totp');
         if (totpIn) { totpIn.value = ''; totpIn.focus(); }

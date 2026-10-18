@@ -41,11 +41,26 @@ window.ReturnsController = (function() {
     return `<span class="pill-badge pill-neutral">${status || 'DRAFT'}</span>`;
   }
 
+  function initDateFilters(isSales) {
+    const fromEl = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from');
+    const toEl = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to');
+    if (fromEl && !fromEl.value) {
+      const now = new Date();
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      fromEl.value = sixMonthsAgo.toISOString().split('T')[0];
+    }
+    if (toEl && !toEl.value) {
+      toEl.value = new Date().toISOString().split('T')[0];
+    }
+  }
+
   // 1. LOAD & RENDER RETURNS REGISTER
   async function loadReturns(type = 'SALES RETURN', page = 0) {
     currentType = type;
     currentPage = page;
     const isSales = currentType === 'SALES RETURN';
+    initDateFilters(isSales);
     const containerId = isSales ? 'tbl-sales-returns-body' : 'tbl-purchase-returns-body';
     const tbody = document.getElementById(containerId);
     if (tbody) {
@@ -1083,9 +1098,18 @@ window.ReturnsController = (function() {
       const s = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search'); if (s) s.value = '';
       const c = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier'); if (c) c.value = '';
       const st = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status'); if (st) st.value = '';
-      const f = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from'); if (f) f.value = '';
-      const t = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to'); if (t) t.value = '';
+      const f = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from');
+      const t = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to');
+      if (f) {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        f.value = sixMonthsAgo.toISOString().split('T')[0];
+      }
+      if (t) {
+        t.value = new Date().toISOString().split('T')[0];
+      }
       loadReturns(currentType, 0);
-    }
+    },
+    initDateFilters
   };
 })();

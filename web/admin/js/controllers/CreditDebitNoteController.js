@@ -133,17 +133,19 @@ window.CreditDebitNoteController = (function() {
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(r.totalAmount)}</td>
           <td>${getStatusBadge(r.status)}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:6px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.downloadPdf('${r.creditNoteNo}', true)" title="Print Credit Note PDF">
-                PDF
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.CreditDebitNoteController.toggleActionMenu(${r.id}, true, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Credit Note Actions">
+                ::: Actions
               </button>
-              ${isActive ? `
-                <button class="btn btn-danger btn-sm" onclick="window.CreditDebitNoteController.cancelNote(${r.id}, '${r.creditNoteNo}', true)" title="Cancel Credit Note (Reverses GL)">
-                  Cancel
-                </button>
-              ` : `
-                <span style="font-size:0.72rem; color:var(--text-dim); padding:4px 6px;">Cancelled</span>
-              `}
+              <div id="cn-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:200px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.CreditDebitNoteController.showNoteDetails(${r.id}, true)"><span style="margin-right:8px;">👁️</span> View Details</div>
+                <div class="action-menu-item" onclick="window.CreditDebitNoteController.downloadPdf('${r.creditNoteNo}', true)"><span style="margin-right:8px;">🖨️</span> Print / PDF</div>
+                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('CREDIT_NOTE', ${r.id}, '${r.creditNoteNo}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
+                ${isActive ? `
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item danger" onclick="window.CreditDebitNoteController.cancelNote(${r.id}, '${r.creditNoteNo}', true)"><span style="margin-right:8px;">⛔</span> Cancel Note</div>
+                ` : ''}
+              </div>
             </div>
           </td>
         </tr>
@@ -248,22 +250,68 @@ window.CreditDebitNoteController = (function() {
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(r.totalAmount)}</td>
           <td>${getStatusBadge(r.status)}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:6px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.downloadPdf('${r.debitNoteNo}', false)" title="Print Debit Note PDF">
-                PDF
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.CreditDebitNoteController.toggleActionMenu(${r.id}, false, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Debit Note Actions">
+                ::: Actions
               </button>
-              ${isActive ? `
-                <button class="btn btn-danger btn-sm" onclick="window.CreditDebitNoteController.cancelNote(${r.id}, '${r.debitNoteNo}', false)" title="Cancel Debit Note (Reverses GL)">
-                  Cancel
-                </button>
-              ` : `
-                <span style="font-size:0.72rem; color:var(--text-dim); padding:4px 6px;">Cancelled</span>
-              `}
+              <div id="dn-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:200px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.CreditDebitNoteController.showNoteDetails(${r.id}, false)"><span style="margin-right:8px;">👁️</span> View Details</div>
+                <div class="action-menu-item" onclick="window.CreditDebitNoteController.downloadPdf('${r.debitNoteNo}', false)"><span style="margin-right:8px;">🖨️</span> Print / PDF</div>
+                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('DEBIT_NOTE', ${r.id}, '${r.debitNoteNo}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
+                ${isActive ? `
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item danger" onclick="window.CreditDebitNoteController.cancelNote(${r.id}, '${r.debitNoteNo}', false)"><span style="margin-right:8px;">⛔</span> Cancel Note</div>
+                ` : ''}
+              </div>
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleActionMenu(id, isCredit, event) {
+    if (event) event.stopPropagation();
+    const menuId = (isCredit ? 'cn-action-menu-' : 'dn-action-menu-') + id;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 210;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 160;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
+    }
   }
 
   // 3. SHOW NOTE DETAILS IN SLIDE DRAWER
@@ -554,6 +602,7 @@ window.CreditDebitNoteController = (function() {
     openCreateDebitModal,
     recalcDebitTax,
     submitCreateDebitNote,
-    closeModal
+    closeModal,
+    toggleActionMenu
   };
 })();

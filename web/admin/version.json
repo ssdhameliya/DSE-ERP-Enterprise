@@ -1,16 +1,17 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 1,
-  "webVersion": "10.0.34.01",
-  "tag": "web-v10.0.34.01",
-  "releaseDate": "2026-10-17T22:20:00+05:30",
+  "webBuild": 2,
+  "webVersion": "10.0.34.02",
+  "tag": "web-v10.0.34.02",
+  "releaseDate": "2026-10-18T11:30:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34 Enterprise Release - Master Lookup Authority, Credit/Debit Note Autocomplete & Date/Time Normalization",
+  "summary": "10.0.34.02 Enterprise Release - Full Parity & Defect Correction (22-Item Suite)",
   "highlights": [
-    "1. Flyway migration V10_0_34_1: Seeded Master Categories for Business Type, Industry, Currency, Timezone, Date & Time Formats, and Credit/Debit Note reasons into database lookup_master",
-    "2. Desktop & Web Settings: Replaced hardcoded dropdown lists with live Master Lookup queries with seamless fallback defaults and value preservation",
-    "3. Credit Note & Debit Note: Searchable Customer & Supplier autocomplete via PartySearchUi, cascading invoice/bill selection with auto-fill taxable totals, and Master Lookup GST rate & reasons",
-    "4. Date & Time / Timestamp: System-wide date/time normalization across headers, footers, status clocks, and PDF rendering using company.dateFormat and company.timeFormat",
-    "5. Quotations: Async background PDF/Excel generator and direct Save-PDF-To dialog with error isolation"
+    "1. Registration Flow: Fixed TOTP QR code modal z-index above auth overlay, auto-launching setup modal upon email verification, and unblocking orphaned MFA registrations in Admin Approvals",
+    "2. Omni-Search & Workspace Navigation: Removed redundant environment & version tags to widen search bar to 580px, dynamic user pill, and removed tab hints strip",
+    "3. Standardized .btn-purple Action Menus: Unifying Sales, Purchases, Bank Entry, Expense Entry, Bank Reconciliation, Credit/Debit Notes, and Reminder Center under floating ::: Actions dropdown",
+    "4. Bank & Expense Registers: Desktop 3-mode strip parity (Bank, Expense, Reconciliation), 6-month default date filters, and custom voucher type & category filters",
+    "5. Sales & Purchase Returns: Integrated in-place return creation modal from registers, side drawer inspection, and 6-month default date filters",
+    "6. User Access & Security: Dual-query pending approvals supporting both PENDING_ADMIN_APPROVAL and MFA_ENROLLMENT_PENDING with dynamic rowVersion concurrency"
   ]
 }

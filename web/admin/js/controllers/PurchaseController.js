@@ -64,6 +64,9 @@ window.PurchaseController = (function() {
 
   function formatDate(d) {
     if (!d) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDate) {
+      return window.FormatUtil.formatDate(d);
+    }
     try {
       const dt = new Date(d);
       if (isNaN(dt.getTime())) return d;

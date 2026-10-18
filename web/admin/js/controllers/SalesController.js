@@ -565,6 +565,23 @@ window.SalesController = {
     }
   },
 
+  createSalesReturn(invNo) {
+    if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
+      if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
+      window.ReturnsController.openCreateReturnModal(invNo, 'SALES RETURN');
+    } else {
+      const modal = document.getElementById('modal-create-return');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        const inp = document.getElementById('cr-invoice-input');
+        if (inp) inp.value = invNo || '';
+        const crType = document.getElementById('cr-type');
+        if (crType) crType.value = 'SALES RETURN';
+      }
+    }
+  },
+
   // =========================================================================
   // 4. FILTERING & SEARCH
   // =========================================================================

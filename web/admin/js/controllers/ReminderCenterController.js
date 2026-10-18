@@ -198,15 +198,67 @@ window.ReminderCenterController = (function() {
             <td style="text-align:center; font-weight:600;">${item.days} days</td>
             <td style="text-align:center;">${badge}</td>
             <td style="text-align:center;" onclick="event.stopPropagation();">
-              <div style="display:flex; gap:6px; justify-content:center;">
-                <button class="btn btn-primary btn-sm" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party}', 'WHATSAPP')" title="Send WhatsApp Payment Follow-up">📱 WhatsApp</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party}', 'EMAIL')" title="Send Official Email Reminder">✉️ Email</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.logCall(${item.id}, '${item.party}')" title="Log Telephonic Commitment">📞 Log Call</button>
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.ReminderCenterController.toggleActionMenu(${idx}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Follow-up Actions">
+                  ::: Actions
+                </button>
+                <div id="rc-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:220px; white-space:nowrap; padding:6px 0; text-align:left;">
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.openReminderDrawer(${idx})"><span style="margin-right:8px;">👁️</span> View Overdue Details</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'WHATSAPP')"><span style="margin-right:8px;">📱</span> Send WhatsApp Follow-up</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'EMAIL')"><span style="margin-right:8px;">✉️</span> Send Official Email Notice</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.logCall(${item.id}, '${item.party.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📞</span> Log Call Commitment</div>
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <div class="action-menu-item" onclick="window.NavigationRouter?.selectNav('view-sales-register')"><span style="margin-right:8px;">🛒</span> Open in Sales Register</div>
+                </div>
               </div>
             </td>
           </tr>
         `;
       }).join('');
+    },
+
+    toggleActionMenu(idx, event) {
+      if (event) event.stopPropagation();
+      const menuId = 'rc-action-menu-' + idx;
+      const targetMenu = document.getElementById(menuId);
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m !== targetMenu) m.style.display = 'none';
+      });
+      if (targetMenu) {
+        const isShowing = targetMenu.style.display === 'block';
+        if (isShowing) {
+          targetMenu.style.display = 'none';
+        } else {
+          targetMenu.style.display = 'block';
+          targetMenu.style.position = 'fixed';
+          targetMenu.style.zIndex = '100005';
+          const btn = event.currentTarget || event.target;
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 230;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+
+          const menuHeight = targetMenu.offsetHeight || 190;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top;
+          if (spaceBelow < menuHeight && rect.top > menuHeight) {
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = rect.bottom + 4;
+          }
+
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
     },
 
     onReminderRowClick(idx, event) {

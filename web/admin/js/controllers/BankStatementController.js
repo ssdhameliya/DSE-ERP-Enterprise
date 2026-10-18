@@ -215,19 +215,70 @@ window.BankStatementController = (function() {
             ${t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-')}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              ${status === 'MATCHED' || status === 'EXPENSE' ? `
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.reverseMatch(${t.id})" style="padding:2px 6px; font-size:0.72rem;" title="Reverse Reconciliation">↩ Reverse</button>
-              ` : `
-                <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.openMatchModal(${t.id})" style="padding:2px 6px; font-size:0.72rem;" title="Match with Sales/Purchase invoice">🔗 Match</button>
-                ${debit > 0 ? `<button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})" style="padding:2px 6px; font-size:0.72rem;" title="Move to Expense">Expense</button>` : ''}
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.quickMoveBankEntry(${t.id}, ${debit > 0 ? debit : credit}, '${debit > 0 ? 'DEBIT' : 'CREDIT'}')" style="padding:2px 6px; font-size:0.72rem;" title="Move to Bank Entry">Bank Entry</button>
-              `}
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.BankStatementController.toggleActionMenu(${t.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Reconciliation Actions">
+                ::: Actions
+              </button>
+              <div id="bs-action-menu-${t.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.BankStatementController.showTxnDetails(${t.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
+                ${status === 'MATCHED' || status === 'EXPENSE' ? `
+                  <div class="action-menu-item" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩</span> Reverse Reconciliation</div>
+                ` : `
+                  <div class="action-menu-item" onclick="window.BankStatementController.openMatchModal(${t.id})"><span style="margin-right:8px;">🔗</span> Match with Invoice / Voucher</div>
+                  ${debit > 0 ? `<div class="action-menu-item" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})"><span style="margin-right:8px;">💸</span> Move to Operating Expense</div>` : ''}
+                  <div class="action-menu-item" onclick="window.BankStatementController.quickMoveBankEntry(${t.id}, ${debit > 0 ? debit : credit}, '${debit > 0 ? 'DEBIT' : 'CREDIT'}')"><span style="margin-right:8px;">🏦</span> Move to Bank Entry</div>
+                `}
+                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_RECON', ${t.id}, '${(t.reference || t.description || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
+              </div>
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleActionMenu(id, event) {
+    if (event) event.stopPropagation();
+    const menuId = 'bs-action-menu-' + id;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 220;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 180;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
+    }
   }
 
   function renderEmptyState(msg) {
@@ -906,6 +957,7 @@ window.BankStatementController = (function() {
     openHistoryBatch,
     deleteStatement,
     closeModal,
+    toggleActionMenu,
 
     // Drawer Parity
     onTxnRowClick,

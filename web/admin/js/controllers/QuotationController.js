@@ -26,6 +26,9 @@ window.QuotationController = (function() {
 
   function formatDate(dStr) {
     if (!dStr) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDate) {
+      return window.FormatUtil.formatDate(dStr);
+    }
     try {
       const d = new Date(dStr);
       if (isNaN(d.getTime())) return dStr;

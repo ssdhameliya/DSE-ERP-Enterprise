@@ -355,7 +355,8 @@ window.AppDialogService = (function() {
       if (!modal) return;
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       modal.style.display = 'flex';
-      modal.style.zIndex = '100010';
+      const isAuthModal = modalId === 'modal-authenticator-setup' || modalId.startsWith('modal-mfa') || document.body.classList.contains('auth-required') || document.documentElement.classList.contains('auth-required');
+      modal.style.zIndex = isAuthModal ? '1000010' : '100010';
       modal.classList.add('active');
       const firstInput = modal.querySelector('input:not([type=hidden]):not([readonly]), select');
       if (firstInput) setTimeout(() => firstInput.focus(), 80);
