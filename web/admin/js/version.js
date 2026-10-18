@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 18,
-  webVersion: "10.0.34.18",
-  tag: "web-v10.0.34.18",
-  releaseDate: "2026-10-19T01:15:00+05:30",
+  webBuild: 19,
+  webVersion: "10.0.34.19",
+  tag: "web-v10.0.34.19",
+  releaseDate: "2026-10-19T01:40:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.18 Enterprise Release - Server Root Cause Remediation for Import Loaders & Full 8-Loader Server Contract Parity (PostgreSQL party_code UNIQUE constraint conflict resolution, Sales customer.id contract, Purchases supplier.id & invoiceDate contract, Bank Statement bankAccount & row fingerprint contract, and Item Master remarks & HSN requirements)"
+  summary: "10.0.34.19 Enterprise Release - Item Master Import Desktop Parity & Bulk Upsert Fix (POST /api/master/items/bulk integration, checkItemExists verification, eliminating duplicate key 500 errors)"
 };
 
 // Automatic UI Version Injection

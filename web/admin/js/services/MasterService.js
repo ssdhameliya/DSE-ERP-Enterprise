@@ -90,6 +90,12 @@ window.MasterService = (function() {
       return res;
     },
 
+    async bulkSaveItems(items = []) {
+      const res = await window.ApiService.post('/api/master/items/bulk', items);
+      invalidateCache('master_items');
+      return res;
+    },
+
     async validateBulkDelete(itemCodes = []) {
       return await window.ApiService.post('/api/master/items/bulk-delete/validate', { itemCodes });
     },

@@ -1,17 +1,15 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 18,
-  "webVersion": "10.0.34.18",
-  "tag": "web-v10.0.34.18",
-  "releaseDate": "2026-10-19T01:15:00+05:30",
+  "webBuild": 19,
+  "webVersion": "10.0.34.19",
+  "tag": "web-v10.0.34.19",
+  "releaseDate": "2026-10-19T01:40:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.18 Enterprise Release - Server Root Cause Remediation for Import Loaders & Full 8-Loader Server Contract Parity (PostgreSQL party_code UNIQUE constraint conflict resolution, Sales customer.id contract, Purchases supplier.id & invoiceDate contract, Bank Statement bankAccount & row fingerprint contract, and Item Master remarks & HSN requirements)",
+  "summary": "10.0.34.19 Enterprise Release - Item Master Import Desktop Parity & Bulk Upsert Fix (POST /api/master/items/bulk integration, checkItemExists verification, eliminating duplicate key 500 errors)",
   "highlights": [
-    "1. Server Root Cause Analysis & Resolution for Customer Import 500 Error: Diagnosed underlying cause of 'The ERP server could not complete this operation' (HTTP 500) as PostgreSQL duplicate key constraint violation on party_master(party_code). Resolved by proactively checking server-level party existence, pre-loading both CUSTOMER and SUPPLIER records, correctly routing existing records to PUT /api/master/parties with valid id and rowVersion, and handling conflict recovery.",
-    "2. Comprehensive 8-Loader Server Contract Verification: Full audit across all 8 import loaders (Item Master, Customers, Suppliers, Sales, Purchases, Categories & Lookups, Purchase Recon, and Bank Statement) directly against Spring Boot controllers, services, repositories, and entity models.",
-    "3. Sales Import Server Contract Alignment: Resolved customer object requirement (customer.id) expected by OperationDtos.SaleDto, and enforced source: 'IMPORT' so server preserves imported invoice numbers instead of auto-generating new ones.",
-    "4. Purchases Import Server Contract Alignment: Resolved supplier object requirement (supplier.id) expected by OperationDtos.PurchaseDto, mapped bill date to invoiceDate, and mapped vendor bill number to referenceNo.",
-    "5. Bank Statement Import Server Contract Alignment: Resolved BankReconciliationDtos.ImportRequest field mismatch by sending bankAccount (previously accountNumber), sourceRowNumber, and transactionFingerprint, ensuring debit/credit parity and preventing server rejection.",
-    "6. Master Categories & Values Lookups Parity: Synchronized lookups cache checks against both lookupCode and lookupValue to align with server validateLookup constraints."
+    "1. Item Master Import Desktop Parity: Fully aligned Web's Item Master import with Desktop's ItemSpreadsheetService.java by routing imports through POST /api/master/items/bulk (MasterDataService.saveItems). This performs atomic server-side find-or-create on the database entity, eliminating PostgreSQL unique constraint collisions on item_master(item_code).",
+    "2. Proactive checkItemExists Integration: Added server-level exists verification via /api/master/items/exists before import execution, ensuring accurate detection of existing items regardless of client caching or view permissions.",
+    "3. MasterService.bulkSaveItems API Method: Exposed bulkSaveItems in MasterService.js to provide standard, reliable bulk upsert capabilities identical to desktop's MasterApiClient.saveItems.",
+    "4. Zero-Friction Conflict Resolution: Item imports now update existing records without requiring rowVersion locks or failing on opening stock discrepancies, while properly creating new items with opening stock."
   ]
 }

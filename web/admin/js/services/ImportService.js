@@ -853,16 +853,25 @@ window.ImportService = (function() {
 
           try {
             let existing = existingItems.get(code.toUpperCase());
-            if (!existing) {
-              const byCodes = await window.MasterService.getItemsByCodes([code]).catch(() => []);
-              existing = (byCodes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
-              if (!existing) {
-                const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
-                existing = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+            let isExisting = !!existing;
+            if (!isExisting) {
+              const check = await window.MasterService.checkItemExists(code).catch(() => null);
+              if (check && check.exists) {
+                isExisting = true;
+                // Attempt to load full entity for non-blank merge if needed
+                const byCodes = await window.MasterService.getItemsByCodes([code]).catch(() => []);
+                existing = (byCodes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                if (!existing) {
+                  const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+                  existing = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                }
+                if (existing) {
+                  existingItems.set(code.toUpperCase(), existing);
+                }
               }
             }
 
-            if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
+            if (isExisting && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
               skipped++;
               details.push({ sourceRows: String(rowNum), reference: code, status: 'SKIPPED', action: 'SKIPPED', message: 'Existing item preserved' });
               continue;
@@ -887,16 +896,16 @@ window.ImportService = (function() {
               sellingPrice: parseFloat(getVal(row, 'selling_price')) || 0,
               openingStock: parseFloat(getVal(row, 'opening_stock')) || 0,
               minimumStock: parseFloat(getVal(row, 'minimum_stock')) || 0,
+              reservedStock: 0,
               location: getVal(row, 'location') || '',
               remarks: remarksVal,
               active: true
             };
 
-            if (existing) {
+            if (isExisting && existing) {
               payload.id = existing.id;
               payload.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
               payload.openingStock = existing.openingStock !== undefined ? existing.openingStock : payload.openingStock;
-              payload.reservedStock = existing.reservedStock !== undefined ? existing.reservedStock : 0;
               if (mode === 'UPDATE_NON_BLANK') {
                 if (!getVal(row, 'description')) payload.description = existing.description;
                 if (!getVal(row, 'category')) payload.category = existing.category;
@@ -912,37 +921,20 @@ window.ImportService = (function() {
                 if (!getVal(row, 'location')) payload.location = existing.location;
                 if (!getVal(row, 'remarks')) payload.remarks = existing.remarks;
               }
-              const res = await window.MasterService.updateItem(payload);
+            }
+
+            // Desktop Parity: Use bulkSaveItems (POST /api/master/items/bulk) which executes
+            // MasterDataService.saveItems() - atomic server-side findByItemCode().orElseGet(ItemEntity::new)
+            // Completely immune to duplicate key constraint violations and rowVersion lockouts.
+            await window.MasterService.bulkSaveItems([payload]);
+            existingItems.set(code.toUpperCase(), payload);
+
+            if (isExisting) {
               updated++;
-              existingItems.set(code.toUpperCase(), res || payload);
               details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated successfully' });
             } else {
-              try {
-                const res = await window.MasterService.createItem(payload);
-                imported++;
-                existingItems.set(code.toUpperCase(), res || payload);
-                details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
-              } catch (createErr) {
-                // If conflict occurs (e.g. duplicate key), re-fetch by code and update
-                const byCodes = await window.MasterService.getItemsByCodes([code]).catch(() => []);
-                let match = (byCodes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
-                if (!match) {
-                  const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
-                  match = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
-                }
-                if (match) {
-                  payload.id = match.id;
-                  payload.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
-                  payload.openingStock = match.openingStock !== undefined ? match.openingStock : payload.openingStock;
-                  payload.reservedStock = match.reservedStock !== undefined ? match.reservedStock : 0;
-                  const res = await window.MasterService.updateItem(payload);
-                  updated++;
-                  existingItems.set(code.toUpperCase(), res || payload);
-                  details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated after conflict resolution' });
-                } else {
-                  throw createErr;
-                }
-              }
+              imported++;
+              details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
             }
           } catch (err) {
             failed++;
