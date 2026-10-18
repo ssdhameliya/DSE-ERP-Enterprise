@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 5,
-  webVersion: "10.0.34.05",
-  tag: "web-v10.0.34.05",
-  releaseDate: "2026-10-18T15:35:00+05:30",
+  webBuild: 6,
+  webVersion: "10.0.34.06",
+  tag: "web-v10.0.34.06",
+  releaseDate: "2026-10-18T15:50:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.05 Enterprise Release - Resolve Payment Controller editingPaymentId closure scope and introduce Settings Live Session Monitor"
+  summary: "10.0.34.06 Enterprise Release - Fix AppDialogService confirmation action handlers, button interactivity, and payment review layout"
 };
 
 // Automatic UI Version Injection

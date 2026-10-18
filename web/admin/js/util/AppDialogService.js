@@ -40,32 +40,56 @@ window.AppDialogService = (function() {
         </div>
       `;
       document.body.appendChild(container);
+    }
+    return container;
+  }
 
-      // Keyboard navigation (<kbd>Enter</kbd> to confirm, <kbd>Escape</kbd> to cancel)
+  /**
+   * Binds click and keyboard handlers unconditionally to guarantee interactivity
+   */
+  function attachDialogHandlers(container) {
+    if (!container) return;
+
+    const btnClose = container.querySelector('#app-dialog-btn-close');
+    const btnCancel = container.querySelector('#app-dialog-btn-cancel');
+    const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+
+    if (btnClose) {
+      btnClose.onclick = function(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        resolveDialog(false);
+      };
+    }
+    if (btnCancel) {
+      btnCancel.onclick = function(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        resolveDialog(false);
+      };
+    }
+    if (btnConfirm) {
+      btnConfirm.onclick = function(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        resolveDialog(true);
+      };
+    }
+
+    if (!window._appDialogKeyboardBound) {
+      window._appDialogKeyboardBound = true;
       window.addEventListener('keydown', (e) => {
-        if (container.style.display === 'flex' && activeDialogResolver) {
+        const dialog = document.getElementById('modal-app-dialog');
+        if (dialog && (dialog.style.display === 'flex' || dialog.classList.contains('active')) && activeDialogResolver) {
           if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
             resolveDialog(false);
-          } else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          } else if (e.key === 'Enter' && e.target && e.target.tagName !== 'TEXTAREA') {
             e.preventDefault();
             e.stopPropagation();
             resolveDialog(true);
           }
         }
       }, true);
-
-      // Close button and cancel button bindings
-      const btnClose = container.querySelector('#app-dialog-btn-close');
-      const btnCancel = container.querySelector('#app-dialog-btn-cancel');
-      const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
-
-      if (btnClose) btnClose.addEventListener('click', () => resolveDialog(false));
-      if (btnCancel) btnCancel.addEventListener('click', () => resolveDialog(false));
-      if (btnConfirm) btnConfirm.addEventListener('click', () => resolveDialog(true));
     }
-    return container;
   }
 
   function resolveDialog(confirmed) {
@@ -75,8 +99,10 @@ window.AppDialogService = (function() {
       container.classList.remove('active');
     }
     if (window.AudioSynthesizer) {
-      if (confirmed) window.AudioSynthesizer.playSuccess();
-      else window.AudioSynthesizer.playClose();
+      try {
+        if (confirmed) window.AudioSynthesizer.playSuccess();
+        else window.AudioSynthesizer.playClose();
+      } catch (_) {}
     }
     if (typeof activeDialogResolver === 'function') {
       const resolver = activeDialogResolver;
@@ -86,12 +112,32 @@ window.AppDialogService = (function() {
   }
 
   return {
+    resolveDialog: resolveDialog,
+
     /**
      * Desktop parity confirmation dialog
      * @returns {Promise<boolean>}
      */
     confirm(title, heading, message, primaryAction = 'Continue', safeAction = 'Cancel') {
+      // Smart argument normalization
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Confirmation';
+        heading = '';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Confirmation';
+          heading = '';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = '';
+        }
+      }
+
       const container = ensureDialogContainer();
+      attachDialogHandlers(container);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
       const iconBox = container.querySelector('#app-dialog-icon-box');
@@ -131,7 +177,24 @@ window.AppDialogService = (function() {
      * @returns {Promise<boolean>}
      */
     destructive(title, heading, message, primaryAction = 'Delete', safeAction = 'Cancel') {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Confirm Delete';
+        heading = 'This action cannot be undone';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Confirm Delete';
+          heading = 'This action cannot be undone';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = 'This action cannot be undone';
+        }
+      }
+
       const container = ensureDialogContainer();
+      attachDialogHandlers(container);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playError();
 
       const iconBox = container.querySelector('#app-dialog-icon-box');
@@ -170,7 +233,24 @@ window.AppDialogService = (function() {
      * @returns {Promise<boolean>}
      */
     warningConfirm(title, heading, message, primaryAction = 'Proceed Anyway', safeAction = 'Cancel') {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Warning';
+        heading = '';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Warning';
+          heading = '';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = '';
+        }
+      }
+
       const container = ensureDialogContainer();
+      attachDialogHandlers(container);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playError();
 
       const iconBox = container.querySelector('#app-dialog-icon-box');
@@ -225,7 +305,24 @@ window.AppDialogService = (function() {
      * @returns {Promise<void>}
      */
     info(title, heading, message) {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Information';
+        heading = '';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Information';
+          heading = '';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = '';
+        }
+      }
+
       const container = ensureDialogContainer();
+      attachDialogHandlers(container);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
       const iconBox = container.querySelector('#app-dialog-icon-box');
@@ -264,6 +361,7 @@ window.AppDialogService = (function() {
      */
     error(title, heading, message, detail) {
       const container = ensureDialogContainer();
+      attachDialogHandlers(container);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playError();
 
       const iconBox = container.querySelector('#app-dialog-icon-box');

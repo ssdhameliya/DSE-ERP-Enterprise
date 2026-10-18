@@ -2174,10 +2174,11 @@
       to { opacity: 1; transform: scale(1); }
     }
     .app-dialog-card {
-      width: 100%; max-width: 520px; background: rgba(15, 23, 42, 0.96);
+      width: 100%; max-width: 520px; background: rgba(15, 23, 42, 0.98);
       border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 16px;
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(56, 189, 248, 0.12);
       overflow: hidden; display: flex; flex-direction: column;
+      pointer-events: auto;
     }
     .app-dialog-header {
       padding: 20px 24px; display: flex; align-items: center; gap: 16px;
@@ -2191,14 +2192,17 @@
     .app-dialog-icon-box.sem-red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); }
     .app-dialog-icon-box.sem-amber { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); }
     .app-dialog-header-text { flex: 1; }
-    .app-dialog-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 3px 0; font-family: 'Space Grotesk', sans-serif; }
+    .app-dialog-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 3px 0; font-family: 'Space Grotesk', sans-serif; word-break: break-word; }
     .app-dialog-heading { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
     .app-dialog-close-btn {
       background: none; border: none; font-size: 1.6rem; color: var(--text-dim);
       cursor: pointer; padding: 4px; line-height: 1; border-radius: 6px; transition: color 0.15s;
     }
     .app-dialog-close-btn:hover { color: #fff; }
-    .app-dialog-body { padding: 22px 24px; font-size: 0.88rem; color: var(--text-main); line-height: 1.55; }
+    .app-dialog-body {
+      padding: 22px 24px; font-size: 0.88rem; color: var(--text-main); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
     .app-dialog-detail {
       margin: 0 24px 16px 24px; padding: 12px 14px; background: rgba(0, 0, 0, 0.3);
       border: 1px solid var(--border-subtle); border-radius: 8px; font-family: monospace;
@@ -2207,6 +2211,9 @@
     .app-dialog-footer {
       padding: 16px 24px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-subtle);
       display: flex; justify-content: flex-end; gap: 12px;
+    }
+    .app-dialog-footer .btn {
+      min-width: 90px; cursor: pointer; pointer-events: auto; user-select: none;
     }
 
     /* WORKFLOW FOCUS RING & HIGH-VISIBILITY FIELD TRACKING (DESKTOP PARITY) */

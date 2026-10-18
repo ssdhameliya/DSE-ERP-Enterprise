@@ -533,12 +533,18 @@ window.RecordPaymentController = (function() {
           const diff = Math.round((newAmt - oldAmt) * 100) / 100;
           const diffStr = (diff >= 0 ? '+' : '') + formatMoney(diff);
           
-          const confirmMsg = `Confirm Payment Modification:\n\n• Old Amount: ${formatMoney(oldAmt)}\n• New Amount: ${formatMoney(newAmt)}\n• Accounting Difference: ${diffStr}\n\nThis will adjust customer/supplier ledger balances and update General Ledger records. Do you wish to continue?`;
+          const confirmMsg = `• Old Amount: ${formatMoney(oldAmt)}\n• New Amount: ${formatMoney(newAmt)}\n• Accounting Difference: ${diffStr}\n\nThis will adjust customer/supplier ledger balances and update General Ledger records. Do you wish to continue?`;
           let confirmed = false;
           if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
-            confirmed = await window.AppDialogService.confirm(confirmMsg, 'Confirm Payment Update');
+            confirmed = await window.AppDialogService.confirm(
+              'Confirm Payment Modification',
+              'Review Ledger Adjustments',
+              confirmMsg,
+              'Continue',
+              'Cancel'
+            );
           } else {
-            confirmed = confirm(confirmMsg);
+            confirmed = confirm(`Confirm Payment Modification:\n\n${confirmMsg}`);
           }
           if (!confirmed) return;
 
