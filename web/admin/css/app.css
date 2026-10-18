@@ -998,15 +998,68 @@
     }
     @media (max-width: 900px) { .item-entry-strip { grid-template-columns: 1fr; } }
 
-    /* PERSISTENT FOOTER BAR - ALWAYS DOWN AT BOTTOM */
+    /* PERSISTENT FOOTER BAR - DESKTOP SHAREDAPPLICATIONFOOTER PARITY */
     .app-footer-bar {
-      height: 30px; background: #070d18; border-top: 1px solid var(--border-subtle);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px; font-size: 0.72rem; color: var(--text-muted); z-index: 40; flex-shrink: 0;
-      width: 100%; box-sizing: border-box;
+      min-height: 38px;
+      height: 38px;
+      background: #060b14;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      z-index: 40;
+      flex-shrink: 0;
+      width: 100%;
+      box-sizing: border-box;
+      gap: 16px;
     }
-    .footer-left { display: flex; align-items: center; gap: 18px; }
-    .footer-right { display: flex; align-items: center; gap: 18px; }
+    .app-footer-bar .footer-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .app-footer-bar .footer-trust {
+      justify-content: flex-start;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.3px;
+    }
+    .app-footer-bar .trust-indicator-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 8px #10b981;
+      flex-shrink: 0;
+    }
+    .app-footer-bar .footer-company {
+      justify-content: flex-start;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .app-footer-bar .footer-phone,
+    .app-footer-bar .footer-email,
+    .app-footer-bar .footer-website {
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    .app-footer-bar .footer-clock {
+      justify-content: flex-end;
+      font-weight: 700;
+      color: #cbd5e1;
+      font-size: 0.75rem;
+    }
+    .app-footer-bar .footer-icon {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
 
     .modal-box {
       background: #0f172a;
@@ -2343,3 +2396,214 @@
       background: rgba(56, 189, 248, 0.4);
     }
 
+    /* ==========================================================================
+       USER ACCESS, PERMISSION MATRIX & REGISTRATION APPROVALS (DESKTOP PARITY)
+       ========================================================================== */
+    .user-table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px 8px 0 0;
+      padding: 10px 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .user-table-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-table-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .user-bottom-action-strip {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* UNIFIED USER DIALOG */
+    .user-dialog-card {
+      max-width: 780px !important;
+      background: #0b1324 !important;
+      border: 1px solid rgba(168, 85, 247, 0.35) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168, 85, 247, 0.15) !important;
+    }
+    .user-dialog-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .user-dialog-section-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* REGISTRATION APPROVALS FULL-SCREEN VIEW */
+    .reg-approvals-view {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .reg-approval-bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 12px 18px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+
+    /* PERMISSION MATRIX WORKSPACE */
+    .permission-matrix-workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .permission-control-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .permission-split-layout {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 1200px) {
+      .permission-split-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .permission-matrix-panel {
+      background: rgba(10, 18, 34, 0.95);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .permission-matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    .permission-matrix-table th {
+      background: #070d19;
+      color: var(--text-muted);
+      padding: 8px 10px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-subtle);
+      text-align: center;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .permission-matrix-table th:first-child {
+      text-align: left;
+      padding-left: 14px;
+    }
+    .permission-matrix-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      text-align: center;
+      vertical-align: middle;
+    }
+    .permission-matrix-table td:first-child {
+      text-align: left;
+      padding-left: 14px;
+    }
+    .permission-category-header-row td {
+      background: rgba(14, 165, 233, 0.08);
+      color: var(--cyan);
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-align: left !important;
+      padding: 8px 14px;
+      border-top: 1px solid rgba(14, 165, 233, 0.2);
+      border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+    }
+    .permission-chk {
+      transform: scale(1.15);
+      cursor: pointer;
+      accent-color: var(--purple-accent);
+    }
+    .permission-special-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      border-radius: 4px;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      color: #d8b4fe;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .permission-preview-panel {
+      background: rgba(10, 18, 34, 0.95);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 680px;
+      overflow-y: auto;
+    }
+    .permission-preview-category {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .permission-preview-cat-title {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .permission-preview-cat-actions {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .permission-footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }

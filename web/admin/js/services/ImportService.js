@@ -879,11 +879,19 @@ window.ImportService = (function() {
             };
 
             if (existing) {
+              payload.id = existing.id;
+              payload.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
               if (mode === 'UPDATE_NON_BLANK') {
                 if (!getVal(row, 'description')) payload.description = existing.description;
                 if (!getVal(row, 'category')) payload.category = existing.category;
-                if (!getVal(row, 'selling_price')) payload.sellingPrice = existing.sellingPrice;
-                if (!getVal(row, 'purchase_price')) payload.purchasePrice = existing.purchasePrice;
+                if (!getVal(row, 'brand')) payload.brand = existing.brand;
+                if (!getVal(row, 'material')) payload.material = existing.material;
+                if (!getVal(row, 'size')) payload.size = existing.size;
+                if (!getVal(row, 'unit')) payload.unit = existing.unit;
+                if (!getVal(row, 'hsn')) payload.hsn = existing.hsn;
+                if (getVal(row, 'gst') === '') payload.gst = existing.gst;
+                if (getVal(row, 'selling_price') === '') payload.sellingPrice = existing.sellingPrice;
+                if (getVal(row, 'purchase_price') === '') payload.purchasePrice = existing.purchasePrice;
               }
               await window.MasterService.updateItem(payload);
               updated++;
@@ -945,11 +953,16 @@ window.ImportService = (function() {
             };
 
             if (existing) {
+              payload.id = existing.id;
+              payload.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
               if (mode === 'UPDATE_NON_BLANK') {
                 if (!getVal(row, 'name')) payload.name = existing.name;
+                if (!getVal(row, 'contact_person')) payload.contactPerson = existing.contactPerson;
                 if (!getVal(row, 'phone')) payload.phone = existing.phone;
                 if (!getVal(row, 'email')) payload.email = existing.email;
                 if (!getVal(row, 'gstin')) payload.gstin = existing.gstin;
+                if (!getVal(row, 'address')) payload.address = existing.address;
+                if (getVal(row, 'opening_balance') === '') payload.openingBalance = existing.openingBalance;
               }
               await window.MasterService.updateParty(payload);
               updated++;

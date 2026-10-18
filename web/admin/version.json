@@ -1,17 +1,20 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 15,
-  "webVersion": "10.0.34.15",
-  "tag": "web-v10.0.34.15",
-  "releaseDate": "2026-10-18T21:55:00+05:30",
+  "webBuild": 16,
+  "webVersion": "10.0.34.16",
+  "tag": "web-v10.0.34.16",
+  "releaseDate": "2026-10-18T22:35:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.15 Enterprise Release - 4-Tab Reporting Desktop Parity, Dynamic Business Footer with IST Clock, Match Link Deep Navigation, Purple Action Badges, and Import Audio Guard",
+  "summary": "10.0.34.16 Enterprise Release - User Access & Permissions Desktop Parity, Dynamic Role Lookups, Dedicated Registration Approvals & Permission Matrix, Supplier Import Persistence, Footer Spacing, and Report Scheduler",
   "highlights": [
-    "1. Desktop Parity 4-Tab Reports Studio: Complete rewrite of ReportsController.js and #view-reports providing Dashboard (Tab 1) with 6 KPI cards, recent sales/purchases, payment breakdown and top rankings; Report Center (Tab 2) with category pills, catalog search, star favorites; Saved Reports / Dynamic Report Viewer (Tab 3) with collapsible 3-row filter panel, live REST querying, dynamic grid, and deep-link 'View Source'; and Scheduled Reports (Tab 4) with 4 KPI cards, scheduling table, action dropdown, and Desktop Parity New Schedule modal",
-    "2. Dynamic Business Profile Footer & Real-Time IST Clock: Bottom persistent footer dynamically bound to business profile (Company Name, Phone, Email, Website) and real-time live ticking clock formatted as 'Day, DD Mon YYYY | hh:mm:ss A | IST'",
-    "3. Bank Statement Match Deep-Linking & Pulsating Highlight: Intelligent document reference resolution across Sales (JI/, INV), Purchases (PR/2026/, PUR), and Recon (PRC) with automated tab navigation, target register filtering, and animated pulsating row highlight (.row-match-highlight)",
-    "4. Purple Action Buttons Parity: Replaced secondary action buttons in Bank Statement and Purchase Recon registers with signature purple gradient styling (.btn-purple)",
-    "5. Import Audio Call Defensive Guard: Implemented playNotification() in AudioSynthesizer.js and defensively wrapped all audio invocations in ImportController.js with try/catch and function-existence checks, eliminating false import error alerts",
-    "6. Purchase Recon Import Dual-Entity Backend Alignment: Dual-transmitted sourceFingerprint/fingerprint and importNote/note in Purchase Recon import payload to satisfy PurchaseReconDtos.ImportRequest and guarantee simultaneous creation of PurchaseReconEntity and ReconSupplierEntity"
+    "1. Desktop Parity 10-Column User Access Table: Full alignment with UserAccess.fxml containing User, Email / Username, Role, Department, Access, Branch, Status, Last Login, MFA, and Actions dropdown menu (.btn-purple) with 7 actions + delete.",
+    "2. Dynamic Server-Owned Role Lookups: Real roles fetched from GET /api/admin/roles populating all filter, dialog, approval, and permission dropdowns without mock data.",
+    "3. Add vs Edit User Account Modal Parity: Password mandatory on Add User, optional on Edit User ('Leave blank to keep current password') preserving password on empty submission, with eye visibility toggles, MFA policy, and Authenticator reset.",
+    "4. Dedicated Registration Approvals Workspace: Full-screen #view-registration-approvals with 2 KPI cards, applicant queue table, final role assignment, and Approve/Reject controls.",
+    "5. Manage Roles Master Data Delegation: Navigates to Masters workspace and automatically activates category 'ROLE'.",
+    "6. Permission Matrix Workspace: 31 modules across 10 categories replicating PermissionCatalog.java, common capabilities, special capabilities with compact N/M dropdowns, 4 templates, copy from role, search, granted-only filter, dynamic effective preview, and optimistic locking save.",
+    "7. Data Import Supplier Upsert Persistence: Preserved existing party ID and rowVersion in ImportService.js to resolve 'Party id is required' server error during supplier imports.",
+    "8. Universal Application Footer Spacing: Upgraded .app-footer-bar to 38px height with generous gaps, paddings, and alignment matching desktop SharedApplicationFooter.java.",
+    "9. Report Scheduler Tab Fix: Correctly parsed res.schedules and bound 4 KPI summary cards from ReportScheduleDtos.SchedulePage."
   ]
 }

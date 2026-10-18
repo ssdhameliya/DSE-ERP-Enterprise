@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 15,
-  webVersion: "10.0.34.15",
-  tag: "web-v10.0.34.15",
-  releaseDate: "2026-10-18T21:55:00+05:30",
+  webBuild: 16,
+  webVersion: "10.0.34.16",
+  tag: "web-v10.0.34.16",
+  releaseDate: "2026-10-18T22:35:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.15 Enterprise Release - 4-Tab Reporting Desktop Parity, Dynamic Business Footer with IST Clock, Match Link Deep Navigation, Purple Action Badges, and Import Audio Guard"
+  summary: "10.0.34.16 Enterprise Release - User Access & Permissions Desktop Parity, Dynamic Role Lookups, Dedicated Registration Approvals & Permission Matrix, Supplier Import Persistence, Footer Spacing, and Report Scheduler"
 };
 
 // Automatic UI Version Injection

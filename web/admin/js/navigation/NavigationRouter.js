@@ -47,6 +47,8 @@ window.NavigationRouter = (function() {
     'view-reminders': { title: 'Reminder Center', breadcrumb: 'Payment Follow-ups & Tasks', icon: '⏰' },
     'view-user-access': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
     'view-users': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
+    'view-registration-approvals': { title: 'Registration Approvals', breadcrumb: 'User Access & Security Governance', icon: '📋' },
+    'view-permission-matrix': { title: 'Permission Matrix', breadcrumb: 'Role-Based Access Control (RBAC)', icon: '⚡' },
     'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
     'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' },
     'view-global-search': { title: 'Global Search', breadcrumb: 'Cross-Module Enterprise Intelligence', icon: '🔍' },
@@ -91,6 +93,15 @@ window.NavigationRouter = (function() {
 
     getCurrentView() {
       return currentViewId;
+    },
+
+    navigate(destination) {
+      if (!destination) return;
+      let viewId = destination;
+      if (!viewId.startsWith('view-')) {
+        viewId = 'view-' + viewId;
+      }
+      return this.selectNav(viewId);
     },
 
     selectNav(viewId, triggerAddTab = true) {
@@ -370,6 +381,12 @@ window.NavigationRouter = (function() {
         case 'view-users':
         case 'view-user-access':
           if (window.UserAccessController) window.UserAccessController.loadUsers();
+          break;
+        case 'view-registration-approvals':
+          if (window.UserAccessController) window.UserAccessController.loadRegistrations();
+          break;
+        case 'view-permission-matrix':
+          if (window.UserAccessController) window.UserAccessController.loadPermissionMatrix();
           break;
         case 'view-settings':
           if (window.SettingsController) window.SettingsController.init();

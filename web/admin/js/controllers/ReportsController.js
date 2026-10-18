@@ -1143,16 +1143,37 @@ window.ReportsController = (function() {
       try {
         if (window.ApiService) {
           const res = await window.ApiService.get('/api/reporting/schedules').catch(() => null);
-          allSchedules = (res && (res.rows || res.content || res)) || [];
+          allSchedules = (res && (res.schedules || res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
           if (!Array.isArray(allSchedules)) allSchedules = [];
+
+          if (res && res.summary) {
+            this.applyScheduleSummary(res.summary);
+          } else {
+            this.updateScheduleKpis();
+          }
         }
       } catch (err) {
         console.warn('[ReportsController] GET /api/reporting/schedules failed:', err);
         allSchedules = [];
+        this.updateScheduleKpis();
       }
 
-      this.updateScheduleKpis();
       this.filterSchedules();
+    },
+
+    applyScheduleSummary(sum) {
+      if (!sum) return;
+      const actEl = document.getElementById('rep-sch-kpi-active');
+      const nextEl = document.getElementById('rep-sch-kpi-next');
+      const nextNameEl = document.getElementById('rep-sch-kpi-next-name');
+      const monthEl = document.getElementById('rep-sch-kpi-month');
+      const failEl = document.getElementById('rep-sch-kpi-failures');
+
+      if (actEl && sum.activeSchedules !== undefined) actEl.innerText = sum.activeSchedules.toString();
+      if (nextEl) nextEl.innerText = sum.nextRun ? formatDate(sum.nextRun) : 'None Scheduled';
+      if (nextNameEl) nextNameEl.innerText = sum.nextSchedule || '-';
+      if (monthEl && sum.reportsThisMonth !== undefined) monthEl.innerText = sum.reportsThisMonth.toString();
+      if (failEl && sum.failuresLast30Days !== undefined) failEl.innerText = sum.failuresLast30Days.toString();
     },
 
     updateScheduleKpis() {

@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.15">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.16">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -6877,24 +6877,24 @@
         </div>
 
         <!-- VIEW: USER ACCESS & SECURITY -->
-        <!-- VIEW: USER ACCESS & ROLE GOVERNANCE (EXACT DESKTOP UserAccess.fxml PARITY) -->
+        <!-- VIEW: USER ACCESS & PERMISSIONS (EXACT DESKTOP UserAccess.fxml PARITY) -->
         <div id="view-users" class="module-view">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>&#128100;</span> User Access &amp; Role Governance</h1>
-              <p>Active accounts, multi-department permission matrix, MFA state, and lockout controls</p>
+              <h1><span>&#128100;</span> User Access &amp; Permissions</h1>
+              <p>Manage users, account security and access from one administration workspace</p>
             </div>
             <div class="view-header-actions" style="display:flex; gap:8px;">
-              <button class="btn btn-secondary" onclick="window.UserAccessController.openRegistrationApprovals()">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('registration-approvals')" title="Review and approve pending registrations">
                 <span>&#128203;</span> Registration Approvals
               </button>
-              <button class="btn btn-secondary" onclick="window.UserAccessController.switchTab('tab-roles')">
+              <button class="btn btn-secondary" onclick="window.UserAccessController.openManageRoles()" title="Manage Roles in Master Data">
                 <span>&#128737;&#65039;</span> Manage Roles
               </button>
-              <button class="btn btn-secondary" onclick="window.UserAccessController.switchTab('tab-permissions')">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('permission-matrix')" title="Configure module authorization matrix">
                 <span>&#9889;</span> Permission Matrix
               </button>
-              <button class="btn btn-primary" onclick="window.UserAccessController.openAddUserModal()">
+              <button class="btn-purple" onclick="window.UserAccessController.openAddUserModal()" style="height:36px; padding:0 14px; font-weight:700; border-radius:6px; cursor:pointer;">
                 <span>+</span> Add New User
               </button>
               <button class="btn btn-secondary" onclick="window.UserAccessController.loadUsers()">
@@ -6905,170 +6905,316 @@
 
           <!-- 5 Desktop KPIs matching UserAccess.fxml -->
           <div class="kpi-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
               <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL SYSTEM USERS</span></div>
               <div class="kpi-value" id="user-kpi-total" style="font-size: 1.25rem;">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Provisioned user accounts</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Accounts</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
               <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ACTIVE ACCOUNTS</span></div>
               <div class="kpi-value" id="user-kpi-active" style="font-size: 1.25rem; color: var(--green);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Operational &amp; unlocked</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Active</div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ASSIGNED ROLES</span></div>
-              <div class="kpi-value" id="user-kpi-roles" style="font-size: 1.25rem; color: var(--purple);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Distinct security profiles</div>
+            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ROLES</span></div>
+              <div class="kpi-value" id="user-kpi-roles" style="font-size: 1.25rem; color: var(--cyan);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Access</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid #ef4444; padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOCKED / PENDING</span></div>
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOCKED ACCOUNTS</span></div>
               <div class="kpi-value" id="user-kpi-locked" style="font-size: 1.25rem; color: #f87171;">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Security-restricted accounts</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Security</div>
             </div>
             <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">MFA PROTECTED</span></div>
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOGIN ACTIVITY</span></div>
               <div class="kpi-value" id="user-kpi-mfa" style="font-size: 1.25rem; color: var(--yellow);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">2-Factor authentication active</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Today</div>
             </div>
           </div>
 
-          <!-- Sub-Tab Navigation Bar -->
-          <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
-            <button class="btn btn-secondary user-subtab-btn active" id="btn-subtab-tab-users" onclick="window.UserAccessController.switchTab('tab-users')">
-              <span>&#128100;</span> System Accounts
-            </button>
-            <button class="btn btn-secondary user-subtab-btn" id="btn-subtab-tab-roles" onclick="window.UserAccessController.switchTab('tab-roles')">
-              <span>&#128737;&#65039;</span> Roles Matrix
-            </button>
-            <button class="btn btn-secondary user-subtab-btn" id="btn-subtab-tab-permissions" onclick="window.UserAccessController.switchTab('tab-permissions')">
-              <span>&#9889;</span> Permission Matrix
-            </button>
+          <!-- User Management Table Card Strip (Desktop Toolbar Parity) -->
+          <div class="user-table-toolbar">
+            <div class="user-table-toolbar-left">
+              <span style="font-size: 1.2rem;">&#9881;&#65039;</span>
+              <div>
+                <strong style="color: #fff; font-size: 0.92rem;">User Management</strong>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Search, filter and manage ERP users</div>
+              </div>
+            </div>
+            <div class="user-table-toolbar-right">
+              <input type="text" id="user-search-input" class="form-input form-input-sm" placeholder="Search user, email..." style="width: 170px;" oninput="window.UserAccessController.filterUsers(this.value)">
+              <select id="user-filter-role" class="form-select form-input-sm" style="width: 130px;" onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Roles</option>
+              </select>
+              <select id="user-filter-status" class="form-select form-input-sm" style="width: 120px;" onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="LOCKED">Locked</option>
+              </select>
+              <select id="user-filter-branch" class="form-select form-input-sm" style="width: 130px;" onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Branches</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.loadUsers()">Refresh</button>
+            </div>
           </div>
 
-          <!-- PANE 1: USERS TABLE (Docked Inline Split) -->
-          <div id="pane-tab-users" class="user-tab-pane active">
-            <div class="register-workspace" id="user-register-workspace">
-              <div class="register-table-panel data-panel" style="overflow-x:auto;">
-                <table class="data-table">
+          <!-- 10-Column Desktop Table -->
+          <div class="register-workspace" id="user-register-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto; border-radius:0;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="min-width: 150px;">User</th>
+                    <th style="min-width: 200px;">Email / Username</th>
+                    <th style="min-width: 110px;">Role</th>
+                    <th style="min-width: 110px;">Department</th>
+                    <th style="min-width: 120px;">Access</th>
+                    <th style="min-width: 110px;">Branch</th>
+                    <th style="min-width: 90px;">Status</th>
+                    <th style="min-width: 130px;">Last Login</th>
+                    <th style="min-width: 80px;">MFA</th>
+                    <th style="text-align: right; min-width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-tbody">
+                  <tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading user accounts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Inline Docked User Detail Drawer -->
+            <div id="user-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="ud-full-name">User Account</h3>
+                  <span id="ud-username" style="font-size:0.75rem; color:var(--cyan); font-family:monospace;">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()" style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ACCOUNT STATUS</span>
+                  <span id="ud-status-badge" class="pill-badge pill-success" style="font-size:0.75rem;">ACTIVE</span>
+                </div>
+                <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Assigned Role:</div>
+                    <div id="ud-role" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">USER</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Access Level:</div>
+                    <div id="ud-access" style="font-weight:700; color:var(--purple); font-size:0.85rem; margin-top:2px;">STANDARD</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Department:</div>
+                    <div id="ud-dept" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">GENERAL</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Branch:</div>
+                    <div id="ud-branch" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">HEADQUARTERS</div>
+                  </div>
+                </div>
+                <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                  <div style="color:var(--text-muted); font-size:0.68rem;">Email Address:</div>
+                  <div id="ud-email" style="font-weight:600; color:var(--text-main); font-size:0.85rem; margin-top:2px; word-break:break-all;">-</div>
+                </div>
+                <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                  <div style="color:var(--text-muted); font-size:0.68rem;">Last Sign-in:</div>
+                  <div id="ud-last-login" style="font-weight:600; color:var(--text-dim); font-size:0.8rem; margin-top:2px;">-</div>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.UserAccessController.drawerEditUser()">✏️ Edit Account</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetPassword()">🔑 Reset Password</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleLock()">🔒 Toggle Lock</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetAuthenticator()">🛡️ Reset Auth</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerUserAudit()">📋 Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()">✖ Close</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Strip (Desktop Parity) -->
+          <div class="user-bottom-action-strip">
+            <button class="btn btn-secondary" onclick="window.UserAccessController.editSelectedUser()">Edit Selected</button>
+            <button class="btn btn-secondary" onclick="window.UserAccessController.resetSelectedUserPassword()">Reset Password</button>
+            <button class="btn-purple" onclick="window.UserAccessController.openAddUserModal()" style="height:34px; padding:0 14px; font-weight:700; border-radius:6px; cursor:pointer;">+ Add New User</button>
+          </div>
+        </div>
+
+        <!-- DEDICATED VIEW: REGISTRATION APPROVALS (EXACT DESKTOP RegistrationApprovals.fxml PARITY) -->
+        <div id="view-registration-approvals" class="module-view" style="display: none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128203;</span> Registration Approvals</h1>
+              <p>Approve only verified non-Admin registrations</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('users')">
+                <span>&larr;</span> Back to User Access
+              </button>
+              <button class="btn btn-secondary" onclick="window.UserAccessController.loadRegistrations()">
+                <span>&#128260;</span> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- 2 KPI Cards -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 14px 18px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.72rem;">PENDING APPROVAL</span></div>
+              <div class="kpi-value" id="reg-kpi-pending" style="font-size: 1.5rem; color: var(--yellow);">0</div>
+              <div class="kpi-meta" style="font-size: 0.68rem;">Awaiting administrator authorization</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 14px 18px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.72rem;">IDENTITY + MFA VERIFIED</span></div>
+              <div class="kpi-value" id="reg-kpi-verified" style="font-size: 1.5rem; color: var(--green);">0</div>
+              <div class="kpi-meta" style="font-size: 0.68rem;">Email and 2FA Authenticator verified</div>
+            </div>
+          </div>
+
+          <!-- Queue Table -->
+          <div class="data-panel" style="overflow-x:auto; margin-bottom: 14px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Requested Role</th>
+                  <th style="width: 100px; text-align: center;">Email</th>
+                  <th style="width: 130px; text-align: center;">Authenticator</th>
+                  <th>Requested</th>
+                  <th style="width: 110px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="reg-table-tbody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading pending registrations...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bottom Decision Strip -->
+          <div class="reg-approval-bottom-bar">
+            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Assign final role:</span>
+            <select id="reg-assign-role" class="form-select form-input-sm" style="width: 200px;">
+              <option value="STAFF">Operations Staff</option>
+            </select>
+            <button class="btn btn-secondary" onclick="window.UserAccessController.rejectSelectedRegistration()" style="color: #f87171; border-color: rgba(239,68,68,0.4);">Reject</button>
+            <button class="btn-purple" onclick="window.UserAccessController.approveSelectedRegistration()" style="height:34px; padding:0 18px; font-weight:700; border-radius:6px; cursor:pointer;">Approve User</button>
+          </div>
+        </div>
+
+        <!-- DEDICATED VIEW: PERMISSION MATRIX WORKSPACE (EXACT DESKTOP PermissionMatrix.fxml PARITY) -->
+        <div id="view-permission-matrix" class="module-view" style="display: none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#9889;</span> User Permissions</h1>
+              <p>Grant role access clearly from one fixed workspace</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('users')">
+                <span>&larr;</span> Back to User Access
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Control Card -->
+          <div class="permission-control-card">
+            <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 180px;">
+                <label class="form-label" style="font-size: 0.72rem;">Role</label>
+                <select id="perm-role-select" class="form-select form-input-sm" onchange="window.UserAccessController.onPermissionRoleChange(this.value)">
+                  <option value="">Loading roles...</option>
+                </select>
+              </div>
+              <div style="flex: 1.2; min-width: 200px;">
+                <label class="form-label" style="font-size: 0.72rem;">Permission Template</label>
+                <select id="perm-template-select" class="form-select form-input-sm">
+                  <option value="READ_ONLY">Read Only (View access without changes)</option>
+                  <option value="SALES_STANDARD">Sales Standard (Sales, quotation, customers)</option>
+                  <option value="MANAGER_STANDARD">Manager Standard (Broad business access)</option>
+                  <option value="BUSINESS_FULL">Business Full Access (All business capabilities)</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.applySelectedTemplate()" style="height: 31px;">Apply Template</button>
+              <div style="flex: 1; min-width: 160px;">
+                <label class="form-label" style="font-size: 0.72rem;">Copy From Role</label>
+                <select id="perm-copy-role-select" class="form-select form-input-sm">
+                  <option value="">Choose role...</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.copyPermissionsFromRole()" style="height: 31px;">Copy</button>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <input type="text" id="perm-search-input" class="form-input form-input-sm" placeholder="Search module or permission..." style="max-width: 320px;" oninput="window.UserAccessController.filterPermissionMatrix(this.value)">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+                  <input type="checkbox" id="perm-chk-granted-only" onchange="window.UserAccessController.toggleGrantedOnly(this.checked)"> Show granted only
+                </label>
+                <span id="perm-granted-summary-badge" class="pill-badge pill-purple" style="font-size: 0.74rem;">0 of 0 granted</span>
+              </div>
+              <span id="perm-role-users-badge" style="font-size: 0.75rem; color: var(--text-dim);">0 users use this role</span>
+            </div>
+
+            <div id="perm-hint-banner" style="font-size: 0.75rem; color: var(--text-muted); padding: 6px 10px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 3px solid var(--purple);">
+              Select a role to inspect or update module-level authorizations.
+            </div>
+          </div>
+
+          <!-- Split Layout: 76% Grid, 24% Effective Preview -->
+          <div class="permission-split-layout">
+            <!-- Left: Grid -->
+            <div class="permission-matrix-panel">
+              <div style="padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-subtle);">
+                <strong style="color: #fff; font-size: 0.85rem;">Permission Matrix</strong>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">&#10003; granted &nbsp;&bull;&nbsp; &#9631; partial &nbsp;&bull;&nbsp; &mdash; not supported</span>
+              </div>
+              <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
+                <table class="permission-matrix-table">
                   <thead>
                     <tr>
-                      <th style="width: 50px;">ID</th>
-                      <th>Full Name</th>
-                      <th>Username</th>
-                      <th>Email Address</th>
-                      <th>Assigned Role</th>
-                      <th>Department</th>
-                      <th>Branch</th>
-                      <th style="width: 90px;">Status</th>
-                      <th style="width: 110px;">MFA State</th>
-                      <th>Last Login</th>
-                      <th style="text-align: right; width: 180px;">Actions</th>
+                      <th style="min-width: 180px;">Module / Scene</th>
+                      <th style="width: 50px;">All</th>
+                      <th style="width: 65px;">View</th>
+                      <th style="width: 65px;">Create</th>
+                      <th style="width: 65px;">Edit</th>
+                      <th style="width: 65px;">Delete</th>
+                      <th style="width: 65px;">Export</th>
+                      <th style="width: 65px;">Approve</th>
+                      <th style="width: 110px;">Special</th>
                     </tr>
                   </thead>
-                  <tbody id="users-table-tbody">
-                    <tr><td colspan="11" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading user accounts...</td></tr>
+                  <tbody id="permission-matrix-tbody">
+                    <tr><td colspan="9" style="padding: 30px; text-align: center; color: var(--text-dim);">Loading permissions matrix...</td></tr>
                   </tbody>
                 </table>
               </div>
+            </div>
 
-              <!-- Inline Docked User Detail Drawer -->
-              <div id="user-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
-                <div class="drawer-header">
-                  <div>
-                    <h3 style="margin:0; font-size:1rem;" id="ud-full-name">User Account</h3>
-                    <span id="ud-username" style="font-size:0.75rem; color:var(--cyan); font-family:monospace;">-</span>
-                  </div>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()" style="padding:2px 8px;">&times;</button>
-                </div>
-                <div class="drawer-body">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ACCOUNT STATUS</span>
-                    <span id="ud-status-badge" class="pill-badge pill-success" style="font-size:0.75rem;">ACTIVE</span>
-                  </div>
-                  <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                    <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                      <div style="color:var(--text-muted); font-size:0.68rem;">Assigned Role:</div>
-                      <div id="ud-role" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">USER</div>
-                    </div>
-                    <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                      <div style="color:var(--text-muted); font-size:0.68rem;">MFA State:</div>
-                      <div id="ud-mfa" style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">ENABLED</div>
-                    </div>
-                    <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                      <div style="color:var(--text-muted); font-size:0.68rem;">Department:</div>
-                      <div id="ud-dept" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">GENERAL</div>
-                    </div>
-                    <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                      <div style="color:var(--text-muted); font-size:0.68rem;">Branch:</div>
-                      <div id="ud-branch" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">HEADQUARTERS</div>
-                    </div>
-                  </div>
-
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Email Address:</div>
-                    <div id="ud-email" style="font-weight:600; color:var(--text-main); font-size:0.85rem; margin-top:2px; word-break:break-all;">-</div>
-                  </div>
-
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Last Sign-in:</div>
-                    <div id="ud-last-login" style="font-weight:600; color:var(--text-dim); font-size:0.8rem; margin-top:2px;">-</div>
-                  </div>
-                </div>
-                <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                  <button class="btn btn-primary btn-sm" onclick="window.UserAccessController.drawerEditUser()">✏️ Edit Account</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetPassword()">🔑 Reset Password</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleLock()">🔒 Toggle Lock</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleMfa()">🛡️ Toggle MFA</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerUserAudit()">📋 Audit Trail</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()">✖ Close</button>
+            <!-- Right: Preview -->
+            <div class="permission-preview-panel">
+              <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                <span style="color: var(--cyan); font-size: 1.1rem;">&#9673;</span>
+                <strong style="color: #fff; font-size: 0.88rem;">Effective Access Preview</strong>
+              </div>
+              <div id="permission-preview-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Populated dynamically -->
+              </div>
+              <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                <div style="font-weight: 700; color: var(--cyan); font-size: 0.72rem; letter-spacing: 0.5px; margin-bottom: 3px;">LOCAL + COMPANY SERVER</div>
+                <div style="font-size: 0.68rem; color: var(--text-dim); line-height: 1.4;">
+                  The same server-owned role matrix is used in both deployment modes. Protected role boundaries still apply, so the matrix narrows access without bypassing server security.
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- PANE 2: ROLES MATRIX -->
-          <div id="pane-tab-roles" class="user-tab-pane" style="display: none;">
-            <div class="data-panel">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Role Code</th>
-                    <th>Display Name</th>
-                    <th>Description</th>
-                    <th style="width: 130px;">Assigned Users</th>
-                    <th style="width: 100px;">Status</th>
-                    <th style="text-align: right; width: 140px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="roles-table-tbody">
-                  <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading roles...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- PANE 3: PERMISSIONS MATRIX -->
-          <div id="pane-tab-permissions" class="user-tab-pane" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-size: 0.85rem; color: var(--text-muted);">Manage granular module-level authorization for role: <strong style="color:var(--cyan);">ADMINISTRATOR</strong></span>
-              <button class="btn btn-primary" onclick="window.UserAccessController.savePermissionMatrix()">&#128190; Commit Permission Matrix</button>
-            </div>
-            <div class="data-panel">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th style="width: 150px;">Module</th>
-                    <th style="width: 180px;">Action / Operation</th>
-                    <th>Description &amp; Access Scope</th>
-                    <th style="width: 100px; text-align: center;">Allowed</th>
-                    <th style="width: 120px; text-align: center;">State</th>
-                  </tr>
-                </thead>
-                <tbody id="permissions-table-tbody">
-                  <tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading permissions matrix...</td></tr>
-                </tbody>
-              </table>
-            </div>
+          <!-- Bottom Footer Bar -->
+          <div class="permission-footer-bar">
+            <button class="btn btn-secondary" onclick="window.UserAccessController.resetPermissionChanges()">Reset Changes</button>
+            <button class="btn-purple" onclick="window.UserAccessController.savePermissionMatrix()" style="height:36px; padding:0 20px; font-weight:700; border-radius:6px; cursor:pointer;">Save Permissions</button>
           </div>
         </div>
 
@@ -8351,16 +8497,27 @@ Outstanding Balance: {BalanceAmount}
     </div>
 
     <!-- PERSISTENT DESKTOP FOOTER BAR (Desktop SharedApplicationFooter.java Parity) -->
-    <footer class="app-footer-bar">
-      <div class="footer-left" id="footer-company-info" style="display:flex; align-items:center; gap:16px;">
-        <span id="footer-trust-badge" style="display:flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; border-radius:50%; background:#34d399; display:inline-block; box-shadow:0 0 8px #34d399;"></span> Secure Local Reliable</span>
-        <span id="footer-company-name">&#127970; Jasvi Industries</span>
-        <span id="footer-phone">&#128222; 9099939193</span>
-        <span id="footer-email">&#9993;&#65039; info@jasviindustries.in</span>
-        <span id="footer-website"><a href="https://jasviindustries.in" target="_blank" style="color:inherit; text-decoration:none;">&#127760; jasviindustries.in</a></span>
+    <footer class="app-footer-bar" id="app-footer-bar">
+      <div class="footer-item footer-trust" id="footer-trust-badge">
+        <span class="trust-indicator-dot"></span>
+        <span class="trust-text">Secure &nbsp; Local &nbsp; Reliable</span>
       </div>
-      <div class="footer-right">
-        <span id="footer-live-clock">&#128197; Sunday, 18 Oct 2026 | 09:04:12 PM | IST</span>
+      <div class="footer-item footer-company" id="footer-company-name">
+        <span class="footer-icon">&#127970;</span> <span class="footer-val">Jasvi Industries</span>
+      </div>
+      <div class="footer-item footer-phone" id="footer-phone">
+        <span class="footer-icon">&#128222;</span> <span class="footer-val">9099939193</span>
+      </div>
+      <div class="footer-item footer-email" id="footer-email">
+        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val">info@jasviindustries.in</span>
+      </div>
+      <div class="footer-item footer-website" id="footer-website">
+        <a href="https://jasviindustries.in" target="_blank" style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <span class="footer-icon">&#127760;</span> <span class="footer-val">https://jasviindustries.in</span>
+        </a>
+      </div>
+      <div class="footer-item footer-clock" id="footer-live-clock">
+        <span class="footer-icon">&#128197;</span> <span class="footer-val">Sunday, 18 Oct 2026 | 10:02:00 PM | IST</span>
       </div>
     </footer>
   </div>
@@ -11308,74 +11465,120 @@ Outstanding Balance: {BalanceAmount}
     </div>
   </div>
 
-  <!-- MODAL: ADD / EDIT USER (UserDialog.fxml PARITY) -->
-  <div id="modal-user-edit" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 560px;">
-      <div class="modal-header">
-        <h3 id="user-modal-title" style="margin: 0; font-size: 1.1rem; color: #fff;">Provision New ERP User</h3>
-        <button type="button" class="modal-close" onclick="window.AppDialogService.closeModal('modal-user-edit')">&times;</button>
-      </div>
-      <form onsubmit="window.UserAccessController.handleUserFormSubmit(event)">
-        <div class="modal-body" style="padding: 20px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Username / Login ID *</label>
-              <input type="text" id="user-form-username" class="form-input form-input-sm" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Full Name *</label>
-              <input type="text" id="user-form-fullname" class="form-input form-input-sm" required>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Email Address *</label>
-              <input type="email" id="user-form-email" class="form-input form-input-sm" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Assigned Role *</label>
-              <select id="user-form-role" class="form-select form-input-sm">
-                <option value="ADMIN">ADMINISTRATOR</option>
-                <option value="MANAGER">FINANCIAL MANAGER</option>
-                <option value="ACCOUNTANT">ACCOUNTANT</option>
-                <option value="STAFF" selected>OPERATIONS STAFF</option>
-                <option value="READONLY">AUDITOR (READ ONLY)</option>
-              </select>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Department</label>
-              <select id="user-form-dept" class="form-select form-input-sm">
-                <option value="ACCOUNTS">Accounts &amp; Taxation</option>
-                <option value="SALES">Sales &amp; Dispatch</option>
-                <option value="PURCHASE">Purchase &amp; Inward</option>
-                <option value="WAREHOUSE">Warehouse &amp; Inventory</option>
-                <option value="OPERATIONS" selected>General Operations</option>
-                <option value="EXECUTIVE">Executive Management</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size: 0.75rem;">Branch / Plant</label>
-              <input type="text" id="user-form-branch" class="form-input form-input-sm" value="HEADQUARTERS">
-            </div>
-          </div>
-          <div id="user-form-password-group" class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" style="font-size: 0.75rem;">Initial Password *</label>
-            <input type="password" id="user-form-password" class="form-input form-input-sm" placeholder="Minimum 6 characters">
-          </div>
-          <div style="display: flex; gap: 20px; font-size: 0.82rem; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="user-form-active" checked> Account Active &amp; Unlocked
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="user-form-mfa"> Enforce 2-Factor Authentication (MFA)
-            </label>
+  <!-- MODAL: ADD / EDIT USER (EXACT DESKTOP UserDialog.fxml PARITY) -->
+  <div id="modal-user-dialog" class="modal-overlay" style="display: none;">
+    <div class="modal-card user-dialog-card" style="max-width: 780px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(168,85,247,0.18); border: 1px solid rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #d8b4fe;">U</div>
+          <div>
+            <h3 id="user-dialog-title" style="margin: 0; font-size: 1.15rem; color: #fff;">Add New User</h3>
+            <div id="user-dialog-subtitle" style="font-size: 0.75rem; color: var(--text-muted);">Identity, access and account security</div>
           </div>
         </div>
-        <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-subtle);">
-          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-user-edit')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save User Account</button>
+        <button type="button" class="modal-close" onclick="window.AppDialogService.closeModal('modal-user-dialog')">&times;</button>
+      </div>
+      <form onsubmit="window.UserAccessController.handleUserFormSubmit(event)">
+        <div class="modal-body" style="padding: 20px; max-height: calc(85vh - 140px); overflow-y: auto;">
+          <!-- Section 1: Identity & Access -->
+          <div class="user-dialog-section">
+            <div class="user-dialog-section-title">&#128100; Identity &amp; Access</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Full Name *</label>
+                <input type="text" id="user-form-fullname" class="form-input form-input-sm" placeholder="Enter full name" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Username *</label>
+                <input type="text" id="user-form-username" class="form-input form-input-sm" placeholder="Enter username" required>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Email Address *</label>
+                <input type="email" id="user-form-email" class="form-input form-input-sm" placeholder="name@company.com" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Role *</label>
+                <select id="user-form-role" class="form-select form-input-sm" required>
+                  <option value="">Loading roles...</option>
+                </select>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Department</label>
+                <input type="text" id="user-form-dept" class="form-input form-input-sm" placeholder="Sales, Purchase, Accounts...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Branch / Location</label>
+                <input type="text" id="user-form-branch" class="form-input form-input-sm" placeholder="e.g. Headquarters">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;">Access Level *</label>
+                <select id="user-form-access" class="form-select form-input-sm" required>
+                  <option value="FULL ACCESS">FULL ACCESS</option>
+                  <option value="STANDARD" selected>STANDARD</option>
+                  <option value="LIMITED ACCESS">LIMITED ACCESS</option>
+                  <option value="READ ONLY">READ ONLY</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Credentials -->
+          <div class="user-dialog-section">
+            <div class="user-dialog-section-title">&#128273; Credentials</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;" id="user-form-password-label">Password *</label>
+                <div style="position: relative;">
+                  <input type="password" id="user-form-password" class="form-input form-input-sm" placeholder="8+ chars, letter & number" style="padding-right: 32px;">
+                  <button type="button" onclick="window.UserAccessController.togglePasswordInputEye('user-form-password')" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.85rem;" title="Toggle Password Visibility">&#128065;</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.75rem;" id="user-form-confirm-label">Confirm Password *</label>
+                <div style="position: relative;">
+                  <input type="password" id="user-form-confirm" class="form-input form-input-sm" placeholder="Repeat password" style="padding-right: 32px;">
+                  <button type="button" onclick="window.UserAccessController.togglePasswordInputEye('user-form-confirm')" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.85rem;" title="Toggle Password Visibility">&#128065;</button>
+                </div>
+              </div>
+            </div>
+            <div id="user-password-hint" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 6px;">
+              Password requires at least 8 characters with both letters and numbers.
+            </div>
+          </div>
+
+          <!-- Section 3: Account & Authentication -->
+          <div class="user-dialog-section" style="margin-bottom: 0;">
+            <div class="user-dialog-section-title">&#128737;&#65039; Account &amp; Authentication</div>
+            <div style="display: flex; gap: 24px; font-size: 0.8rem; margin-bottom: 12px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="user-form-active" class="permission-chk" checked> Active
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="user-form-locked" class="permission-chk"> Locked
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="user-form-mfa" class="permission-chk"> Require MFA
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px; font-size: 0.76rem; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-subtle); margin-bottom: 12px;">
+              <div style="color: var(--text-muted);">MFA policy:</div>
+              <div id="user-dialog-mfa-policy" style="color: var(--text-main); font-weight: 600;">Admin Controlled / Required for non-Admin</div>
+              <div style="color: var(--text-muted);">Authenticator:</div>
+              <div id="user-dialog-mfa-status" style="color: var(--cyan); font-weight: 600;">Enrollment required at first sign-in</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button type="button" id="btn-dialog-reset-mfa" class="btn btn-secondary btn-sm" onclick="window.UserAccessController.dialogResetAuthenticator()" style="display: none; white-space: nowrap;">Reset Authenticator</button>
+              <span style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.3;">Reset invalidates the old phone and requires a new QR enrollment at the next sign-in.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 14px 22px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn btn-secondary" onclick="window.AppDialogService.closeModal('modal-user-dialog')">Cancel</button>
+          <button type="submit" id="user-dialog-submit-btn" class="btn-purple" style="height: 36px; padding: 0 20px; font-weight: 700; border-radius: 6px; cursor: pointer;">Create User</button>
         </div>
       </form>
     </div>
@@ -12314,68 +12517,68 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.15"></script>
+  <script src="js/version.js?v=10.0.34.16"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.34.15"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.34.15"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.15"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.15"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.15"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.15"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.15"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.15"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.15"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.15"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.15"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.15"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.15"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.15"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.15"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.15"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.34.16"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.16"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.16"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.16"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.16"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.16"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.16"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.16"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.16"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.16"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.16"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.16"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.16"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.16"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.16"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.16"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.15"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.15"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.15"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.15"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.15"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.15"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.15"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.15"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.15"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.16"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.16"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.16"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.16"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.16"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.16"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.16"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.16"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.16"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.15"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.15"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.16"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.15"></script>
-  <script src="js/app.js?v=10.0.34.15"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.16"></script>
+  <script src="js/app.js?v=10.0.34.16"></script>
 </body>
 </html>
 
