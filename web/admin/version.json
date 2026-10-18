@@ -1,17 +1,16 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 11,
-  "webVersion": "10.0.34.11",
-  "tag": "web-v10.0.34.11",
-  "releaseDate": "2026-10-18T18:45:00+05:30",
+  "webBuild": 12,
+  "webVersion": "10.0.34.12",
+  "tag": "web-v10.0.34.12",
+  "releaseDate": "2026-10-18T19:00:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.11 Enterprise Release - Complete 5-Screen Desktop Parity for Settings Studio, LiveOperationDialog Email Testing, and PascalCase Template Tokens",
+  "summary": "10.0.34.12 Enterprise Release - Full Desktop Parity for Bank & Expense, Bank Statement Reconciliation, Categorized Actions Context Menu, and Screenshot 5 Linked Transactions Modal",
   "highlights": [
-    "1. Settings Screen 1 (Company & Billing): 4-column master grid, PAN, Industry, Business Type, FY Start, and dual application branding preview cards",
-    "2. Settings Screen 2 (Payment & Bank): 3-column commercial bank layout, max ₹5.00 reconciliation tolerance constraint with explanation card, and UPI QR code layout",
-    "3. Settings Screen 3 (Invoice & Delivery): Billing/shipping addresses, Place of Supply, Website, Currency, Timezone, Date/Time formats, and dual Logo & Signature preview cards",
-    "4. Settings Screen 4 & 5 (Email & Communication): SMTP credentials with password eye toggle, Google App Password setup guidance modal, signature image uploader, PascalCase template tokens, and LiveOperationDialog 3-stage email diagnostic test modal",
-    "5. Centralized Version Sync: Bumped version registry, DOM injectors, and cache-busting query strings to 10.0.34.11"
+    "1. Bank & Expense Module (BankExpense.fxml Parity): Unified workspace, in-place mode switching, dynamic 4 KPIs with grey/green/orange/blue pills, FY date pickers, bill attachment uploader, and dynamic lookups via MasterService",
+    "2. Bank Statement Reconciliation (BankStatement.fxml Parity): Account masking, 8 Title Case KPIs, 3-row filter toolbar with batch progress bar, guidance banner, and 50/100/200 pagination",
+    "3. Categorized Context Menu (Screenshot 4 Parity): VIEW (Transaction Details with 500-char ERP note editor, Imported Statement with raw CSV and SHA-256 fingerprint copy, Audit History), RECONCILIATION (View Match/Linked Record, Review Suggested Match, Move to Expense, View Bank Entry), REVERSAL (Unmatch/Reverse), and STATUS (Mark for Review, Mark as Ignored)",
+    "4. Linked Transactions Modal (Screenshot 5 Parity): Information modal with 5 metric cards (Bank Ref, Linked Count, Bank Linked, Round-off, Difference), multi-allocation table with direct workflow navigation",
+    "5. Modals & Safety: 1040px Browse Statements History dialog with 4 filters, two-step DELETE confirmation safety modal, reason prompt dialogs for review/ignore, and bulk move dialog"
   ]
 }
-

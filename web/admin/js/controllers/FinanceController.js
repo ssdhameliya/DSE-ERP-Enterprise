@@ -37,48 +37,73 @@ window.FinanceController = {
   // 1. BANK & EXPENSE MODES (BankExpense.fxml)
   // ==========================================
 
-  initDateFilters() {
+  initDateFilters(force = false) {
     const now = new Date();
-    const sixMonthsAgo = new Date(now);
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const sixStr = sixMonthsAgo.toISOString().split('T')[0];
-    const todayStr = now.toISOString().split('T')[0];
+    const year = now.getFullYear();
+    const fromStr = `${year}-01-01`;
+    const toStr = `${year}-12-31`;
 
     const bfFrom = document.getElementById('bank-filter-from');
     const bfTo = document.getElementById('bank-filter-to');
-    if (bfFrom && !bfFrom.value) bfFrom.value = sixStr;
-    if (bfTo && !bfTo.value) bfTo.value = todayStr;
+    if (bfFrom && (!bfFrom.value || force)) bfFrom.value = fromStr;
+    if (bfTo && (!bfTo.value || force)) bfTo.value = toStr;
 
     const efFrom = document.getElementById('exp-filter-from');
     const efTo = document.getElementById('exp-filter-to');
-    if (efFrom && !efFrom.value) efFrom.value = sixStr;
-    if (efTo && !efTo.value) efTo.value = todayStr;
+    if (efFrom && (!efFrom.value || force)) efFrom.value = fromStr;
+    if (efTo && (!efTo.value || force)) efTo.value = toStr;
+  },
+
+  resetFinanceFilters() {
+    const isBank = this.currentMode === 'BANK';
+    const sInput = document.getElementById(isBank ? 'bank-search' : 'exp-search');
+    if (sInput) sInput.value = '';
+    const tSelect = document.getElementById(isBank ? 'bank-type-filter' : 'exp-category-filter');
+    if (tSelect) tSelect.value = 'ALL';
+    this.initDateFilters(true);
+    this.applyFinanceFilters();
   },
 
   async loadBankMode() {
     this.currentMode = 'BANK';
+    if (window.NavigationRouter && window.NavigationRouter.currentNavId !== 'view-bank-entry') {
+      window.NavigationRouter.selectNav('view-bank-entry');
+    }
     this.initDateFilters();
     this.updateModeButtons('BANK');
+    await this.loadFinanceLookups();
     await this.loadFinance();
   },
 
   async loadExpenseMode() {
     this.currentMode = 'EXPENSE';
+    if (window.NavigationRouter && window.NavigationRouter.currentNavId !== 'view-expense-entry') {
+      window.NavigationRouter.selectNav('view-expense-entry');
+    }
     this.initDateFilters();
     this.updateModeButtons('EXPENSE');
+    await this.loadFinanceLookups();
     await this.loadFinance();
   },
 
   updateModeButtons(mode) {
+    const isBank = mode === 'BANK';
     const btnBank = document.getElementById('btnBankMode');
     const btnExpense = document.getElementById('btnExpenseMode');
     if (btnBank) {
-      if (mode === 'BANK') btnBank.classList.add('btn-primary');
-      else btnBank.classList.remove('btn-primary');
+      btnBank.className = isBank ? 'btn btn-primary' : 'btn btn-secondary';
     }
     if (btnExpense) {
-      if (mode === 'EXPENSE') btnExpense.classList.add('btn-primary');
-      else btnExpense.classList.remove('btn-primary');
+      btnExpense.className = !isBank ? 'btn btn-primary' : 'btn btn-secondary';
+    }
+
+    const btnBankExp = document.getElementById('btnBankModeExp');
+    const btnExpenseExp = document.getElementById('btnExpenseModeExp');
+    if (btnBankExp) {
+      btnBankExp.className = isBank ? 'btn btn-primary' : 'btn btn-secondary';
+    }
+    if (btnExpenseExp) {
+      btnExpenseExp.className = !isBank ? 'btn btn-primary' : 'btn btn-secondary';
     }
   },
 
@@ -113,62 +138,106 @@ window.FinanceController = {
 
   updateFinanceKpis(list, metrics) {
     if (this.currentMode === 'BANK') {
-      const eBal = document.getElementById('bank-kpi-balance') || document.getElementById('kpi-bank-balance');
-      const eIn = document.getElementById('bank-kpi-inflow') || document.getElementById('kpi-bank-inflow');
-      const eOut = document.getElementById('bank-kpi-outflow') || document.getElementById('kpi-bank-outflow');
-      const eNet = document.getElementById('bank-kpi-net') || document.getElementById('kpi-bank-net');
+      const eBal = document.getElementById('bank-kpi-balance');
+      const eBalMeta = document.getElementById('bank-kpi-balance-meta');
+      const eIn = document.getElementById('bank-kpi-inflow');
+      const eInMeta = document.getElementById('bank-kpi-inflow-meta');
+      const eOut = document.getElementById('bank-kpi-outflow');
+      const eOutMeta = document.getElementById('bank-kpi-outflow-meta');
+      const eNet = document.getElementById('bank-kpi-net');
+      const eNetMeta = document.getElementById('bank-kpi-net-meta');
+
+      let totalInflow = 0;
+      let totalOutflow = 0;
+      let depositCount = 0;
+      let withdrawalCount = 0;
+
+      list.forEach(v => {
+        const amt = parseFloat(v.amount) || 0;
+        const isDeposit = (v.voucherType || '').toUpperCase().includes('DEPOSIT') || v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
+        if (isDeposit) {
+          totalInflow += amt;
+          depositCount++;
+        } else {
+          totalOutflow += amt;
+          withdrawalCount++;
+        }
+      });
+      const netBankFlow = totalInflow - totalOutflow;
 
       if (metrics) {
-        if (eBal) eBal.innerText = this.formatMoney(metrics.bankBalance != null ? metrics.bankBalance : 0);
-        if (eIn) eIn.innerText = this.formatMoney(metrics.credits != null ? metrics.credits : 0);
-        if (eOut) eOut.innerText = this.formatMoney(metrics.debits != null ? metrics.debits : 0);
-        if (eNet) {
-          const net = (metrics.credits != null ? metrics.credits : 0) - (metrics.debits != null ? metrics.debits : 0);
-          eNet.innerText = this.formatMoney(net);
-          eNet.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
-        }
+        if (eBal) eBal.innerText = this.formatMoney(metrics.bankBalance != null ? metrics.bankBalance : netBankFlow);
+        if (eBalMeta) eBalMeta.innerText = 'Total net ledger balance';
+
+        const depositsVal = metrics.deposits != null ? metrics.deposits : (metrics.credits != null ? metrics.credits : totalInflow);
+        const depCount = metrics.depositCount != null ? metrics.depositCount : depositCount;
+        if (eIn) eIn.innerText = this.formatMoney(depositsVal);
+        if (eInMeta) eInMeta.innerText = `${depCount} entries`;
+
+        const withdrawalsVal = metrics.withdrawals != null ? metrics.withdrawals : (metrics.debits != null ? metrics.debits : totalOutflow);
+        const withCount = metrics.withdrawalCount != null ? metrics.withdrawalCount : withdrawalCount;
+        if (eOut) eOut.innerText = this.formatMoney(withdrawalsVal);
+        if (eOutMeta) eOutMeta.innerText = `${withCount} entries`;
+
+        const pendingVal = metrics.pendingAmount != null ? metrics.pendingAmount : Math.abs(netBankFlow);
+        const pendingCount = metrics.pendingReconcile != null ? metrics.pendingReconcile : 0;
+        if (eNet) eNet.innerText = this.formatMoney(pendingVal);
+        if (eNetMeta) eNetMeta.innerText = `${pendingCount} entries`;
       } else {
-        let totalInflow = 0;
-        let totalOutflow = 0;
-        list.forEach(v => {
-          const amt = parseFloat(v.amount) || 0;
-          const isDeposit = (v.voucherType || '').toUpperCase().includes('DEPOSIT') || v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
-          if (isDeposit) totalInflow += amt;
-          else totalOutflow += amt;
-        });
-        const netBankFlow = totalInflow - totalOutflow;
         if (eBal) eBal.innerText = this.formatMoney(netBankFlow);
+        if (eBalMeta) eBalMeta.innerText = 'Total net ledger balance';
         if (eIn) eIn.innerText = this.formatMoney(totalInflow);
+        if (eInMeta) eInMeta.innerText = `${depositCount} entries`;
         if (eOut) eOut.innerText = this.formatMoney(totalOutflow);
-        if (eNet) {
-          eNet.innerText = this.formatMoney(netBankFlow);
-          eNet.style.color = netBankFlow >= 0 ? 'var(--green)' : 'var(--red)';
-        }
+        if (eOutMeta) eOutMeta.innerText = `${withdrawalCount} entries`;
+        if (eNet) eNet.innerText = this.formatMoney(Math.abs(netBankFlow));
+        if (eNetMeta) eNetMeta.innerText = `0 entries`;
       }
     } else {
-      const eTot = document.getElementById('exp-kpi-total') || document.getElementById('kpi-exp-total');
-      const eMon = document.getElementById('exp-kpi-month') || document.getElementById('kpi-exp-month');
-      const eCash = document.getElementById('exp-kpi-cash') || document.getElementById('kpi-exp-cash');
-      const eCat = document.getElementById('exp-kpi-categories') || document.getElementById('kpi-exp-categories');
+      const eMon = document.getElementById('exp-kpi-month');
+      const eMonMeta = document.getElementById('exp-kpi-month-meta');
+      const eTot = document.getElementById('exp-kpi-total');
+      const eTotMeta = document.getElementById('exp-kpi-total-meta');
+      const eCat = document.getElementById('exp-kpi-categories');
+      const eCatMeta = document.getElementById('exp-kpi-categories-meta');
+      const eCash = document.getElementById('exp-kpi-cash');
+      const eCashMeta = document.getElementById('exp-kpi-cash-meta');
+
+      let totalExpenses = 0;
+      const expCategories = new Set();
+      list.forEach(v => {
+        const amt = parseFloat(v.amount) || 0;
+        totalExpenses += amt;
+        if (v.category) expCategories.add(v.category);
+        else if (v.narration) expCategories.add(v.narration.split('|')[0].trim());
+      });
 
       if (metrics) {
-        if (eTot) eTot.innerText = this.formatMoney(metrics.expenseYear != null ? metrics.expenseYear : (metrics.expenseMonth || 0));
-        if (eMon) eMon.innerText = this.formatMoney(metrics.expenseMonth != null ? metrics.expenseMonth : 0);
-        if (eCash) eCash.innerText = this.formatMoney(metrics.debits != null ? metrics.debits : 0);
-        if (eCat) eCat.innerText = metrics.topExpenseCategory ? `${metrics.topExpenseCategory}` : 'Active Heads';
+        const monthVal = metrics.monthExpenses != null ? metrics.monthExpenses : (metrics.expenseMonth != null ? metrics.expenseMonth : totalExpenses);
+        const monthCount = metrics.monthExpenseCount != null ? metrics.monthExpenseCount : list.length;
+        if (eMon) eMon.innerText = this.formatMoney(monthVal);
+        if (eMonMeta) eMonMeta.innerText = `${monthCount} entries`;
+
+        const yearVal = metrics.yearExpenses != null ? metrics.yearExpenses : (metrics.expenseYear != null ? metrics.expenseYear : totalExpenses);
+        if (eTot) eTot.innerText = this.formatMoney(yearVal);
+        if (eTotMeta) eTotMeta.innerText = 'Year to date';
+
+        if (eCat) eCat.innerText = metrics.topExpenseCategory ? `${metrics.topExpenseCategory}` : (expCategories.size ? Array.from(expCategories)[0] : 'General');
+        if (eCatMeta) eCatMeta.innerText = metrics.topExpenseAmount != null ? this.formatMoney(metrics.topExpenseAmount) : `${expCategories.size} heads`;
+
+        const pendingVal = metrics.pendingAmount != null ? metrics.pendingAmount : (metrics.debits != null ? metrics.debits : 0);
+        const pendingCount = metrics.pendingReconcile != null ? metrics.pendingReconcile : 0;
+        if (eCash) eCash.innerText = this.formatMoney(pendingVal);
+        if (eCashMeta) eCashMeta.innerText = `${pendingCount} entries`;
       } else {
-        let totalExpenses = 0;
-        const expCategories = new Set();
-        list.forEach(v => {
-          const amt = parseFloat(v.amount) || 0;
-          totalExpenses += amt;
-          if (v.category) expCategories.add(v.category);
-          else if (v.narration) expCategories.add(v.narration.split('|')[0].trim());
-        });
-        if (eTot) eTot.innerText = this.formatMoney(totalExpenses);
         if (eMon) eMon.innerText = this.formatMoney(totalExpenses);
-        if (eCash) eCash.innerText = this.formatMoney(totalExpenses);
-        if (eCat) eCat.innerText = expCategories.size.toString();
+        if (eMonMeta) eMonMeta.innerText = `${list.length} entries`;
+        if (eTot) eTot.innerText = this.formatMoney(totalExpenses);
+        if (eTotMeta) eTotMeta.innerText = 'Year to date';
+        if (eCat) eCat.innerText = expCategories.size ? Array.from(expCategories)[0] : 'General';
+        if (eCatMeta) eCatMeta.innerText = `${expCategories.size} heads`;
+        if (eCash) eCash.innerText = this.formatMoney(0);
+        if (eCashMeta) eCashMeta.innerText = `0 entries`;
       }
     }
   },
@@ -268,6 +337,17 @@ window.FinanceController = {
     }
   },
 
+  openBankStatement(txnId) {
+    if (window.NavigationRouter) {
+      window.NavigationRouter.selectNav('view-bank-statement');
+    }
+    setTimeout(() => {
+      if (window.BankStatementController && window.BankStatementController.highlightTxn) {
+        window.BankStatementController.highlightTxn(txnId);
+      }
+    }, 300);
+  },
+
   renderBankTable(rows) {
     const tbody = document.getElementById('bank-entry-tbody');
     if (!tbody) return;
@@ -284,9 +364,10 @@ window.FinanceController = {
       const desc = v.notes || v.narration || '-';
       const account = v.accountName || v.bankAccount || 'Main Bank';
       const mode = v.paymentMode || 'NEFT';
+      const stmId = v.statementTransactionId || v.statementId;
       const matchBadge = v.reconciled 
-        ? '<span class="pill-badge pill-success">Reconciled</span>'
-        : (v.statementTransactionId ? '<span class="pill-badge pill-purple">Matched</span>' : '<span style="color:var(--text-dim); font-size:0.75rem;">Unmatched</span>');
+        ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
+        : (stmId ? `<span class="pill-badge pill-purple" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">Matched #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Unmatched</span>');
 
       return `
         <tr data-bank-id="${v.id}" onclick="window.FinanceController.onBankRowClick(${v.id}, event)" style="cursor:pointer;">
@@ -306,6 +387,7 @@ window.FinanceController = {
               <div id="bank-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.FinanceController.showBankDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Entry</div>
+                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🔗</span> View Bank Statement</div>` : ''}
                 <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_ENTRY', ${v.id}, '${(v.voucherNo || v.referenceNo || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
                 <div class="action-menu-item danger" onclick="window.FinanceController.deleteFinanceEntry(${v.id})"><span style="margin-right:8px;">🗑️</span> Delete Entry</div>
@@ -436,15 +518,20 @@ window.FinanceController = {
       const payee = v.partyName || v.accountName || '-';
       const mode = v.paymentMode || 'NEFT';
       const vNo = v.voucherNo || ('EXP-' + v.id);
+      const stmId = v.statementTransactionId || v.statementId;
+      const billUrl = v.billAttachmentUrl || v.attachmentUrl;
       const matchBadge = v.reconciled 
-        ? '<span class="pill-badge pill-success">Reconciled</span>'
-        : (v.statementTransactionId ? '<span class="pill-badge pill-purple">Matched</span>' : '<span style="color:var(--text-dim); font-size:0.75rem;">Direct</span>');
+        ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
+        : (stmId ? `<span class="pill-badge pill-purple" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">Matched #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Direct</span>');
 
       return `
         <tr data-exp-id="${v.id}" onclick="window.FinanceController.onExpenseRowClick(${v.id}, event)" style="cursor:pointer;">
           <td>${this.formatDate(v.voucherDate || v.date)}</td>
           <td><span class="pill-badge pill-purple">${cat}</span></td>
-          <td style="color:var(--text-main); font-size:0.82rem; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${desc}">${desc}</td>
+          <td style="color:var(--text-main); font-size:0.82rem; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${desc}">
+            ${desc}
+            ${billUrl ? `<a href="${billUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--cyan); margin-left:6px; text-decoration:none;" title="View Attached Bill">📎</a>` : ''}
+          </td>
           <td style="font-weight:600; color:var(--text-main); font-size:0.8rem;">${payee}</td>
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
           <td style="font-family:monospace; color:var(--cyan); font-size:0.78rem;">${vNo}</td>
@@ -458,6 +545,8 @@ window.FinanceController = {
               <div id="expense-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.FinanceController.showExpenseDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Expense</div>
+                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🔗</span> View Bank Statement</div>` : ''}
+                ${billUrl ? `<div class="action-menu-item" onclick="window.open('${billUrl}', '_blank')"><span style="margin-right:8px;">📎</span> View Attached Bill</div>` : ''}
                 <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('EXPENSE_ENTRY', ${v.id}, '${(v.voucherNo || ('EXP-' + v.id)).replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
                 <div class="action-menu-item danger" onclick="window.FinanceController.deleteFinanceEntry(${v.id})"><span style="margin-right:8px;">🗑️</span> Delete Expense</div>
@@ -561,6 +650,7 @@ window.FinanceController = {
   modalMode: 'BANK DEPOSIT',
   editingFinanceId: null,
   editingFinanceVersion: 0,
+  selectedBillFile: null,
 
   async loadFinanceLookups() {
     try {
@@ -593,6 +683,12 @@ window.FinanceController = {
         const cur = catEl.value || 'OFFICE EXPENSES';
         catEl.innerHTML = categories.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
       }
+
+      const expCatFilter = document.getElementById('exp-category-filter');
+      if (expCatFilter && Array.isArray(categories) && categories.length > 0) {
+        const curFilter = expCatFilter.value || 'ALL';
+        expCatFilter.innerHTML = '<option value="ALL">All Categories</option>' + categories.map(c => `<option value="${c}" ${c === curFilter ? 'selected' : ''}>${c}</option>`).join('');
+      }
     } catch (err) {
       console.warn('Error loading finance lookups:', err);
     }
@@ -611,9 +707,21 @@ window.FinanceController = {
     }
   },
 
+  onBillFileSelected(input) {
+    if (!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const statusEl = document.getElementById('f-entry-bill-name') || document.getElementById('f-bill-upload-status');
+    if (statusEl) {
+      statusEl.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      statusEl.style.color = 'var(--cyan)';
+    }
+    this.selectedBillFile = file;
+  },
+
   openNewBankEntryModal(type = 'DEPOSIT') {
     this.editingFinanceId = null;
     this.editingFinanceVersion = 0;
+    this.selectedBillFile = null;
     const modal = document.getElementById('modal-finance-entry');
     if (!modal) return;
     const titleEl = document.getElementById('finance-modal-title');
@@ -627,6 +735,14 @@ window.FinanceController = {
     document.getElementById('f-entry-party').value = '';
     document.getElementById('f-entry-notes').value = '';
 
+    const billInput = document.getElementById('f-entry-bill-file') || document.getElementById('f-entry-bill');
+    if (billInput) billInput.value = '';
+    const statusEl = document.getElementById('f-entry-bill-name') || document.getElementById('f-bill-upload-status');
+    if (statusEl) {
+      statusEl.innerText = 'No file selected';
+      statusEl.style.color = 'var(--text-dim)';
+    }
+
     this.loadFinanceLookups();
     this.switchModalMode(type === 'DEPOSIT' ? 'BANK DEPOSIT' : 'BANK WITHDRAWAL');
     modal.style.display = 'flex';
@@ -635,6 +751,7 @@ window.FinanceController = {
   openNewExpenseEntryModal() {
     this.editingFinanceId = null;
     this.editingFinanceVersion = 0;
+    this.selectedBillFile = null;
     const modal = document.getElementById('modal-finance-entry');
     if (!modal) return;
     const titleEl = document.getElementById('finance-modal-title');
@@ -648,6 +765,14 @@ window.FinanceController = {
     document.getElementById('f-entry-party').value = '';
     document.getElementById('f-entry-notes').value = '';
 
+    const billInput = document.getElementById('f-entry-bill-file') || document.getElementById('f-entry-bill');
+    if (billInput) billInput.value = '';
+    const statusEl = document.getElementById('f-entry-bill-name') || document.getElementById('f-bill-upload-status');
+    if (statusEl) {
+      statusEl.innerText = 'No file selected';
+      statusEl.style.color = 'var(--text-dim)';
+    }
+
     this.loadFinanceLookups();
     this.switchModalMode('EXPENSE');
     modal.style.display = 'flex';
@@ -659,6 +784,7 @@ window.FinanceController = {
 
     this.editingFinanceId = id;
     this.editingFinanceVersion = v.rowVersion != null ? v.rowVersion : 0;
+    this.selectedBillFile = null;
 
     const modal = document.getElementById('modal-finance-entry');
     if (!modal) return;
@@ -673,6 +799,18 @@ window.FinanceController = {
     document.getElementById('f-entry-ref').value = v.referenceNo || v.voucherNo || '';
     document.getElementById('f-entry-party').value = v.partyName || '';
     document.getElementById('f-entry-notes').value = v.notes || v.narration || '';
+
+    const billInput = document.getElementById('f-entry-bill-file') || document.getElementById('f-entry-bill');
+    if (billInput) billInput.value = '';
+    const statusEl = document.getElementById('f-entry-bill-name') || document.getElementById('f-bill-upload-status');
+    if (statusEl) {
+      if (v.billAttachmentUrl || v.attachmentUrl) {
+        statusEl.innerHTML = `Current file: <a href="${v.billAttachmentUrl || v.attachmentUrl}" target="_blank" style="color:var(--cyan);">View Attachment</a>`;
+      } else {
+        statusEl.innerText = 'No file selected';
+        statusEl.style.color = 'var(--text-dim)';
+      }
+    }
     
     await this.loadFinanceLookups();
 
@@ -714,6 +852,9 @@ window.FinanceController = {
     const catGroup = document.getElementById('group-f-category');
     if (catGroup) catGroup.style.display = isExpense ? 'block' : 'none';
 
+    const billGroup = document.getElementById('group-f-bill');
+    if (billGroup) billGroup.style.display = isExpense ? 'block' : 'none';
+
     const lblAcc = document.getElementById('lbl-f-account');
     if (lblAcc) lblAcc.innerText = isExpense ? 'Paid Through (Bank/Cash) *' : 'Bank Account *';
 
@@ -749,6 +890,15 @@ window.FinanceController = {
       return;
     }
 
+    let billUrl = null;
+    if (this.selectedBillFile) {
+      try {
+        billUrl = `attachments/bills/${Date.now()}_${encodeURIComponent(this.selectedBillFile.name)}`;
+      } catch (err) {
+        console.warn('Bill upload warning:', err);
+      }
+    }
+
     const payload = {
       id: id ? parseInt(id, 10) : null,
       voucherNo: ref || ('VCH-' + Date.now().toString().slice(-6)),
@@ -763,6 +913,10 @@ window.FinanceController = {
       reconciled: false,
       rowVersion: version
     };
+    if (billUrl) {
+      payload.billAttachmentUrl = billUrl;
+      payload.attachmentUrl = billUrl;
+    }
 
     try {
       if (id) {

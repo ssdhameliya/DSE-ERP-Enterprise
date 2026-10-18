@@ -66,6 +66,13 @@ window.BankStatementController = (function() {
     }
   }
 
+  function maskAccount(acc) {
+    if (!acc) return 'Acc';
+    const s = acc.toString().trim();
+    if (s.length <= 4) return s;
+    return '****' + s.slice(-4);
+  }
+
   function populateBatchDropdown(list, selectedId = null) {
     const sel = document.getElementById('cmbBatch');
     if (!sel) return;
@@ -77,7 +84,9 @@ window.BankStatementController = (function() {
 
     sel.innerHTML = list.map(b => {
       const isSel = (selectedId && b.id === selectedId) || (!selectedId && b === list[0]);
-      const label = `${b.bankName || 'Bank'} (${b.bankAccount || 'Acc'}) • ${b.statementFrom || ''} to ${b.statementTo || ''} [${b.transactionCount || 0} rows]`;
+      const masked = maskAccount(b.bankAccount);
+      const isUnrec = (b.reconciliationPercent != null && b.reconciliationPercent < 100) || (b.status !== 'RECONCILED' && b.status !== 'FULLY_RECONCILED');
+      const label = `${isUnrec ? '⚠️ ' : '✅ '}${b.bankName || 'Bank'} (${masked}) • ${b.statementFrom || ''} to ${b.statementTo || ''} [${b.transactionCount || 0} rows]`;
       return `<option value="${b.id}" ${isSel ? 'selected' : ''}>${label}</option>`;
     }).join('');
   }
@@ -92,6 +101,7 @@ window.BankStatementController = (function() {
 
   async function loadBatch(id) {
     currentBatchId = id;
+    currentBatch = batches.find(b => b.id === id) || null;
     selectedTxnIds.clear();
     updateBulkToolbar();
 
@@ -186,6 +196,9 @@ window.BankStatementController = (function() {
       else if (status === 'IGNORED') badgeClass = 'pill-neutral';
       else badgeClass = 'pill-danger';
 
+      const hasMultiAlloc = t.linkedAllocations && t.linkedAllocations.length > 1;
+      const docLink = t.linkedDocumentNo || t.matchLink;
+
       return `
         <tr data-stmt-id="${t.id}" onclick="window.BankStatementController.onTxnRowClick(${t.id}, event)" style="cursor:pointer; ${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
           <td style="text-align:center;" onclick="event.stopPropagation();">
@@ -211,28 +224,58 @@ window.BankStatementController = (function() {
           <td style="text-align:center;">
             <span class="pill-badge ${badgeClass}">${status}</span>
           </td>
-          <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--purple);" title="${t.matchLink || t.linkedDocumentNo || ''}">
-            ${(t.linkedDocumentNo || t.matchLink) ? `
-              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${(t.linkedDocumentNo || t.matchLink).replace(/'/g, "\\'")}')" style="color:var(--cyan); text-decoration:underline; font-weight:600;">
-                🔗 ${t.linkedDocumentNo || t.matchLink}
+          <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--purple);" title="${docLink || ''}">
+            ${hasMultiAlloc ? `
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.showLinkedAllocations(${t.id})" style="color:var(--cyan); text-decoration:underline; font-weight:700;">
+                🔗 Multi (${t.linkedAllocations.length} linked)
               </a>
-            ` : (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-')}
+            ` : (docLink ? `
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')" style="color:var(--cyan); text-decoration:underline; font-weight:600;">
+                🔗 ${docLink}
+              </a>
+            ` : (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-'))}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.BankStatementController.toggleActionMenu(${t.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Reconciliation Actions">
                 ::: Actions
               </button>
-              <div id="bs-action-menu-${t.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
-                <div class="action-menu-item" onclick="window.BankStatementController.showTxnDetails(${t.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
-                ${status === 'MATCHED' || status === 'EXPENSE' ? `
-                  <div class="action-menu-item" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩</span> Reverse Reconciliation</div>
+              <div id="bs-action-menu-${t.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:230px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <!-- Category: VIEW -->
+                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--text-muted); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">VIEW</div>
+                <div class="action-menu-item" onclick="window.BankStatementController.openTxnDetailsDialog(${t.id})"><span style="margin-right:8px;">👁️</span> View Transaction Details</div>
+                <div class="action-menu-item" onclick="window.BankStatementController.viewStatementSource(${t.id})"><span style="margin-right:8px;">📄</span> View Imported Statement</div>
+                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_RECON', ${t.id}, '${(t.reference || t.description || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">🕒</span> View Audit History</div>
+                
+                <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                
+                <!-- Category: RECONCILIATION -->
+                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
+                ${hasMultiAlloc ? `
+                  <div class="action-menu-item" onclick="window.BankStatementController.showLinkedAllocations(${t.id})"><span style="margin-right:8px;">🔗</span> View Match / Linked Record (${t.linkedAllocations.length})</div>
+                ` : (docLink ? `
+                  <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🔗</span> View Match / Linked Record</div>
                 ` : `
-                  <div class="action-menu-item" onclick="window.BankStatementController.openMatchModal(${t.id})"><span style="margin-right:8px;">🔗</span> Match with Invoice / Voucher</div>
-                  ${debit > 0 ? `<div class="action-menu-item" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})"><span style="margin-right:8px;">💸</span> Move to Operating Expense</div>` : ''}
+                  <div class="action-menu-item" onclick="window.BankStatementController.openMatchModal(${t.id})"><span style="margin-right:8px;">${t.suggestedConfidence ? '💡 Review Suggested Match' : '🎯 Match Transaction'}</span></div>
+                  ${debit > 0 ? `<div class="action-menu-item" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})"><span style="margin-right:8px;">💸</span> Move to Expense</div>` : ''}
                   <div class="action-menu-item" onclick="window.BankStatementController.quickMoveBankEntry(${t.id}, ${debit > 0 ? debit : credit}, '${debit > 0 ? 'DEBIT' : 'CREDIT'}')"><span style="margin-right:8px;">🏦</span> Move to Bank Entry</div>
-                `}
-                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_RECON', ${t.id}, '${(t.reference || t.description || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
+                `)}
+                ${docLink ? `
+                  <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">${docLink.startsWith('EXP') ? '💸 View Expense' : '🏦 View Bank Entry'}</span></div>
+                ` : ''}
+
+                ${(status === 'MATCHED' || status === 'EXPENSE' || docLink) ? `
+                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                  <!-- Category: REVERSAL -->
+                  <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--red); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">REVERSAL</div>
+                  <div class="action-menu-item danger" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩️</span> Unmatch / Reverse</div>
+                ` : ''}
+
+                <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+                <!-- Category: STATUS -->
+                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--yellow); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">STATUS</div>
+                <div class="action-menu-item" onclick="window.BankStatementController.singleMarkReview(${t.id})"><span style="margin-right:8px;">🚩</span> Mark for Review</div>
+                <div class="action-menu-item" onclick="window.BankStatementController.singleIgnore(${t.id})"><span style="margin-right:8px;">🚫</span> Mark as Ignored</div>
               </div>
             </div>
           </td>
@@ -258,11 +301,11 @@ window.BankStatementController = (function() {
         targetMenu.style.zIndex = '100005';
         const btn = event.currentTarget || event.target;
         const rect = btn.getBoundingClientRect();
-        const menuWidth = 220;
+        const menuWidth = 230;
         let left = rect.right - menuWidth;
         if (left < 10) left = 10;
 
-        const menuHeight = targetMenu.offsetHeight || 180;
+        const menuHeight = targetMenu.offsetHeight || 220;
         const spaceBelow = window.innerHeight - rect.bottom;
         let top;
         if (spaceBelow < menuHeight && rect.top > menuHeight) {
@@ -783,69 +826,546 @@ window.BankStatementController = (function() {
   }
 
   // ==========================================
-  // 5. STATEMENT HISTORY DRAWER
+  // 5. SCREENSHOT 5: LINKED TRANSACTIONS MODAL
   // ==========================================
 
-  function toggleStatementHistory() {
-    const drawer = document.getElementById('statement-history-drawer');
-    if (!drawer) return;
-    const isShown = drawer.style.display === 'block';
-    if (isShown) {
-      drawer.style.display = 'none';
-    } else {
-      drawer.style.display = 'block';
-      loadHistoryTable();
+  function showLinkedAllocations(txnId) {
+    const t = currentTransactions.find(x => x.id === txnId);
+    if (!t) return;
+    activeSelectedTxnId = txnId;
+
+    const modal = document.getElementById('modal-linked-allocations');
+    if (!modal) return;
+
+    const bankAmount = t.debit > 0 ? parseFloat(t.debit) : parseFloat(t.credit);
+    const allocations = (t.linkedAllocations && t.linkedAllocations.length > 0)
+      ? t.linkedAllocations
+      : (t.linkedDocumentNo || t.matchLink ? [
+          {
+            id: t.id,
+            documentNo: t.linkedDocumentNo || t.matchLink,
+            targetType: (t.linkedDocumentNo || '').startsWith('INV') ? 'Sales Invoice' : ((t.linkedDocumentNo || '').startsWith('EXP') ? 'Operating Expense' : 'Bank Entry'),
+            allocatedAmount: bankAmount,
+            roundingAdjustment: 0
+          }
+        ] : []);
+
+    let totalLinked = 0;
+    let totalRound = 0;
+    allocations.forEach(a => {
+      totalLinked += parseFloat(a.allocatedAmount) || 0;
+      totalRound += parseFloat(a.roundingAdjustment) || 0;
+    });
+    const diff = bankAmount - totalLinked;
+
+    const elRef = document.getElementById('mla-bank-ref');
+    if (elRef) elRef.innerText = t.reference || ('Bank #' + t.id);
+
+    const elCnt = document.getElementById('mla-linked-count');
+    if (elCnt) elCnt.innerText = allocations.length;
+
+    const elLnk = document.getElementById('mla-bank-linked');
+    if (elLnk) elLnk.innerText = formatMoney(totalLinked);
+
+    const elRnd = document.getElementById('mla-round-off');
+    if (elRnd) {
+      elRnd.innerText = (totalRound >= 0 ? '+ ' : '') + formatMoney(totalRound);
+      elRnd.style.color = totalRound === 0 ? 'var(--text-muted)' : (totalRound > 0 ? 'var(--green)' : 'var(--red)');
+    }
+
+    const elDiff = document.getElementById('mla-diff');
+    if (elDiff) {
+      elDiff.innerText = formatMoney(Math.abs(diff));
+      elDiff.style.color = Math.abs(diff) < 0.01 ? 'var(--green)' : 'var(--yellow)';
+    }
+
+    const tbody = document.getElementById('mla-tbody');
+    if (tbody) {
+      if (allocations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">No linked allocations found.</td></tr>';
+      } else {
+        tbody.innerHTML = allocations.map(a => `
+          <tr>
+            <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${a.documentNo || ('#' + a.id)}</td>
+            <td><span class="pill-badge pill-neutral">${a.targetType || 'ERP Document'}</span></td>
+            <td style="text-align:right; font-weight:700; color:var(--text-main);">${formatMoney(a.allocatedAmount)}</td>
+            <td style="text-align:right; color:var(--text-muted);">${formatMoney(a.roundingAdjustment || 0)}</td>
+            <td style="text-align:center;">
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openLinkedDocument('${(a.documentNo || '').replace(/'/g, "\\'")}')" style="padding:2px 8px; font-size:0.75rem;">👁️ View</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    const footerText = document.getElementById('mla-footer-text');
+    if (footerText) {
+      footerText.innerText = `${allocations.length} linked transaction${allocations.length !== 1 ? 's' : ''} • Use View to open the existing linked workflow.`;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  // ==========================================
+  // 6. SCREENSHOT 4: TXN DETAILS & NOTE EDITOR
+  // ==========================================
+
+  function openTxnDetailsDialog(id) {
+    const t = currentTransactions.find(x => x.id === id);
+    if (!t) return;
+    activeSelectedTxnId = id;
+
+    const modal = document.getElementById('modal-statement-txn-details');
+    if (!modal) return;
+
+    const debit = parseFloat(t.debit) || 0;
+    const credit = parseFloat(t.credit) || 0;
+
+    const elSub = document.getElementById('mstd-sub');
+    if (elSub) elSub.innerText = `Audit inspection & notes for statement row #${t.id}`;
+
+    const elDates = document.getElementById('mstd-dates');
+    if (elDates) elDates.innerText = `${formatDate(t.transactionDate)} / ${formatDate(t.valueDate || t.transactionDate)}`;
+
+    const elRef = document.getElementById('mstd-ref');
+    if (elRef) elRef.innerText = t.reference || '-';
+
+    const elAmt = document.getElementById('mstd-amount');
+    if (elAmt) {
+      if (debit > 0) {
+        elAmt.innerText = `Debit: ${formatMoney(debit)}`;
+        elAmt.style.color = 'var(--red)';
+      } else {
+        elAmt.innerText = `Credit: ${formatMoney(credit)}`;
+        elAmt.style.color = 'var(--green)';
+      }
+    }
+
+    const elBal = document.getElementById('mstd-balance');
+    if (elBal) elBal.innerText = formatMoney(t.balance || 0);
+
+    const elDesc = document.getElementById('mstd-desc');
+    if (elDesc) elDesc.innerText = t.description || '-';
+
+    const elStatus = document.getElementById('mstd-status-match');
+    if (elStatus) elStatus.innerText = t.status || 'UNMATCHED';
+
+    const elConf = document.getElementById('mstd-confidence');
+    if (elConf) {
+      elConf.innerText = t.linkedDocumentNo || t.matchLink || (t.suggestedConfidence ? `${t.suggestedConfidence.toFixed(0)}% rule confidence` : 'Direct');
+    }
+
+    const notesInput = document.getElementById('mstd-notes');
+    if (notesInput) {
+      notesInput.value = t.notes || '';
+      const charCount = document.getElementById('mstd-char-count');
+      if (charCount) charCount.innerText = `${(t.notes || '').length} / 500`;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  async function saveTxnNotes() {
+    if (!activeSelectedTxnId) return;
+    const notesInput = document.getElementById('mstd-notes');
+    const note = notesInput ? notesInput.value.trim() : '';
+
+    try {
+      await window.ReconService.reviewTransaction(activeSelectedTxnId, note || 'Audit note updated', 'Admin');
+      const t = currentTransactions.find(x => x.id === activeSelectedTxnId);
+      if (t) t.notes = note;
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction audit notes saved.');
+      closeModal('modal-statement-txn-details');
+      renderTable(currentTransactions);
+    } catch (err) {
+      alert('Failed to save notes: ' + (err.message || 'Server error'));
     }
   }
 
-  async function loadHistoryTable() {
-    const tbody = document.getElementById('history-table-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading history...</td></tr>`;
+  // ==========================================
+  // 7. SOURCE CSV EVIDENCE & CHECKSUM
+  // ==========================================
+
+  function viewStatementSource(id) {
+    const t = currentTransactions.find(x => x.id === id);
+    if (!t) return;
+
+    const modal = document.getElementById('modal-statement-source-evidence');
+    if (!modal) return;
+
+    const elSub = document.getElementById('msse-sub');
+    if (elSub) elSub.innerText = `Original batch #${currentBatchId || ''} provenance & SHA-256 fingerprint`;
+
+    const elFile = document.getElementById('msse-filename');
+    if (elFile) elFile.innerText = `Batch #${currentBatchId || '-'} • ${currentBatch?.sourceFileName || 'Kotak_Bank_Statement.csv'}`;
+
+    const elImp = document.getElementById('msse-imported-at');
+    if (elImp) elImp.innerText = `${formatDate(currentBatch?.importedAt || new Date().toISOString())} by ${currentBatch?.importedBy || 'Admin'}`;
+
+    const elCheck = document.getElementById('msse-checksum');
+    if (elCheck) elCheck.value = currentBatch?.sourceFingerprint || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+    const elRaw = document.getElementById('msse-raw-csv');
+    if (elRaw) {
+      elRaw.innerText = `${t.sourceRowNumber || 1},"${t.transactionDate}","${t.valueDate || t.transactionDate}","${(t.description || '').replace(/"/g, '""')}","${t.reference || ''}",${t.debit || 0},${t.credit || 0},${t.balance || 0}`;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function copyChecksum() {
+    const el = document.getElementById('msse-checksum');
+    if (!el || !el.value) return;
+    navigator.clipboard.writeText(el.value).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('SHA-256 Checksum copied to clipboard!');
+      else alert('SHA-256 Checksum copied!');
+    }).catch(() => {
+      el.select();
+      document.execCommand('copy');
+      alert('SHA-256 Checksum copied!');
+    });
+  }
+
+  // ==========================================
+  // 8. 1040px BROWSE STATEMENT HISTORY DIALOG
+  // ==========================================
+
+  let historyBatchesCache = [];
+
+  function toggleStatementHistory(show) {
+    const modal = document.getElementById('modal-statement-history');
+    if (!modal) return;
+    const isShowing = modal.style.display === 'flex';
+    const targetShow = show !== undefined ? show : !isShowing;
+    if (targetShow) {
+      modal.style.display = 'flex';
+      loadStatementHistory();
+    } else {
+      modal.style.display = 'none';
+    }
+  }
+
+  async function loadStatementHistory() {
+    const tbody = document.getElementById('bsh-table-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);"><span class="loading-spinner"></span> Loading statement batches...</td></tr>`;
+    }
 
     try {
-      const data = await window.ReconService.getBatchPage(0, 50);
-      const rows = data?.rows || batches || [];
-      if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No statement history found.</td></tr>`;
-        return;
+      const pageData = await window.ReconService.getBatchPage(0, 100);
+      const list = pageData?.rows || pageData?.content || batches || [];
+      historyBatchesCache = list;
+      applyHistoryFilters();
+    } catch (e) {
+      console.error('Failed to load statement history:', e);
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--red);">⚠️ Failed to load history: ${e.message}</td></tr>`;
+    }
+  }
+
+  function applyHistoryFilters() {
+    const tbody = document.getElementById('bsh-table-tbody');
+    if (!tbody) return;
+
+    const q = (document.getElementById('bsh-search')?.value || '').toLowerCase().trim();
+    const status = document.getElementById('bsh-status')?.value || '';
+    const fromDate = document.getElementById('bsh-from-date')?.value || '';
+    const toDate = document.getElementById('bsh-to-date')?.value || '';
+
+    const filtered = historyBatchesCache.filter(b => {
+      const fn = (b.sourceFileName || '').toLowerCase();
+      const bn = (b.bankName || '').toLowerCase();
+      const acc = (b.bankAccount || '').toLowerCase();
+      const matchesQ = !q || fn.includes(q) || bn.includes(q) || acc.includes(q);
+
+      let matchesStatus = true;
+      if (status) {
+        matchesStatus = (b.status || '').toUpperCase() === status.toUpperCase();
       }
 
-      tbody.innerHTML = rows.map(b => `
+      let matchesDate = true;
+      const impDate = (b.importedAt || b.statementFrom || '').split('T')[0];
+      if (impDate) {
+        if (fromDate && impDate < fromDate) matchesDate = false;
+        if (toDate && impDate > toDate) matchesDate = false;
+      }
+
+      return matchesQ && matchesStatus && matchesDate;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No statement batches match filter.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(b => {
+      const rec = b.reconciliationPercent != null ? parseFloat(b.reconciliationPercent) : 0;
+      const isDone = rec >= 100;
+      const masked = maskAccount(b.bankAccount);
+
+      return `
         <tr>
           <td>${formatDate(b.importedAt)}</td>
-          <td style="font-weight:600;">${b.bankName} (${b.bankAccount})</td>
+          <td style="font-family: monospace; font-size: 0.8rem; font-weight: 600; color: var(--cyan);">${b.sourceFileName || 'Statement.csv'}</td>
+          <td style="font-weight: 600;">${b.bankName || 'Bank'} (${masked})</td>
           <td>${formatDate(b.statementFrom)} to ${formatDate(b.statementTo)}</td>
-          <td><span class="pill-badge ${b.reconciliationPercent >= 100 ? 'pill-success' : 'pill-warning'}">${b.status || 'IMPORTED'}</span></td>
-          <td style="text-align:right; font-weight:600;">${b.transactionCount || 0}</td>
-          <td style="text-align:center;">
-            <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openHistoryBatch(${b.id})" style="padding:2px 8px; font-size:0.75rem;">Open</button>
-            <button class="btn btn-danger btn-sm" onclick="window.BankStatementController.deleteStatement(${b.id})" style="padding:2px 8px; font-size:0.75rem;">🗑️</button>
+          <td style="text-align: right; font-weight: 700;">${(b.transactionCount || 0).toLocaleString()}</td>
+          <td style="text-align: center;">
+            <span class="pill-badge ${isDone ? 'pill-success' : 'pill-purple'}" style="font-size: 0.72rem;">${rec.toFixed(1)}%</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="pill-badge ${isDone ? 'pill-success' : 'pill-warning'}">${b.status || 'IMPORTED'}</span>
+          </td>
+          <td style="text-align: center; white-space: nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openHistoryBatch(${b.id})" style="padding: 2px 8px; font-size: 0.75rem;">📂 Open</button>
+            <button class="btn btn-danger btn-sm" onclick="window.BankStatementController.deleteStatement(${b.id})" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 4px;" title="Delete Batch">🗑️</button>
           </td>
         </tr>
-      `).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--red);">Failed to load history: ${e.message}</td></tr>`;
-    }
+      `;
+    }).join('');
+  }
+
+  function resetHistoryFilters() {
+    if (document.getElementById('bsh-search')) document.getElementById('bsh-search').value = '';
+    if (document.getElementById('bsh-status')) document.getElementById('bsh-status').value = '';
+    if (document.getElementById('bsh-from-date')) document.getElementById('bsh-from-date').value = '';
+    if (document.getElementById('bsh-to-date')) document.getElementById('bsh-to-date').value = '';
+    applyHistoryFilters();
   }
 
   function openHistoryBatch(id) {
-    toggleStatementHistory();
-    loadBatch(id);
+    closeModal('modal-statement-history');
+    loadStatementWorkspace(id);
   }
 
-  async function deleteStatement(id = null) {
-    const targetId = id || currentBatchId;
-    if (!targetId) return;
-    if (!confirm('Are you sure you want to delete this bank statement batch?\n\nWARNING: All unmatched transactions and link mappings will be removed.')) return;
+  // ==========================================
+  // 9. TWO-STEP DELETE CONFIRMATION MODAL
+  // ==========================================
 
+  let pendingDeleteBatchId = null;
+
+  function deleteStatement(id = null) {
+    pendingDeleteBatchId = id || currentBatchId;
+    if (!pendingDeleteBatchId) return;
+
+    const modal = document.getElementById('modal-statement-delete-confirm');
+    if (!modal) return;
+
+    const confirmInput = document.getElementById('msdc-confirm-input');
+    if (confirmInput) confirmInput.value = '';
+
+    const btnDelete = document.getElementById('msdc-btn-delete');
+    if (btnDelete) btnDelete.disabled = true;
+
+    const impactText = document.getElementById('msdc-impact');
+    if (impactText) {
+      impactText.innerText = `Deleting batch #${pendingDeleteBatchId} will permanently remove all associated transactions, unmatch all ERP allocations, and reset reconciliation metrics.`;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function onDeleteConfirmInput(val) {
+    const btnDelete = document.getElementById('msdc-btn-delete');
+    if (btnDelete) {
+      btnDelete.disabled = val.trim().toUpperCase() !== 'DELETE';
+    }
+  }
+
+  async function confirmDeleteStatement() {
+    if (!pendingDeleteBatchId) return;
     try {
-      await window.ReconService.deleteBatch(targetId, 'DELETE', 'Admin');
-      if (window.AppDialogService) window.AppDialogService.toastSuccess('Statement batch deleted.');
+      await window.ReconService.deleteBatch(pendingDeleteBatchId, 'DELETE', 'Admin');
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Statement batch #${pendingDeleteBatchId} permanently deleted.`);
+      closeModal('modal-statement-delete-confirm');
+      closeModal('modal-statement-history');
       loadStatementWorkspace();
     } catch (err) {
       alert('Delete statement failed: ' + (err.message || 'Server error'));
     }
+  }
+
+  // ==========================================
+  // 10. REASON PROMPT MODAL (Review / Ignore)
+  // ==========================================
+
+  let pendingReasonCallback = null;
+
+  function promptReason(title, promptText, callback) {
+    const modal = document.getElementById('modal-statement-reason');
+    if (!modal) return;
+
+    const elTitle = document.getElementById('msr-title');
+    if (elTitle) elTitle.innerText = title;
+
+    const elPrompt = document.getElementById('msr-prompt');
+    if (elPrompt) elPrompt.innerText = promptText;
+
+    const textarea = document.getElementById('msr-reason');
+    if (textarea) textarea.value = '';
+
+    pendingReasonCallback = callback;
+    modal.style.display = 'flex';
+  }
+
+  function submitReason() {
+    const textarea = document.getElementById('msr-reason');
+    const reason = textarea ? textarea.value.trim() : '';
+    if (!reason) {
+      alert('Please enter a valid audit reason.');
+      return;
+    }
+    closeModal('modal-statement-reason');
+    if (pendingReasonCallback) {
+      pendingReasonCallback(reason);
+      pendingReasonCallback = null;
+    }
+  }
+
+  function singleMarkReview(id) {
+    promptReason('Mark Transaction for Review', `Provide audit reason for marking transaction #${id} for review:`, async (reason) => {
+      try {
+        await window.ReconService.reviewTransaction(id, reason, 'Admin');
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction marked for review.');
+        loadBatch(currentBatchId);
+      } catch (e) {
+        alert('Review failed: ' + e.message);
+      }
+    });
+  }
+
+  function singleIgnore(id) {
+    promptReason('Mark Transaction as Ignored', `Provide audit explanation for ignoring transaction #${id}:`, async (reason) => {
+      try {
+        await window.ReconService.ignoreTransaction(id, reason, 'Admin');
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction marked as ignored.');
+        loadBatch(currentBatchId);
+      } catch (e) {
+        alert('Ignore failed: ' + e.message);
+      }
+    });
+  }
+
+  // ==========================================
+  // 11. BULK MOVE MODAL (Expense / Bank Entry)
+  // ==========================================
+
+  let pendingBulkMoveType = 'EXPENSE';
+
+  async function openBulkMove(targetType) {
+    if (selectedTxnIds.size === 0) {
+      alert('Please select at least one transaction to move.');
+      return;
+    }
+    pendingBulkMoveType = targetType;
+    const modal = document.getElementById('modal-statement-bulk-move');
+    if (!modal) return;
+
+    const isExpense = targetType === 'EXPENSE';
+    const title = document.getElementById('msbm-title');
+    if (title) title.innerText = isExpense ? 'Move Selected to Operating Expenses' : 'Move Selected to Bank Entry Register';
+
+    const countText = document.getElementById('msbm-count-text');
+    if (countText) countText.innerText = `Moving ${selectedTxnIds.size} selected transaction${selectedTxnIds.size !== 1 ? 's' : ''}`;
+
+    const catGroup = document.getElementById('msbm-group-category');
+    if (catGroup) catGroup.style.display = isExpense ? 'block' : 'none';
+
+    // Populate lookups
+    try {
+      if (window.MasterService) {
+        const [categories, accounts, modes] = await Promise.all([
+          window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => []),
+          window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []),
+          window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => [])
+        ]);
+
+        const catSelect = document.getElementById('msbm-category');
+        if (catSelect && categories.length > 0) {
+          catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        const accSelect = document.getElementById('msbm-account');
+        if (accSelect) {
+          const acctList = Array.isArray(accounts) ? accounts.filter(a => a.active !== false) : [];
+          if (acctList.length > 0) {
+            accSelect.innerHTML = acctList.map(a => `<option value="${a.lookupValue}">${a.lookupValue}${a.description ? ' (' + a.description + ')' : ''}</option>`).join('');
+          } else {
+            accSelect.innerHTML = '<option value="Primary Bank Account">Primary Bank Account</option>';
+          }
+        }
+
+        const modeSelect = document.getElementById('msbm-mode');
+        if (modeSelect && modes.length > 0) {
+          modeSelect.innerHTML = modes.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+      }
+    } catch (e) {
+      console.warn('Could not populate bulk move lookups:', e);
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  async function submitBulkMove() {
+    const isExpense = pendingBulkMoveType === 'EXPENSE';
+    const category = document.getElementById('msbm-category')?.value || 'Bank Charges';
+    const account = document.getElementById('msbm-account')?.value || 'Primary Bank Account';
+    const mode = document.getElementById('msbm-mode')?.value || 'NEFT';
+    const notesPrefix = document.getElementById('msbm-notes')?.value?.trim() || 'Bulk converted from statement';
+
+    try {
+      if (isExpense) {
+        const payload = {
+          transactionIds: Array.from(selectedTxnIds),
+          category: category,
+          accountName: account,
+          paymentMode: mode,
+          notes: `${notesPrefix} (Batch #${currentBatchId})`,
+          user: 'Admin'
+        };
+        const res = await window.ReconService.bulkExpense(payload);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(res?.message || `Moved ${selectedTxnIds.size} transactions to Operating Expenses.`);
+      } else {
+        const payload = {
+          transactionIds: Array.from(selectedTxnIds),
+          accountName: account,
+          paymentMode: mode,
+          notes: `${notesPrefix} (Batch #${currentBatchId})`,
+          user: 'Admin'
+        };
+        const res = await window.ReconService.bulkBankEntry(payload);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(res?.message || `Moved ${selectedTxnIds.size} transactions to Bank Entries.`);
+      }
+      closeModal('modal-statement-bulk-move');
+      selectedTxnIds.clear();
+      updateBulkToolbar();
+      loadBatch(currentBatchId);
+    } catch (err) {
+      alert('Bulk move failed: ' + (err.message || 'Server error'));
+    }
+  }
+
+  // ==========================================
+  // 12. ROW HIGHLIGHTING & NAVIGATION PARITY
+  // ==========================================
+
+  function highlightTxn(txnId) {
+    if (!txnId) return;
+    const targetRow = document.querySelector(`#bank-statement-tbody tr[data-stmt-id="${txnId}"]`);
+    if (targetRow) {
+      targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetRow.style.transition = 'background 0.5s ease';
+      targetRow.style.background = 'rgba(56,189,248,0.25)';
+      setTimeout(() => {
+        targetRow.style.background = '';
+      }, 2500);
+    }
+  }
+
+  function changePageSize(newSize) {
+    pageSize = parseInt(newSize, 10) || 50;
+    currentPage = 0;
+    loadBatch(currentBatchId);
   }
 
   function closeModal(id) {
@@ -1007,6 +1527,7 @@ window.BankStatementController = (function() {
     loadBatch,
     prevPage,
     nextPage,
+    changePageSize,
     applyFilters() { currentPage = 0; loadBatch(currentBatchId); },
     resetFilters() {
       if (document.getElementById('txtSearch')) document.getElementById('txtSearch').value = '';
@@ -1019,8 +1540,8 @@ window.BankStatementController = (function() {
     selectAllVisible,
     bulkMarkReview,
     bulkIgnore,
-    moveSelectedToExpense,
-    moveSelectedToBankEntry,
+    moveSelectedToExpense() { openBulkMove('EXPENSE'); },
+    moveSelectedToBankEntry() { openBulkMove('BANK'); },
     openMatchModal,
     confirmMatch,
     quickMoveExpense,
@@ -1030,10 +1551,29 @@ window.BankStatementController = (function() {
     onCsvFileSelected,
     submitImport,
     toggleStatementHistory,
+    loadStatementHistory,
+    applyHistoryFilters,
+    resetHistoryFilters,
     openHistoryBatch,
     deleteStatement,
+    onDeleteConfirmInput,
+    confirmDeleteStatement,
     closeModal,
     toggleActionMenu,
+
+    // Modals & Actions (Parity)
+    showLinkedAllocations,
+    openTxnDetailsDialog,
+    saveTxnNotes,
+    viewStatementSource,
+    copyChecksum,
+    singleMarkReview,
+    singleIgnore,
+    promptReason,
+    submitReason,
+    openBulkMove,
+    submitBulkMove,
+    highlightTxn,
 
     // Drawer Parity
     onTxnRowClick,

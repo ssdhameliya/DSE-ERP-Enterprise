@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 11,
-  webVersion: "10.0.34.11",
-  tag: "web-v10.0.34.11",
-  releaseDate: "2026-10-18T18:45:00+05:30",
+  webBuild: 12,
+  webVersion: "10.0.34.12",
+  tag: "web-v10.0.34.12",
+  releaseDate: "2026-10-18T19:00:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.11 Enterprise Release - Complete 5-Screen Desktop Parity for Settings Studio, LiveOperationDialog Email Testing, and PascalCase Template Tokens"
+  summary: "10.0.34.12 Enterprise Release - Full Desktop Parity for Bank & Expense, Bank Statement Reconciliation, Categorized Actions Context Menu, and Screenshot 5 Linked Transactions Modal"
 };
 
 // Automatic UI Version Injection

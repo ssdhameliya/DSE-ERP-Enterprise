@@ -3468,73 +3468,86 @@
 
         <!-- VIEW: BANK ENTRY JOURNAL (BankExpense.fxml Parity) -->
         <div id="view-bank-entry" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#127974;</span> Bank Entry Journal</h1>
-              <p>Direct banking deposits, withdrawals, NEFT/RTGS transfers and ledger settlements</p>
+          <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">₹</span>
+              <div>
+                <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="bank-view-title">Bank Entry</h1>
+                <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);" id="bank-view-subtitle">Direct bank deposits, withdrawals and transfers</p>
+              </div>
             </div>
-            <div class="view-actions">
-              <input type="text" id="bank-search" class="filter-input" placeholder="Search reference, narration, account..." oninput="window.FinanceController.applyFinanceFilters()">
-              <button class="btn btn-secondary" onclick="window.FinanceController.loadBankMode()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="window.FinanceController.openNewBankEntryModal()">+ New Bank Entry</button>
+            <!-- Desktop Top-Right Mode Buttons (BankExpense.fxml Parity) -->
+            <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-primary" id="btnBankMode" onclick="window.FinanceController.loadBankMode()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🏦</span> Bank Entry
+              </button>
+              <button class="btn btn-secondary" id="btnExpenseMode" onclick="window.FinanceController.loadExpenseMode()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>💸</span> Expense Entry
+              </button>
+              <button class="btn btn-secondary" id="btnBankRecon" onclick="window.NavigationRouter.selectNav('view-bank-statement')" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📑</span> Bank Reconciliation
+              </button>
             </div>
           </div>
 
-          <!-- Desktop Mode Navigation Strip (BankExpense.fxml parity) -->
-          <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-            <button class="btn btn-primary" id="btnBankMode" onclick="selectNav('view-bank-entry')" style="font-weight: 700;">&#127974; Bank Entry</button>
-            <button class="btn btn-secondary" id="btnExpenseMode" onclick="selectNav('view-expense-entry')">&#128184; Expense Entry</button>
-            <button class="btn btn-secondary" id="btnBankRecon" onclick="selectNav('view-bank-statement')">&#128209; Bank Reconciliation</button>
-          </div>
-
-          <!-- Bank KPIs (BankExpense.fxml Parity) -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">TOTAL NET BALANCE</span><span class="kpi-badge">Cash &amp; Bank</span></div>
-              <div class="kpi-value" id="bank-kpi-balance">&#8377; 0.00</div>
-              <div class="kpi-meta">Net cash &amp; bank ledger position</div>
+          <!-- Dynamic 4 KPIs for Bank Entry (BankExpense.fxml Parity) -->
+          <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;">
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Bank Balance</span>
+                <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-balance" style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-balance-meta" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">Total net ledger balance</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">TOTAL INFLOW</span><span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Deposits</span></div>
-              <div class="kpi-value" id="bank-kpi-inflow" style="color:var(--green);">&#8377; 0.00</div>
-              <div class="kpi-meta">Receipt vouchers &amp; contra in</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Deposits</span>
+                <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-inflow" style="font-size: 1.2rem; font-weight: 800; color: var(--green);">₹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-inflow-meta" style="font-size: 0.7rem; color: var(--green); margin-top: 4px;">0 entries</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">TOTAL OUTFLOW</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Withdrawals</span></div>
-              <div class="kpi-value" id="bank-kpi-outflow" style="color:var(--red);">&#8377; 0.00</div>
-              <div class="kpi-meta">Payment vouchers &amp; contra out</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Withdrawals</span>
+                <span class="pill-badge pill-warning" style="font-size: 0.65rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Outflow</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-outflow" style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">₹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-outflow-meta" style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px;">0 entries</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">NET FLOW</span><span class="kpi-badge">Settlement</span></div>
-              <div class="kpi-value" id="bank-kpi-net">&#8377; 0.00</div>
-              <div class="kpi-meta">Inflow minus outflow</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Pending Reconcile</span>
+                <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-net" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">₹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-net-meta" style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
           </div>
 
           <!-- Bank Entry Filter Toolbar (BankExpense.fxml Parity) -->
-          <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">Type Filter</label>
-              <select id="bank-type-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-                <option value="ALL">All Types</option>
-                <option value="RECEIPT">Deposit / Receipt</option>
-                <option value="PAYMENT">Withdrawal / Payment</option>
-                <option value="CONTRA">Contra Transfer</option>
-              </select>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px; position: relative;">
+              <input type="text" id="bank-search" class="filter-input" style="width: 100%; padding-left: 28px;" placeholder="Search reference, narration, account..." oninput="window.FinanceController.applyFinanceFilters()">
+              <span style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
             </div>
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">From Date</label>
-              <input type="date" id="bank-filter-from" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-            </div>
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">To Date</label>
-              <input type="date" id="bank-filter-to" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-            </div>
+            <select id="bank-type-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; min-width: 140px;">
+              <option value="ALL">All Types</option>
+              <option value="DEPOSIT">Deposit</option>
+              <option value="WITHDRAWAL">Withdrawal</option>
+              <option value="CONTRA">Contra Transfer</option>
+            </select>
+            <input type="date" id="bank-filter-from" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; width: 135px;" title="From Date">
+            <input type="date" id="bank-filter-to" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; width: 135px;" title="To Date">
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.resetFinanceFilters()" style="height: 34px;">Reset</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.loadBankMode()" style="height: 34px;">&#8635; Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="window.FinanceController.openNewBankEntryModal('DEPOSIT')" style="height: 34px; font-weight: 700;">+ Add Entry</button>
           </div>
 
           <!-- Bank Entry Register Workspace (BankExpense.fxml Parity) -->
           <div class="register-workspace" id="bank-entry-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+            <div class="register-table-panel data-panel" style="overflow-x: auto;">
               <table class="data-table">
                 <thead>
                   <tr>
@@ -3542,11 +3555,11 @@
                     <th>Type</th>
                     <th>Description / Narration</th>
                     <th>Bank Account</th>
-                    <th>Payment Mode</th>
+                    <th id="th-bank-mode" style="display: none;">Mode</th>
                     <th>Reference / UTR</th>
-                    <th style="text-align:right;">Amount (&#8377;)</th>
+                    <th style="text-align: right;">Amount (₹)</th>
                     <th>Match / Link</th>
-                    <th style="text-align:center;">Actions</th>
+                    <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="bank-entry-tbody">
@@ -3556,50 +3569,50 @@
             </div>
 
             <!-- Inline Docked Bank Entry Detail Drawer -->
-            <div id="bank-entry-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+            <div id="bank-entry-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
               <div class="drawer-header">
                 <div>
-                  <h3 style="margin:0; font-size:1rem;" id="bed-ref">Bank Entry</h3>
-                  <span id="bed-type" class="pill-badge pill-purple" style="font-size:0.75rem;">RECEIPT</span>
+                  <h3 style="margin: 0; font-size: 1rem;" id="bed-ref">Bank Entry</h3>
+                  <span id="bed-type" class="pill-badge pill-purple" style="font-size: 0.75rem;">RECEIPT</span>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()" style="padding:2px 8px;">&times;</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()" style="padding: 2px 8px;">&times;</button>
               </div>
               <div class="drawer-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">STATUS</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">STATUS</span>
                   <span id="bed-status" class="pill-badge pill-success">POSTED</span>
                 </div>
-                <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Posting Date:</div>
-                    <div id="bed-date" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
+                <div class="drawer-field-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Posting Date:</div>
+                    <div id="bed-date" style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Payment Mode:</div>
-                    <div id="bed-mode" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">NEFT</div>
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Payment Mode:</div>
+                    <div id="bed-mode" style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">NEFT</div>
                   </div>
                 </div>
-                <div style="padding:10px 12px; background:rgba(16,185,129,0.06); border-radius:6px; border:1px solid rgba(16,185,129,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.75rem; color:var(--green); font-weight:700;">TRANSACTION AMOUNT:</span>
-                  <span id="bed-amount" style="font-weight:800; color:var(--green); font-size:1.05rem;">&#8377; 0.00</span>
+                <div style="padding: 10px 12px; background: rgba(16,185,129,0.06); border-radius: 6px; border: 1px solid rgba(16,185,129,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.75rem; color: var(--green); font-weight: 700;">TRANSACTION AMOUNT:</span>
+                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">₹ 0.00</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Bank Account:</span><span id="bed-account" style="font-weight:600;">-</span></div>
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Counterparty / Payee:</span><span id="bed-party" style="font-weight:600;">-</span></div>
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Reference / UTR:</span><span id="bed-utr" style="font-family:monospace; font-weight:600; color:var(--cyan);">-</span></div>
-                  <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
-                    <span style="color:var(--text-muted);">Narration / Remarks:</span>
-                    <span id="bed-narration" style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Bank Account:</span><span id="bed-account" style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Counterparty / Payee:</span><span id="bed-party" style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Reference / UTR:</span><span id="bed-utr" style="font-family: monospace; font-weight: 600; color: var(--cyan);">-</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
+                    <span style="color: var(--text-muted);">Narration / Remarks:</span>
+                    <span id="bed-narration" style="color: var(--text-dim); background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; font-size: 0.78rem;">-</span>
                   </div>
                 </div>
               </div>
-              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">&#128220; View In GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">&#128203; Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">&#9999;&#65039; Edit Entry</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()" style="color:#f87171;">&#128465;&#65039; Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">&#128424;&#65039; Print Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">&#10006; Close</button>
+              <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">📜 View In GL</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">📋 Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">✏️ Edit Entry</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()" style="color: #f87171;">🗑️ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">🖨️ Print Voucher</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">✖ Close</button>
               </div>
             </div>
           </div>
@@ -3607,76 +3620,83 @@
 
         <!-- VIEW: OPERATING EXPENSE REGISTER (BankExpense.fxml Parity) -->
         <div id="view-expense-entry" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128184;</span> Operating Expense Register</h1>
-              <p>Factory utilities, consumables, courier, administration, and overhead expense vouchers</p>
+          <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">₹</span>
+              <div>
+                <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="exp-view-title">Expense Entry</h1>
+                <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);" id="exp-view-subtitle">Operational and administrative expense tracking</p>
+              </div>
             </div>
-            <div class="view-actions">
-              <input type="text" id="exp-search" class="filter-input" placeholder="Search voucher, payee, head..." oninput="window.FinanceController.applyFinanceFilters()">
-              <button class="btn btn-secondary" onclick="window.FinanceController.loadExpenseMode()">&#8635; Refresh</button>
-              <button class="btn btn-primary" onclick="window.FinanceController.openNewExpenseEntryModal()">+ Record Expense</button>
+            <!-- Desktop Top-Right Mode Buttons (BankExpense.fxml Parity) -->
+            <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-secondary" id="btnBankModeExp" onclick="window.FinanceController.loadBankMode()" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🏦</span> Bank Entry
+              </button>
+              <button class="btn btn-primary" id="btnExpenseModeExp" onclick="window.FinanceController.loadExpenseMode()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>💸</span> Expense Entry
+              </button>
+              <button class="btn btn-secondary" id="btnBankReconExp" onclick="window.NavigationRouter.selectNav('view-bank-statement')" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📑</span> Bank Reconciliation
+              </button>
             </div>
           </div>
 
-          <!-- Desktop Mode Navigation Strip (BankExpense.fxml parity) -->
-          <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
-            <button class="btn btn-secondary" onclick="selectNav('view-bank-entry')">&#127974; Bank Entry</button>
-            <button class="btn btn-primary" onclick="selectNav('view-expense-entry')" style="font-weight: 700;">&#128184; Expense Entry</button>
-            <button class="btn btn-secondary" onclick="selectNav('view-bank-statement')">&#128209; Bank Reconciliation</button>
-          </div>
-
-          <!-- Expense KPIs (BankExpense.fxml Parity) -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">TOTAL OPERATING EXPENSES</span><span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Total</span></div>
-              <div class="kpi-value" id="exp-kpi-total" style="color:var(--red);">&#8377; 0.00</div>
-              <div class="kpi-meta">All recorded expense vouchers</div>
+          <!-- Dynamic 4 KPIs for Expense Entry (BankExpense.fxml Parity) -->
+          <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;">
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Expenses (This Month)</span>
+                <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
+              </div>
+              <div class="kpi-value" id="exp-kpi-month" style="font-size: 1.2rem; font-weight: 800; color: var(--red);">₹ 0.00</div>
+              <div class="kpi-meta" id="exp-kpi-month-meta" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">0 entries</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">THIS MONTH</span><span class="kpi-badge">Current FY</span></div>
-              <div class="kpi-value" id="exp-kpi-month">&#8377; 0.00</div>
-              <div class="kpi-meta">Current period expenses</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Expenses (This Year)</span>
+                <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
+              </div>
+              <div class="kpi-value" id="exp-kpi-total" style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
+              <div class="kpi-meta" id="exp-kpi-total-meta" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Year to date</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">PAID OUTFLOW</span><span class="kpi-badge">Settled</span></div>
-              <div class="kpi-value" id="exp-kpi-cash">&#8377; 0.00</div>
-              <div class="kpi-meta">Bank / Cash disbursed</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Top Expense Category</span>
+                <span class="pill-badge pill-warning" style="font-size: 0.65rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Outflow</span>
+              </div>
+              <div class="kpi-value" id="exp-kpi-categories" style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">-</div>
+              <div class="kpi-meta" id="exp-kpi-categories-meta" style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px;">0 entries</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-label">EXPENSE CATEGORIES</span><span class="kpi-badge">Heads</span></div>
-              <div class="kpi-value" id="exp-kpi-categories">0</div>
-              <div class="kpi-meta">Active accounting heads</div>
+            <div class="kpi-card" style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Pending Reconcile</span>
+                <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
+              </div>
+              <div class="kpi-value" id="exp-kpi-cash" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">₹ 0.00</div>
+              <div class="kpi-meta" id="exp-kpi-cash-meta" style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
           </div>
 
           <!-- Expense Entry Filter Toolbar (BankExpense.fxml Parity) -->
-          <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">Category Filter</label>
-              <select id="exp-category-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-                <option value="ALL">All Categories</option>
-                <option value="Office & Admin">Office & Admin</option>
-                <option value="Factory Utilities">Factory Utilities</option>
-                <option value="Courier & Freight">Courier & Freight</option>
-                <option value="Travel & Lodging">Travel & Lodging</option>
-                <option value="Maintenance & Repair">Maintenance & Repair</option>
-                <option value="General Expense">General Expense</option>
-              </select>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px; position: relative;">
+              <input type="text" id="exp-search" class="filter-input" style="width: 100%; padding-left: 28px;" placeholder="Search voucher, payee, head, description..." oninput="window.FinanceController.applyFinanceFilters()">
+              <span style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
             </div>
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">From Date</label>
-              <input type="date" id="exp-filter-from" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-            </div>
-            <div>
-              <label class="form-label" style="font-size: 0.72rem;">To Date</label>
-              <input type="date" id="exp-filter-to" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 32px; font-size: 0.78rem;">
-            </div>
+            <select id="exp-category-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; min-width: 160px;">
+              <option value="ALL">All Categories</option>
+            </select>
+            <input type="date" id="exp-filter-from" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; width: 135px;" title="From Date">
+            <input type="date" id="exp-filter-to" class="form-input" onchange="window.FinanceController.applyFinanceFilters()" style="height: 34px; font-size: 0.78rem; width: 135px;" title="To Date">
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.resetFinanceFilters()" style="height: 34px;">Reset</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.loadExpenseMode()" style="height: 34px;">&#8635; Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="window.FinanceController.openNewExpenseEntryModal()" style="height: 34px; font-weight: 700;">+ Add Expense</button>
           </div>
 
           <!-- Operating Expense Register Workspace (BankExpense.fxml Parity) -->
           <div class="register-workspace" id="expense-entry-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+            <div class="register-table-panel data-panel" style="overflow-x: auto;">
               <table class="data-table">
                 <thead>
                   <tr>
@@ -3684,11 +3704,11 @@
                     <th>Category</th>
                     <th>Description / Voucher</th>
                     <th>Payee / Paid To</th>
-                    <th>Payment Mode</th>
+                    <th>Mode</th>
                     <th>Voucher #</th>
-                    <th style="text-align:right;">Amount (&#8377;)</th>
+                    <th style="text-align: right;">Amount (₹)</th>
                     <th>Match / Link</th>
-                    <th style="text-align:center;">Actions</th>
+                    <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="expense-entry-tbody">
@@ -3698,50 +3718,50 @@
             </div>
 
             <!-- Inline Docked Expense Detail Drawer -->
-            <div id="expense-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+            <div id="expense-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
               <div class="drawer-header">
                 <div>
-                  <h3 style="margin:0; font-size:1rem;" id="eed-voucher">Expense Voucher</h3>
-                  <span id="eed-category" class="pill-badge pill-purple" style="font-size:0.75rem;">General Expense</span>
+                  <h3 style="margin: 0; font-size: 1rem;" id="eed-voucher">Expense Voucher</h3>
+                  <span id="eed-category" class="pill-badge pill-purple" style="font-size: 0.75rem;">General Expense</span>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()" style="padding:2px 8px;">&times;</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()" style="padding: 2px 8px;">&times;</button>
               </div>
               <div class="drawer-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">STATUS</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">STATUS</span>
                   <span id="eed-status" class="pill-badge pill-success">DISBURSED</span>
                 </div>
-                <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Voucher Date:</div>
-                    <div id="eed-date" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
+                <div class="drawer-field-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Voucher Date:</div>
+                    <div id="eed-date" style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Payment Mode:</div>
-                    <div id="eed-mode" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">NEFT</div>
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Payment Mode:</div>
+                    <div id="eed-mode" style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">NEFT</div>
                   </div>
                 </div>
-                <div style="padding:10px 12px; background:rgba(239,68,68,0.06); border-radius:6px; border:1px solid rgba(239,68,68,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.75rem; color:var(--red); font-weight:700;">DISBURSED AMOUNT:</span>
-                  <span id="eed-amount" style="font-weight:800; color:var(--red); font-size:1.05rem;">&#8377; 0.00</span>
+                <div style="padding: 10px 12px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.75rem; color: var(--red); font-weight: 700;">DISBURSED AMOUNT:</span>
+                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">₹ 0.00</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Payee / Paid To:</span><span id="eed-payee" style="font-weight:600;">-</span></div>
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Expense Head:</span><span id="eed-head" style="font-weight:600;">-</span></div>
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Ref / Bill #:</span><span id="eed-ref" style="font-family:monospace; font-weight:600; color:var(--cyan);">-</span></div>
-                  <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
-                    <span style="color:var(--text-muted);">Narration / Particulars:</span>
-                    <span id="eed-narration" style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Payee / Paid To:</span><span id="eed-payee" style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Expense Head:</span><span id="eed-head" style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Ref / Bill #:</span><span id="eed-ref" style="font-family: monospace; font-weight: 600; color: var(--cyan);">-</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
+                    <span style="color: var(--text-muted);">Narration / Particulars:</span>
+                    <span id="eed-narration" style="color: var(--text-dim); background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; font-size: 0.78rem;">-</span>
                   </div>
                 </div>
               </div>
-              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">&#128220; View In GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">&#128203; Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">&#9999;&#65039; Edit Expense</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()" style="color:#f87171;">&#128465;&#65039; Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">&#128424;&#65039; Print Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">&#10006; Close</button>
+              <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">📜 View In GL</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">📋 Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">✏️ Edit Expense</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()" style="color: #f87171;">🗑️ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">🖨️ Print Voucher</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">✖ Close</button>
               </div>
             </div>
           </div>
@@ -3749,126 +3769,178 @@
 
         <!-- VIEW: BANK STATEMENT IMPORT & RECONCILIATION (BankStatement.fxml Parity) -->
         <div id="view-bank-statement" class="module-view">
-          <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#128209;</span> Bank Statement Reconciliation</h1>
-              <p>Reconcile imported bank CSV statements with ERP sales invoices, purchase bills and ledger entries</p>
+          <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">📑</span>
+              <div>
+                <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;">Bank Statement</h1>
+                <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);">Review and reconcile imported bank transactions</p>
+              </div>
             </div>
-            <div class="view-actions">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Statement / Account:</label>
-                <select id="cmbBatch" class="form-select" style="min-width:280px;" onchange="window.BankStatementController.onBatchSelected(this.value)">
+            <!-- Header Batch Selector & Primary Action Buttons (Desktop Parity) -->
+            <div class="view-actions" style="display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Statement / Account:</label>
+                <select id="cmbBatch" class="form-select" style="min-width: 320px; height: 34px; font-size: 0.8rem;" onchange="window.BankStatementController.onBatchSelected(this.value)">
                   <option value="">Loading statements...</option>
                 </select>
               </div>
-              <button class="btn btn-secondary" onclick="window.BankStatementController.toggleStatementHistory()">Browse History</button>
-              <button class="btn btn-danger" onclick="window.BankStatementController.deleteStatement()">Delete Statement</button>
-              <button class="btn btn-primary" onclick="window.BankStatementController.openImportModal()">&#128229; Import Statement</button>
+              <button class="btn btn-secondary" onclick="window.BankStatementController.toggleStatementHistory(true)" style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📂</span> Browse Statements
+              </button>
+              <button class="btn btn-danger" id="btnDeleteStatement" onclick="window.BankStatementController.deleteStatement()" style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🗑️</span> Delete Statement
+              </button>
+              <button class="btn btn-primary" onclick="window.BankStatementController.openImportModal()" style="height: 34px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📥</span> Import Statement
+              </button>
             </div>
           </div>
 
-          <!-- 8 KPI Cards (BankStatement.fxml Parity) -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:10px; margin-bottom:16px;">
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem;">TOTAL TXNS</span></div>
-              <div class="kpi-value" id="kpiTotal" style="font-size:1.15rem;">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Imported rows</div>
+          <!-- 8 Title Case KPI Cards (BankStatement.fxml Parity) -->
+          <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Transactions</span>
+                <span class="pill-badge pill-neutral" style="font-size: 0.58rem; padding: 1px 4px;">Rows</span>
+              </div>
+              <div class="kpi-value" id="kpiTotal" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">0</div>
+              <div class="kpi-meta" id="kpiTotalMeta" style="font-size: 0.62rem; color: var(--text-dim); margin-top: 2px;">Imported rows</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--red);">UNMATCHED</span></div>
-              <div class="kpi-value" id="kpiUnmatched" style="font-size:1.15rem; color:var(--red);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Needs action</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #f87171;">Unmatched</span>
+                <span class="pill-badge pill-danger" style="font-size: 0.58rem; padding: 1px 4px;">Action</span>
+              </div>
+              <div class="kpi-value" id="kpiUnmatched" style="font-size: 1.15rem; font-weight: 800; color: #f87171;">0</div>
+              <div class="kpi-meta" id="kpiUnmatchedMeta" style="font-size: 0.62rem; color: #f87171; margin-top: 2px;">Needs action</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--yellow);">SUGGESTED</span></div>
-              <div class="kpi-value" id="kpiSuggested" style="font-size:1.15rem; color:var(--yellow);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">System matches</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #fbbf24;">Suggested</span>
+                <span class="pill-badge pill-warning" style="font-size: 0.58rem; padding: 1px 4px; background: rgba(245,158,11,0.15); color: #fbbf24;">Rule</span>
+              </div>
+              <div class="kpi-value" id="kpiSuggested" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">0</div>
+              <div class="kpi-meta" id="kpiSuggestedMeta" style="font-size: 0.62rem; color: #fbbf24; margin-top: 2px;">System matches</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--green);">MATCHED</span></div>
-              <div class="kpi-value" id="kpiMatched" style="font-size:1.15rem; color:var(--green);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Linked to ERP</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--green);">Matched</span>
+                <span class="pill-badge pill-success" style="font-size: 0.58rem; padding: 1px 4px;">Linked</span>
+              </div>
+              <div class="kpi-value" id="kpiMatched" style="font-size: 1.15rem; font-weight: 800; color: var(--green);">0</div>
+              <div class="kpi-meta" id="kpiMatchedMeta" style="font-size: 0.62rem; color: var(--green); margin-top: 2px;">Linked to ERP</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--purple);">EXPENSES</span></div>
-              <div class="kpi-value" id="kpiExpense" style="font-size:1.15rem; color:var(--purple);">0</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Expense entries</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--purple);">Expenses</span>
+                <span class="pill-badge pill-purple" style="font-size: 0.58rem; padding: 1px 4px;">Expense</span>
+              </div>
+              <div class="kpi-value" id="kpiExpense" style="font-size: 1.15rem; font-weight: 800; color: var(--purple);">0</div>
+              <div class="kpi-meta" id="kpiExpenseMeta" style="font-size: 0.62rem; color: var(--purple); margin-top: 2px;">Operating heads</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--green);">CREDITS</span></div>
-              <div class="kpi-value" id="kpiCredits" style="font-size:1.05rem; color:var(--green);">&#8377; 0.00</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Money in</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--green);">Total Credits</span>
+                <span class="pill-badge pill-success" style="font-size: 0.58rem; padding: 1px 4px;">In</span>
+              </div>
+              <div class="kpi-value" id="kpiCredits" style="font-size: 1.05rem; font-weight: 800; color: var(--green);">₹ 0.00</div>
+              <div class="kpi-meta" id="kpiCreditsMeta" style="font-size: 0.62rem; color: var(--green); margin-top: 2px;">Money in</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--red);">DEBITS</span></div>
-              <div class="kpi-value" id="kpiDebits" style="font-size:1.05rem; color:var(--red);">&#8377; 0.00</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Money out</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #f87171;">Total Debits</span>
+                <span class="pill-badge pill-danger" style="font-size: 0.58rem; padding: 1px 4px;">Out</span>
+              </div>
+              <div class="kpi-value" id="kpiDebits" style="font-size: 1.05rem; font-weight: 800; color: #f87171;">₹ 0.00</div>
+              <div class="kpi-meta" id="kpiDebitsMeta" style="font-size: 0.62rem; color: #f87171; margin-top: 2px;">Money out</div>
             </div>
-            <div class="kpi-card" style="padding:10px 12px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--cyan);">RECONCILED</span></div>
-              <div class="kpi-value" id="kpiReconciled" style="font-size:1.15rem; color:var(--cyan);">0.0%</div>
-              <div class="kpi-meta" style="font-size:0.65rem;">Completion</div>
+            <div class="kpi-card" style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="kpi-label" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--cyan);">Reconciled</span>
+                <span class="pill-badge pill-purple" style="font-size: 0.58rem; padding: 1px 4px;">Rate</span>
+              </div>
+              <div class="kpi-value" id="kpiReconciled" style="font-size: 1.15rem; font-weight: 800; color: var(--cyan);">0.0%</div>
+              <div class="kpi-meta" id="kpiReconciledMeta" style="font-size: 0.62rem; color: var(--cyan); margin-top: 2px;">Completion</div>
             </div>
           </div>
 
-          <!-- Filters & Bulk Operations Panel -->
-          <div style="background:var(--bg-card); padding:14px; border-radius:8px 8px 0 0; border:1px solid var(--border-subtle); border-bottom:none; display:flex; flex-direction:column; gap:12px;">
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="text" id="txtSearch" class="filter-input" style="flex:1;" placeholder="Search narration, reference, amount..." oninput="window.BankStatementController.applyFilters()">
-              <input type="date" id="bs-from-date" class="form-input" style="width:140px;" onchange="window.BankStatementController.applyFilters()">
-              <input type="date" id="bs-to-date" class="form-input" style="width:140px;" onchange="window.BankStatementController.applyFilters()">
-              <select id="cmbStatus" class="form-select" style="width:160px;" onchange="window.BankStatementController.applyFilters()">
-                <option value="">All Status</option>
-                <option value="UNMATCHED">UNMATCHED</option>
-                <option value="SUGGESTED">SUGGESTED</option>
-                <option value="MATCHED">MATCHED</option>
-                <option value="EXPENSE">EXPENSE</option>
-                <option value="REVIEW">REVIEW</option>
-                <option value="IGNORED">IGNORED</option>
-              </select>
-              <select id="cmbDirection" class="form-select" style="width:120px;" onchange="window.BankStatementController.applyFilters()">
-                <option value="ALL">All (Dr/Cr)</option>
-                <option value="CREDIT">Credits Only</option>
-                <option value="DEBIT">Debits Only</option>
-              </select>
-              <button class="btn btn-secondary" onclick="window.BankStatementController.resetFilters()">Reset</button>
-              <button class="btn btn-secondary" onclick="window.BankStatementController.loadBatch(window.BankStatementController.currentBatchId)">&#8635; Refresh</button>
+          <!-- 3-Row Filter & Bulk Toolbar (BankStatement.fxml Parity) -->
+          <div style="background: var(--bg-card); padding: 12px 14px; border-radius: 8px 8px 0 0; border: 1px solid var(--border-subtle); border-bottom: none; display: flex; flex-direction: column; gap: 10px;">
+            <!-- Row 1: Search, Search Button, Reset, Refresh -->
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div style="flex: 1; position: relative;">
+                <input type="text" id="txtSearch" class="filter-input" style="width: 100%; padding-left: 28px; height: 34px;" placeholder="Search narration, reference, cheque, amount..." oninput="window.BankStatementController.applyFilters()">
+                <span style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.applyFilters()" style="height: 34px;">Search</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.resetFilters()" style="height: 34px;">Reset</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.loadBatch(window.BankStatementController.currentBatchId)" style="height: 34px;">&#8635; Refresh</button>
             </div>
 
-            <!-- Bulk Actions Toolbar (BankStatement.fxml Parity) -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--border-subtle);">
-              <div style="display:flex; align-items:center; gap:14px;">
-                <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+            <!-- Row 2: Bulk Operations Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-main);">
                   <input type="checkbox" id="chkSelectAll" onchange="window.BankStatementController.selectAllVisible(this.checked)"> Select all visible
                 </label>
-                <span id="lblSelected" style="font-size:0.8rem; font-weight:700; color:var(--cyan);">0 selected</span>
+                <span id="lblSelected" style="font-size: 0.8rem; font-weight: 700; color: var(--cyan);">0 selected</span>
               </div>
-              <div style="display:flex; gap:8px;">
+              <div style="display: flex; gap: 8px;">
                 <button id="btnBulkReview" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.bulkMarkReview()" disabled>Reviewed</button>
                 <button id="btnBulkIgnore" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.bulkIgnore()" disabled>Ignore</button>
                 <button id="btnMoveExpense" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.moveSelectedToExpense()" disabled>Move to Expense</button>
                 <button id="btnMoveBankEntry" class="btn btn-primary btn-sm" onclick="window.BankStatementController.moveSelectedToBankEntry()" disabled>Move to Bank Entry</button>
               </div>
             </div>
+
+            <!-- Row 3: From Date, To Date, Status, Direction, Progress Bar -->
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="date" id="bs-from-date" class="form-input" style="width: 135px; height: 32px; font-size: 0.78rem;" onchange="window.BankStatementController.applyFilters()" title="From Date">
+                <input type="date" id="bs-to-date" class="form-input" style="width: 135px; height: 32px; font-size: 0.78rem;" onchange="window.BankStatementController.applyFilters()" title="To Date">
+                <select id="cmbStatus" class="form-select" style="width: 150px; height: 32px; font-size: 0.78rem;" onchange="window.BankStatementController.applyFilters()">
+                  <option value="">All Status</option>
+                  <option value="UNMATCHED">UNMATCHED</option>
+                  <option value="SUGGESTED">SUGGESTED</option>
+                  <option value="MATCHED">MATCHED</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                  <option value="REVIEW">REVIEW</option>
+                  <option value="IGNORED">IGNORED</option>
+                </select>
+                <select id="cmbDirection" class="form-select" style="width: 130px; height: 32px; font-size: 0.78rem;" onchange="window.BankStatementController.applyFilters()">
+                  <option value="ALL">All (Dr/Cr)</option>
+                  <option value="CREDIT">Credits Only</option>
+                  <option value="DEBIT">Debits Only</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Batch Progress:</span>
+                <div style="width: 130px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+                  <div id="reconciliationProgress" style="height: 100%; width: 0%; background: var(--cyan); transition: width 0.3s;"></div>
+                </div>
+                <span id="lblProgressText" style="font-size: 0.75rem; font-weight: 700; color: var(--cyan);">0 / 0 reconciled</span>
+              </div>
+            </div>
           </div>
 
           <!-- Bank Statement Register Workspace (BankStatement.fxml Parity) -->
           <div class="register-workspace" id="statement-register-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto; border-radius:0;">
+            <div class="register-table-panel data-panel" style="overflow-x: auto; border-radius: 0;">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th style="width:36px; text-align:center;"></th>
+                    <th style="width: 36px; text-align: center;"></th>
                     <th>Date</th>
                     <th>Value Date</th>
                     <th>Reference / Cheque</th>
                     <th>Description / Narration</th>
-                    <th style="text-align:right;">Debit (&#8377;)</th>
-                    <th style="text-align:right;">Credit (&#8377;)</th>
-                    <th style="text-align:right;">Balance (&#8377;)</th>
-                    <th style="text-align:center;">Status</th>
+                    <th style="text-align: right;">Debit (₹)</th>
+                    <th style="text-align: right;">Credit (₹)</th>
+                    <th style="text-align: right;">Balance (₹)</th>
+                    <th style="text-align: center;">Status</th>
                     <th>Match / Link</th>
-                    <th style="text-align:center;">Actions</th>
+                    <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="bank-statement-tbody">
@@ -3878,90 +3950,80 @@
             </div>
 
             <!-- Inline Docked Statement Detail Drawer -->
-            <div id="statement-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+            <div id="statement-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
               <div class="drawer-header">
                 <div>
-                  <h3 style="margin:0; font-size:1rem;" id="bsd-ref">Transaction Details</h3>
-                  <span id="bsd-status" class="pill-badge pill-neutral" style="font-size:0.75rem;">UNMATCHED</span>
+                  <h3 style="margin: 0; font-size: 1rem;" id="bsd-ref">Transaction Details</h3>
+                  <span id="bsd-status" class="pill-badge pill-neutral" style="font-size: 0.75rem;">UNMATCHED</span>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.closeStatementDrawer()" style="padding:2px 8px;">&times;</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.closeStatementDrawer()" style="padding: 2px 8px;">&times;</button>
               </div>
               <div class="drawer-body">
-                <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Date:</div>
-                    <div id="bsd-date" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
+                <div class="drawer-field-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Date:</div>
+                    <div id="bsd-date" style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Value Date:</div>
-                    <div id="bsd-value-date" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">-</div>
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Value Date:</div>
+                    <div id="bsd-value-date" style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Debit:</div>
-                    <div id="bsd-debit" style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">-</div>
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Debit:</div>
+                    <div id="bsd-debit" style="font-weight: 700; color: var(--red); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
-                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Credit:</div>
-                    <div id="bsd-credit" style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">-</div>
+                  <div style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Credit:</div>
+                    <div id="bsd-credit" style="font-weight: 700; color: var(--green); font-size: 0.85rem; margin-top: 2px;">-</div>
                   </div>
                 </div>
-                <div style="padding:10px 12px; background:rgba(56,189,248,0.06); border-radius:6px; border:1px solid rgba(56,189,248,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.75rem; color:var(--cyan); font-weight:700;">CLOSING BALANCE:</span>
-                  <span id="bsd-balance" style="font-weight:800; color:var(--cyan); font-size:1.05rem;">&#8377; 0.00</span>
+                <div style="padding: 10px 12px; background: rgba(56,189,248,0.06); border-radius: 6px; border: 1px solid rgba(56,189,248,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.75rem; color: var(--cyan); font-weight: 700;">CLOSING BALANCE:</span>
+                  <span id="bsd-balance" style="font-weight: 800; color: var(--cyan); font-size: 1.05rem;">₹ 0.00</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Match / Link:</span><span id="bsd-link" style="font-weight:600; color:var(--purple);">-</span></div>
-                  <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
-                    <span style="color:var(--text-muted);">Narration / Particulars:</span>
-                    <span id="bsd-narration" style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Match / Link:</span><span id="bsd-link" style="font-weight: 600; color: var(--purple);">-</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
+                    <span style="color: var(--text-muted);">Narration / Particulars:</span>
+                    <span id="bsd-narration" style="color: var(--text-dim); background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; font-size: 0.78rem;">-</span>
                   </div>
                 </div>
               </div>
-              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.drawerMatch()">&#128279; Match ERP</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveExpense()">&#128184; To Expense</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveBankEntry()">&#127974; Bank Entry</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.closeStatementDrawer()">&#10006; Close</button>
+              <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.drawerMatch()">🔗 Match ERP</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveExpense()">💸 To Expense</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveBankEntry()">🏦 Bank Entry</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.closeStatementDrawer()">✖ Close</button>
               </div>
             </div>
           </div>
 
-          <!-- Table Footer Pagination & Progress -->
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-top:none; border-radius:0 0 8px 8px; font-size:0.85rem;">
-            <div style="display:flex; align-items:center; gap:16px;">
-              <span id="lblShowing" style="color:var(--text-muted);">Showing 0 records</span>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <div style="width:140px; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
-                  <div id="reconciliationProgress" style="height:100%; width:0%; background:var(--cyan); transition:width 0.3s;"></div>
-                </div>
-                <span id="lblProgressText" style="font-size:0.75rem; color:var(--text-muted);">0 / 0 reconciled</span>
+          <!-- Table Footer Pagination & Status (Desktop Parity) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-top: none; border-radius: 0 0 8px 8px; font-size: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span id="lblShowing" class="pill-badge pill-purple" style="font-size: 0.75rem;">Showing 0 records</span>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted);">
+                <span>Rows:</span>
+                <select id="bs-page-size" class="form-select form-input-sm" style="width: 70px; height: 26px; font-size: 0.75rem;" onchange="window.BankStatementController.changePageSize(this.value)">
+                  <option value="25">25</option>
+                  <option value="50" selected>50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                </select>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span id="lblBatchStatus" class="pill-badge pill-neutral">IMPORTED</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="lblBatchStatus" class="pill-badge pill-neutral">No statement selected</span>
               <button id="btnPrevPage" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.prevPage()">Previous</button>
-              <span id="lblPage" style="color:var(--text-muted);">Page 1 of 1</span>
+              <span id="lblPage" class="pill-badge pill-neutral" style="font-size: 0.75rem;">Page 1 of 1</span>
               <button id="btnNextPage" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.nextPage()">Next</button>
             </div>
           </div>
 
-          <!-- Statement History Drawer (BankStatement.fxml Parity) -->
-          <div id="statement-history-drawer" style="display:none; margin-top:20px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-              <div>
-                <h3 style="margin:0;">Bank Statement History</h3>
-                <span style="font-size:0.75rem; color:var(--text-muted);">Browse and reopen any previously imported bank statement file</span>
-              </div>
-              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.toggleStatementHistory()">&times; Close</button>
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Imported</th><th>Bank / Account</th><th>Statement Period</th><th>Status</th><th style="text-align:right;">Rows</th><th style="text-align:center;">Actions</th></tr>
-              </thead>
-              <tbody id="history-table-tbody">
-                <tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-dim);">Loading history...</td></tr>
-              </tbody>
-            </table>
+          <!-- Bottom Guidance Banner (BankStatement.fxml Parity) -->
+          <div style="margin-top: 14px; padding: 10px 14px; background: rgba(56,189,248,0.04); border: 1px solid rgba(56,189,248,0.15); border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--cyan); font-weight: 700;">ⓘ</span>
+            <span><strong>How Matching Works:</strong> Automatically links bank entries to sales invoices, vendor bills, and expense vouchers based on reference heuristics, amount tolerance (±₹5.00), and date proximity.</span>
           </div>
         </div>
 
@@ -11155,13 +11217,13 @@ Outstanding Balance: {BalanceAmount}
             <label class="form-label" style="margin-bottom: 6px; display: block;">Entry Type *</label>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
               <button type="button" id="btn-fmode-deposit" class="btn btn-primary" onclick="window.FinanceController.switchModalMode('BANK DEPOSIT')" style="font-weight: 700;">
-                &#128176; Bank Deposit
+                💰 Bank Deposit
               </button>
               <button type="button" id="btn-fmode-withdrawal" class="btn btn-secondary" onclick="window.FinanceController.switchModalMode('BANK WITHDRAWAL')" style="font-weight: 700;">
-                &#128179; Bank Withdrawal
+                💳 Bank Withdrawal
               </button>
               <button type="button" id="btn-fmode-expense" class="btn btn-secondary" onclick="window.FinanceController.switchModalMode('EXPENSE')" style="font-weight: 700;">
-                &#128184; Operating Expense
+                💸 Operating Expense
               </button>
             </div>
           </div>
@@ -11178,27 +11240,14 @@ Outstanding Balance: {BalanceAmount}
               <div class="form-group">
                 <label class="form-label" id="lbl-f-account">Bank Account *</label>
                 <select id="f-entry-account" class="form-select form-input" required>
-                  <option value="HDFC Bank - Current">HDFC Bank - Current (50200012345678)</option>
-                  <option value="State Bank of India - OD">State Bank of India - OD (30123456789)</option>
-                  <option value="ICICI Bank - Current">ICICI Bank - Current (000405012345)</option>
-                  <option value="Cash / General">Cash Account / Petty Cash</option>
+                  <option value="">Loading accounts...</option>
                 </select>
               </div>
 
               <div class="form-group" id="group-f-category" style="display: none;">
                 <label class="form-label">Expense Head / Category *</label>
                 <select id="f-entry-category" class="form-select form-input">
-                  <option value="OFFICE EXPENSES">OFFICE EXPENSES</option>
-                  <option value="RENT">RENT & PREMISES</option>
-                  <option value="SALARY">SALARY & WAGES</option>
-                  <option value="UTILITIES & ELECTRICITY">UTILITIES & ELECTRICITY</option>
-                  <option value="COURIER & FREIGHT">COURIER & FREIGHT</option>
-                  <option value="MAINTENANCE & REPAIR">MAINTENANCE & REPAIR</option>
-                  <option value="PRINTING & STATIONERY">PRINTING & STATIONERY</option>
-                  <option value="TRAVEL & CONVEYANCE">TRAVEL & CONVEYANCE</option>
-                  <option value="LEGAL & PROFESSIONAL">LEGAL & PROFESSIONAL</option>
-                  <option value="FACTORY CONSUMABLES">FACTORY CONSUMABLES</option>
-                  <option value="MISCELLANEOUS EXPENSES">MISCELLANEOUS EXPENSES</option>
+                  <option value="">Loading categories...</option>
                 </select>
               </div>
 
@@ -11218,18 +11267,22 @@ Outstanding Balance: {BalanceAmount}
               <div class="form-group">
                 <label class="form-label">Payment / Settlement Mode *</label>
                 <select id="f-entry-mode" class="form-select form-input" required>
-                  <option value="NEFT/RTGS">NEFT / RTGS</option>
-                  <option value="UPI">UPI / QR Code</option>
-                  <option value="CHEQUE">Cheque / Demand Draft</option>
-                  <option value="CASH">Cash</option>
-                  <option value="CARD">Credit / Debit Card</option>
-                  <option value="NETBANKING">Internet Banking</option>
+                  <option value="">Loading modes...</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label class="form-label" id="lbl-f-ref">Reference / UTR / Cheque #</label>
                 <input type="text" id="f-entry-ref" class="form-input" placeholder="e.g. UTR-8923748293 / CHQ-104928">
+              </div>
+
+              <div class="form-group" id="group-f-bill" style="display: none;">
+                <label class="form-label">Upload Bill (Optional)</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('f-entry-bill-file').click()" style="padding: 4px 10px; font-size: 0.75rem;">Choose Bill</button>
+                  <span id="f-entry-bill-name" style="font-size: 0.75rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">No file selected</span>
+                  <input type="file" id="f-entry-bill-file" accept=".pdf,.png,.jpg,.jpeg" style="display: none;" onchange="window.FinanceController.onBillFileSelected(this)">
+                </div>
               </div>
 
               <div class="form-group">
@@ -11245,6 +11298,319 @@ Outstanding Balance: {BalanceAmount}
           <button type="submit" id="btn-f-submit" class="btn btn-primary">Save Journal Entry</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LINKED TRANSACTIONS (Screenshot 5 / BankStatement.fxml Parity) -->
+  <div id="modal-linked-allocations" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 900px; width: 95%;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">ℹ️</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Information</h3>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">View all ERP transactions linked to this bank entry.</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-linked-allocations')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <!-- 5 Top Metric Cards -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px;">
+          <div class="kpi-card" style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Ref</div>
+            <div id="mla-bank-ref" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">-</div>
+          </div>
+          <div class="kpi-card" style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Linked Count</div>
+            <div id="mla-linked-count" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">0</div>
+          </div>
+          <div class="kpi-card" style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Linked</div>
+            <div id="mla-bank-linked" style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Round-off</div>
+            <div id="mla-round-off" style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Difference</div>
+            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">₹ 0.00</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="data-panel" style="max-height: 360px; overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Document No</th>
+                <th>Transaction Type</th>
+                <th style="text-align: right;">Bank Amount</th>
+                <th style="text-align: right;">Round-off</th>
+                <th style="text-align: center; width: 130px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="mla-tbody">
+              <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">No linked allocations found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions • Use View to open the existing linked workflow.</div>
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-linked-allocations')">✖ Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TRANSACTION DETAILS (Screenshot 4 Parity) -->
+  <div id="modal-statement-txn-details" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 680px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">👁️ Bank Statement Transaction Details</h3>
+          <div id="mstd-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Audit inspection &amp; ERP narration editor</div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-txn-details')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Posting Date / Value Date:</div>
+            <div id="mstd-dates" style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Reference / Cheque:</div>
+            <div id="mstd-ref" style="font-family: monospace; font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Debit / Credit Flow:</div>
+            <div id="mstd-amount" style="font-weight: 800; font-size: 0.95rem; margin-top: 2px;">-</div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Statement Balance:</div>
+            <div id="mstd-balance" style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">Original Statement Narration:</div>
+          <div id="mstd-desc" style="padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-subtle); font-size: 0.8rem; color: var(--text-main); word-break: break-all;">-</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Status / Match Type:</div>
+            <div id="mstd-status-match" style="font-weight: 700; font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Matching Confidence / Link:</div>
+            <div id="mstd-confidence" style="font-weight: 700; color: var(--purple); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="font-size: 0.75rem; margin: 0;">ERP Reconciliation Notes (max 500 characters):</label>
+            <span id="mstd-char-count" style="font-size: 0.7rem; color: var(--text-dim);">0 / 500</span>
+          </div>
+          <textarea id="mstd-notes" class="form-input" rows="3" maxlength="500" placeholder="Enter administrative explanation or audit notes..." oninput="document.getElementById('mstd-char-count').innerText = this.value.length + ' / 500'"></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-txn-details')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.saveTxnNotes()">💾 Save Notes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW IMPORTED STATEMENT SOURCE & CHECKSUM (Screenshot 4 Parity) -->
+  <div id="modal-statement-source-evidence" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 720px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">📄 Imported Statement Source Evidence</h3>
+          <div id="msse-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Original statement batch provenance &amp; SHA-256 fingerprint</div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-source-evidence')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Batch ID / File Name:</div>
+            <div id="msse-filename" style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Imported At / User:</div>
+            <div id="msse-imported-at" style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">-</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">SHA-256 File Checksum Fingerprint:</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="msse-checksum" class="form-input" readonly style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--cyan);">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.copyChecksum()" style="white-space: nowrap;">📋 Copy</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">Raw Statement CSV Evidence Line:</div>
+          <pre id="msse-raw-csv" style="padding: 12px; background: #070d18; border: 1px solid var(--border-subtle); border-radius: 6px; font-family: monospace; font-size: 0.78rem; color: #a5f3fc; overflow-x: auto; max-height: 180px; white-space: pre-wrap; margin: 0;">-</pre>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-source-evidence')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BROWSE BANK STATEMENT HISTORY (1040px Dialog Parity) -->
+  <div id="modal-statement-history" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 1040px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">📂 Bank Statement Import History</h3>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Browse, inspect, reopen, and manage all previously imported bank statement batches</div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-history')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+        <!-- Filters Toolbar -->
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+          <input type="text" id="bsh-search" class="filter-input" style="flex: 1; min-width: 180px;" placeholder="Search file name, account, bank..." oninput="window.BankStatementController.applyHistoryFilters()">
+          <select id="bsh-status" class="form-select" style="width: 150px;" onchange="window.BankStatementController.applyHistoryFilters()">
+            <option value="">All Statuses</option>
+            <option value="IMPORTED">IMPORTED</option>
+            <option value="PARTIALLY RECONCILED">PARTIALLY RECONCILED</option>
+            <option value="FULLY RECONCILED">FULLY RECONCILED</option>
+          </select>
+          <input type="date" id="bsh-from-date" class="form-input" style="width: 130px;" onchange="window.BankStatementController.applyHistoryFilters()" title="From Date">
+          <input type="date" id="bsh-to-date" class="form-input" style="width: 130px;" onchange="window.BankStatementController.applyHistoryFilters()" title="To Date">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.resetHistoryFilters()">Reset</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.loadStatementHistory()">&#8635; Refresh</button>
+        </div>
+
+        <div class="data-panel" style="max-height: calc(85vh - 220px); overflow-y: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Imported</th>
+                <th>File Name</th>
+                <th>Bank / Account</th>
+                <th>Statement Period</th>
+                <th style="text-align: right;">Total Rows</th>
+                <th style="text-align: center;">Reconciled</th>
+                <th style="text-align: center;">Status</th>
+                <th style="text-align: center; width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bsh-table-tbody">
+              <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">Loading statement batches...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-history')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TWO-STEP STATEMENT DELETION SAFETY DIALOG (Desktop Parity) -->
+  <div id="modal-statement-delete-confirm" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(239,68,68,0.2);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem; color: var(--red);">⚠️</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.1rem; color: #f87171;">Delete Statement Batch</h3>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Irreversible administrative operation</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <div style="padding: 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: #fca5a5; font-size: 0.85rem; margin-bottom: 6px;">Impact Warning:</div>
+          <div id="msdc-impact" style="font-size: 0.78rem; color: #fecaca; line-height: 1.5;">
+            Deleting this batch will permanently remove all imported statement transactions, reverse all matched links, and discard reconciliation history.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 0.78rem; margin-bottom: 6px; display: block;">
+            Type <strong style="color: var(--red);">DELETE</strong> below to confirm deletion:
+          </label>
+          <input type="text" id="msdc-confirm-input" class="form-input" placeholder="Type DELETE to confirm" oninput="window.BankStatementController.onDeleteConfirmInput(this.value)">
+        </div>
+
+        <div class="modal-footer" style="padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">Cancel</button>
+          <button type="button" id="msdc-btn-delete" class="btn btn-danger" disabled onclick="window.BankStatementController.confirmDeleteStatement()">Permanently Delete Statement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUDIT REASON PROMPT (Review / Ignore Parity) -->
+  <div id="modal-statement-reason" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 480px; width: 95%;">
+      <div class="modal-header">
+        <h3 id="msr-title" style="margin: 0; font-size: 1.05rem; color: #fff;">Provide Audit Reason</h3>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-reason')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <p id="msr-prompt" style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">Please enter the reason for this action:</p>
+        <textarea id="msr-reason" class="form-input" rows="3" placeholder="Enter reason (e.g. Verified contra transfer / Duplicate / Bank charge)..." required></textarea>
+        <div class="modal-footer" style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-reason')">Cancel</button>
+          <button type="button" id="msr-submit-btn" class="btn btn-primary" onclick="window.BankStatementController.submitReason()">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BULK MOVE TRANSACTIONS (Expense / Bank Entry) -->
+  <div id="modal-statement-bulk-move" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
+      <div class="modal-header">
+        <h3 id="msbm-title" style="margin: 0; font-size: 1.05rem; color: #fff;">Move Selected Transactions</h3>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-bulk-move')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <div style="font-size: 0.82rem; color: var(--cyan); font-weight: 600; margin-bottom: 14px;" id="msbm-count-text">Moving 0 transactions</div>
+        
+        <div class="form-group" id="msbm-group-category" style="margin-bottom: 12px;">
+          <label class="form-label">Expense Category *</label>
+          <select id="msbm-category" class="form-select form-input"></select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Bank / Ledger Account *</label>
+          <select id="msbm-account" class="form-select form-input"></select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Payment Mode *</label>
+          <select id="msbm-mode" class="form-select form-input"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Audit Note / Narration Prefix</label>
+          <input type="text" id="msbm-notes" class="form-input" placeholder="Bulk moved from bank statement">
+        </div>
+
+        <div class="modal-footer" style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-bulk-move')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.submitBulkMove()">Confirm Move</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -11469,67 +11835,67 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.11"></script>
+  <script src="js/version.js?v=10.0.34.12"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.11"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.11"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.11"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.11"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.11"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.11"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.11"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.11"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.11"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.11"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.11"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.11"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.11"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.11"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.11"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.12"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.12"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.12"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.12"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.12"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.12"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.12"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.12"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.12"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.12"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.12"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.12"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.12"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.12"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.12"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.11"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.11"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.11"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.11"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.11"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.11"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.11"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.11"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.11"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.12"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.12"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.12"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.12"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.12"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.12"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.12"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.12"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.12"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.11"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.11"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.12"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.11"></script>
-  <script src="js/app.js?v=10.0.34.11"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.12"></script>
+  <script src="js/app.js?v=10.0.34.12"></script>
 </body>
 </html>
 
