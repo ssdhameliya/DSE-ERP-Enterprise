@@ -93,6 +93,13 @@ window.SettingsController = (function() {
     if (el) el.checked = (v === true || v === 'true');
   }
 
+  function getAuthToken() {
+    return (window.AuthService && window.AuthService.getAccessToken ? window.AuthService.getAccessToken() : null) ||
+           (window.AuthService && window.AuthService.getToken ? window.AuthService.getToken() : null) ||
+           localStorage.getItem('dse_access_token') ||
+           localStorage.getItem('auth_token');
+  }
+
   async function resolveAssetUrl(val) {
     if (!val || typeof val !== 'string') return '';
     if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
@@ -101,7 +108,7 @@ window.SettingsController = (function() {
     if (val.startsWith('server-resource:')) {
       const key = val.replace('server-resource:', '');
       try {
-        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const token = getAuthToken();
         const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
         const resp = await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(key)}`, { headers });
         if (resp.ok) {
@@ -152,14 +159,14 @@ window.SettingsController = (function() {
       const file = fileInput.files[0];
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const token = getAuthToken();
         const headers = {
           'Content-Type': file.type || 'application/octet-stream'
         };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
         // 1. Upload binary stream to ServerResourceController
-        const resKey = 'email.signature.image';
+        const resKey = 'company.signaturePath';
         const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
         await fetch(uploadUrl, {
           method: 'PUT',
@@ -167,9 +174,13 @@ window.SettingsController = (function() {
           body: arrayBuffer
         });
 
-        // 2. Save pointer in support settings
+        // 2. Save pointer in support settings under both canonical and alias keys
         await window.ApiService.put('/api/support/settings', {
-          values: { 'email.signature.image': 'server-resource:' + resKey }
+          values: {
+            'company.signaturePath': 'server-resource:' + resKey,
+            'email.signature.image': 'server-resource:' + resKey,
+            'invoice.digital.seal': 'server-resource:' + resKey
+          }
         });
 
         const img = document.getElementById('preview-email-sig-img');
@@ -183,7 +194,7 @@ window.SettingsController = (function() {
           status.style.color = '#4ade80';
         }
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Email signature image saved to server resource repository!', 'success');
+        window.AppDialogService.showToast('Signature image saved to server resource repository!', 'success');
       } catch (err) {
         console.error('Failed to save signature image:', err);
         window.AppDialogService.showToast('Failed to save signature image: ' + err.message, 'error');
@@ -193,7 +204,11 @@ window.SettingsController = (function() {
     async clearSignatureImage() {
       try {
         await window.ApiService.put('/api/support/settings', {
-          values: { 'email.signature.image': '' }
+          values: {
+            'company.signaturePath': '',
+            'email.signature.image': '',
+            'invoice.digital.seal': ''
+          }
         });
         const img = document.getElementById('preview-email-sig-img');
         const status = document.getElementById('status-email-sig-img');
@@ -208,25 +223,45 @@ window.SettingsController = (function() {
         const fileInput = document.getElementById('file-email-sig-img');
         if (fileInput) fileInput.value = '';
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Email signature image removed.', 'info');
+        window.AppDialogService.showToast('Signature image removed.', 'info');
       } catch (err) {
         window.AppDialogService.showToast('Failed to clear signature image: ' + err.message, 'error');
       }
     },
 
-    async uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId) {
+    async uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId, statusId) {
       if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
       const file = fileInput.files[0];
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const token = getAuthToken();
         const headers = {
           'Content-Type': file.type || 'application/octet-stream'
         };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
+        // Bridge canonical Desktop keys & Web alias keys
+        let canonicalKey = assetKey;
+        let aliasKey = assetKey;
+        if (assetKey === 'application.banner' || assetKey === 'application.brandImagePath') {
+          canonicalKey = 'application.brandImagePath';
+          aliasKey = 'application.banner';
+        } else if (assetKey === 'application.mark' || assetKey === 'application.markImagePath') {
+          canonicalKey = 'application.markImagePath';
+          aliasKey = 'application.mark';
+        } else if (assetKey === 'invoice.header.logo' || assetKey === 'company.logoPath') {
+          canonicalKey = 'company.logoPath';
+          aliasKey = 'invoice.header.logo';
+        } else if (assetKey === 'invoice.digital.seal' || assetKey === 'company.signaturePath') {
+          canonicalKey = 'company.signaturePath';
+          aliasKey = 'invoice.digital.seal';
+        } else if (assetKey === 'payment.upi.qr' || assetKey === 'payment.qrImagePath') {
+          canonicalKey = 'payment.qrImagePath';
+          aliasKey = 'payment.upi.qr';
+        }
+
         // 1. Upload binary stream to ServerResourceController
-        const resKey = assetKey;
+        const resKey = canonicalKey;
         const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
         await fetch(uploadUrl, {
           method: 'PUT',
@@ -234,16 +269,25 @@ window.SettingsController = (function() {
           body: arrayBuffer
         });
 
-        // 2. Save pointer in support settings
+        // 2. Save pointer in support settings under both canonical and alias keys
         const values = {};
-        values[assetKey] = 'server-resource:' + resKey;
+        values[canonicalKey] = 'server-resource:' + resKey;
+        values[aliasKey] = 'server-resource:' + resKey;
         await window.ApiService.put('/api/support/settings', { values });
 
         // 3. Set preview directly using ObjectURL
         setAssetPreview(previewImgId, placeholderId, URL.createObjectURL(file));
 
+        if (statusId) {
+          const statusEl = document.getElementById(statusId);
+          if (statusEl) {
+            statusEl.textContent = file.name + ' • preserved on server';
+            statusEl.style.color = '#4ade80';
+          }
+        }
+
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Asset "${assetKey}" uploaded and saved to server resources!`, 'success');
+        window.AppDialogService.showToast(`Asset "${canonicalKey}" saved to server!`, 'success');
       } catch (err) {
         console.error('Failed to upload branding asset:', err);
         window.AppDialogService.showToast('Failed to save asset: ' + err.message, 'error');
@@ -267,18 +311,53 @@ window.SettingsController = (function() {
       }
     },
 
-    async clearBrandingAsset(assetKey, previewImgId, placeholderId) {
+    async clearBrandingAsset(assetKey, previewImgId, placeholderId, statusId) {
       try {
+        let canonicalKey = assetKey;
+        let aliasKey = assetKey;
+        if (assetKey === 'application.banner' || assetKey === 'application.brandImagePath') {
+          canonicalKey = 'application.brandImagePath';
+          aliasKey = 'application.banner';
+        } else if (assetKey === 'application.mark' || assetKey === 'application.markImagePath') {
+          canonicalKey = 'application.markImagePath';
+          aliasKey = 'application.mark';
+        } else if (assetKey === 'invoice.header.logo' || assetKey === 'company.logoPath') {
+          canonicalKey = 'company.logoPath';
+          aliasKey = 'invoice.header.logo';
+        } else if (assetKey === 'invoice.digital.seal' || assetKey === 'company.signaturePath') {
+          canonicalKey = 'company.signaturePath';
+          aliasKey = 'invoice.digital.seal';
+        } else if (assetKey === 'payment.upi.qr' || assetKey === 'payment.qrImagePath') {
+          canonicalKey = 'payment.qrImagePath';
+          aliasKey = 'payment.upi.qr';
+        }
+
         const values = {};
-        values[assetKey] = '';
+        values[canonicalKey] = '';
+        values[aliasKey] = '';
         await window.ApiService.put('/api/support/settings', { values });
+
         const defaultImgs = {
-          'invoice.header.logo': 'assets/logo.png'
+          'invoice.header.logo': 'assets/brand-banner.png',
+          'company.logoPath': 'assets/brand-banner.png',
+          'application.banner': 'assets/brand-banner.png',
+          'application.brandImagePath': 'assets/brand-banner.png',
+          'application.mark': 'assets/brand-mark.png',
+          'application.markImagePath': 'assets/brand-mark.png'
         };
-        const defImg = defaultImgs[assetKey] || '';
+        const defImg = defaultImgs[canonicalKey] || defaultImgs[assetKey] || '';
         setAssetPreview(previewImgId, placeholderId, '', defImg);
+
+        if (statusId) {
+          const statusEl = document.getElementById(statusId);
+          if (statusEl) {
+            statusEl.textContent = 'No image selected';
+            statusEl.style.color = '#64748b';
+          }
+        }
+
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Asset "${assetKey}" cleared.`, 'info');
+        window.AppDialogService.showToast(`Asset "${canonicalKey}" removed.`, 'info');
       } catch (err) {
         window.AppDialogService.showToast('Failed to clear asset: ' + err.message, 'error');
       }
@@ -477,12 +556,11 @@ window.SettingsController = (function() {
         setVal('setting-app-tagline', serverSettings['application.tagline'] || 'Enterprise Production & Distribution');
         setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
 
-        if (serverSettings['application.banner']) {
-          setAssetPreview('preview-app-banner', 'placeholder-app-banner', serverSettings['application.banner']);
-        }
-        if (serverSettings['application.mark']) {
-          setAssetPreview('preview-app-mark', 'placeholder-app-mark', serverSettings['application.mark']);
-        }
+        const bannerVal = serverSettings['application.brandImagePath'] || serverSettings['application.banner'];
+        setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, 'assets/brand-banner.png');
+
+        const markVal = serverSettings['application.markImagePath'] || serverSettings['application.mark'];
+        setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, 'assets/brand-mark.png');
       } catch (err) {
         console.error('[SettingsController] Failed to load company settings:', err);
       }
@@ -571,8 +649,9 @@ window.SettingsController = (function() {
         setVal('setting-upi-id', serverSettings['payment.upiId'] || (profile && profile.upiId) || '');
         setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '0.00');
 
-        if (serverSettings['payment.upi.qr']) {
-          setAssetPreview('preview-upi-qr', 'placeholder-upi-qr', serverSettings['payment.upi.qr']);
+        const qrVal = serverSettings['payment.qrImagePath'] || serverSettings['payment.upi.qr'];
+        if (qrVal) {
+          setAssetPreview('preview-upi-qr', 'placeholder-upi-qr', qrVal);
         }
       } catch (err) {
         console.error('[SettingsController] Failed to load payment settings:', err);
@@ -655,12 +734,16 @@ window.SettingsController = (function() {
         let invoiceSettings = {};
         try {
           invoiceSettings = await window.ApiService.get('/api/support/settings?prefix=invoice.');
+          const compSettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+          Object.assign(invoiceSettings, compSettings);
         } catch (e) {}
-        if (invoiceSettings['invoice.header.logo']) {
-          setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', invoiceSettings['invoice.header.logo'], 'assets/logo.png');
-        }
-        if (invoiceSettings['invoice.digital.seal']) {
-          setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', invoiceSettings['invoice.digital.seal']);
+
+        const logoVal = invoiceSettings['company.logoPath'] || invoiceSettings['invoice.header.logo'];
+        setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', logoVal, 'assets/brand-banner.png');
+
+        const sealVal = invoiceSettings['company.signaturePath'] || invoiceSettings['invoice.digital.seal'];
+        if (sealVal) {
+          setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', sealVal);
         }
       } catch (err) {
         console.error('[SettingsController] Failed to load invoice settings:', err);

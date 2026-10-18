@@ -1,15 +1,15 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 19,
-  "webVersion": "10.0.34.19",
-  "tag": "web-v10.0.34.19",
-  "releaseDate": "2026-10-19T01:40:00+05:30",
+  "webBuild": 20,
+  "webVersion": "10.0.34.20",
+  "tag": "web-v10.0.34.20",
+  "releaseDate": "2026-10-19T02:20:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.19 Enterprise Release - Item Master Import Desktop Parity & Bulk Upsert Fix (POST /api/master/items/bulk integration, checkItemExists verification, eliminating duplicate key 500 errors)",
+  "summary": "10.0.34.20 Enterprise Release - Desktop Baseline Parity, Data Import Validation Error Transparency, Settings 5-Asset API Fix & Authentic Auth Split Layout",
   "highlights": [
-    "1. Item Master Import Desktop Parity: Fully aligned Web's Item Master import with Desktop's ItemSpreadsheetService.java by routing imports through POST /api/master/items/bulk (MasterDataService.saveItems). This performs atomic server-side find-or-create on the database entity, eliminating PostgreSQL unique constraint collisions on item_master(item_code).",
-    "2. Proactive checkItemExists Integration: Added server-level exists verification via /api/master/items/exists before import execution, ensuring accurate detection of existing items regardless of client caching or view permissions.",
-    "3. MasterService.bulkSaveItems API Method: Exposed bulkSaveItems in MasterService.js to provide standard, reliable bulk upsert capabilities identical to desktop's MasterApiClient.saveItems.",
-    "4. Zero-Friction Conflict Resolution: Item imports now update existing records without requiring rowVersion locks or failing on opening stock discrepancies, while properly creating new items with opening stock."
+    "1. Data Import Studio Error Reason Transparency: Upgraded the 7th column to 'Result / Error' and rendered exact validation messages alongside status badges with red row highlight for failed records matching Desktop ImportController.",
+    "2. Settings 5 Image Assets & AuthService Token Fix: Added getToken() alias in AuthService.js and unified token resolution across SettingsController.js. Bridged canonical Desktop keys (application.brandImagePath, application.markImagePath, company.logoPath, company.signaturePath, payment.qrImagePath) and alias keys, enabling full asset upload & preview parity.",
+    "3. Login Screen Full-Viewport Split Layout: Eliminated 960px constraints and black side voids on 1080p displays. Upgraded to full viewport split layout with authentic Jasvi Industries 5:1 banner and square J mark icon badge matching Desktop Image 3.",
+    "4. Spacious Registration & Forgot Password Layout: Dynamically expands auth container to wide card (860px) on tab switch to match Desktop's Registration.fxml 2-column grid and 3-step sequential cards."
   ]
 }

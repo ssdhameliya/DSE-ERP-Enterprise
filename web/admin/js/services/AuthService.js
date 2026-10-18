@@ -30,6 +30,10 @@ window.AuthService = (function() {
       return localStorage.getItem('dse_access_token');
     },
 
+    getToken() {
+      return this.getAccessToken();
+    },
+
     isAuthenticated() {
       return !!localStorage.getItem('dse_access_token');
     },

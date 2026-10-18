@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 19,
-  webVersion: "10.0.34.19",
-  tag: "web-v10.0.34.19",
-  releaseDate: "2026-10-19T01:40:00+05:30",
+  webBuild: 20,
+  webVersion: "10.0.34.20",
+  tag: "web-v10.0.34.20",
+  releaseDate: "2026-10-19T02:20:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.19 Enterprise Release - Item Master Import Desktop Parity & Bulk Upsert Fix (POST /api/master/items/bulk integration, checkItemExists verification, eliminating duplicate key 500 errors)"
+  summary: "10.0.34.20 Enterprise Release - Desktop Baseline Parity, Data Import Validation Error Transparency, Settings 5-Asset API Fix & Authentic Auth Split Layout"
 };
 
 // Automatic UI Version Injection

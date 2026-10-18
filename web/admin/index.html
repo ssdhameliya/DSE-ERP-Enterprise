@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.17">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.20">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -99,6 +99,7 @@
         const alertEl = document.getElementById('auth-alert');
         const cardTitle = document.getElementById('auth-card-title');
         const cardSub = document.getElementById('auth-card-subtitle');
+        const cardCol = document.getElementById('auth-card-col');
 
         if (formLogin) formLogin.style.display = tab === 'login' ? 'block' : 'none';
         if (formRegister) formRegister.style.display = tab === 'register' ? 'block' : 'none';
@@ -106,12 +107,20 @@
         if (formMfa) formMfa.style.display = tab === 'mfa' ? 'block' : 'none';
         if (alertEl) alertEl.style.display = 'none';
 
+        if (cardCol) {
+          if (tab === 'register' || tab === 'forgot') {
+            cardCol.classList.add('wide-card');
+          } else {
+            cardCol.classList.remove('wide-card');
+          }
+        }
+
         if (tab === 'login') {
           if (cardTitle) cardTitle.innerText = 'Sign in to your account';
-          if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+          if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Creation';
         } else if (tab === 'register') {
           if (cardTitle) cardTitle.innerText = 'Create New Account';
-          if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA &#8594; Email OTP &#8594; Authenticator &#8594; Admin approval';
+          if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
           if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
           if (window.loadRegistrationRoles) window.loadRegistrationRoles();
         } else if (tab === 'forgot') {
@@ -167,18 +176,19 @@
     
     <div class="auth-desktop-wrapper">
       <!-- LEFT BRAND COLUMN -->
-      <!-- LEFT BRAND COLUMN -->
       <div class="auth-brand-col">
-        <div class="auth-brand-logo-card">
-          <img src="assets/logo.png" alt="Company Logo" id="auth-brand-logo-img">
+        <div class="auth-brand-banner-box" id="auth-brand-banner-box">
+          <img src="assets/brand-banner.png" alt="Jasvi Industries" id="auth-brand-banner-img">
         </div>
-        <h1 class="auth-brand-title">Jashvi Engineers</h1>
+        <div class="auth-brand-mark-box" id="auth-brand-mark-box">
+          <img src="assets/brand-mark.png" alt="Jasvi Mark" id="auth-brand-mark-img">
+        </div>
+        <h1 class="auth-brand-title">Jasvi Creation</h1>
         <div class="auth-brand-line"></div>
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
-        <div class="auth-brand-tagline">Role-aware secure access to Jashvi Engineers</div>
+        <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
           <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.34</span>
-          <div id="auth-desktop-baseline" style="font-size: 0.68rem; color: #94a3b8; margin-top: 4px; font-weight: 500;">Desktop Baseline: v10.0.34</div>
         </div>
       </div>
 
@@ -187,7 +197,7 @@
         <div class="auth-shield-icon-box">&#128737;&#65039;</div>
         <div style="text-align: center; color: #a78bfa; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Welcome Back</div>
         <h2 style="text-align: center; font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 4px 0;" id="auth-card-title">Sign in to your account</h2>
-        <p style="text-align: center; font-size: 0.74rem; color: #64748b; margin: 0 0 18px 0;" id="auth-card-subtitle">Role-aware secure access to Jashvi Engineers</p>
+        <p style="text-align: center; font-size: 0.74rem; color: #64748b; margin: 0 0 18px 0;" id="auth-card-subtitle">Role-aware secure access to Jasvi Creation</p>
 
         <div id="auth-alert" class="auth-alert" style="display: none; margin-bottom: 14px;"></div>
 
@@ -5650,8 +5660,8 @@
                         <th style="width:130px;">Mandatory</th>
                         <th style="width:130px;">Format</th>
                         <th style="width:140px;">Master Match</th>
-                        <th>Data / Duplicate Action</th>
-                        <th style="width:100px; text-align:center;">Status</th>
+                        <th style="min-width:160px;">Data / Duplicate Action</th>
+                        <th style="min-width:280px;">Result / Error</th>
                       </tr>
                     </thead>
                     <tbody id="import-validation-tbody">
@@ -12539,69 +12549,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.17"></script>
+  <script src="js/version.js?v=10.0.34.20"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.34.17"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.34.17"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.17"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.17"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.17"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.17"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.17"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.17"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.17"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.17"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.17"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.17"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.17"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.17"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.17"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.17"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.34.20"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.20"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.20"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.20"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.20"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.20"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.20"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.20"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.20"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.20"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.20"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.20"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.20"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.20"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.20"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.20"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.34.17"></script>
-  <script src="js/services/ApiService.js?v=10.0.34.17"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.17"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.17"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.17"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.17"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.17"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.17"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.17"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.17"></script>
+  <script src="js/services/BrandingService.js?v=10.0.34.20"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.20"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.20"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.20"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.20"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.20"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.20"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.20"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.20"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.20"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.17"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.20"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.20"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.17"></script>
-  <script src="js/app.js?v=10.0.34.17"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.20"></script>
+  <script src="js/app.js?v=10.0.34.20"></script>
 </body>
 </html>
 
