@@ -178,7 +178,7 @@ window.SettingsController = (function() {
           INVOICE: 'Invoice Defaults',
           NOTIFICATIONS: 'Notifications',
           EMAIL: 'Email Delivery',
-          SECURITY: 'Security Policies',
+          SECURITY: 'Security & Session',
           MODULES: 'Module Toggles'
         };
         saveBtn.innerHTML = `<span>&#128190;</span> Save ${names[sec] || 'Settings'}`;
@@ -733,16 +733,81 @@ window.SettingsController = (function() {
       }
     },
 
+    sessionMonitorInterval: null,
+
+    startSessionMonitorTimer() {
+      if (this.sessionMonitorInterval) clearInterval(this.sessionMonitorInterval);
+      
+      const updateUi = () => {
+        if (this.activeSection !== 'SECURITY') {
+          if (this.sessionMonitorInterval) {
+            clearInterval(this.sessionMonitorInterval);
+            this.sessionMonitorInterval = null;
+          }
+          return;
+        }
+
+        const mgr = window.SessionFocusManager;
+        if (!mgr) return;
+
+        const idleSec = mgr.getIdleSeconds ? mgr.getIdleSeconds() : Math.max(0, Math.floor((Date.now() - (mgr.lastActivity || Date.now())) / 1000));
+        const remSec = mgr.getRemainingSecondsToWarning ? mgr.getRemainingSecondsToWarning() : Math.max(0, (mgr.timeoutMinutes * 60 - mgr.warningSeconds) - idleSec);
+        const totalSec = Math.max(1, (mgr.timeoutMinutes * 60 - mgr.warningSeconds));
+        const pct = Math.max(0, Math.min(100, Math.round((remSec / totalSec) * 100)));
+
+        const elIdle = document.getElementById('sec-monitor-idle');
+        const elRem = document.getElementById('sec-monitor-remaining');
+        const elProg = document.getElementById('sec-monitor-progress');
+        const elLimit = document.getElementById('sec-monitor-limit');
+
+        if (elIdle) {
+          const m = Math.floor(idleSec / 60);
+          const s = idleSec % 60;
+          elIdle.textContent = m > 0 ? `${m}m ${s}s idle` : `${s}s idle`;
+        }
+        if (elRem) {
+          const rm = Math.floor(remSec / 60);
+          const rs = remSec % 60;
+          elRem.textContent = `${rm}m ${rs < 10 ? '0' : ''}${rs}s`;
+          elRem.style.color = pct < 20 ? 'var(--red)' : pct < 50 ? 'var(--yellow)' : 'var(--green)';
+        }
+        if (elProg) {
+          elProg.style.width = pct + '%';
+          elProg.style.background = pct < 20 ? 'var(--red)' : pct < 50 ? 'var(--yellow)' : 'var(--green)';
+        }
+        if (elLimit) {
+          elLimit.textContent = `Timeout: ${mgr.timeoutMinutes}m • Warn at ${Math.round(mgr.warningSeconds / 60)}m`;
+        }
+      };
+
+      updateUi();
+      this.sessionMonitorInterval = setInterval(updateUi, 1000);
+    },
+
     // ==========================================
     // 6. SECURITY & SESSION POLICIES
     // ==========================================
     async loadSecuritySettings() {
       try {
         const secSettings = await window.ApiService.get('/api/support/settings?prefix=security.');
-        setVal('sec-session-timeout', secSettings['security.session.timeout.minutes'] || '60');
-        setVal('sec-session-warning', secSettings['security.session.warning.minutes'] || '5');
+        const timeout = parseInt(secSettings['security.session.timeout.minutes'] || '60', 10);
+        const warning = parseInt(secSettings['security.session.warning.minutes'] || '5', 10);
+        setVal('sec-session-timeout', timeout);
+        setVal('sec-session-warning', warning);
         setVal('sec-mfa-policy', secSettings['security.auth.mfa.policy'] || 'ADMIN_CONTROLLED');
         setChk('sec-ui-diagnostics', true);
+
+        if (window.SessionFocusManager && window.SessionFocusManager.init) {
+          window.SessionFocusManager.init(timeout, warning * 60);
+        }
+
+        const u = window.AuthService && window.AuthService.getCurrentUser ? window.AuthService.getCurrentUser() : null;
+        const userEl = document.getElementById('sec-monitor-user');
+        const roleEl = document.getElementById('sec-monitor-role');
+        if (userEl) userEl.textContent = (u && (u.fullName || u.username)) || 'Administrator';
+        if (roleEl) roleEl.textContent = `${(u && u.role || 'ADMIN').toUpperCase()} • Active Enterprise Session`;
+
+        this.startSessionMonitorTimer();
       } catch (err) {
         console.warn('[SettingsController] Could not load security settings:', err);
       }
@@ -771,6 +836,10 @@ window.SettingsController = (function() {
 
       try {
         await window.ApiService.put('/api/support/settings', { values });
+        if (window.SessionFocusManager && window.SessionFocusManager.init) {
+          window.SessionFocusManager.init(timeout, warning * 60);
+        }
+        this.startSessionMonitorTimer();
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast('Security & MFA governance policies updated on server!', 'success');
       } catch (err) {
@@ -911,6 +980,20 @@ window.SessionFocusManager = {
     this.checkInterval = setInterval(() => this.checkIdle(), 10000);
   },
 
+  getIdleSeconds() {
+    return Math.max(0, Math.floor((Date.now() - this.lastActivity) / 1000));
+  },
+
+  getWarningThresholdSeconds() {
+    return (this.timeoutMinutes * 60) - this.warningSeconds;
+  },
+
+  getRemainingSecondsToWarning() {
+    const thresh = this.getWarningThresholdSeconds();
+    const idle = this.getIdleSeconds();
+    return Math.max(0, thresh - idle);
+  },
+
   checkIdle() {
     if (this.isWarningShown) return;
     const idleMs = Date.now() - this.lastActivity;
@@ -942,12 +1025,17 @@ window.SessionFocusManager = {
     }, 1000);
   },
 
-  extendSession() {
+  async extendSession() {
     this.isWarningShown = false;
     this.lastActivity = Date.now();
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     const modal = document.getElementById('session-timeout-modal');
     if (modal) modal.style.display = 'none';
+    try {
+      if (window.ApiService && window.ApiService.post) {
+        await window.ApiService.post('/api/auth/session/extend', {});
+      }
+    } catch (_) {}
     if (window.AppDialogService) window.AppDialogService.toastSuccess('Session active and renewed.');
   },
 

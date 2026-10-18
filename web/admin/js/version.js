@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 4,
-  webVersion: "10.0.34.04",
-  tag: "web-v10.0.34.04",
-  releaseDate: "2026-10-18T15:20:00+05:30",
+  webBuild: 5,
+  webVersion: "10.0.34.05",
+  tag: "web-v10.0.34.05",
+  releaseDate: "2026-10-18T15:35:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.04 Enterprise Release - Resolve Payment Controller syntax, Stock Register actions, and Settings branding preview"
+  summary: "10.0.34.05 Enterprise Release - Resolve Payment Controller editingPaymentId closure scope and introduce Settings Live Session Monitor"
 };
 
 // Automatic UI Version Injection

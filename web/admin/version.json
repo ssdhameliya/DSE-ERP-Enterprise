@@ -1,15 +1,14 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 4,
-  "webVersion": "10.0.34.04",
-  "tag": "web-v10.0.34.04",
-  "releaseDate": "2026-10-18T15:20:00+05:30",
+  "webBuild": 5,
+  "webVersion": "10.0.34.05",
+  "tag": "web-v10.0.34.05",
+  "releaseDate": "2026-10-18T15:35:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.04 Enterprise Release - Resolve Payment Controller syntax, Stock Register actions, and Settings branding preview",
+  "summary": "10.0.34.05 Enterprise Release - Resolve Payment Controller editingPaymentId closure scope and introduce Settings Live Session Monitor",
   "highlights": [
-    "1. Record Payment Controller: Fixed fatal syntax error in object literal breaking RecordPaymentController, sales/purchase/return payment views and all modal triggers",
-    "2. Stock Register Parity: Standardized purple actions dropdown (Stock Adjustment, Movement History, Barcode Label Print, Stock Revaluation)",
-    "3. Settings Branding Assets: Added live interactive thumbnails, file uploads, delete/clear triggers and fullscreen preview lightbox for Company Banner, Watermark, UPI QR, Header Logo, and Digital Seal",
-    "4. Invoice Terms & Conditions: Expanded defaults editor textarea to full-sized 6-row view"
+    "1. Record Payment Save & Edit: Fixed editingPaymentId and editingPaymentOriginal ReferenceError during savePayment, editPayment, and cancelEdit workflows",
+    "2. Settings Security & Session: Renamed tab to Security & Session matching desktop FXML and sidebar navigation standard",
+    "3. Live Session Inactivity Monitor: Added interactive real-time session monitor card with active account details, idle time ticker, progress bar countdown, and immediate SessionFocusManager synchronization"
   ]
 }

@@ -13,6 +13,8 @@ window.RecordPaymentController = (function() {
   let invoiceBalance = 0;
   let attachedProofFile = null;
   let paymentHistory = [];
+  let editingPaymentId = null;
+  let editingPaymentOriginal = null;
 
   function formatMoney(amt) {
     const n = parseFloat(amt) || 0;
@@ -278,8 +280,10 @@ window.RecordPaymentController = (function() {
       if (btnRem) btnRem.disabled = true;
     },
 
-    editingPaymentId: null,
-    editingPaymentOriginal: null,
+    get editingPaymentId() { return editingPaymentId; },
+    set editingPaymentId(v) { editingPaymentId = v; },
+    get editingPaymentOriginal() { return editingPaymentOriginal; },
+    set editingPaymentOriginal(v) { editingPaymentOriginal = v; },
 
     onPaymentModeChange(val) {
       const mode = (val || '').toLowerCase();

@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.04">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.05">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -6996,7 +6996,7 @@
               <span>&#9993;&#65039;</span> SMTP Delivery
             </button>
             <button type="button" class="settings-tab-btn" data-section="SECURITY" onclick="window.SettingsController.switchSection('SECURITY')">
-              <span>&#128274;</span> Security Policies
+              <span>&#128274;</span> Security &amp; Session
             </button>
             <button type="button" class="settings-tab-btn" data-section="MODULES" onclick="window.SettingsController.switchSection('MODULES')">
               <span>&#129513;</span> Module Management
@@ -7465,22 +7465,53 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
                 </div>
 
                 <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Inactivity Timeout Policy &amp; Telemetry</h3>
-                  <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:12px; margin-bottom:14px; font-size:0.8rem; line-height:1.5; color:var(--text-muted);">
-                    <div style="display:flex; align-items:flex-start; gap:8px;">
-                      <span style="color:var(--cyan); font-size:1.1rem;">&#128172;</span>
-                      <div>
-                        <strong>Owned Dialog Standard:</strong>
-                        <div>The timeout warning uses the same owned-dialog presentation standard as other ERP modal dialogs. Background data refreshes and polling do not count as user keyboard/mouse activity.</div>
-                      </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Live Session Inactivity Monitor</h3>
+                    <span class="pill-badge pill-success" id="sec-monitor-badge" style="font-size:0.7rem; font-weight:700;">ACTIVE SESSION</span>
+                  </div>
+                  
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                      <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Active Account</div>
+                      <div id="sec-monitor-user" style="font-weight:700; color:var(--text-main); font-size:0.88rem; margin-top:2px;">Administrator</div>
+                      <div id="sec-monitor-role" style="font-size:0.72rem; color:var(--cyan); margin-top:2px;">ADMIN &bull; Active Session</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                      <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Inactivity Idle Time</div>
+                      <div id="sec-monitor-idle" style="font-weight:700; color:var(--yellow); font-size:0.88rem; margin-top:2px; font-family:monospace;">0s idle</div>
+                      <div id="sec-monitor-limit" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Timeout: 60m &bull; Warn at 5m</div>
                     </div>
                   </div>
-                  <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:12px; font-size:0.8rem; line-height:1.5; color:var(--text-muted);">
+
+                  <!-- Session Warning Progress Bar -->
+                  <div style="margin-bottom:14px; background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.75rem;">
+                      <span style="color:var(--text-muted); font-weight:600;">Time Until Inactivity Warning:</span>
+                      <span id="sec-monitor-remaining" style="font-weight:700; color:var(--green); font-family:monospace;">55m 00s</span>
+                    </div>
+                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+                      <div id="sec-monitor-progress" style="height:100%; width:100%; background:var(--green); transition:width 1s linear;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Session Action Buttons -->
+                  <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.SessionFocusManager.showWarning()" style="font-size:0.74rem;">
+                      &#9203; Test Warning Dialog
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.SessionFocusManager.extendSession()" style="font-size:0.74rem;">
+                      &#9889; Renew Session Now
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.SessionFocusManager.logoutUser()" style="font-size:0.74rem; color:var(--red);">
+                      &#128682; Sign Out
+                    </button>
+                  </div>
+
+                  <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px; font-size:0.74rem; line-height:1.45; color:var(--text-muted);">
                     <div style="display:flex; align-items:flex-start; gap:8px;">
-                      <span style="color:var(--accent-green); font-size:1.1rem;">&#128737;&#65039;</span>
+                      <span style="color:var(--cyan); font-size:1rem;">&#8505;&#65039;</span>
                       <div>
-                        <strong>MFA Enforcement Semantics:</strong>
-                        <div><strong>Required:</strong> non-Admin MFA remains strictly mandatory.<br><strong>Admin Controlled:</strong> the MFA checkbox in User Access is authoritative.<br><strong>Disabled:</strong> password-only login for all users.</div>
+                        <strong>Owned Dialog Standard:</strong> The inactivity timeout warning uses the same modal presentation standard as other ERP dialogs. Background data refreshes and polling do not count as user keyboard/mouse activity.
                       </div>
                     </div>
                   </div>
@@ -11012,67 +11043,67 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.04"></script>
+  <script src="js/version.js?v=10.0.34.05"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.04"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.04"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.04"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.04"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.04"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.04"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.04"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.04"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.04"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.04"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.04"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.04"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.04"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.04"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.04"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.05"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.05"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.05"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.05"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.05"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.05"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.05"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.05"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.05"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.05"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.05"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.05"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.05"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.05"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.05"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.04"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.04"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.04"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.04"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.04"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.04"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.04"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.04"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.04"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.05"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.05"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.05"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.05"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.05"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.05"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.05"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.05"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.05"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.04"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.05"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.05"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.04"></script>
-  <script src="js/app.js?v=10.0.34.04"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.05"></script>
+  <script src="js/app.js?v=10.0.34.05"></script>
 </body>
 </html>
 
