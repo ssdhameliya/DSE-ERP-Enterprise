@@ -8,6 +8,7 @@ window.ReportsController = (function() {
   let currentReportId = 'sales-register';
   let currentResult = null;
   let activeMainTab = 'dashboard';
+  let allSchedules = [];
 
   const DEFAULT_DEFINITIONS = [
     { id: 'sales-register', title: 'Sales Register Report', category: 'SALES', description: 'Comprehensive sales invoices, taxable value, GST split and customer breakdown' },
@@ -41,51 +42,47 @@ window.ReportsController = (function() {
       this.populateDefinitionTabs();
     },
 
-    // 1. MAIN TAB SWITCHING (Dashboard vs Report Center)
+    // 1. MAIN TAB SWITCHING (Dashboard vs Report Center vs Scheduled Reports)
     switchMainTab(tabName) {
       activeMainTab = tabName;
       const dashView = document.getElementById('rep-tab-dashboard-view');
       const centerView = document.getElementById('rep-tab-center-view');
+      const schView = document.getElementById('rep-tab-scheduler-view');
       const btnDash = document.getElementById('btn-rep-tab-dashboard');
       const btnCenter = document.getElementById('btn-rep-tab-center');
+      const btnSch = document.getElementById('btn-rep-tab-scheduler');
+
+      const setBtnActive = (btn, active) => {
+        if (!btn) return;
+        if (active) {
+          btn.classList.add('active');
+          btn.style.background = 'rgba(56,189,248,0.15)';
+          btn.style.color = 'var(--cyan)';
+          btn.style.borderColor = 'rgba(56,189,248,0.3)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'transparent';
+        }
+      };
+
+      if (dashView) dashView.style.display = tabName === 'dashboard' ? 'block' : 'none';
+      if (centerView) centerView.style.display = tabName === 'center' ? 'block' : 'none';
+      if (schView) schView.style.display = tabName === 'scheduler' ? 'block' : 'none';
+
+      setBtnActive(btnDash, tabName === 'dashboard');
+      setBtnActive(btnCenter, tabName === 'center');
+      setBtnActive(btnSch, tabName === 'scheduler');
 
       if (tabName === 'dashboard') {
-        if (dashView) dashView.style.display = 'block';
-        if (centerView) centerView.style.display = 'none';
-
-        if (btnDash) {
-          btnDash.classList.add('active');
-          btnDash.style.background = 'rgba(56,189,248,0.15)';
-          btnDash.style.color = 'var(--cyan)';
-          btnDash.style.borderColor = 'rgba(56,189,248,0.3)';
-        }
-        if (btnCenter) {
-          btnCenter.classList.remove('active');
-          btnCenter.style.background = 'transparent';
-          btnCenter.style.color = 'var(--text-muted)';
-          btnCenter.style.borderColor = 'transparent';
-        }
         this.refreshDashboard();
-      } else {
-        if (dashView) dashView.style.display = 'none';
-        if (centerView) centerView.style.display = 'block';
-
-        if (btnCenter) {
-          btnCenter.classList.add('active');
-          btnCenter.style.background = 'rgba(56,189,248,0.15)';
-          btnCenter.style.color = 'var(--cyan)';
-          btnCenter.style.borderColor = 'rgba(56,189,248,0.3)';
-        }
-        if (btnDash) {
-          btnDash.classList.remove('active');
-          btnDash.style.background = 'transparent';
-          btnDash.style.color = 'var(--text-muted)';
-          btnDash.style.borderColor = 'transparent';
-        }
-
+      } else if (tabName === 'center') {
         if (!currentResult) {
           this.runCurrentReport();
         }
+      } else if (tabName === 'scheduler') {
+        this.loadSchedules();
       }
     },
 
@@ -466,6 +463,127 @@ window.ReportsController = (function() {
         rows: [],
         totals: {}
       };
+    },
+
+    // 5. SCHEDULED REPORTS (Desktop ReportSchedulerController.java Parity)
+    async loadSchedules() {
+      const tbody = document.getElementById('rep-sch-tbody');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading scheduled reports...</td></tr>`;
+
+      try {
+        const data = await window.ApiService.get('/api/reporting/schedules');
+        const summary = (data && data.summary) || {};
+        allSchedules = (data && Array.isArray(data.schedules)) ? data.schedules : [];
+
+        const actEl = document.getElementById('rep-sch-kpi-active');
+        const nextEl = document.getElementById('rep-sch-kpi-next');
+        const nextNameEl = document.getElementById('rep-sch-kpi-next-name');
+        const monthEl = document.getElementById('rep-sch-kpi-month');
+        const failEl = document.getElementById('rep-sch-kpi-failures');
+
+        if (actEl) actEl.innerText = summary.activeSchedules != null ? summary.activeSchedules : allSchedules.filter(s => s.status === 'ACTIVE').length;
+        if (nextEl) nextEl.innerText = summary.nextRun || (allSchedules.find(s => s.status === 'ACTIVE')?.nextRun) || 'None Scheduled';
+        if (nextNameEl) nextNameEl.innerText = summary.nextSchedule ? ('Next: ' + summary.nextSchedule) : (allSchedules.length > 0 ? `${allSchedules.length} schedules configured` : 'No upcoming jobs');
+        if (monthEl) monthEl.innerText = summary.reportsThisMonth != null ? summary.reportsThisMonth : 0;
+        if (failEl) failEl.innerText = summary.failuresLast30Days != null ? summary.failuresLast30Days : 0;
+
+        this.filterSchedules();
+      } catch (err) {
+        console.warn('Failed to load reporting schedules:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">No scheduled reports configured yet. Select a Saved Report to configure automated delivery.</td></tr>`;
+      }
+    },
+
+    filterSchedules() {
+      const search = (document.getElementById('rep-sch-search')?.value || '').toLowerCase().trim();
+      const status = (document.getElementById('rep-sch-status-filter')?.value || '').toUpperCase().trim();
+      const format = (document.getElementById('rep-sch-format-filter')?.value || '').toUpperCase().trim();
+
+      const filtered = allSchedules.filter(s => {
+        if (status && (s.status || '').toUpperCase() !== status) return false;
+        if (format && (s.format || '').toUpperCase() !== format) return false;
+        if (search) {
+          const matchStr = `${s.name || ''} ${s.savedReport || ''} ${s.reportTitle || ''} ${s.recipients || ''}`.toLowerCase();
+          if (!matchStr.includes(search)) return false;
+        }
+        return true;
+      });
+
+      const tbody = document.getElementById('rep-sch-tbody');
+      if (!tbody) return;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">No scheduled reports matching the selected filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => {
+        const isActive = (s.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+        const statusBadge = isActive
+          ? `<span class="badge badge-paid">ACTIVE</span>`
+          : `<span class="badge badge-unpaid">PAUSED</span>`;
+
+        return `
+          <tr>
+            <td style="color:var(--text-dim); font-size:0.8rem; text-align:center;">#${s.id}</td>
+            <td style="font-weight:600; color:var(--text-bright);">${s.name || 'Untitled Schedule'}</td>
+            <td><span class="badge badge-neutral" style="font-size:0.75rem;">${s.reportTitle || s.savedReport || 'System Report'}</span></td>
+            <td>${s.frequency || 'DAILY'}</td>
+            <td>${s.time || '08:00 AM'}</td>
+            <td><span style="font-weight:600; color:var(--cyan);">${s.format || 'PDF'}</span></td>
+            <td title="${s.recipients || ''}">${s.delivery || 'EMAIL'}</td>
+            <td>${s.nextRun || '-'}</td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right;">
+              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.runScheduleNow(${s.id})" title="Trigger Report Now" style="padding:2px 8px; font-size:0.75rem;">&#9654; Run</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.toggleScheduleStatus(${s.id}, '${isActive ? 'pause' : 'resume'}')" style="padding:2px 8px; font-size:0.75rem;">${isActive ? 'Pause' : 'Resume'}</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.duplicateSchedule(${s.id})" title="Duplicate Schedule" style="padding:2px 8px; font-size:0.75rem;">&#128203;</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.deleteSchedule(${s.id})" title="Delete Schedule" style="padding:2px 8px; font-size:0.75rem; color:var(--accent-red);">&#128465;</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    async runScheduleNow(id) {
+      try {
+        await window.ApiService.post(`/api/reporting/schedules/${id}/run`, {});
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Report schedule triggered successfully on server.');
+        await this.loadSchedules();
+      } catch (err) {
+        alert('Run Error: ' + err.message);
+      }
+    },
+
+    async toggleScheduleStatus(id, action) {
+      try {
+        await window.ApiService.post(`/api/reporting/schedules/${id}/${action}`, {});
+        if (window.AppDialogService) window.AppDialogService.toastInfo(`Schedule has been ${action === 'pause' ? 'paused' : 'resumed'}.`);
+        await this.loadSchedules();
+      } catch (err) {
+        alert('Action Error: ' + err.message);
+      }
+    },
+
+    async duplicateSchedule(id) {
+      try {
+        await window.ApiService.post(`/api/reporting/schedules/${id}/duplicate`, {});
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Schedule duplicated.');
+        await this.loadSchedules();
+      } catch (err) {
+        alert('Duplicate Error: ' + err.message);
+      }
+    },
+
+    async deleteSchedule(id) {
+      if (!confirm('Are you sure you want to delete this scheduled report job?')) return;
+      try {
+        await window.ApiService.delete(`/api/reporting/schedules/${id}`);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Schedule deleted.');
+        await this.loadSchedules();
+      } catch (err) {
+        alert('Delete Error: ' + err.message);
+      }
     },
 
     exportExcel() {

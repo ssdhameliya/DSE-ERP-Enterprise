@@ -368,7 +368,7 @@ window.ImportController = (function() {
 
       try {
         const mode = document.getElementById('import-mode-select')?.value || 'UPSERT';
-        const res = await window.ImportService.executeImport(selectedModule, parsedData.rows, columnMapping, mode);
+        const res = await window.ImportService.executeImport(selectedModule, parsedData.rows, columnMapping, mode, parsedData.headers);
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         if (window.AppDialogService) {

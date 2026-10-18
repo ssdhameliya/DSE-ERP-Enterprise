@@ -366,7 +366,11 @@ window.PurchaseController = (function() {
 
     drawer.classList.add('open');
     drawer.style.display = 'flex';
-    if (overlay) overlay.classList.add('open');
+    if (overlay && drawer.id === 'drawer-purchase-details-inspect') {
+      overlay.classList.add('open');
+    } else if (overlay) {
+      overlay.classList.remove('open');
+    }
 
     // 2. Load complete details and line items in background if missing
     if (!p.lines || p.lines.length === 0) {

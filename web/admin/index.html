@@ -41,12 +41,18 @@
       };
       window.applyUserToHeader = function(user) {
         if (!user) return;
+        const name = user.fullName || user.username || 'User';
+        const role = (user.role || 'USER').toUpperCase();
         const nameEl = document.getElementById('header-user-name');
         const roleEl = document.getElementById('header-user-role');
         const avatarEl = document.getElementById('header-user-avatar');
-        if (nameEl) nameEl.innerText = user.fullName || user.username || 'User';
-        if (roleEl) roleEl.innerText = (user.role || 'USER').toUpperCase();
-        if (avatarEl) avatarEl.innerText = (user.fullName || user.username || 'U')[0].toUpperCase();
+        const menuName = document.getElementById('menu-user-name');
+        const menuRole = document.getElementById('menu-user-role');
+        if (nameEl) nameEl.innerText = name;
+        if (roleEl) roleEl.innerText = role;
+        if (avatarEl) avatarEl.innerText = (name || 'U')[0].toUpperCase();
+        if (menuName) menuName.innerText = name;
+        if (menuRole) menuRole.innerText = role;
       };
       window.openModal = function(id) {
         if (window.AppDialogService && window.AppDialogService.openModal) {
@@ -3151,9 +3157,6 @@
                     <th>Item Code</th>
                     <th>Item Name / Description</th>
                     <th>Category</th>
-                    <th>Brand</th>
-                    <th>Material</th>
-                    <th>Size</th>
                     <th>Unit</th>
                     <th>HSN Code</th>
                     <th style="text-align:right;">GST %</th>
@@ -3168,7 +3171,7 @@
                   </tr>
                 </thead>
                 <tbody id="items-table-tbody">
-                  <tr><td colspan="18" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item catalog...</td></tr>
+                  <tr><td colspan="15" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item catalog...</td></tr>
                 </tbody>
               </table>
 
@@ -6109,13 +6112,16 @@
             </div>
           </div>
 
-          <!-- 2-TAB SWITCHER (Reports.fxml Desktop Parity) -->
+          <!-- 3-TAB SWITCHER (Reports.fxml Desktop Parity) -->
           <div class="register-tab-strip" style="display:flex; gap:8px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px; padding-bottom:4px;">
             <button class="register-tab-btn active" id="btn-rep-tab-dashboard" onclick="window.ReportsController.switchMainTab('dashboard')" style="padding:8px 18px; font-weight:700; border-radius:6px; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); cursor:pointer;">
               &#128200; Dashboard
             </button>
             <button class="register-tab-btn" id="btn-rep-tab-center" onclick="window.ReportsController.switchMainTab('center')" style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
               &#128196; Report Center
+            </button>
+            <button class="register-tab-btn" id="btn-rep-tab-scheduler" onclick="window.ReportsController.switchMainTab('scheduler')" style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
+              &#9201;&#65039; Scheduled Reports
             </button>
           </div>
 
@@ -6266,6 +6272,76 @@
                 <tfoot id="report-table-tfoot"></tfoot>
               </table>
             </div>
+          </div>
+
+          <!-- TAB 3: SCHEDULED REPORTS (Desktop Reports.fxml Parity) -->
+          <div id="rep-tab-scheduler-view" style="display:none;">
+            <!-- 4 KPI CARDS (Desktop Reports.fxml lines 151-156) -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+              <div class="standard-kpi-card kpi-blue">
+                <div class="metric-label">ACTIVE SCHEDULES</div>
+                <div class="metric-value" id="rep-sch-kpi-active">0</div>
+                <div class="metric-note" style="color:var(--accent-green);">Enabled Jobs</div>
+              </div>
+              <div class="standard-kpi-card kpi-cyan">
+                <div class="metric-label">NEXT DISPATCH</div>
+                <div class="metric-value" id="rep-sch-kpi-next" style="font-size:1.15rem;">None Scheduled</div>
+                <div class="metric-note" id="rep-sch-kpi-next-name" style="color:var(--cyan);">-</div>
+              </div>
+              <div class="standard-kpi-card kpi-purple">
+                <div class="metric-label">REPORTS THIS MONTH</div>
+                <div class="metric-value" id="rep-sch-kpi-month">0</div>
+                <div class="metric-note" style="color:var(--accent-purple);">Delivered</div>
+              </div>
+              <div class="standard-kpi-card kpi-amber">
+                <div class="metric-label">FAILURES (LAST 30D)</div>
+                <div class="metric-value" id="rep-sch-kpi-failures">0</div>
+                <div class="metric-note" style="color:var(--accent-red);">Delivery Alerts</div>
+              </div>
+            </div>
+
+            <!-- SCHEDULER FILTER TOOLBAR -->
+            <div class="filter-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+              <input type="text" id="rep-sch-search" class="form-input" placeholder="Search schedules, saved reports, recipients..." oninput="window.ReportsController.filterSchedules()" style="flex:1;">
+              <select id="rep-sch-status-filter" class="form-select" onchange="window.ReportsController.filterSchedules()" style="width:160px;">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active Only</option>
+                <option value="PAUSED">Paused Only</option>
+              </select>
+              <select id="rep-sch-format-filter" class="form-select" onchange="window.ReportsController.filterSchedules()" style="width:140px;">
+                <option value="">All Formats</option>
+                <option value="PDF">PDF</option>
+                <option value="EXCEL">EXCEL</option>
+                <option value="CSV">CSV</option>
+              </select>
+              <button class="btn btn-secondary" onclick="window.ReportsController.loadSchedules()">&#8635; Refresh</button>
+            </div>
+
+            <!-- SCHEDULES TABLE -->
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">ID</th>
+                    <th>SCHEDULE NAME</th>
+                    <th>SAVED REPORT</th>
+                    <th>FREQUENCY</th>
+                    <th>TIME</th>
+                    <th>FORMAT</th>
+                    <th>DELIVERY</th>
+                    <th>NEXT RUN</th>
+                    <th>STATUS</th>
+                    <th style="text-align:right;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-sch-tbody">
+                  <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading scheduled reports...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:10px; font-size:0.75rem; color:var(--text-dim);">
+              &#9432; Schedules run securely on the ERP server, calculate dynamic date presets at execution time, deliver automated files to configured recipients, and log delivery history.
+            </p>
           </div>
         </div>
 

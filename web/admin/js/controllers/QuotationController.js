@@ -50,8 +50,23 @@ window.QuotationController = (function() {
     return `<span class="pill-badge pill-warning">${status || 'DRAFT'}</span>`;
   }
 
+  function initDateFilters() {
+    const fromEl = document.getElementById('quote-filter-from');
+    const toEl = document.getElementById('quote-filter-to');
+    if (fromEl && !fromEl.value) {
+      const now = new Date();
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      fromEl.value = sixMonthsAgo.toISOString().split('T')[0];
+    }
+    if (toEl && !toEl.value) {
+      toEl.value = new Date().toISOString().split('T')[0];
+    }
+  }
+
   // 1. LOAD & RENDER QUOTATIONS REGISTER
   async function loadQuotations(page = 0) {
+    initDateFilters();
     currentPage = page;
     const tbody = document.getElementById('tbl-quotations-body');
     if (tbody) {
@@ -896,7 +911,9 @@ window.QuotationController = (function() {
       const sp = document.getElementById('quote-filter-salesperson'); if (sp) sp.value = '';
       const fu = document.getElementById('quote-filter-followup'); if (fu) fu.value = '';
       const src = document.getElementById('quote-filter-source'); if (src) src.value = '';
+      initDateFilters();
       loadQuotations(0);
-    }
+    },
+    initDateFilters
   };
 })();

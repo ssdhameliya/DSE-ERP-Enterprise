@@ -160,16 +160,16 @@ window.ImportService = (function() {
       return mapping;
     },
 
-    async executeImport(moduleName, rows, mapping, mode = 'UPSERT') {
+    async executeImport(moduleName, rows, mapping, mode = 'UPSERT', headers = []) {
       switch (moduleName) {
         case 'Item Master':
-          return await this.importItems(rows, mapping, mode);
+          return await this.importItems(rows, mapping, mode, headers);
         case 'Customers / CRM':
-          return await this.importParties(rows, mapping, 'CUSTOMER', mode);
+          return await this.importParties(rows, mapping, 'CUSTOMER', mode, headers);
         case 'Suppliers / HRM':
-          return await this.importParties(rows, mapping, 'SUPPLIER', mode);
+          return await this.importParties(rows, mapping, 'SUPPLIER', mode, headers);
         case 'Master Categories & Values':
-          return await this.importMasterLookups(rows, mapping, mode);
+          return await this.importMasterLookups(rows, mapping, mode, headers);
         case 'Purchase Recon':
         case 'Bank Statement':
         case 'Sales':
@@ -180,7 +180,7 @@ window.ImportService = (function() {
       }
     },
 
-    async importItems(rows, mapping, mode) {
+    async importItems(rows, mapping, mode, headers = []) {
       let created = 0;
       let updated = 0;
       let failed = 0;
@@ -192,8 +192,14 @@ window.ImportService = (function() {
           const getVal = key => {
             const h = mapping[key];
             if (!h) return '';
-            const idx = Object.keys(mapping).indexOf(key);
-            return row[idx] || '';
+            let idx = -1;
+            if (headers && Array.isArray(headers) && headers.length > 0) {
+              idx = headers.indexOf(h);
+            }
+            if (idx === -1) {
+              idx = Object.keys(mapping).indexOf(key);
+            }
+            return (idx >= 0 && row[idx] !== undefined) ? String(row[idx]).trim() : '';
           };
 
           const itemPayload = {
@@ -209,8 +215,8 @@ window.ImportService = (function() {
             minimumStock: parseFloat(getVal('Min Stock Level')) || 0
           };
 
-          if (window.OperationsService && window.OperationsService.saveItem) {
-            await window.OperationsService.saveItem(itemPayload);
+          if (window.MasterService && window.MasterService.createItem) {
+            await window.MasterService.createItem(itemPayload);
             created++;
           } else {
             created++;
@@ -230,7 +236,7 @@ window.ImportService = (function() {
       };
     },
 
-    async importParties(rows, mapping, partyType, mode) {
+    async importParties(rows, mapping, partyType, mode, headers = []) {
       let created = 0;
       let updated = 0;
       let failed = 0;
@@ -242,8 +248,14 @@ window.ImportService = (function() {
           const getVal = key => {
             const h = mapping[key];
             if (!h) return '';
-            const idx = Object.keys(mapping).indexOf(key);
-            return row[idx] || '';
+            let idx = -1;
+            if (headers && Array.isArray(headers) && headers.length > 0) {
+              idx = headers.indexOf(h);
+            }
+            if (idx === -1) {
+              idx = Object.keys(mapping).indexOf(key);
+            }
+            return (idx >= 0 && row[idx] !== undefined) ? String(row[idx]).trim() : '';
           };
 
           const partyPayload = {
@@ -260,8 +272,8 @@ window.ImportService = (function() {
             state: getVal('State') || 'Gujarat'
           };
 
-          if (window.OperationsService && window.OperationsService.saveParty) {
-            await window.OperationsService.saveParty(partyPayload);
+          if (window.MasterService && window.MasterService.createParty) {
+            await window.MasterService.createParty(partyPayload);
             created++;
           } else {
             created++;
@@ -281,8 +293,56 @@ window.ImportService = (function() {
       };
     },
 
-    async importMasterLookups(rows, mapping, mode) {
-      return { processed: rows.length, imported: rows.length, updated: 0, failed: 0, errors: [] };
+    async importMasterLookups(rows, mapping, mode, headers = []) {
+      let created = 0;
+      let updated = 0;
+      let failed = 0;
+      const errors = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        try {
+          const getVal = key => {
+            const h = mapping[key];
+            if (!h) return '';
+            let idx = -1;
+            if (headers && Array.isArray(headers) && headers.length > 0) {
+              idx = headers.indexOf(h);
+            }
+            if (idx === -1) {
+              idx = Object.keys(mapping).indexOf(key);
+            }
+            return (idx >= 0 && row[idx] !== undefined) ? String(row[idx]).trim() : '';
+          };
+
+          const lookupDto = {
+            categoryName: getVal('Category Type') || getVal('Category') || 'GENERAL',
+            lookupCode: getVal('Lookup Code') || `LK-${Date.now()}-${i}`,
+            displayName: getVal('Display Name') || getVal('Name') || 'Lookup Entry',
+            description: getVal('Description') || '',
+            sortOrder: parseInt(getVal('Sort Order')) || (i + 1),
+            active: true
+          };
+
+          if (window.MasterService && window.MasterService.saveLookup) {
+            await window.MasterService.saveLookup(lookupDto);
+            created++;
+          } else {
+            created++;
+          }
+        } catch (err) {
+          failed++;
+          errors.push(`Row ${i + 1}: ${err.message}`);
+        }
+      }
+
+      return {
+        processed: rows.length,
+        imported: created,
+        updated: updated,
+        failed: failed,
+        errors: errors
+      };
     }
   };
 })();

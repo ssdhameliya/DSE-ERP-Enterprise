@@ -2527,19 +2527,38 @@ window.SalesController = {
   async previewAttachedPdf() {
     const invNo = (document.getElementById('mei-inv-no') || {}).value;
     if (!invNo) {
-      window.AppDialogService.showToast('No invoice selected for preview', 'warning');
+      if (window.AppDialogService) window.AppDialogService.showToast('No invoice selected for preview', 'warning');
       return;
     }
+    const docType = (document.getElementById('mei-doc-type') || {}).value || 'SALE';
+    const isPurchase = docType === 'PURCHASE';
+    const docTypeParam = isPurchase ? 'PURCHASE' : 'SALES_INVOICE';
     const token = localStorage.getItem('dse_access_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     try {
-      const res = await fetch(`/api/documents/render?type=SALES_INVOICE&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(`/api/documents/render?type=${docTypeParam}&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
+      if (!res.ok) {
+        // Fallback for sales if server render throws error
+        if (!isPurchase && window.jspdf) {
+          const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+          if (saleObj) {
+            const doc = this.buildSalesInvoiceJsPdf(saleObj);
+            if (doc) {
+              const blob = doc.output('blob');
+              const blobUrl = URL.createObjectURL(blob);
+              window.open(blobUrl, '_blank');
+              return;
+            }
+          }
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
       window.open(blobUrl, '_blank');
     } catch (e) {
-      window.AppDialogService.showToast('Could not load PDF preview: ' + e.message, 'error');
+      if (window.AppDialogService) window.AppDialogService.showToast('Could not load PDF preview: ' + e.message, 'error');
+      else alert('Could not load PDF preview: ' + e.message);
     }
   },
 
@@ -2839,14 +2858,26 @@ window.SalesController = {
   // =========================================================================
   async createSalesReturn(invoiceNo) {
     try {
-      if (window.ReturnsController) {
-        window.ReturnsController.setType('SALES RETURN');
-        await window.ReturnsController.openCreateReturnModal(invoiceNo);
-      } else if (window.NavigationRouter) {
-        window.NavigationRouter.selectNav('view-sales-returns');
+      if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
+        if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
+        await window.ReturnsController.openCreateReturnModal(invoiceNo, 'SALES RETURN');
+      } else {
+        const modal = document.getElementById('modal-create-return');
+        if (modal) {
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+          const inp = document.getElementById('cr-invoice-input');
+          if (inp) inp.value = invoiceNo || '';
+          const crType = document.getElementById('cr-type');
+          if (crType) crType.value = 'SALES RETURN';
+        }
       }
     } catch (e) {
-      window.AppDialogService.showToast('Could not initialize return: ' + e.message, 'error');
+      if (window.AppDialogService && window.AppDialogService.showToast) {
+        window.AppDialogService.showToast('Could not initialize return: ' + e.message, 'error');
+      } else {
+        alert('Could not initialize return: ' + e.message);
+      }
     }
   },
 

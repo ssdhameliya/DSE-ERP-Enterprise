@@ -441,7 +441,7 @@ window.MasterDataController = (function() {
       const titleEl = document.getElementById('modal-lookup-title');
 
       const category = currentCategory || 'GENERAL';
-      if (titleEl) titleEl.innerText = Add Lookup ();
+      if (titleEl) titleEl.innerText = `Add Lookup (${category})`;
       if (catField) catField.value = category;
       if (codeField) {
         codeField.value = '';
@@ -505,7 +505,7 @@ window.MasterDataController = (function() {
       const sortField = document.getElementById('m-lookup-sort');
       const titleEl = document.getElementById('modal-lookup-title');
 
-      if (titleEl) titleEl.innerText = Edit Lookup ();
+      if (titleEl) titleEl.innerText = `Edit Lookup (${item.lookupCode || item.code || ''})`;
       if (catField) catField.value = currentCategory || '';
       if (codeField) {
         codeField.value = item.lookupCode || item.code || '';
@@ -587,10 +587,10 @@ window.MasterDataController = (function() {
       try {
         await window.MasterService.setLookupActive(item.id, newStatus);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(Lookup status updated to , 'success');
+        window.AppDialogService.showToast(`Lookup status updated to ${newStatus ? 'Active' : 'Inactive'}`, 'success');
         await this.selectCategory(currentCategory);
       } catch (err) {
-        window.AppDialogService.showToast(Status change failed: , 'error');
+        window.AppDialogService.showToast(`Status change failed: ${err.message}`, 'error');
       }
     },
 

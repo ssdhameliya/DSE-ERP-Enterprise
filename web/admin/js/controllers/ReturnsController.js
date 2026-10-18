@@ -1081,7 +1081,7 @@ window.ReturnsController = (function() {
     onReturnReasonChange,
     submitCreateReturn,
     openRefundModal,
-    submitRefund,
+    submitRefund: saveRefund,
     saveRefund,
     onRefundModeChange,
     selectFullRefund,

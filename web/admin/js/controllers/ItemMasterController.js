@@ -26,7 +26,7 @@ window.ItemMasterController = (function() {
   async function loadItems() {
     const tbody = document.getElementById('items-table-tbody');
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="18" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading item catalog...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="15" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading item catalog...</td></tr>`;
     }
 
     selectedCodes.clear();
@@ -43,7 +43,7 @@ window.ItemMasterController = (function() {
     } catch (err) {
       console.error('Failed to load items:', err);
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center; padding:30px; color:var(--red);">⚠️ Failed to load item catalog: ${err.message || 'Server error'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" style="text-align:center; padding:30px; color:var(--red);">⚠️ Failed to load item catalog: ${err.message || 'Server error'}</td></tr>`;
       }
     }
   }
@@ -89,7 +89,7 @@ window.ItemMasterController = (function() {
     if (!rows || rows.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="18" style="text-align:center; padding:40px; color:var(--text-muted);">
+          <td colspan="15" style="text-align:center; padding:40px; color:var(--text-muted);">
             <div style="font-size:1.8rem; margin-bottom:8px;">🏷️</div>
             <div style="font-weight:600; font-size:0.95rem; color:var(--text-main);">No items found</div>
             <div style="font-size:0.78rem;">Create a new item or adjust the current search query.</div>
@@ -114,9 +114,6 @@ window.ItemMasterController = (function() {
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${i.itemCode}</td>
           <td style="font-weight:600; color:var(--text-main);">${i.description}</td>
           <td><span class="pill-badge pill-neutral">${i.category || 'General'}</span></td>
-          <td style="color:var(--text-muted);">${i.brand || '-'}</td>
-          <td style="color:var(--text-muted);">${i.material || '-'}</td>
-          <td style="color:var(--text-muted);">${i.size || '-'}</td>
           <td style="font-weight:600;">${i.unit || 'PCS'}</td>
           <td style="font-family:monospace;">${i.hsn || '73063000'}</td>
           <td style="text-align:right;">${(i.gst || 18).toFixed(1)}%</td>
@@ -301,7 +298,9 @@ window.ItemMasterController = (function() {
   }
 
   function viewAuditTrail(code) {
-    if (window.OperationsService && window.OperationsService.getActivityTimeline) {
+    if (window.AppDialogService && window.AppDialogService.showActivityTimeline) {
+      window.AppDialogService.showActivityTimeline('ITEM', null, code);
+    } else if (window.OperationsService && window.OperationsService.getActivityTimeline) {
       window.OperationsService.getActivityTimeline('ITEM', code).then(timeline => {
         if (window.AppDialogService) {
           window.AppDialogService.toastInfo(`Audit trail for ${code}: ${(timeline || []).length} change records found.`);
@@ -315,21 +314,30 @@ window.ItemMasterController = (function() {
   }
 
   function createSale(code) {
-    if (window.SalesController && window.SalesController.openNewSaleModal) {
-      window.NavigationRouter.selectNav('view-sales-register');
-      window.SalesController.openNewSaleModal();
+    if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+      window.NavigationRouter.selectNav('view-sale-create');
+      if (window.SalesController && window.SalesController.initSaleWorkspace) {
+        window.SalesController.initSaleWorkspace(null, false);
+      }
       setTimeout(() => {
-        if (window.SalesController.selectEditorItem) window.SalesController.selectEditorItem(code);
+        const itemInput = document.getElementById('se-item-search') || document.getElementById('sale-item-search');
+        if (itemInput) {
+          itemInput.value = code;
+          itemInput.dispatchEvent(new Event('input'));
+        }
       }, 350);
     }
   }
 
   function createPurchase(code) {
-    if (window.PurchaseController && window.PurchaseController.openNewPurchaseModal) {
-      window.NavigationRouter.selectNav('view-purchase-register');
-      window.PurchaseController.openNewPurchaseModal();
+    if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+      window.PurchaseController.openPurchaseEditor();
       setTimeout(() => {
-        if (window.PurchaseController.selectEditorItem) window.PurchaseController.selectEditorItem(code);
+        const itemInput = document.getElementById('pe-item-search');
+        if (itemInput) {
+          itemInput.value = code;
+          itemInput.dispatchEvent(new Event('input'));
+        }
       }, 350);
     }
   }
@@ -430,9 +438,19 @@ window.ItemMasterController = (function() {
     // Fetch next auto item code from server
     try {
       const nextRes = await window.MasterService.getNextItemCode();
-      document.getElementById('m-item-code').value = nextRes?.code || 'ITEM' + Date.now().toString().slice(-4);
+      const codeInp = document.getElementById('m-item-code');
+      if (codeInp) {
+        codeInp.value = nextRes?.code || 'ITEM' + Date.now().toString().slice(-4);
+        codeInp.readOnly = true;
+        codeInp.title = 'Item code is auto-generated and locked.';
+      }
     } catch {
-      document.getElementById('m-item-code').value = 'ITEM' + Date.now().toString().slice(-4);
+      const codeInp = document.getElementById('m-item-code');
+      if (codeInp) {
+        codeInp.value = 'ITEM' + Date.now().toString().slice(-4);
+        codeInp.readOnly = true;
+        codeInp.title = 'Item code is auto-generated and locked.';
+      }
     }
 
     // Dynamically populate categories, units, gst, discounts from server lookups
