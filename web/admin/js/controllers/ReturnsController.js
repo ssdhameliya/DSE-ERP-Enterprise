@@ -1034,9 +1034,16 @@ window.ReturnsController = (function() {
   }
 
   async function removeRefundProof(refundId) {
-    if (!confirm('Remove the saved proof from this refund?')) return;
+    let confirmed = false;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Remove Refund Proof', 'Proof Removal', 'Remove the saved proof from this refund?', 'Remove', 'Cancel');
+    } else {
+      confirmed = confirm('Remove the saved proof from this refund?');
+    }
+    if (!confirmed) return;
+
     try {
-      await window.ApiService.delete(`/api/support/return-refunds/${refundId}/attachment`);
+      await window.ApiService.delete(`/api/support/return-refunds/${refundId}/attachment-file`);
       if (window.AppDialogService) window.AppDialogService.toastSuccess('Refund proof removed successfully.');
       if (activeRefundDetails) await loadRefundHistory(activeRefundDetails.no);
     } catch (err) {
@@ -1047,18 +1054,20 @@ window.ReturnsController = (function() {
 
   async function downloadRefundProof(refundId) {
     try {
-      window.AppDialogService.toastInfo('Downloading settlement proof...');
-      const blob = await window.ApiService.request(`/api/support/return-refunds/${refundId}/attachment-file`, { method: 'GET' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `refund-proof-${refundId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      if (window.AppDialogService) window.AppDialogService.toastInfo('Loading refund proof...');
+      const token = localStorage.getItem('dse_access_token');
+      const url = `/api/support/return-refunds/${refundId}/attachment-file`;
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     } catch (err) {
-      window.AppDialogService.toastError('Failed to open proof: ' + err.message);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to open proof: ' + err.message);
+      else alert('Failed to open proof: ' + err.message);
     }
   }
 
