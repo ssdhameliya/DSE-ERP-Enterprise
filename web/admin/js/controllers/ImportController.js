@@ -1,96 +1,25 @@
 /**
  * Jasvi Industries ERP - ImportController
- * Desktop Parity with org.example.controller.ImportController & Import.fxml
+ * Desktop Parity with:
+ * - org.example.controller.ImportController & Import.fxml
+ * - org.example.importing.ImportModuleRegistry
+ * - org.example.importing.ImportTemplateService
+ * - org.example.importing.ImportMappingSupport
+ * - org.example.importing.ImportPreviewService
+ * - org.example.importing.ImportResultReportService
  */
 window.ImportController = (function() {
+  'use strict';
+
   let currentStep = 1;
   let selectedModule = 'Item Master';
   let selectedFile = null;
-  let parsedData = { headers: [], rows: [] };
+  let parsedData = { headers: [], rows: [], sheetNames: [], selectedSheet: '' };
   let columnMapping = {};
-
-  const MODULE_FIELDS = {
-    'Item Master': [
-      { key: 'Item Code', label: 'Item Code / SKU', required: true },
-      { key: 'Item Name', label: 'Item Description / Name', required: true },
-      { key: 'Category', label: 'Product Category', required: false },
-      { key: 'HSN/SAC', label: 'HSN / SAC Code', required: true },
-      { key: 'Unit', label: 'Measurement Unit', required: true },
-      { key: 'GST Rate %', label: 'Applicable GST Rate (%)', required: true },
-      { key: 'Sell Price', label: 'Selling Rate (₹)', required: false },
-      { key: 'Cost Price', label: 'Purchase Rate (₹)', required: false },
-      { key: 'Opening Stock', label: 'Opening Physical Stock', required: false },
-      { key: 'Min Stock Level', label: 'Reorder / Min Stock Level', required: false }
-    ],
-    'Customers / CRM': [
-      { key: 'Party Code', label: 'Customer Code', required: false },
-      { key: 'Party Name', label: 'Company / Trade Name', required: true },
-      { key: 'GSTIN', label: '15-Digit GSTIN', required: false },
-      { key: 'Pan Number', label: 'Income Tax PAN', required: false },
-      { key: 'Contact Person', label: 'Primary Contact Person', required: false },
-      { key: 'Mobile Number', label: 'Contact Phone / Mobile', required: false },
-      { key: 'Email', label: 'Billing Email Address', required: false },
-      { key: 'Billing Address', label: 'Registered Address', required: false },
-      { key: 'City', label: 'City', required: false },
-      { key: 'State', label: 'State Name', required: false }
-    ],
-    'Suppliers / HRM': [
-      { key: 'Supplier Code', label: 'Supplier Code', required: false },
-      { key: 'Supplier Name', label: 'Vendor / Firm Name', required: true },
-      { key: 'GSTIN', label: '15-Digit GSTIN', required: false },
-      { key: 'Pan Number', label: 'Income Tax PAN', required: false },
-      { key: 'Contact Person', label: 'Contact Representative', required: false },
-      { key: 'Mobile Number', label: 'Mobile / WhatsApp', required: false },
-      { key: 'Email', label: 'Official Email', required: false },
-      { key: 'Address', label: 'Dispatch Address', required: false },
-      { key: 'City', label: 'City', required: false },
-      { key: 'State', label: 'State Name', required: false }
-    ],
-    'Sales': [
-      { key: 'Invoice No', label: 'Sales Tax Invoice #', required: true },
-      { key: 'Invoice Date', label: 'Document Date (YYYY-MM-DD)', required: true },
-      { key: 'Customer Name', label: 'Customer / Buyer Name', required: true },
-      { key: 'Item Code', label: 'Item Code / SKU', required: true },
-      { key: 'Qty', label: 'Billed Quantity', required: true },
-      { key: 'Rate', label: 'Selling Rate (₹)', required: true },
-      { key: 'Tax Rate %', label: 'GST %', required: true }
-    ],
-    'Purchases': [
-      { key: 'Supplier Bill No', label: 'Vendor Invoice / Bill #', required: true },
-      { key: 'Bill Date', label: 'Bill Date (YYYY-MM-DD)', required: true },
-      { key: 'Supplier Name', label: 'Supplier / Vendor Name', required: true },
-      { key: 'Item Code', label: 'Item Code / SKU', required: true },
-      { key: 'Qty', label: 'Received Quantity', required: true },
-      { key: 'Rate', label: 'Purchase Rate (₹)', required: true },
-      { key: 'Tax Rate %', label: 'GST %', required: true }
-    ],
-    'Master Categories & Values': [
-      { key: 'Category Code', label: 'Lookup Category Code', required: true },
-      { key: 'Lookup Value', label: 'Lookup Display Value', required: true },
-      { key: 'Lookup Code', label: 'Internal Code / Key', required: false },
-      { key: 'Description', label: 'Description', required: false }
-    ],
-    'Purchase Recon': [
-      { key: 'Invoice No', label: 'Supplier Invoice / Bill #', required: true },
-      { key: 'Invoice Date', label: 'Invoice Date (YYYY-MM-DD)', required: true },
-      { key: 'Supplier Name', label: 'Supplier / Vendor Trade Name', required: true },
-      { key: 'GSTIN', label: 'Supplier GSTIN (15 Digits)', required: true },
-      { key: 'Taxable Amount', label: 'Taxable Value (₹)', required: true },
-      { key: 'IGST Amount', label: 'Integrated GST (₹)', required: false },
-      { key: 'CGST Amount', label: 'Central GST (₹)', required: false },
-      { key: 'SGST Amount', label: 'State GST (₹)', required: false },
-      { key: 'Total Amount', label: 'Total Invoice Value (₹)', required: true }
-    ],
-    'Bank Statement': [
-      { key: 'Txn Date', label: 'Transaction Date (YYYY-MM-DD)', required: true },
-      { key: 'Value Date', label: 'Value / Clearance Date', required: false },
-      { key: 'Description', label: 'Narration / Description', required: true },
-      { key: 'Ref / Cheque No', label: 'Cheque / Reference / UTR #', required: false },
-      { key: 'Debit', label: 'Withdrawal / Debit Amount (₹)', required: false },
-      { key: 'Credit', label: 'Deposit / Credit Amount (₹)', required: false },
-      { key: 'Balance', label: 'Running Account Balance (₹)', required: false }
-    ]
-  };
+  let dryRunEnabled = false;
+  let activeReviewTab = 'preview';
+  let lastPreflightResult = null;
+  let lastImportResult = null;
 
   return {
     init() {
@@ -125,12 +54,32 @@ window.ImportController = (function() {
       selectedModule = moduleName;
       const titleEl = document.getElementById('lbl-import-selected-module');
       if (titleEl) titleEl.innerText = moduleName;
+
+      // Reset file and data for new selection
+      selectedFile = null;
+      parsedData = { headers: [], rows: [], sheetNames: [], selectedSheet: '' };
+      columnMapping = {};
+      lastPreflightResult = null;
+      lastImportResult = null;
+
+      const nameEl = document.getElementById('lbl-import-file-name');
+      const sizeEl = document.getElementById('lbl-import-file-size');
+      const rowsEl = document.getElementById('lbl-import-file-rows');
+      if (nameEl) nameEl.innerText = 'No file selected';
+      if (sizeEl) sizeEl.innerText = '0 KB';
+      if (rowsEl) rowsEl.innerText = '0 rows detected';
+      document.getElementById('btn-import-proceed-mapping')?.setAttribute('disabled', 'true');
+
+      const completedPanel = document.getElementById('import-completed-panel');
+      if (completedPanel) completedPanel.style.display = 'none';
+
       this.goToStep(2);
     },
 
     downloadTemplate(moduleName) {
+      const target = moduleName || selectedModule;
       if (window.ImportService) {
-        window.ImportService.downloadTemplate(moduleName || selectedModule);
+        window.ImportService.downloadTemplate(target);
       }
     },
 
@@ -147,29 +96,47 @@ window.ImportController = (function() {
       }
     },
 
-    processSelectedFile(file) {
+    async processSelectedFile(file) {
+      if (!file) return;
       selectedFile = file;
+
       const nameEl = document.getElementById('lbl-import-file-name');
       const sizeEl = document.getElementById('lbl-import-file-size');
+      const countEl = document.getElementById('lbl-import-file-rows');
+      const proceedBtn = document.getElementById('btn-import-proceed-mapping');
+
       if (nameEl) nameEl.innerText = file.name;
       if (sizeEl) sizeEl.innerText = `${(file.size / 1024).toFixed(1)} KB`;
+      if (countEl) countEl.innerText = 'Parsing spreadsheet...';
+      if (proceedBtn) proceedBtn.setAttribute('disabled', 'true');
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const text = evt.target.result;
-        if (window.ImportService) {
-          parsedData = window.ImportService.parseCsv(text);
-          const countEl = document.getElementById('lbl-import-file-rows');
-          if (countEl) countEl.innerText = `${parsedData.rows.length} rows detected`;
-          document.getElementById('btn-import-proceed-mapping')?.removeAttribute('disabled');
+      try {
+        if (!window.ImportService) {
+          throw new Error('ImportService is not loaded.');
         }
-      };
-      reader.readAsText(file);
+
+        parsedData = await window.ImportService.parseFile(file);
+
+        if (countEl) {
+          const sheetInfo = parsedData.selectedSheet ? ` [Sheet: ${parsedData.selectedSheet}]` : '';
+          countEl.innerText = `${parsedData.rows.length} rows detected${sheetInfo}`;
+        }
+
+        if (parsedData.rows.length > 0) {
+          if (proceedBtn) proceedBtn.removeAttribute('disabled');
+        } else {
+          alert('The selected spreadsheet does not contain any valid data rows.');
+        }
+      } catch (err) {
+        console.error('File parsing error:', err);
+        if (countEl) countEl.innerText = 'Failed to parse file';
+        alert('Could not read spreadsheet: ' + (err.message || err));
+      }
     },
 
     proceedToMapping() {
       if (!parsedData.rows || parsedData.rows.length === 0) {
-        alert('Please choose a valid spreadsheet/CSV file containing data rows.');
+        alert('Please choose a valid spreadsheet (.xlsx, .xls, .csv) containing data rows.');
         return;
       }
       this.renderMappingTable();
@@ -178,47 +145,72 @@ window.ImportController = (function() {
 
     renderMappingTable() {
       const tbody = document.getElementById('import-mapping-tbody');
-      if (!tbody) return;
+      if (!tbody || !window.ImportService) return;
 
-      const targetFields = MODULE_FIELDS[selectedModule] || [];
-      columnMapping = window.ImportService.autoMapHeaders(parsedData.headers, targetFields);
+      const domainFields = window.ImportService.getModuleFields(selectedModule);
+      const requiredSet = window.ImportService.getRequiredFields(selectedModule);
 
-      tbody.innerHTML = targetFields.map(target => {
-        const matched = columnMapping[target.key] || '';
+      // Perform Auto-Map matching
+      columnMapping = window.ImportService.autoMap(domainFields, parsedData.headers);
+
+      tbody.innerHTML = domainFields.map(field => {
+        const isRequired = requiredSet.has(field);
+        const humanLabel = window.ImportService.humanize(field);
+        const matchedHeader = columnMapping[field] || '';
+
         const optionsHtml = `<option value="">-- Do Not Import / Skip --</option>` +
-          parsedData.headers.map(h => `<option value="${h}" ${h === matched ? 'selected' : ''}>${h}</option>`).join('');
+          parsedData.headers.map(h => `<option value="${h}" ${h === matchedHeader ? 'selected' : ''}>${h}</option>`).join('');
+
+        const statusHtml = matchedHeader
+          ? `<span style="color:var(--accent-green); font-weight:600;">✓ Auto-Matched</span>`
+          : (isRequired
+              ? `<span style="color:var(--accent-red); font-weight:600;">⚠️ Required</span>`
+              : `<span style="color:var(--text-dim); font-size:0.75rem;">Optional</span>`);
 
         return `
           <tr>
             <td style="font-weight:600; color:var(--text-bright);">
-              ${target.label} ${target.required ? '<span style="color:var(--accent-red)">*</span>' : ''}
+              ${humanLabel} ${isRequired ? '<span style="color:var(--accent-red)">*</span>' : ''}
             </td>
             <td>
-              <span class="badge badge-neutral" style="font-family:monospace;">${target.key}</span>
+              <span class="badge badge-neutral" style="font-family:monospace; font-size:0.75rem;">${field}</span>
             </td>
             <td>
-              <select class="form-select form-select-sm" onchange="window.ImportController.updateMapping('${target.key}', this.value)">
+              <select class="form-select form-select-sm" onchange="window.ImportController.updateMapping('${field}', this.value)">
                 ${optionsHtml}
               </select>
             </td>
-            <td style="color:${matched ? 'var(--accent-green)' : (target.required ? 'var(--accent-red)' : 'var(--text-dim)')}; font-weight:600;">
-              ${matched ? '✓ Auto-Matched' : (target.required ? '⚠️ Required' : 'Optional')}
+            <td id="mapping-status-${field}">
+              ${statusHtml}
             </td>
           </tr>
         `;
       }).join('');
     },
 
-    updateMapping(targetKey, fileHeader) {
-      columnMapping[targetKey] = fileHeader;
+    updateMapping(field, fileHeader) {
+      if (fileHeader) {
+        columnMapping[field] = fileHeader;
+      } else {
+        delete columnMapping[field];
+      }
+
+      const statusEl = document.getElementById(`mapping-status-${field}`);
+      if (statusEl && window.ImportService) {
+        const requiredSet = window.ImportService.getRequiredFields(selectedModule);
+        const isRequired = requiredSet.has(field);
+        if (fileHeader) {
+          statusEl.innerHTML = `<span style="color:var(--accent-green); font-weight:600;">✓ Matched</span>`;
+        } else if (isRequired) {
+          statusEl.innerHTML = `<span style="color:var(--accent-red); font-weight:600;">⚠️ Required</span>`;
+        } else {
+          statusEl.innerHTML = `<span style="color:var(--text-dim); font-size:0.75rem;">Optional</span>`;
+        }
+      }
     },
 
-    activeReviewTab: 'preview',
-    dryRunEnabled: false,
-    validationResults: [],
-
     toggleDryRun(checked) {
-      this.dryRunEnabled = checked;
+      dryRunEnabled = checked;
       const btn = document.getElementById('btn-execute-import');
       if (btn) {
         btn.innerText = checked ? 'Validate Dataset (Dry Run)' : `✓ Execute Import (${parsedData.rows.length} Records)`;
@@ -226,7 +218,7 @@ window.ImportController = (function() {
     },
 
     switchReviewTab(tab) {
-      this.activeReviewTab = tab;
+      activeReviewTab = tab;
       const tabPreview = document.getElementById('tab-import-preview');
       const tabValid = document.getElementById('tab-import-validation');
       const panePreview = document.getElementById('pane-import-preview');
@@ -239,30 +231,43 @@ window.ImportController = (function() {
       if (paneValid) paneValid.style.display = tab === 'validation' ? 'block' : 'none';
     },
 
-    proceedToValidation() {
-      const targetFields = MODULE_FIELDS[selectedModule] || [];
-      const missingRequired = targetFields.filter(f => f.required && !columnMapping[f.key]);
+    async proceedToValidation() {
+      const requiredSet = window.ImportService.getRequiredFields(selectedModule);
+      const missingRequired = [];
+      requiredSet.forEach(field => {
+        if (!columnMapping[field]) {
+          missingRequired.push(window.ImportService.humanize(field));
+        }
+      });
+
       if (missingRequired.length > 0) {
-        alert(`Missing required field mappings: ${missingRequired.map(f => f.label).join(', ')}`);
-        return;
+        const confirmProceed = confirm(
+          `The following required fields are not mapped:\n- ${missingRequired.join('\n- ')}\n\nWould you like to review mappings first? Click Cancel to stay, or OK to proceed anyway.`
+        );
+        if (!confirmProceed) return;
       }
 
       this.renderPreviewTable();
-      this.validateDataset();
       this.switchReviewTab('preview');
       this.goToStep(4);
+
+      // Run deep async preflight validation
+      await this.validateDataset();
     },
 
     renderPreviewTable() {
       const thead = document.getElementById('import-preview-thead');
       const tbody = document.getElementById('import-preview-tbody');
+      if (!window.ImportService) return;
 
-      const targetFields = MODULE_FIELDS[selectedModule] || [];
+      const domainFields = window.ImportService.getModuleFields(selectedModule);
+      const mappedFields = domainFields.filter(f => columnMapping[f]);
+
       if (thead) {
         thead.innerHTML = `<tr>
           <th style="width:50px; text-align:center;">#</th>
           <th style="width:80px; text-align:center;">STATUS</th>
-          ${targetFields.map(f => `<th>${f.key}</th>`).join('')}
+          ${mappedFields.map(f => `<th>${window.ImportService.humanize(f)}</th>`).join('')}
         </tr>`;
       }
 
@@ -273,11 +278,11 @@ window.ImportController = (function() {
             <tr>
               <td style="text-align:center; color:var(--text-dim);">${idx + 1}</td>
               <td style="text-align:center;"><span class="badge badge-paid">READY</span></td>
-              ${targetFields.map(f => {
-                const header = columnMapping[f.key];
+              ${mappedFields.map(f => {
+                const header = columnMapping[f];
                 const colIdx = parsedData.headers.indexOf(header);
-                const val = colIdx >= 0 ? row[colIdx] : '';
-                return `<td>${val || '-'}</td>`;
+                const val = colIdx >= 0 ? (row[colIdx] ?? '') : '';
+                return `<td>${val !== '' ? String(val) : '-'}</td>`;
               }).join('')}
             </tr>
           `;
@@ -285,77 +290,84 @@ window.ImportController = (function() {
       }
     },
 
-    validateDataset() {
-      const targetFields = MODULE_FIELDS[selectedModule] || [];
-      const results = [];
-      let validCount = 0;
-      let errorCount = 0;
-
-      parsedData.rows.forEach((row, rowIdx) => {
-        const rowNum = rowIdx + 1;
-        const rowErrors = [];
-
-        targetFields.forEach(f => {
-          const header = columnMapping[f.key];
-          const colIdx = parsedData.headers.indexOf(header);
-          const val = (colIdx >= 0 ? (row[colIdx] || '') : '').trim();
-
-          if (f.required && !val) {
-            rowErrors.push({ row: rowNum, field: f.key, type: 'ERROR', message: `Required field "${f.label}" is missing or empty.` });
-          } else if (val) {
-            const keyLower = f.key.toLowerCase();
-            if (keyLower.includes('rate') || keyLower.includes('price') || keyLower.includes('amount') || keyLower.includes('stock') || keyLower.includes('qty') || f.key === 'Debit' || f.key === 'Credit') {
-              const num = parseFloat(val.replace(/,/g, ''));
-              if (isNaN(num)) {
-                rowErrors.push({ row: rowNum, field: f.key, type: 'ERROR', message: `Field "${f.label}" expected number, found "${val}".` });
-              }
-            }
-          }
-        });
-
-        if (rowErrors.length > 0) {
-          errorCount++;
-          results.push(...rowErrors);
-        } else {
-          validCount++;
-        }
-      });
-
-      this.validationResults = results;
-      const summaryTotal = document.getElementById('lbl-import-total-count');
-      const summaryValid = document.getElementById('lbl-import-valid-count');
-      const summaryInvalid = document.getElementById('lbl-import-invalid-count');
-
-      if (summaryTotal) summaryTotal.innerText = parsedData.rows.length;
-      if (summaryValid) summaryValid.innerText = validCount;
-      if (summaryInvalid) summaryInvalid.innerText = errorCount;
-
+    async validateDataset() {
+      const mode = document.getElementById('import-mode-select')?.value || 'UPSERT';
       const validTbody = document.getElementById('import-validation-tbody');
       if (validTbody) {
-        if (results.length === 0) {
-          validTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--accent-green); font-weight:600;">✓ All ${parsedData.rows.length} records passed validation! No schema or constraint errors found.</td></tr>`;
-        } else {
-          validTbody.innerHTML = results.slice(0, 50).map(r => `
-            <tr>
-              <td style="text-align:center; font-weight:700;">Row ${r.row}</td>
-              <td style="text-align:center;"><span class="badge badge-unpaid">${r.type}</span></td>
-              <td style="font-family:monospace; color:var(--cyan); font-weight:600;">${r.field}</td>
-              <td style="color:var(--text-main); font-size:0.8rem;">${r.message}</td>
-            </tr>
-          `).join('');
-        }
+        validTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--cyan);"><span class="loading-spinner"></span> Performing cross-entity & schema validation against database...</td></tr>`;
       }
 
-      return { validCount, errorCount, total: parsedData.rows.length };
+      try {
+        const res = await window.ImportService.validatePreflight(
+          selectedModule,
+          columnMapping,
+          parsedData.rows,
+          parsedData.headers,
+          mode
+        );
+
+        lastPreflightResult = res;
+
+        // Update KPI metrics
+        const summaryTotal = document.getElementById('lbl-import-total-count');
+        const summaryValid = document.getElementById('lbl-import-valid-count');
+        const summaryInvalid = document.getElementById('lbl-import-invalid-count');
+
+        if (summaryTotal) summaryTotal.innerText = res.processed || parsedData.rows.length;
+        if (summaryValid) summaryValid.innerText = res.passedCount || 0;
+        if (summaryInvalid) summaryInvalid.innerText = (res.failedCount || 0) + (res.skippedCount || 0);
+
+        // Render validation rows matching Desktop ImportController.java 7 columns
+        if (validTbody) {
+          if (!res.details || res.details.length === 0) {
+            validTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--accent-green); font-weight:600;">✓ All ${parsedData.rows.length} records passed validation! No schema or constraint errors found.</td></tr>`;
+          } else {
+            validTbody.innerHTML = res.details.slice(0, 100).map(d => {
+              const isPassed = d.status === 'PASSED';
+              const statusBadge = isPassed
+                ? `<span class="badge badge-paid">${d.status}</span>`
+                : `<span class="badge badge-unpaid">${d.status}</span>`;
+
+              return `
+                <tr>
+                  <td style="text-align:center; font-weight:600; color:var(--text-bright);">${d.sourceRows || '-'}</td>
+                  <td style="font-family:monospace; color:var(--cyan); font-weight:600;">${d.reference || '-'}</td>
+                  <td style="font-size:0.75rem;">${d.mandatory || '✓ Passed'}</td>
+                  <td style="font-size:0.75rem;">${d.format || '✓ Passed'}</td>
+                  <td style="font-size:0.75rem;">${d.master || '✓ Passed'}</td>
+                  <td style="font-size:0.75rem;">${d.data || d.action || '-'}</td>
+                  <td style="text-align:center;">${statusBadge}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        const executeBtn = document.getElementById('btn-execute-import');
+        if (executeBtn) {
+          executeBtn.innerText = dryRunEnabled
+            ? 'Validate Dataset (Dry Run)'
+            : `✓ Execute Import (${res.passedCount} Records)`;
+        }
+
+        return res;
+      } catch (err) {
+        console.error('Validation error:', err);
+        if (validTbody) {
+          validTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--accent-red);">Validation Error: ${err.message || err}</td></tr>`;
+        }
+      }
     },
 
     async runImport() {
-      if (this.dryRunEnabled) {
-        const stats = this.validateDataset();
+      if (dryRunEnabled) {
+        const stats = await this.validateDataset();
         this.switchReviewTab('validation');
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         if (window.AppDialogService) {
-          window.AppDialogService.toastInfo(`Dry Run Finished: ${stats.validCount} valid, ${stats.errorCount} errors. Uncheck "Validate only" to ingest.`);
+          window.AppDialogService.toastInfo(
+            `Dry Run Finished: ${stats.passedCount} valid, ${stats.failedCount} errors, ${stats.skippedCount} skipped. Uncheck "Validate only" to ingest into database.`
+          );
         }
         return;
       }
@@ -368,21 +380,40 @@ window.ImportController = (function() {
 
       try {
         const mode = document.getElementById('import-mode-select')?.value || 'UPSERT';
-        const res = await window.ImportService.executeImport(selectedModule, parsedData.rows, columnMapping, mode, parsedData.headers);
+        const res = await window.ImportService.executeImport(
+          selectedModule,
+          columnMapping,
+          parsedData.rows,
+          parsedData.headers,
+          mode,
+          (curr, tot) => {
+            if (btn) btn.innerHTML = `<span class="loading-spinner"></span> Ingesting: ${curr} / ${tot} records...`;
+          }
+        );
 
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        if (window.AppDialogService) {
-          window.AppDialogService.toastSuccess(`Data Import Completed! Imported: ${res.imported}, Skipped: ${res.updated || 0}`);
+        lastImportResult = res;
+
+        if (window.AudioSynthesizer) {
+          if (res.failed === 0) window.AudioSynthesizer.playSuccess();
+          else window.AudioSynthesizer.playNotification();
         }
 
+        // Show page completion banner
         const completedPanel = document.getElementById('import-completed-panel');
         if (completedPanel) {
           completedPanel.style.display = 'block';
-          document.getElementById('lbl-import-complete-summary').innerText =
-            `Processed ${res.processed} rows — ${res.imported} records created successfully in ${selectedModule}.`;
+          const summaryEl = document.getElementById('lbl-import-complete-summary');
+          if (summaryEl) {
+            summaryEl.innerText = `Ingested into ${selectedModule}: ${res.imported} created, ${res.updated} updated, ${res.skipped} skipped, ${res.failed} failed.`;
+          }
         }
+
+        // Display Desktop Parity Completion Dialog Modal
+        this.showResultModal(res);
+
       } catch (err) {
-        alert('Import Error: ' + err.message);
+        console.error('Import execution error:', err);
+        alert('Import Error: ' + (err.message || err));
       } finally {
         if (btn) {
           btn.removeAttribute('disabled');
@@ -391,12 +422,77 @@ window.ImportController = (function() {
       }
     },
 
+    showResultModal(result) {
+      const modal = document.getElementById('modal-import-result');
+      if (!modal) return;
+
+      document.getElementById('lbl-modal-import-module').innerText = selectedModule;
+      document.getElementById('lbl-modal-import-total').innerText = result.processed || parsedData.rows.length;
+      document.getElementById('lbl-modal-import-created').innerText = result.imported || 0;
+      document.getElementById('lbl-modal-import-updated').innerText = result.updated || 0;
+      document.getElementById('lbl-modal-import-skipped').innerText = result.skipped || 0;
+      document.getElementById('lbl-modal-import-failed').innerText = result.failed || 0;
+
+      const detailsEl = document.getElementById('modal-import-error-details');
+      if (detailsEl) {
+        if (result.errors && result.errors.length > 0) {
+          detailsEl.style.display = 'block';
+          detailsEl.innerHTML = `<strong>Errors Encountered (${result.errors.length}):</strong><br>` +
+            result.errors.slice(0, 10).map(e => `• ${e}`).join('<br>');
+        } else {
+          detailsEl.style.display = 'none';
+          detailsEl.innerHTML = '';
+        }
+      }
+
+      modal.style.display = 'flex';
+    },
+
+    closeResultModal() {
+      const modal = document.getElementById('modal-import-result');
+      if (modal) modal.style.display = 'none';
+    },
+
+    downloadResultReport() {
+      const resultData = lastImportResult || lastPreflightResult;
+      if (!resultData) {
+        alert('No validation or import result data available to export.');
+        return;
+      }
+      if (window.ImportService) {
+        window.ImportService.generateResultReport(
+          selectedModule,
+          selectedFile ? selectedFile.name : 'Import_Data',
+          dryRunEnabled,
+          resultData
+        );
+      }
+    },
+
+    viewImportedRecords() {
+      this.closeResultModal();
+      if (!window.ImportService) return;
+
+      const targetRoute = window.ImportService.getTargetView(selectedModule);
+      if (targetRoute) {
+        if (typeof window.selectNav === 'function') {
+          window.selectNav(targetRoute);
+        } else if (window.NavigationRouter && typeof window.NavigationRouter.selectNav === 'function') {
+          window.NavigationRouter.selectNav(targetRoute);
+        }
+      }
+    },
+
     startAnotherImport() {
-      parsedData = { headers: [], rows: [] };
+      parsedData = { headers: [], rows: [], sheetNames: [], selectedSheet: '' };
       selectedFile = null;
       columnMapping = {};
+      lastPreflightResult = null;
+      lastImportResult = null;
+
       const completedPanel = document.getElementById('import-completed-panel');
       if (completedPanel) completedPanel.style.display = 'none';
+      this.closeResultModal();
       this.goToStep(1);
     }
   };

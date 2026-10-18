@@ -1,19 +1,19 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 13,
-  "webVersion": "10.0.34.13",
-  "tag": "web-v10.0.34.13",
-  "releaseDate": "2026-10-18T20:30:00+05:30",
+  "webBuild": 14,
+  "webVersion": "10.0.34.14",
+  "tag": "web-v10.0.34.14",
+  "releaseDate": "2026-10-18T21:15:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.13 Enterprise Release - Full Desktop Parity for Matching Workspace, Native Drive CSV Import, Pre-Reversal Delete Impact Analysis, Cross-Module Deep Linking, and Branding Binary Uploads",
+  "summary": "10.0.34.14 Enterprise Release - Full Desktop Parity for All 8 Import Modules: Native .xlsx Multi-Sheet Templates, SheetJS Parsing, Pre-Flight Master Validation Pipeline, True DB Persistence, Completion Dialog, and Audit Result Reports",
   "highlights": [
-    "1. Matching Workspace Engine (Desktop BankStatementController.java:680-776 Parity): 6 live KPI cards (Bank Amount, Allocated, Round-off, Bank Remaining, Doc Residual, Settlement Status), 10-column candidate table with checkboxes, confidence scores, and editable allocation inputs with rounding tolerance calculation and partial settlement confirmation",
-    "2. Native Drive CSV Selection & Master Account Resolution: Direct file chooser without mock popups, Kotak/Standard CSV parser, automated account matching, and choice dialog modal for master data bank account mapping",
-    "3. Two-Phase Pre-Reversal Delete Impact Analysis: Safety modal with Phase 1 pre-reversal impact metric preview (transactions, matched, expenses, ignored) and Phase 2 uppercase 'DELETE' verification",
-    "4. Cross-Module Deep-Linking & Re-Entrancy Guard: Unified openLinkedDocument for PRC-, EXP-, BANK-, INV-, and PO- records with NavigationRouter re-entrancy prevention guard",
-    "5. Dedicated Note Updates & Context Menu Parity: POST /api/bank-statements/transactions/{id}/note endpoint integration allowing note edits on matched records without status mutation; neutral secondary Actions dropdown with strict status-based action categorization",
-    "6. Purchase Recon & Recon Supplier Actions: Desktop Actions dropdown with View, Edit, direct Open Bank Statement navigation, and dependency deletion protection",
-    "7. Server-Resource Branding Binary Upload & Email Test Guard: Raw binary PUT /api/authority/resources/BUSINESS_ASSET/{key} with server-resource: pointer resolution and empty-password safe email testing",
-    "8. DOM Structural Integrity: Closed orphaned container in Business Settings restoring full access to Security and Module Management tabs"
+    "1. Native Multi-Sheet Excel Template Generation (.xlsx): Sheet 1 'Import Template' with formatted headers and example records, and Sheet 2 'Instructions' detailing field constraints, required flags, and data formats (matching Desktop ImportTemplateService.java)",
+    "2. SheetJS Binary (.xlsx / .xls) and CSV Parser: Offline xlsx.full.min.js engine supporting direct workbook loading, sheet layout detection, and multi-sheet resolution",
+    "3. Full 8-Module Registry & Column Auto-Mapping: Item Master, Customers CRM, Suppliers HRM, Sales Register, Purchase Bills, Master Categories, Purchase Recon, and Bank Statement (matching Desktop ImportModuleRegistry.java and ImportMappingSupport.java)",
+    "4. Deep Pre-Flight Validation Engine: ReferenceFormatRules regex evaluation, in-file duplicate detection, DB collision/mode policy (UPSERT, SKIP_EXISTING, UPDATE_NON_BLANK), cross-entity master lookups, and available stock checking",
+    "5. Genuine Database Persistence for All 8 Modules: Replaced mock responses with live Spring Boot REST API calls with exact DTO shapes for Sales, Purchases, Recon, Bank Statement, Items, Customers, Suppliers, and Master Lookups",
+    "6. Desktop Parity Completion Dialog Modal: Full execution summary displaying total processed, created, updated, skipped, failed counts, and error details",
+    "7. Two-Sheet Excel Audit Result Export: Generates downloadable Import_Result_<Module>_<Timestamp>.xlsx with Summary and Detailed Rows audit sheets",
+    "8. Seamless View Imported Records Navigation: Direct deep-linking from import completion to target ledger or register view"
   ]
 }

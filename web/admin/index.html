@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.13">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.14">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -5623,14 +5623,17 @@
                   <table class="data-table">
                     <thead>
                       <tr>
-                        <th style="width:90px; text-align:center;">Row #</th>
+                        <th style="width:100px; text-align:center;">Sheet / Rows</th>
+                        <th style="width:160px;">Record / Reference</th>
+                        <th style="width:130px;">Mandatory</th>
+                        <th style="width:130px;">Format</th>
+                        <th style="width:140px;">Master Match</th>
+                        <th>Data / Duplicate Action</th>
                         <th style="width:100px; text-align:center;">Status</th>
-                        <th style="width:180px;">Target Field</th>
-                        <th>Validation Details / Error Message</th>
                       </tr>
                     </thead>
                     <tbody id="import-validation-tbody">
-                      <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-dim);">No validation issues found.</td></tr>
+                      <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-dim);">No validation issues found.</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -5639,7 +5642,9 @@
               <div id="import-completed-panel" style="display:none; background:rgba(0,255,163,0.08); border:1px solid var(--accent-green); padding:16px; border-radius:6px; margin-bottom:20px;">
                 <h4 style="margin:0 0 4px 0; color:var(--accent-green);">&#127881; Import Completed Successfully!</h4>
                 <p id="lbl-import-complete-summary" style="margin:0; font-size:0.8rem;"></p>
-                <div style="margin-top:10px;">
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="btn-import-view-records" onclick="window.ImportController.viewImportedRecords()">&#128065; View Imported Records</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-import-download-report" onclick="window.ImportController.downloadResultReport()">&#128229; Download Audit Report (.xlsx)</button>
                   <button class="btn btn-secondary btn-sm" onclick="window.ImportController.startAnotherImport()">Start Another Import</button>
                 </div>
               </div>
@@ -11926,70 +11931,122 @@ Outstanding Balance: {BalanceAmount}
     </div>
   </div>
 
+  <!-- MODAL: DATA IMPORT COMPLETION & AUDIT RESULT (Desktop ImportController Parity) -->
+  <div id="modal-import-result" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center;">
+    <div class="modal-dialog" style="background:#0b1120; border:1px solid rgba(0,242,254,0.3); border-radius:12px; max-width:560px; width:92%; padding:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.85); color:#f8fafc;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.6rem;">&#127881;</span>
+          <div>
+            <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#fff;">Import Completed</h3>
+            <div style="font-size:0.75rem; color:#94a3b8;">Module: <span id="lbl-modal-import-module" style="color:var(--cyan); font-weight:600;">-</span></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="window.ImportController.closeResultModal()">&times;</button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:16px;">
+        <div style="background:rgba(15,23,42,0.6); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase;">Total Processed</div>
+          <div id="lbl-modal-import-total" style="font-size:1.35rem; font-weight:700; color:#fff;">0</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.1); padding:12px; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">
+          <div style="font-size:0.72rem; color:#34d399; text-transform:uppercase;">Created / Imported</div>
+          <div id="lbl-modal-import-created" style="font-size:1.35rem; font-weight:700; color:#34d399;">0</div>
+        </div>
+        <div style="background:rgba(56,189,248,0.1); padding:12px; border-radius:8px; border:1px solid rgba(56,189,248,0.3);">
+          <div style="font-size:0.72rem; color:#38bdf8; text-transform:uppercase;">Updated (Upsert)</div>
+          <div id="lbl-modal-import-updated" style="font-size:1.35rem; font-weight:700; color:#38bdf8;">0</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.1); padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.3);">
+          <div style="font-size:0.72rem; color:#f87171; text-transform:uppercase;">Failed / Blocked</div>
+          <div id="lbl-modal-import-failed" style="font-size:1.35rem; font-weight:700; color:#f87171;">0</div>
+        </div>
+      </div>
+
+      <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">
+        Skipped records: <span id="lbl-modal-import-skipped" style="font-weight:600; color:#e2e8f0;">0</span> (due to duplicate policy or duplicate keys)
+      </div>
+
+      <div id="modal-import-error-details" style="display:none; max-height:100px; overflow-y:auto; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:6px; padding:8px 12px; font-size:0.75rem; color:#fca5a5; margin-bottom:16px;"></div>
+
+      <!-- Action Footer -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="window.ImportController.downloadResultReport()">&#128229; Download Audit Report (.xlsx)</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-secondary" onclick="window.ImportController.closeResultModal()">Close</button>
+          <button type="button" class="btn btn-primary" onclick="window.ImportController.viewImportedRecords()">&#128065; View Imported Records</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.13"></script>
+  <script src="js/version.js?v=10.0.34.14"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.13"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.13"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.13"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.13"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.13"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.13"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.13"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.13"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.13"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.13"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.13"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.13"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.13"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.13"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.13"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.34.14"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.14"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.14"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.14"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.14"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.14"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.14"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.14"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.14"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.14"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.14"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.14"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.14"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.14"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.14"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.14"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.13"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.13"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.13"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.13"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.13"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.13"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.13"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.13"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.13"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.14"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.14"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.14"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.14"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.14"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.14"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.14"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.14"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.14"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.13"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.14"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.14"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.13"></script>
-  <script src="js/app.js?v=10.0.34.13"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.14"></script>
+  <script src="js/app.js?v=10.0.34.14"></script>
 </body>
 </html>
 

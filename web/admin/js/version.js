@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 13,
-  webVersion: "10.0.34.13",
-  tag: "web-v10.0.34.13",
-  releaseDate: "2026-10-18T20:30:00+05:30",
-  environment: "UAT",
-  summary: "10.0.34.13 Enterprise Release - Full Desktop Parity for Matching Workspace, Native Drive CSV Import, Pre-Reversal Delete Impact Analysis, Cross-Module Deep Linking, and Branding Binary Uploads"
+  webBuild: 14,
+  webVersion: "10.0.34.14",
+  tag: "web-v10.0.34.14",
+  releaseDate: "2026-10-18T21:15:00+05:30",
+  "environment": "UAT",
+  summary: "10.0.34.14 Enterprise Release - Full Desktop Parity for All 8 Import Modules: Native .xlsx Multi-Sheet Templates, SheetJS Parsing, Pre-Flight Master Validation Pipeline, True DB Persistence, Completion Dialog, and Audit Result Reports"
 };
 
 // Automatic UI Version Injection
