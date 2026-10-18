@@ -854,8 +854,12 @@ window.ImportService = (function() {
           try {
             let existing = existingItems.get(code.toUpperCase());
             if (!existing) {
-              const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
-              existing = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+              const byCodes = await window.MasterService.getItemsByCodes([code]).catch(() => []);
+              existing = (byCodes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+              if (!existing) {
+                const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+                existing = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+              }
             }
 
             if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
@@ -863,6 +867,10 @@ window.ImportService = (function() {
               details.push({ sourceRows: String(rowNum), reference: code, status: 'SKIPPED', action: 'SKIPPED', message: 'Existing item preserved' });
               continue;
             }
+
+            // Server requires remarks and hsn in copy(d, e, true)
+            const remarksVal = getVal(row, 'remarks') || 'Imported via Data Import Studio';
+            const hsnVal = getVal(row, 'hsn') || '7306';
 
             const payload = {
               itemCode: code,
@@ -872,7 +880,7 @@ window.ImportService = (function() {
               material: getVal(row, 'material') || '',
               size: getVal(row, 'size') || '',
               unit: getVal(row, 'unit') || 'NOS',
-              hsn: getVal(row, 'hsn') || '7306',
+              hsn: hsnVal,
               gst: parseFloat(getVal(row, 'gst')) || 18,
               discountPercent: parseFloat(getVal(row, 'discount_percent')) || 0,
               purchasePrice: parseFloat(getVal(row, 'purchase_price')) || 0,
@@ -880,14 +888,13 @@ window.ImportService = (function() {
               openingStock: parseFloat(getVal(row, 'opening_stock')) || 0,
               minimumStock: parseFloat(getVal(row, 'minimum_stock')) || 0,
               location: getVal(row, 'location') || '',
-              remarks: getVal(row, 'remarks') || '',
+              remarks: remarksVal,
               active: true
             };
 
             if (existing) {
               payload.id = existing.id;
               payload.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
-              // Preserve openingStock & reservedStock as creation baselines (ImportMergePolicy.java)
               payload.openingStock = existing.openingStock !== undefined ? existing.openingStock : payload.openingStock;
               payload.reservedStock = existing.reservedStock !== undefined ? existing.reservedStock : 0;
               if (mode === 'UPDATE_NON_BLANK') {
@@ -916,9 +923,13 @@ window.ImportService = (function() {
                 existingItems.set(code.toUpperCase(), res || payload);
                 details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
               } catch (createErr) {
-                // If conflict occurs (e.g. duplicate key), re-fetch and update
-                const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
-                const match = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                // If conflict occurs (e.g. duplicate key), re-fetch by code and update
+                const byCodes = await window.MasterService.getItemsByCodes([code]).catch(() => []);
+                let match = (byCodes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                if (!match) {
+                  const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+                  match = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                }
                 if (match) {
                   payload.id = match.id;
                   payload.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
@@ -949,10 +960,18 @@ window.ImportService = (function() {
       case 'Suppliers / HRM': {
         const partyType = module.includes('Customer') ? 'CUSTOMER' : 'SUPPLIER';
         const existingParties = new Map();
+        
+        // Pre-load BOTH Customers and Suppliers so party_code uniqueness across party_master is always respected
         try {
-          const parties = await window.MasterService.getParties(partyType, true);
-          (parties || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
-        } catch (e) { }
+          const [customers, suppliers] = await Promise.all([
+            window.MasterService.getParties('CUSTOMER', true).catch(() => []),
+            window.MasterService.getParties('SUPPLIER', true).catch(() => [])
+          ]);
+          (customers || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
+          (suppliers || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
+        } catch (e) {
+          console.warn('Could not preload parties cache:', e);
+        }
 
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
@@ -963,8 +982,22 @@ window.ImportService = (function() {
           try {
             let existing = existingParties.get(code.toUpperCase());
             if (!existing) {
-              const searchRes = await window.MasterService.searchParties(partyType, code, 5).catch(() => []);
-              existing = (searchRes || []).find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
+              // Server-level check: Check if party_code already exists in database
+              const check = await window.MasterService.checkPartyExists(code).catch(() => null);
+              if (check && check.exists) {
+                // Refresh cache across both customer & supplier to obtain id and rowVersion
+                const [freshCust, freshSupp] = await Promise.all([
+                  window.MasterService.getParties('CUSTOMER', true).catch(() => []),
+                  window.MasterService.getParties('SUPPLIER', true).catch(() => [])
+                ]);
+                (freshCust || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
+                (freshSupp || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
+                existing = existingParties.get(code.toUpperCase());
+                if (!existing) {
+                  const searchRes = await window.MasterService.searchParties(partyType, code, 5).catch(() => []);
+                  existing = (searchRes || []).find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
+                }
+              }
             }
 
             if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
@@ -983,7 +1016,7 @@ window.ImportService = (function() {
             const payload = {
               partyCode: code,
               name: getVal(row, 'name') || 'Party',
-              partyType: partyType,
+              partyType: existing ? existing.partyType : partyType,
               contactPerson: getVal(row, 'contact_person') || '',
               phone: getVal(row, 'phone') || '',
               email: emailVal,
@@ -1016,11 +1049,16 @@ window.ImportService = (function() {
                 existingParties.set(code.toUpperCase(), res || payload);
                 details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: `New ${partyType} created` });
               } catch (createErr) {
-                // Duplicate key / conflict catch: re-fetch and update
-                const searchRes = await window.MasterService.searchParties(partyType, code, 5).catch(() => []);
-                const match = (searchRes || []).find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
+                // Duplicate key / conflict catch: re-fetch from server and update
+                const [freshCust, freshSupp] = await Promise.all([
+                  window.MasterService.getParties('CUSTOMER', true).catch(() => []),
+                  window.MasterService.getParties('SUPPLIER', true).catch(() => [])
+                ]);
+                const allParties = [...(freshCust || []), ...(freshSupp || [])];
+                const match = allParties.find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
                 if (match) {
                   payload.id = match.id;
+                  payload.partyType = match.partyType;
                   payload.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
                   if (mode === 'UPDATE_NON_BLANK') {
                     if (!getVal(row, 'name')) payload.name = match.name;
@@ -1062,9 +1100,12 @@ window.ImportService = (function() {
         });
 
         const existingSales = new Set();
+        const existingCustomers = new Map();
         try {
           const sp = await window.OperationsService.getSalesPage(0, 1000);
           ((sp && sp.rows) || []).forEach(s => existingSales.add((s.invoiceNo || '').toUpperCase()));
+          const custs = await window.MasterService.getParties('CUSTOMER', true);
+          (custs || []).forEach(c => existingCustomers.set((c.partyCode || '').toUpperCase(), c));
         } catch (e) { }
 
         let current = 0;
@@ -1086,6 +1127,20 @@ window.ImportService = (function() {
             const invDate = getVal(first, 'invoice_date') || new Date().toISOString().substring(0, 10);
             const gstType = (getVal(first, 'gst_type') || 'GST').toUpperCase();
 
+            // Resolve customer entity required by server contract (OperationDtos.SaleDto.customer)
+            let customerEntity = existingCustomers.get(customerCode.toUpperCase());
+            if (!customerEntity) {
+              const custMatches = await window.MasterService.searchParties('CUSTOMER', customerCode, 5).catch(() => []);
+              customerEntity = (custMatches || []).find(p => (p.partyCode || '').toUpperCase() === customerCode.toUpperCase());
+            }
+            if (!customerEntity) {
+              const allCust = await window.MasterService.getParties('CUSTOMER', true).catch(() => []);
+              customerEntity = (allCust || []).find(p => (p.partyCode || '').toUpperCase() === customerCode.toUpperCase());
+            }
+            if (!customerEntity) {
+              throw new Error(`Customer '${customerCode}' does not exist in master. Please create the customer first.`);
+            }
+
             const lines = gRows.map(g => {
               const r = g.row;
               const qty = parseFloat(getVal(r, 'quantity')) || 1;
@@ -1100,21 +1155,28 @@ window.ImportService = (function() {
                 rate: rate,
                 discountPercent: 0,
                 gstPercent: gstPct,
-                taxableAmount: taxable,
-                gstAmount: tax,
                 totalAmount: taxable + tax
               };
             });
 
             // Calculate totals
-            const itemTaxable = lines.reduce((acc, l) => acc + l.taxableAmount, 0);
-            const totalTax = lines.reduce((acc, l) => acc + l.gstAmount, 0);
+            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate), 0);
+            const totalTax = lines.reduce((acc, l) => acc + ((l.quantity * l.rate * l.gstPercent) / 100), 0);
             const grandTotal = itemTaxable + totalTax;
 
             const salePayload = {
               invoiceNo: invNo,
               invoiceDate: invDate,
-              customerCode: customerCode,
+              customer: {
+                id: customerEntity.id,
+                partyCode: customerEntity.partyCode,
+                name: customerEntity.name,
+                email: customerEntity.email,
+                phone: customerEntity.phone,
+                gstin: customerEntity.gstin,
+                address: customerEntity.address
+              },
+              source: 'IMPORT', // Server requires source='IMPORT' to preserve invoiceNo
               paymentTerms: getVal(first, 'payment_terms') || '15 Days',
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
@@ -1129,6 +1191,7 @@ window.ImportService = (function() {
 
             await window.OperationsService.createSale(salePayload);
             imported++;
+            existingSales.add(invNo);
             details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Sale invoice created (${lines.length} lines)` });
           } catch (err) {
             failed++;
@@ -1151,12 +1214,15 @@ window.ImportService = (function() {
         });
 
         const existingPurchases = new Set();
+        const existingSuppliers = new Map();
         try {
           const pp = await window.OperationsService.getPurchasesPage(0, 1000);
           ((pp && pp.rows) || []).forEach(p => {
             if (p.invoiceNo) existingPurchases.add(p.invoiceNo.toUpperCase());
             if (p.referenceNo) existingPurchases.add(p.referenceNo.toUpperCase());
           });
+          const supps = await window.MasterService.getParties('SUPPLIER', true);
+          (supps || []).forEach(s => existingSuppliers.set((s.partyCode || '').toUpperCase(), s));
         } catch (e) { }
 
         let current = 0;
@@ -1178,6 +1244,20 @@ window.ImportService = (function() {
             const invDate = getVal(first, 'invoice_date') || new Date().toISOString().substring(0, 10);
             const gstType = (getVal(first, 'gst_type') || 'GST').toUpperCase();
 
+            // Resolve supplier entity required by server contract (OperationDtos.PurchaseDto.supplier)
+            let supplierEntity = existingSuppliers.get(supplierCode.toUpperCase());
+            if (!supplierEntity) {
+              const suppMatches = await window.MasterService.searchParties('SUPPLIER', supplierCode, 5).catch(() => []);
+              supplierEntity = (suppMatches || []).find(p => (p.partyCode || '').toUpperCase() === supplierCode.toUpperCase());
+            }
+            if (!supplierEntity) {
+              const allSupp = await window.MasterService.getParties('SUPPLIER', true).catch(() => []);
+              supplierEntity = (allSupp || []).find(p => (p.partyCode || '').toUpperCase() === supplierCode.toUpperCase());
+            }
+            if (!supplierEntity) {
+              throw new Error(`Supplier '${supplierCode}' does not exist in master. Please create the supplier first.`);
+            }
+
             const lines = gRows.map(g => {
               const r = g.row;
               const qty = parseFloat(getVal(r, 'quantity')) || 1;
@@ -1192,20 +1272,28 @@ window.ImportService = (function() {
                 rate: rate,
                 discountPercent: 0,
                 gstPercent: gstPct,
-                taxableAmount: taxable,
-                gstAmount: tax,
                 totalAmount: taxable + tax
               };
             });
 
-            const itemTaxable = lines.reduce((acc, l) => acc + l.taxableAmount, 0);
-            const totalTax = lines.reduce((acc, l) => acc + l.gstAmount, 0);
+            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate), 0);
+            const totalTax = lines.reduce((acc, l) => acc + ((l.quantity * l.rate * l.gstPercent) / 100), 0);
             const grandTotal = itemTaxable + totalTax;
 
             const purchasePayload = {
-              invoiceNo: invNo,
-              billDate: invDate,
-              supplierCode: supplierCode,
+              invoiceNo: null,
+              referenceNo: invNo, // Supplier's invoice no from Excel maps to referenceNo
+              invoiceDate: invDate, // Server field is invoiceDate (not billDate)
+              supplier: {
+                id: supplierEntity.id,
+                partyCode: supplierEntity.partyCode,
+                name: supplierEntity.name,
+                email: supplierEntity.email,
+                phone: supplierEntity.phone,
+                gstin: supplierEntity.gstin,
+                address: supplierEntity.address
+              },
+              source: 'IMPORT',
               paymentTerms: getVal(first, 'payment_terms') || '15 Days',
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
@@ -1220,6 +1308,7 @@ window.ImportService = (function() {
 
             await window.OperationsService.createPurchase(purchasePayload);
             imported++;
+            existingPurchases.add(invNo);
             details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Purchase bill created (${lines.length} lines)` });
           } catch (err) {
             failed++;
@@ -1257,13 +1346,16 @@ window.ImportService = (function() {
               catCache.add(catCode.toUpperCase());
             }
 
-            // Check if lookup already exists in category
+            // Check if lookup already exists in category by code OR by value (server validateLookup checks both)
             if (!lookupsCache.has(catName)) {
               const list = await window.MasterService.getLookups(catName, true).catch(() => []);
               lookupsCache.set(catName, list || []);
             }
             const existingLookups = lookupsCache.get(catName) || [];
-            const existing = existingLookups.find(l => (l.lookupCode || '').toUpperCase() === valCode.toUpperCase());
+            const existing = existingLookups.find(l => 
+              (l.lookupCode || '').toUpperCase() === valCode.toUpperCase() ||
+              (l.lookupValue || '').trim().toUpperCase() === val.trim().toUpperCase()
+            );
 
             if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
               skipped++;
@@ -1301,7 +1393,10 @@ window.ImportService = (function() {
                 // Duplicate conflict resolution: re-fetch and update
                 const freshList = await window.MasterService.getLookups(catName, true).catch(() => []);
                 lookupsCache.set(catName, freshList || []);
-                const match = (freshList || []).find(l => (l.lookupCode || '').toUpperCase() === valCode.toUpperCase());
+                const match = (freshList || []).find(l => 
+                  (l.lookupCode || '').toUpperCase() === valCode.toUpperCase() ||
+                  (l.lookupValue || '').trim().toUpperCase() === val.trim().toUpperCase()
+                );
                 if (match) {
                   lookupDto.id = match.id;
                   lookupDto.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
@@ -1368,28 +1463,41 @@ window.ImportService = (function() {
         const accountHolder = branding.name || 'Jashvi Engineers';
 
         const bankRows = rows.map((r, idx) => {
-          const debit = parseFloat(getVal(r, 'amount')) || 0;
-          const dir = (getVal(r, 'direction') || 'DR').toUpperCase();
-          const dVal = dir === 'DR' ? debit : 0;
-          const cVal = dir === 'CR' ? debit : 0;
+          let dVal = parseFloat(getVal(r, 'debit')) || 0;
+          let cVal = parseFloat(getVal(r, 'credit')) || 0;
+          if (dVal <= 0 && cVal <= 0) {
+            const rawAmt = parseFloat(getVal(r, 'amount')) || 0;
+            const dir = (getVal(r, 'direction') || '').trim().toUpperCase();
+            if (dir === 'CR' || dir === 'CREDIT' || rawAmt < 0) {
+              cVal = Math.abs(rawAmt);
+            } else {
+              dVal = Math.abs(rawAmt);
+            }
+          }
+          if (dVal > 0 && cVal > 0) {
+            cVal = 0; // Exactly one must be positive per server contract
+          }
+          const dateStr = (getVal(r, 'transaction_date') || '').substring(0, 10);
+          const timeStr = getVal(r, 'transaction_date') || new Date().toISOString();
+          const fp = `BS-ROW-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
           return {
-            sourceRow: idx + 1,
-            transactionTimestamp: getVal(r, 'transaction_date') || new Date().toISOString(),
-            transactionDate: (getVal(r, 'transaction_date') || '').substring(0, 10),
-            valueDate: getVal(r, 'value_date'),
+            sourceRowNumber: idx + 1, // Server BankReconciliationDtos.ImportRow field is sourceRowNumber
+            transactionTimestamp: timeStr,
+            transactionDate: dateStr,
+            valueDate: (getVal(r, 'value_date') || dateStr).substring(0, 10),
             description: getVal(r, 'description') || 'Bank Txn',
             reference: getVal(r, 'reference') || `REF-${idx + 1}`,
             debit: dVal,
             credit: cVal,
             balance: parseFloat(getVal(r, 'balance')) || 0,
-            rowFingerprint: `BS-ROW-${Date.now()}-${idx}`
+            transactionFingerprint: fp // Server BankReconciliationDtos.ImportRow field is transactionFingerprint
           };
-        }).filter(r => r.description);
+        }).filter(r => r.description && ((r.debit > 0 && r.credit === 0) || (r.credit > 0 && r.debit === 0)));
 
         try {
           const req = {
             bankName: bankName,
-            accountNumber: accountNumber,
+            bankAccount: accountNumber, // Server BankReconciliationDtos.ImportRequest field is bankAccount (NOT accountNumber)
             accountHolder: accountHolder,
             statementFrom: bankRows[0]?.transactionDate || new Date().toISOString().substring(0, 10),
             statementTo: bankRows[bankRows.length - 1]?.transactionDate || new Date().toISOString().substring(0, 10),
@@ -1406,7 +1514,7 @@ window.ImportService = (function() {
           const res = await window.ReconService.importStatement(req);
           imported = (res && res.importedRows) || bankRows.length;
           skipped = (res && res.duplicateRows) || 0;
-          details.push({ sourceRows: `1-${bankRows.length}`, reference: req.accountNumber, status: 'PASSED', action: 'IMPORTED', message: `Imported ${imported} bank statement lines` });
+          details.push({ sourceRows: `1-${bankRows.length}`, reference: req.bankAccount, status: 'PASSED', action: 'IMPORTED', message: `Imported ${imported} bank statement lines` });
         } catch (err) {
           failed = bankRows.length;
           errors.push(err.message);

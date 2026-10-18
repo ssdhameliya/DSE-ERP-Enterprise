@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 17,
-  webVersion: "10.0.34.17",
-  tag: "web-v10.0.34.17",
-  releaseDate: "2026-10-18T23:30:00+05:30",
+  webBuild: 18,
+  webVersion: "10.0.34.18",
+  tag: "web-v10.0.34.18",
+  releaseDate: "2026-10-19T01:15:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.17 Enterprise Release - Full 8-Loader Desktop Import Parity, Robust Upsert & Conflict Handling, Dynamic Logic Screens & Progressive Disclosure, Dynamic Settings Branding, Universal Footer Disappearance, and Mock Data Removal"
+  summary: "10.0.34.18 Enterprise Release - Server Root Cause Remediation for Import Loaders & Full 8-Loader Server Contract Parity (PostgreSQL party_code UNIQUE constraint conflict resolution, Sales customer.id contract, Purchases supplier.id & invoiceDate contract, Bank Statement bankAccount & row fingerprint contract, and Item Master remarks & HSN requirements)"
 };
 
 // Automatic UI Version Injection
