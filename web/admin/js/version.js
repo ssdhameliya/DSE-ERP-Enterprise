@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 6,
-  webVersion: "10.0.34.06",
-  tag: "web-v10.0.34.06",
-  releaseDate: "2026-10-18T15:50:00+05:30",
+  webBuild: 7,
+  webVersion: "10.0.34.07",
+  tag: "web-v10.0.34.07",
+  releaseDate: "2026-10-18T17:05:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.06 Enterprise Release - Fix AppDialogService confirmation action handlers, button interactivity, and payment review layout"
+  summary: "10.0.34.07 Enterprise Release - Notification Center complete Desktop parity (3-column layout, 16 categories, 10-verb actionable engine, deep-linking)"
 };
 
 // Automatic UI Version Injection

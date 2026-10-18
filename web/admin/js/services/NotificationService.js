@@ -120,6 +120,56 @@ window.NotificationService = (function() {
 
     notifySecurity(title, message, severity = 'WARN') {
       return this.createNotification('SECURITY', title, message, severity, 'view-profile');
+    },
+
+    notifyInventory(itemCode, action = 'Stock adjusted', description = '') {
+      return this.createNotification(
+        'INVENTORY',
+        `Inventory: ${itemCode}`,
+        `${action} for item ${itemCode}${description ? ` (${description})` : ''}.`,
+        'INFO',
+        'view-item-master',
+        itemCode,
+        'ITEMS'
+      );
+    },
+
+    notifyBanking(actionLabel, amount, ref = '') {
+      const formattedAmt = parseFloat(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      return this.createNotification(
+        'BANKING',
+        `Bank Transaction: ${actionLabel}`,
+        `${actionLabel} recorded: ₹${formattedAmt}${ref ? ` (Ref: ${ref})` : ''}.`,
+        'INFO',
+        'view-bank-entry',
+        ref,
+        'BANKING'
+      );
+    },
+
+    notifyReminder(title, status = 'created') {
+      return this.createNotification(
+        'REMINDERS',
+        `Reminder: ${title}`,
+        `Reminder "${title}" marked as ${status}.`,
+        'INFO',
+        'view-reminders',
+        null,
+        'REMINDERS'
+      );
+    },
+
+    notifyApproval(docNo, type = 'Sale', approved = true) {
+      const statusText = approved ? 'approved' : 'rejected';
+      return this.createNotification(
+        'APPROVAL',
+        `${type} ${docNo} ${statusText}`,
+        `${type} ${docNo} was ${statusText}.`,
+        approved ? 'INFO' : 'WARN',
+        type.toUpperCase().includes('PURCHASE') ? 'view-purchase-register' : 'view-sales-register',
+        docNo,
+        type.toUpperCase().includes('PURCHASE') ? 'PURCHASES' : 'SALES'
+      );
     }
   };
 })();
