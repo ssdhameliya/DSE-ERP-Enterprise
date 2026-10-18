@@ -1,17 +1,15 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 3,
-  "webVersion": "10.0.34.03",
-  "tag": "web-v10.0.34.03",
-  "releaseDate": "2026-10-18T14:15:00+05:30",
+  "webBuild": 4,
+  "webVersion": "10.0.34.04",
+  "tag": "web-v10.0.34.04",
+  "releaseDate": "2026-10-18T15:20:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.03 Enterprise Release - Full Desktop 10.0.34 Parity & 26-Item Defect Correction Suite",
+  "summary": "10.0.34.04 Enterprise Release - Resolve Payment Controller syntax, Stock Register actions, and Settings branding preview",
   "highlights": [
-    "1. Sales & Purchase Register Return Status: Authoritative settlements batch calculation, semantic status badges, and 5-state cmbReturnStatus filter",
-    "2. Authenticated Document Streaming: Resolved HTTP-401 AUTH_TOKEN_MISSING across Sales/Purchase Returns, Credit/Debit Notes, and Party Excel Exports",
-    "3. Return Refund & Payment Workspaces: Converted popups to dedicated workspaces, dynamic Bank Account enabling by mode, 25MB/5MB proof validation, and unclipped buttons",
-    "4. Payment History & Accounting Diff: Implemented Desktop editPayment workflow with Old vs New difference confirmation modal and rowVersion optimistic locking",
-    "5. Credit Note & Debit Note Parity: Searchable party autocomplete, cascading party invoice selection, auto-fill taxable amount, and restock inventory toggle",
-    "6. Print Studio & UI Layout: Fixed blank white print preview on A4 tax invoices, expanded cramped modals to 520px-620px, and standardized .btn-purple action menus"
+    "1. Record Payment Controller: Fixed fatal syntax error in object literal breaking RecordPaymentController, sales/purchase/return payment views and all modal triggers",
+    "2. Stock Register Parity: Standardized purple actions dropdown (Stock Adjustment, Movement History, Barcode Label Print, Stock Revaluation)",
+    "3. Settings Branding Assets: Added live interactive thumbnails, file uploads, delete/clear triggers and fullscreen preview lightbox for Company Banner, Watermark, UPI QR, Header Logo, and Digital Seal",
+    "4. Invoice Terms & Conditions: Expanded defaults editor textarea to full-sized 6-row view"
   ]
 }

@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.03">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.04">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -7103,21 +7103,31 @@
                     </div>
 
                     <!-- Branding Asset Uploaders (CompanySettingsPanel.fxml Parity) -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; border-top:1px dashed var(--border-subtle); padding-top:10px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; border-top:1px dashed var(--border-subtle); padding-top:12px;">
                       <div class="form-group">
-                        <label class="form-label" style="font-size:0.7rem;">Application Banner (5:1, 1600 &times; 320)</label>
-                        <input type="file" id="file-app-banner" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.banner', this)">
+                        <label class="form-label" style="font-size:0.7rem; font-weight:600;">Application Banner (5:1, 1600 &times; 320)</label>
+                        <div style="margin-bottom:6px; min-height:55px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px;">
+                          <img id="preview-app-banner" src="" style="max-height:50px; max-width:100%; display:none; object-fit:contain;" alt="App Banner">
+                          <span id="placeholder-app-banner" style="font-size:0.72rem; color:var(--text-dim);">No banner uploaded</span>
+                        </div>
+                        <input type="file" id="file-app-banner" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.banner', this, 'preview-app-banner', 'placeholder-app-banner')">
                         <div style="display:flex; gap:6px;">
-                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-banner').click()" style="font-size:0.72rem;">&#128194; Upload Banner</button>
-                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.banner')" style="font-size:0.72rem;">Clear</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-banner').click()" style="font-size:0.72rem; flex:1;">📁 Upload</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.previewBrandingAsset('application.banner', 'preview-app-banner')" style="font-size:0.72rem; flex:1;">👁️ Preview</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.banner', 'preview-app-banner', 'placeholder-app-banner')" style="font-size:0.72rem; color:var(--red);">🗑️ Clear</button>
                         </div>
                       </div>
                       <div class="form-group">
-                        <label class="form-label" style="font-size:0.7rem;">Application Mark (512 &times; 512 PNG)</label>
-                        <input type="file" id="file-app-mark" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.mark', this)">
+                        <label class="form-label" style="font-size:0.7rem; font-weight:600;">Application Mark / Watermark (512 &times; 512)</label>
+                        <div style="margin-bottom:6px; min-height:55px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:4px;">
+                          <img id="preview-app-mark" src="" style="max-height:50px; max-width:100%; display:none; object-fit:contain;" alt="App Mark">
+                          <span id="placeholder-app-mark" style="font-size:0.72rem; color:var(--text-dim);">No mark uploaded</span>
+                        </div>
+                        <input type="file" id="file-app-mark" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('application.mark', this, 'preview-app-mark', 'placeholder-app-mark')">
                         <div style="display:flex; gap:6px;">
-                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-mark').click()" style="font-size:0.72rem;">&#128194; Upload Mark</button>
-                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.mark')" style="font-size:0.72rem;">Clear</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-app-mark').click()" style="font-size:0.72rem; flex:1;">📁 Upload</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.previewBrandingAsset('application.mark', 'preview-app-mark')" style="font-size:0.72rem; flex:1;">👁️ Preview</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('application.mark', 'preview-app-mark', 'placeholder-app-mark')" style="font-size:0.72rem; color:var(--red);">🗑️ Clear</button>
                         </div>
                       </div>
                     </div>
@@ -7176,11 +7186,22 @@
                     <input type="number" id="setting-tolerance" class="form-input form-input-sm" value="1.00" step="0.1">
                   </div>
                   <div style="margin-top:16px; padding:12px; background:rgba(0,0,0,0.25); border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:6px;">UPI Dynamic QR Preview:</div>
-                    <div style="display:flex; align-items:center; gap:12px;">
-                      <div style="width:64px; height:64px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">&#128241;</div>
-                      <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
-                        Printed dynamically on B2B / B2C tax invoices for instant real-time UPI settlements.
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:8px; font-weight:600;">Corporate Payment UPI QR Scanner:</div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                      <div style="width:80px; height:80px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--border-subtle); flex-shrink:0;">
+                        <img id="preview-upi-qr" src="" style="max-width:100%; max-height:100%; display:none; object-fit:contain;" alt="UPI QR">
+                        <span id="placeholder-upi-qr" style="font-size:1.6rem; color:#64748b;">📱</span>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-size:0.74rem; color:var(--text-muted); line-height:1.4; margin-bottom:8px;">
+                          Dynamic UPI QR printed on sales tax invoices for instant customer payments via Google Pay, PhonePe, and BHIM.
+                        </div>
+                        <input type="file" id="file-upi-qr" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('payment.upi.qr', this, 'preview-upi-qr', 'placeholder-upi-qr')">
+                        <div style="display:flex; gap:6px;">
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-upi-qr').click()" style="font-size:0.72rem;">📁 Upload QR</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.previewBrandingAsset('payment.upi.qr', 'preview-upi-qr')" style="font-size:0.72rem;">👁️ Preview</button>
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('payment.upi.qr', 'preview-upi-qr', 'placeholder-upi-qr')" style="font-size:0.72rem; color:var(--red);">🗑️ Delete</button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -7234,8 +7255,8 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label class="form-label" style="font-size:0.75rem;">Default Invoice Terms &amp; Conditions</label>
-                    <textarea id="setting-invoice-terms" class="form-input form-input-sm" rows="5">1. Goods once sold will not be taken back.
+                    <label class="form-label" style="font-size:0.75rem; font-weight:600;">Default Invoice Terms &amp; Conditions</label>
+                    <textarea id="setting-invoice-terms" class="form-input form-input-sm" rows="6" style="min-height:130px; font-family:inherit; font-size:0.78rem; line-height:1.45;" placeholder="Enter company legal terms and conditions...">1. Goods once sold will not be taken back.
 2. Interest @ 18% p.a. will be charged after 30 days.
 3. Subject to Morbi jurisdiction only.</textarea>
                   </div>
@@ -7244,15 +7265,29 @@
                 <div class="data-panel" style="padding:18px;">
                   <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Invoice Branding Assets</h3>
                   <div style="margin-bottom:14px;">
-                    <label class="form-label" style="font-size:0.75rem;">Active Tax Invoice Header Logo</label>
-                    <div style="background:#fff; padding:12px; border-radius:6px; max-width:260px; text-align:center;">
-                      <img src="assets/logo.png" alt="Invoice Logo" style="max-height:48px; max-width:100%;">
+                    <label class="form-label" style="font-size:0.75rem; font-weight:600;">Active Tax Invoice Header Logo</label>
+                    <div style="background:#fff; padding:10px; border-radius:6px; max-width:280px; text-align:center; min-height:55px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; border:1px solid var(--border-subtle);">
+                      <img id="preview-invoice-logo" src="assets/logo.png" alt="Invoice Logo" style="max-height:48px; max-width:100%; object-fit:contain;">
+                      <span id="placeholder-invoice-logo" style="display:none; font-size:0.72rem; color:#64748b;">No logo</span>
+                    </div>
+                    <input type="file" id="file-invoice-logo" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('invoice.header.logo', this, 'preview-invoice-logo', 'placeholder-invoice-logo')">
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-invoice-logo').click()" style="font-size:0.72rem;">📁 Upload Logo</button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.previewBrandingAsset('invoice.header.logo', 'preview-invoice-logo')" style="font-size:0.72rem;">👁️ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('invoice.header.logo', 'preview-invoice-logo', 'placeholder-invoice-logo')" style="font-size:0.72rem; color:var(--red);">🗑️ Reset</button>
                     </div>
                   </div>
                   <div>
-                    <label class="form-label" style="font-size:0.75rem;">Authorized Signatory Digital Seal</label>
-                    <div style="background:rgba(0,0,0,0.3); border:1px dashed var(--border); padding:16px; border-radius:6px; text-align:center; color:var(--text-dim); font-size:0.75rem;">
-                      <span>&#9997;&#65039; Digital Signature Configured: JASVI ENTERPRISE SEAL</span>
+                    <label class="form-label" style="font-size:0.75rem; font-weight:600;">Authorized Signatory Digital Seal</label>
+                    <div style="background:rgba(0,0,0,0.3); border:1px dashed var(--border); padding:10px; border-radius:6px; text-align:center; min-height:55px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
+                      <img id="preview-invoice-seal" src="" style="max-height:50px; max-width:100%; display:none; object-fit:contain;" alt="Digital Seal">
+                      <span id="placeholder-invoice-seal" style="font-size:0.75rem; color:var(--text-dim);">&#9997;&#65039; Digital Signature Configured: JASVI ENTERPRISE SEAL</span>
+                    </div>
+                    <input type="file" id="file-invoice-seal" accept="image/*" style="display:none;" onchange="window.SettingsController.uploadBrandingAsset('invoice.digital.seal', this, 'preview-invoice-seal', 'placeholder-invoice-seal')">
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('file-invoice-seal').click()" style="font-size:0.72rem;">📁 Upload Seal</button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.previewBrandingAsset('invoice.digital.seal', 'preview-invoice-seal')" style="font-size:0.72rem;">👁️ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="window.SettingsController.clearBrandingAsset('invoice.digital.seal', 'preview-invoice-seal', 'placeholder-invoice-seal')" style="font-size:0.72rem; color:var(--red);">🗑️ Clear</button>
                     </div>
                   </div>
                 </div>
@@ -10958,70 +10993,86 @@ Please find attached {docType} {docNo} dated {date} for total amount {total}.
     </div>
   </div>
 
+  <!-- MODAL: BRANDING ASSET PREVIEW LIGHTBOX -->
+  <div class="modal-overlay" id="modal-branding-preview" style="display: none; z-index: 999999;">
+    <div class="modal-box" style="max-width: 650px; width: 90%; background: var(--bg-card, #1e293b); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); text-align: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+        <h3 id="branding-preview-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main); font-weight: 700;">Asset Preview</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-branding-preview').style.display='none'">&times;</button>
+      </div>
+      <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--border-subtle); border-radius: 8px; padding: 20px; min-height: 250px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 16px;">
+        <img id="branding-preview-img" src="" alt="Branding Asset Preview" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-branding-preview').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.03"></script>
+  <script src="js/version.js?v=10.0.34.04"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.03"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.03"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.03"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.03"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.03"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.03"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.03"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.03"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.03"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.03"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.03"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.03"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.03"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.03"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.03"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.04"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.04"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.04"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.04"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.04"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.04"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.04"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.04"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.04"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.04"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.04"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.04"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.04"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.04"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.04"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.03"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.03"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.03"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.03"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.03"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.03"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.03"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.03"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.03"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.04"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.04"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.04"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.04"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.04"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.04"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.04"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.04"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.04"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.03"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.03"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.04"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.04"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.03"></script>
-  <script src="js/app.js?v=10.0.34.03"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.04"></script>
+  <script src="js/app.js?v=10.0.34.04"></script>
 </body>
 </html>
 

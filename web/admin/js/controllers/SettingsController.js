@@ -68,8 +68,27 @@ window.SettingsController = (function() {
     if (el) el.checked = (v === true || v === 'true');
   }
 
+  function setAssetPreview(imgId, phId, base64OrUrl, defaultImg) {
+    const img = document.getElementById(imgId);
+    const ph = document.getElementById(phId);
+    if (!img) return;
+    if (base64OrUrl && base64OrUrl.trim() !== '') {
+      img.src = base64OrUrl;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+    } else if (defaultImg) {
+      img.src = defaultImg;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+    } else {
+      img.src = '';
+      img.style.display = 'none';
+      if (ph) ph.style.display = 'block';
+    }
+  }
+
   return {
-    uploadBrandingAsset(assetKey, fileInput) {
+    uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId) {
       if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
       const file = fileInput.files[0];
       const reader = new FileReader();
@@ -79,6 +98,7 @@ window.SettingsController = (function() {
           const values = {};
           values[assetKey] = base64Data;
           await window.ApiService.put('/api/support/settings', { values });
+          setAssetPreview(previewImgId, placeholderId, base64Data);
           if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
           window.AppDialogService.showToast(`Asset "${assetKey}" uploaded successfully!`, 'success');
         } catch (err) {
@@ -88,11 +108,33 @@ window.SettingsController = (function() {
       reader.readAsDataURL(file);
     },
 
-    async clearBrandingAsset(assetKey) {
+    previewBrandingAsset(assetKey, previewImgId) {
+      const imgEl = document.getElementById(previewImgId);
+      const src = imgEl ? imgEl.src : '';
+      if (!src || src.endsWith('undefined') || src === window.location.href || imgEl.style.display === 'none') {
+        window.AppDialogService.showToast('No asset image available to preview.', 'warning');
+        return;
+      }
+      const modal = document.getElementById('modal-branding-preview');
+      const modalImg = document.getElementById('branding-preview-img');
+      const modalTitle = document.getElementById('branding-preview-title');
+      if (modal && modalImg) {
+        modalImg.src = src;
+        if (modalTitle) modalTitle.textContent = 'Preview: ' + assetKey;
+        modal.style.display = 'flex';
+      }
+    },
+
+    async clearBrandingAsset(assetKey, previewImgId, placeholderId) {
       try {
         const values = {};
         values[assetKey] = '';
         await window.ApiService.put('/api/support/settings', { values });
+        const defaultImgs = {
+          'invoice.header.logo': 'assets/logo.png'
+        };
+        const defImg = defaultImgs[assetKey] || '';
+        setAssetPreview(previewImgId, placeholderId, '', defImg);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${assetKey}" cleared.`, 'info');
       } catch (err) {
@@ -286,6 +328,13 @@ window.SettingsController = (function() {
         setVal('setting-app-name', serverSettings['application.displayName'] || (profile && profile.companyName) || 'JASVI INDUSTRIES ERP');
         setVal('setting-app-tagline', serverSettings['application.tagline'] || 'Enterprise Production & Distribution');
         setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
+
+        if (serverSettings['application.banner']) {
+          setAssetPreview('preview-app-banner', 'placeholder-app-banner', serverSettings['application.banner']);
+        }
+        if (serverSettings['application.mark']) {
+          setAssetPreview('preview-app-mark', 'placeholder-app-mark', serverSettings['application.mark']);
+        }
       } catch (err) {
         console.error('[SettingsController] Failed to load company settings:', err);
       }
@@ -373,6 +422,10 @@ window.SettingsController = (function() {
         setVal('setting-account-type', serverSettings['payment.accountType'] || (profile && profile.accountType) || 'CURRENT');
         setVal('setting-upi-id', serverSettings['payment.upiId'] || (profile && profile.upiId) || '');
         setVal('setting-tolerance', serverSettings['payment.bankMatchRoundingTolerance'] || (profile && profile.bankMatchTolerance) || '0.00');
+
+        if (serverSettings['payment.upi.qr']) {
+          setAssetPreview('preview-upi-qr', 'placeholder-upi-qr', serverSettings['payment.upi.qr']);
+        }
       } catch (err) {
         console.error('[SettingsController] Failed to load payment settings:', err);
       }
@@ -434,6 +487,17 @@ window.SettingsController = (function() {
         setVal('setting-date-format', normDateFmt);
         setVal('setting-time-format', normTimeFmt);
         setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged after 30 days.\n3. Subject to Morbi jurisdiction only.');
+
+        let invoiceSettings = {};
+        try {
+          invoiceSettings = await window.ApiService.get('/api/support/settings?prefix=invoice.');
+        } catch (e) {}
+        if (invoiceSettings['invoice.header.logo']) {
+          setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', invoiceSettings['invoice.header.logo'], 'assets/logo.png');
+        }
+        if (invoiceSettings['invoice.digital.seal']) {
+          setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', invoiceSettings['invoice.digital.seal']);
+        }
       } catch (err) {
         console.error('[SettingsController] Failed to load invoice settings:', err);
       }

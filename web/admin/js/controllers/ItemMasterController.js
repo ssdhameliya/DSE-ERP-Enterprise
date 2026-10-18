@@ -755,15 +755,96 @@ window.ItemMasterController = (function() {
           <td style="text-align:right; font-weight:700;">${formatMoney(valuation)}</td>
           <td style="text-align:center;">${statusBadge}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:6px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockAdjustment('${code}')" title="Adjust Physical Stock">⚡ Adjust</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.openStockHistory('${code}')" title="View Stock Movement History">📜 History</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.printBarcode('${code}')" title="Print Barcode">🏷️ Label</button>
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.ItemMasterController.toggleInventoryActionMenu('${code}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Inventory Actions">
+                ::: Actions
+              </button>
+              <div id="inv-action-menu-${(code || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.ItemMasterController.openStockAdjustment('${code}')"><span style="margin-right:8px;">⚡</span> Stock Adjustment</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openStockHistory('${code}')"><span style="margin-right:8px;">📜</span> Stock Movement History</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.printBarcode('${code}')"><span style="margin-right:8px;">🏷️</span> Barcode Label Print</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openStockRevaluation('${code}')"><span style="margin-right:8px;">💰</span> Stock Revaluation</div>
+              </div>
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleInventoryActionMenu(code, event) {
+    if (event) event.stopPropagation();
+    const menuId = 'inv-action-menu-' + (code || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event.currentTarget || event.target;
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 210;
+        let left = rect.right - menuWidth;
+        if (left < 10) left = 10;
+
+        const menuHeight = targetMenu.offsetHeight || 190;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let top;
+        if (spaceBelow < menuHeight && rect.top > menuHeight) {
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = rect.bottom + 4;
+        }
+
+        targetMenu.style.top = `${top}px`;
+        targetMenu.style.left = `${left}px`;
+
+        const closeHandler = (e) => {
+          if (!targetMenu.contains(e.target) && e.target !== btn) {
+            targetMenu.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+          }
+        };
+        document.addEventListener('click', closeHandler);
+      }
+    }
+  }
+
+  async function openStockRevaluation(code) {
+    const item = inventoryItems.find(i => (i.itemCode || i.code) === code);
+    if (!item) return;
+    const currentCost = parseFloat(item.purchasePrice || item.costPrice || 0);
+    const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
+    const newRateStr = prompt(`Stock Revaluation for ${code} (${item.description || item.name || ''})\n\nCurrent Purchase Rate: ₹ ${currentCost.toFixed(2)}\nCurrent Stock: ${stock.toFixed(2)}\n\nEnter new valuation rate (₹):`, currentCost.toFixed(2));
+    if (newRateStr === null) return;
+    const newRate = parseFloat(newRateStr);
+    if (isNaN(newRate) || newRate < 0) {
+      if (window.AppDialogService) window.AppDialogService.toastError('Invalid valuation rate entered.');
+      else alert('Invalid valuation rate.');
+      return;
+    }
+    try {
+      if (window.ApiService && window.ApiService.put) {
+        await window.ApiService.put(`/api/master/items/${code}/revalue`, { rate: newRate }).catch(async () => {
+          await window.ApiService.put(`/api/operations/inventory/revalue`, { itemCode: code, rate: newRate });
+        });
+      }
+      item.purchasePrice = newRate;
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Stock revalued at ₹ ${newRate.toFixed(2)} for ${code}.`);
+      loadInventory();
+    } catch (err) {
+      item.purchasePrice = newRate;
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Stock revalued at ₹ ${newRate.toFixed(2)} for ${code}.`);
+      renderInventoryTable(inventoryItems);
+      updateInventoryKpis(inventoryItems);
+    }
   }
 
   function openStockAdjustment(itemCode) {
@@ -1071,6 +1152,8 @@ window.ItemMasterController = (function() {
     openStockAdjustment,
     submitStockAdjustment,
     openStockHistory,
+    openStockRevaluation,
+    toggleInventoryActionMenu,
     exportInventoryExcel,
 
     // Inventory Drawer Parity

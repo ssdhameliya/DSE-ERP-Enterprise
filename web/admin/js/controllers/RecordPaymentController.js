@@ -278,10 +278,10 @@ window.RecordPaymentController = (function() {
       if (btnRem) btnRem.disabled = true;
     },
 
-    let editingPaymentId = null;
-    let editingPaymentOriginal = null;
+    editingPaymentId: null,
+    editingPaymentOriginal: null,
 
-    function onPaymentModeChange(val) {
+    onPaymentModeChange(val) {
       const mode = (val || '').toLowerCase();
       const bankSelect = document.getElementById('rp-bank-account');
       if (bankSelect) {
@@ -290,9 +290,9 @@ window.RecordPaymentController = (function() {
         bankSelect.style.opacity = isCashOrUpi ? '0.45' : '1';
         bankSelect.style.pointerEvents = isCashOrUpi ? 'none' : 'auto';
       }
-    }
+    },
 
-    function toggleHistoryMenu(id, event) {
+    toggleHistoryMenu(id, event) {
       if (event) event.stopPropagation();
       const menuId = 'rp-history-menu-' + id;
       const targetMenu = document.getElementById(menuId);
@@ -326,9 +326,9 @@ window.RecordPaymentController = (function() {
           setTimeout(() => document.addEventListener('click', closeHandler), 10);
         }
       }
-    }
+    },
 
-    async function loadPaymentLookups() {
+    async loadPaymentLookups() {
       const modeSelect = document.getElementById('rp-pay-mode');
       const bankSelect = document.getElementById('rp-bank-account');
 
@@ -345,7 +345,7 @@ window.RecordPaymentController = (function() {
         }
         if (modeSelect) {
           modeSelect.innerHTML = modeList.map(m => `<option value="${m}" ${m === 'Bank Transfer' ? 'selected' : ''}>${m}</option>`).join('');
-          modeSelect.onchange = (e) => onPaymentModeChange(e.target.value);
+          modeSelect.onchange = (e) => this.onPaymentModeChange(e.target.value);
         }
 
         let accountList = [];
@@ -368,13 +368,13 @@ window.RecordPaymentController = (function() {
           }
         }
 
-        onPaymentModeChange(modeSelect ? modeSelect.value : '');
+        this.onPaymentModeChange(modeSelect ? modeSelect.value : '');
       } catch (err) {
         console.warn('[RecordPaymentController] Failed to load payment lookups:', err);
       }
-    }
+    },
 
-    function renderHistoryTable() {
+    renderHistoryTable() {
       const tbody = document.getElementById('rp-history-tbody');
       if (!tbody) return;
 
@@ -428,7 +428,7 @@ window.RecordPaymentController = (function() {
           </tr>
         `;
       }).join('');
-    }
+    },
 
     async savePayment(e) {
       if (e) {
@@ -824,10 +824,7 @@ window.RecordPaymentController = (function() {
           else alert('Failed to remove proof: ' + e2.message);
         }
       }
-    },
-
-    toggleHistoryMenu,
-    onPaymentModeChange
+    }
   };
 })();
 
