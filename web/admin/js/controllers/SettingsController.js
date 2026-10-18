@@ -93,12 +93,35 @@ window.SettingsController = (function() {
     if (el) el.checked = (v === true || v === 'true');
   }
 
-  function setAssetPreview(imgId, phId, base64OrUrl, defaultImg) {
+  async function resolveAssetUrl(val) {
+    if (!val || typeof val !== 'string') return '';
+    if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
+      return val;
+    }
+    if (val.startsWith('server-resource:')) {
+      const key = val.replace('server-resource:', '');
+      try {
+        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const resp = await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(key)}`, { headers });
+        if (resp.ok) {
+          const blob = await resp.blob();
+          return URL.createObjectURL(blob);
+        }
+      } catch (err) {
+        console.warn('Failed to resolve server-resource ' + key, err);
+      }
+    }
+    return val;
+  }
+
+  async function setAssetPreview(imgId, phId, base64OrUrl, defaultImg) {
     const img = document.getElementById(imgId);
     const ph = document.getElementById(phId);
     if (!img) return;
-    if (base64OrUrl && base64OrUrl.trim() !== '') {
-      img.src = base64OrUrl;
+    const resolved = await resolveAssetUrl(base64OrUrl);
+    if (resolved && resolved.trim() !== '') {
+      img.src = resolved;
       img.style.display = 'block';
       if (ph) ph.style.display = 'none';
     } else if (defaultImg) {
@@ -124,33 +147,47 @@ window.SettingsController = (function() {
       if (el) el.style.display = 'flex';
     },
 
-    uploadSignatureImage(fileInput) {
+    async uploadSignatureImage(fileInput) {
       if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
       const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        const base64Data = evt.target.result;
-        try {
-          await window.ApiService.put('/api/support/settings', {
-            values: { 'email.signature.image': base64Data }
-          });
-          const img = document.getElementById('preview-email-sig-img');
-          const status = document.getElementById('status-email-sig-img');
-          if (img) {
-            img.src = base64Data;
-            img.style.display = 'block';
-          }
-          if (status) {
-            status.textContent = file.name + ' • preserved';
-            status.style.color = '#4ade80';
-          }
-          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-          window.AppDialogService.showToast('Email signature image saved successfully!', 'success');
-        } catch (err) {
-          window.AppDialogService.showToast('Failed to save signature image: ' + err.message, 'error');
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const headers = {
+          'Content-Type': file.type || 'application/octet-stream'
+        };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        // 1. Upload binary stream to ServerResourceController
+        const resKey = 'email.signature.image';
+        const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: headers,
+          body: arrayBuffer
+        });
+
+        // 2. Save pointer in support settings
+        await window.ApiService.put('/api/support/settings', {
+          values: { 'email.signature.image': 'server-resource:' + resKey }
+        });
+
+        const img = document.getElementById('preview-email-sig-img');
+        const status = document.getElementById('status-email-sig-img');
+        if (img) {
+          img.src = URL.createObjectURL(file);
+          img.style.display = 'block';
         }
-      };
-      reader.readAsDataURL(file);
+        if (status) {
+          status.textContent = file.name + ' • preserved on server';
+          status.style.color = '#4ade80';
+        }
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Email signature image saved to server resource repository!', 'success');
+      } catch (err) {
+        console.error('Failed to save signature image:', err);
+        window.AppDialogService.showToast('Failed to save signature image: ' + err.message, 'error');
+      }
     },
 
     async clearSignatureImage() {
@@ -177,24 +214,40 @@ window.SettingsController = (function() {
       }
     },
 
-    uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId) {
+    async uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId) {
       if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
       const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        const base64Data = evt.target.result;
-        try {
-          const values = {};
-          values[assetKey] = base64Data;
-          await window.ApiService.put('/api/support/settings', { values });
-          setAssetPreview(previewImgId, placeholderId, base64Data);
-          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-          window.AppDialogService.showToast(`Asset "${assetKey}" uploaded successfully!`, 'success');
-        } catch (err) {
-          window.AppDialogService.showToast('Failed to save asset: ' + err.message, 'error');
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const token = window.AuthService ? window.AuthService.getToken() : localStorage.getItem('auth_token');
+        const headers = {
+          'Content-Type': file.type || 'application/octet-stream'
+        };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        // 1. Upload binary stream to ServerResourceController
+        const resKey = assetKey;
+        const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: headers,
+          body: arrayBuffer
+        });
+
+        // 2. Save pointer in support settings
+        const values = {};
+        values[assetKey] = 'server-resource:' + resKey;
+        await window.ApiService.put('/api/support/settings', { values });
+
+        // 3. Set preview directly using ObjectURL
+        setAssetPreview(previewImgId, placeholderId, URL.createObjectURL(file));
+
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast(`Asset "${assetKey}" uploaded and saved to server resources!`, 'success');
+      } catch (err) {
+        console.error('Failed to upload branding asset:', err);
+        window.AppDialogService.showToast('Failed to save asset: ' + err.message, 'error');
+      }
     },
 
     previewBrandingAsset(assetKey, previewImgId) {
@@ -925,17 +978,21 @@ window.SettingsController = (function() {
       if (statusText) statusText.textContent = `Connecting to ${host}:${port}...`;
 
       try {
-        // Step 1: Pre-save updated credentials to authority backend so test doesn't run with stale password
-        appendLog(`Syncing SMTP credentials for ${email} with server...`);
-        const smtpPayload = {
-          host,
-          port,
-          email,
-          appPassword: password
-        };
-        await window.ApiService.put('/api/authority/email/settings', smtpPayload);
-        setStage(1, 'success', `Host ${host}:${port} connection resolved`);
-        appendLog(`[OK] Server acknowledged SMTP target: ${host}:${port} (STARTTLS enabled)`);
+        if (password && password.trim()) {
+          appendLog(`Syncing updated SMTP credentials for ${email} with server...`);
+          const smtpPayload = {
+            host,
+            port,
+            email,
+            appPassword: password.trim()
+          };
+          await window.ApiService.put('/api/authority/email/settings', smtpPayload);
+          setStage(1, 'success', `Host ${host}:${port} credentials updated`);
+          appendLog(`[OK] Server acknowledged SMTP target: ${host}:${port} (STARTTLS enabled)`);
+        } else {
+          setStage(1, 'success', `Host ${host}:${port} connection verified`);
+          appendLog(`Using existing authenticated SMTP configuration on server for ${email}...`);
+        }
 
         // Step 2: Handshake
         setStage(2, 'active', `Authenticating account ${email}...`);

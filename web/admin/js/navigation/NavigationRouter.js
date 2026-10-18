@@ -9,6 +9,7 @@ window.NavigationRouter = (function() {
   ];
   let hoverHideTimeout = null;
   let isHoverPeekActive = false;
+  let isNavigating = false;
 
   const viewMetadata = {
     'view-dashboard': { title: 'Dashboard', breadcrumb: 'Executive Command Center', icon: '📊' },
@@ -84,102 +85,115 @@ window.NavigationRouter = (function() {
   }
 
   return {
+    get currentNavId() {
+      return currentViewId;
+    },
+
     getCurrentView() {
       return currentViewId;
     },
 
     selectNav(viewId, triggerAddTab = true) {
-      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
-
-      // Strictly hide all views and remove active class
-      document.querySelectorAll('.module-view, .view-section').forEach(sec => {
-        sec.classList.remove('active');
-        sec.style.display = 'none';
-      });
-
-      // Close open side drawers and overlay
-      ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.classList.remove('open'); el.style.display = ''; }
-      });
-      const ov = document.getElementById('side-drawer-overlay');
-      if (ov) ov.classList.remove('open');
-
-      // Clear all active navigation highlights
-      document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {
-        btn.classList.remove('active');
-      });
-
-      const isSettingsSub = viewId.startsWith('view-settings-');
-      const domViewId = isSettingsSub ? 'view-settings' : viewId;
-      const targetView = document.getElementById(domViewId);
-      if (targetView) {
-        targetView.classList.add('active');
-        targetView.style.display = 'block';
+      if (isNavigating) return;
+      if (currentViewId === viewId && document.getElementById(viewId)?.classList.contains('active')) {
+        return;
       }
+      isNavigating = true;
+      try {
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
-      if (isSettingsSub) {
-        const sec = viewId.replace('view-settings-', '').toUpperCase();
-        if (window.SettingsController && window.SettingsController.switchSection) {
-          window.SettingsController.switchSection(sec);
+        // Strictly hide all views and remove active class
+        document.querySelectorAll('.module-view, .view-section').forEach(sec => {
+          sec.classList.remove('active');
+          sec.style.display = 'none';
+        });
+
+        // Close open side drawers and overlay
+        ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) { el.classList.remove('open'); el.style.display = ''; }
+        });
+        const ov = document.getElementById('side-drawer-overlay');
+        if (ov) ov.classList.remove('open');
+
+        // Clear all active navigation highlights
+        document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {
+          btn.classList.remove('active');
+        });
+
+        const isSettingsSub = viewId.startsWith('view-settings-');
+        const domViewId = isSettingsSub ? 'view-settings' : viewId;
+        const targetView = document.getElementById(domViewId);
+        if (targetView) {
+          targetView.classList.add('active');
+          targetView.style.display = 'block';
         }
-      }
 
-      if (window.LabelIconEnhancer && targetView) {
-        window.LabelIconEnhancer.enhance(targetView);
-      }
-
-      const navKey = viewId.replace('view-', '');
-      const targetNav = document.getElementById(`nav-${navKey}`) ||
-                        document.getElementById(`nav-${navKey.replace('-register', '')}`);
-      if (targetNav) {
-        targetNav.classList.add('active');
-        // If child of a group, expand parent group automatically
-        const parentGroup = targetNav.closest('.nav-group');
-        if (parentGroup) {
-          parentGroup.classList.add('open', 'expanded');
-          const children = parentGroup.querySelector('.nav-children');
-          if (children) children.style.display = 'block';
-          const chev = parentGroup.querySelector('.nav-chevron');
-          if (chev) { chev.style.transform = 'rotate(90deg)'; chev.innerHTML = '&#9660;'; }
+        if (isSettingsSub) {
+          const sec = viewId.replace('view-settings-', '').toUpperCase();
+          if (window.SettingsController && window.SettingsController.switchSection) {
+            window.SettingsController.switchSection(sec);
+          }
         }
-      }
 
-      currentViewId = viewId;
-
-      // Update Header Title & Breadcrumb matching Desktop
-      const meta = viewMetadata[viewId] || { title: navKey.toUpperCase(), breadcrumb: 'Workspace Module', icon: '📄' };
-      updateHeader(meta);
-
-      // Manage Workspace Tabs
-      if (triggerAddTab) {
-        const existing = openTabs.find(t => t.id === viewId);
-        if (!existing) {
-          openTabs.push({ id: viewId, title: meta.title, icon: meta.icon, closable: viewId !== 'view-dashboard' });
+        if (window.LabelIconEnhancer && targetView) {
+          window.LabelIconEnhancer.enhance(targetView);
         }
-      }
-      renderTabs();
 
-      // Auto-hide hover peek drawer once a navigation destination is selected
-      const sb = document.querySelector('aside.app-sidebar');
-      if (sb && sb.classList.contains('hover-peek')) {
-        sb.classList.remove('hover-peek');
-        isHoverPeekActive = false;
-        if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
-      }
-
-      // Update URL hash without polluting history
-      if (window.location.hash !== `#${navKey}`) {
-        if (window.history && window.history.pushState) {
-          window.history.pushState({ viewId }, '', `#${navKey}`);
-        } else {
-          window.location.hash = `#${navKey}`;
+        const navKey = viewId.replace('view-', '');
+        const targetNav = document.getElementById(`nav-${navKey}`) ||
+                          document.getElementById(`nav-${navKey.replace('-register', '')}`);
+        if (targetNav) {
+          targetNav.classList.add('active');
+          // If child of a group, expand parent group automatically
+          const parentGroup = targetNav.closest('.nav-group');
+          if (parentGroup) {
+            parentGroup.classList.add('open', 'expanded');
+            const children = parentGroup.querySelector('.nav-children');
+            if (children) children.style.display = 'block';
+            const chev = parentGroup.querySelector('.nav-chevron');
+            if (chev) { chev.style.transform = 'rotate(90deg)'; chev.innerHTML = '&#9660;'; }
+          }
         }
-      }
 
-      // Dispatch controller onMount lifecycle only if authenticated
-      if (window.AuthService && window.AuthService.isAuthenticated()) {
-        this.dispatchLifecycle(viewId);
+        currentViewId = viewId;
+
+        // Update Header Title & Breadcrumb matching Desktop
+        const meta = viewMetadata[viewId] || { title: navKey.toUpperCase(), breadcrumb: 'Workspace Module', icon: '📄' };
+        updateHeader(meta);
+
+        // Manage Workspace Tabs
+        if (triggerAddTab) {
+          const existing = openTabs.find(t => t.id === viewId);
+          if (!existing) {
+            openTabs.push({ id: viewId, title: meta.title, icon: meta.icon, closable: viewId !== 'view-dashboard' });
+          }
+        }
+        renderTabs();
+
+        // Auto-hide hover peek drawer once a navigation destination is selected
+        const sb = document.querySelector('aside.app-sidebar');
+        if (sb && sb.classList.contains('hover-peek')) {
+          sb.classList.remove('hover-peek');
+          isHoverPeekActive = false;
+          if (hoverHideTimeout) { clearTimeout(hoverHideTimeout); hoverHideTimeout = null; }
+        }
+
+        // Update URL hash without polluting history
+        if (window.location.hash !== `#${navKey}`) {
+          if (window.history && window.history.pushState) {
+            window.history.pushState({ viewId }, '', `#${navKey}`);
+          } else {
+            window.location.hash = `#${navKey}`;
+          }
+        }
+
+        // Dispatch controller onMount lifecycle only if authenticated
+        if (window.AuthService && window.AuthService.isAuthenticated()) {
+          this.dispatchLifecycle(viewId);
+        }
+      } finally {
+        isNavigating = false;
       }
     },
 

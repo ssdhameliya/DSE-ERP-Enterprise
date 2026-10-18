@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.11">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.13">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -3791,7 +3791,8 @@
               <button class="btn btn-danger" id="btnDeleteStatement" onclick="window.BankStatementController.deleteStatement()" style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
                 <span>🗑️</span> Delete Statement
               </button>
-              <button class="btn btn-primary" onclick="window.BankStatementController.openImportModal()" style="height: 34px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <input type="file" id="bank-csv-file-input" accept=".csv,.txt" style="display:none;" onchange="window.BankStatementController.onCsvFileSelected(event)">
+              <button class="btn btn-primary" onclick="window.BankStatementController.importStatement()" style="height: 34px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
                 <span>📥</span> Import Statement
               </button>
             </div>
@@ -7823,8 +7824,8 @@ Outstanding Balance: {BalanceAmount}
 {Signature}</textarea>
                   </div>
                 </div>
+              </div>
             </div>
-
 
             <!-- 6. SECURITY PANEL (SecuritySettingsPanel.fxml Parity) -->
             <div id="settings-panel-security" class="settings-subpanel" data-section="SECURITY" style="display:none;">
@@ -10833,83 +10834,176 @@ Outstanding Balance: {BalanceAmount}
     </div>
   </div>
 
-  <!-- MODAL: IMPORT BANK STATEMENT CSV (BankStatement.fxml Parity) -->
-  <div id="modal-import-statement" class="modal-backdrop" style="display:none;">
-    <div class="modal-card" style="max-width:560px;">
+  <!-- MODAL: SELECT BANK ACCOUNT FOR STATEMENT (Desktop ChoiceDialog Parity) -->
+  <div id="modal-select-bank-account" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width:480px;">
       <div class="modal-header">
-        <h3 style="margin:0;">&#128229; Import Bank Statement</h3>
-        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-import-statement')">&times;</button>
+        <h3 style="margin:0;">🏦 Select Bank Account</h3>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-select-bank-account')">&times;</button>
       </div>
       <div class="modal-body" style="padding:20px;">
-        <div style="margin-bottom:16px;">
-          <label class="form-label">Bank Institution</label>
-          <select id="import-bank-name" class="form-select">
-            <option value="Kotak Mahindra Bank" selected>Kotak Mahindra Bank (Kotak CSV Format)</option>
-            <option value="HDFC Bank">HDFC Bank (Standard CSV)</option>
-            <option value="State Bank of India">State Bank of India (SBI CSV)</option>
-            <option value="ICICI Bank">ICICI Bank (Corporate Statement)</option>
-            <option value="Generic Bank">Generic Bank (Date, Ref, Dr, Cr, Balance)</option>
+        <p style="margin-top:0; font-size:0.85rem; color:var(--text-muted);">
+          Confirm the Bank Account for this statement.
+        </p>
+        <div id="msba-detected-info" style="font-size:0.8rem; color:var(--cyan); margin-bottom:12px; padding:8px 12px; background:rgba(56,189,248,0.08); border-radius:6px; border:1px solid rgba(56,189,248,0.2);">
+          Detected: -
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Master Data Bank Account</label>
+          <select id="msba-account-select" class="form-select" style="height:38px;">
+            <!-- populated dynamically from BANK_ACCOUNT lookups -->
           </select>
         </div>
-        <div style="margin-bottom:16px;">
-          <label class="form-label">Bank Account Number / Identifier</label>
-          <input type="text" id="import-bank-acc" class="form-input" value="50200012345678" placeholder="Account Number">
-        </div>
-        <div style="margin-bottom:16px;">
-          <label class="form-label">Select Statement File (.CSV / .TXT)</label>
-          <div style="border: 2px dashed var(--border-subtle); padding: 24px; text-align: center; border-radius: 8px; background: rgba(255,255,255,0.02);">
-            <div style="font-size: 2rem; margin-bottom: 8px;">&#128196;</div>
-            <div id="import-file-name" style="font-weight: 600; color: var(--cyan); margin-bottom: 6px;">No file selected</div>
-            <div id="import-preview-count" style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">0 rows detected</div>
-            <input type="file" id="import-csv-file" accept=".csv,.txt" style="display:none;" onchange="window.BankStatementController.onCsvFileSelected(event)">
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-csv-file').click()">Browse Computer...</button>
-          </div>
-        </div>
         <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-import-statement')">Cancel</button>
-          <button type="button" id="btn-submit-import" class="btn btn-primary" onclick="window.BankStatementController.submitImport()">Import Statement</button>
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-select-bank-account')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.confirmAccountAndImport()">Continue Import</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: MATCH CANDIDATE WORKSPACE (BankStatement.fxml Parity) -->
-  <div id="modal-match-candidate" class="modal-backdrop" style="display:none;">
-    <div class="modal-card" style="max-width:850px; width:95%;">
+  <!-- MODAL: TWO-STEP STATEMENT DELETE CONFIRMATION (Desktop Parity) -->
+  <div id="modal-statement-delete-confirm" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width:520px;">
       <div class="modal-header">
-        <div>
-          <h3 style="margin:0;">&#128269; Match Transaction to ERP Invoices</h3>
-          <div id="mc-txn-info" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Select transaction</div>
+        <h3 id="msdc-title" style="margin:0; color:#f87171;">🗑️ Delete Bank Statement?</h3>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div id="msdc-batch-label" style="font-size:0.85rem; font-weight:700; color:#ffffff; margin-bottom:12px;"></div>
+        
+        <!-- Phase 1: Impact Metrics Preview -->
+        <div id="msdc-phase-1">
+          <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:8px; padding:14px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:0.82rem; color:#f87171; margin-bottom:8px;">Pre-Reversal Impact Analysis:</div>
+            <div id="msdc-impact-metrics" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem; color:#e2e8f0; margin-bottom:10px;">
+              <div>• Total Transactions: <strong id="msdc-metric-total">0</strong></div>
+              <div>• Matched / Linked: <strong id="msdc-metric-matched">0</strong></div>
+              <div>• Expense Entries: <strong id="msdc-metric-expenses">0</strong></div>
+              <div>• Ignored Items: <strong id="msdc-metric-ignored">0</strong></div>
+            </div>
+            <div style="font-size:0.75rem; color:#fca5a5; line-height:1.4;">
+              ⚠️ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal fails, nothing will be deleted.
+            </div>
+          </div>
+          <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="window.BankStatementController.proceedToDeleteStepTwo()">Continue</button>
+          </div>
         </div>
-        <div style="display:flex; align-items:center; gap:14px;">
-          <span style="font-size:0.8rem; color:var(--text-muted);">Amount: <strong id="mc-txn-amount" style="color:var(--cyan); font-size:1.05rem;">&#8377; 0.00</strong></span>
-          <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-match-candidate')">&times;</button>
+
+        <!-- Phase 2: Final Confirmation (Type DELETE) -->
+        <div id="msdc-phase-2" style="display:none;">
+          <div style="margin-bottom:14px;">
+            <div style="font-size:0.85rem; font-weight:700; color:#ffffff; margin-bottom:4px;">Final Confirmation</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Permanently delete this Bank Statement import.</div>
+            <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#f87171;">Type DELETE to confirm:</label>
+            <input type="text" id="msdc-confirm-input" class="form-input" placeholder="DELETE" style="font-family:monospace; font-weight:700; font-size:0.9rem;" oninput="window.BankStatementController.onDeleteConfirmInput(this.value)">
+          </div>
+          <div class="modal-footer" style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">Cancel</button>
+            <button type="button" id="msdc-btn-delete" class="btn btn-danger" disabled onclick="window.BankStatementController.executeBatchDelete()">Delete Statement</button>
+          </div>
         </div>
       </div>
-      <div class="modal-body" style="padding:16px;">
-        <div class="data-panel" style="max-height:360px; overflow-y:auto;">
-          <table class="data-table">
+    </div>
+  </div>
+
+  <!-- MODAL: MATCH TRANSACTION WORKSPACE (Desktop BankStatementController.java:680-776 Parity) -->
+  <div id="modal-match-candidate" class="modal-backdrop" style="display:none;">
+    <div class="modal-card" style="max-width:1180px; width:96%;">
+      <div class="modal-header" style="padding:14px 20px; border-bottom:1px solid var(--border-subtle);">
+        <div>
+          <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
+            <span>ⓘ</span> Match Transaction
+          </h3>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
+            Review possible matches and allocate the complete bank transaction.
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-match-candidate')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;">
+        
+        <!-- Top 6 KPI Metric Cards Strip -->
+        <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:14px;">
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">Bank Amount</div>
+            <div class="kpi-value" id="mc-kpi-bank-amount" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--green);">Allocated</div>
+            <div class="kpi-value" id="mc-kpi-allocated" style="font-size:1.05rem; font-weight:800; color:var(--green);">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--yellow);">Round-off</div>
+            <div class="kpi-value" id="mc-kpi-roundoff" style="font-size:1.05rem; font-weight:800; color:var(--yellow);">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:#f87171;">Bank Remaining</div>
+            <div class="kpi-value" id="mc-kpi-remaining" style="font-size:1.05rem; font-weight:800; color:#f87171;">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--cyan);">Doc Residual</div>
+            <div class="kpi-value" id="mc-kpi-residual" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">₹ 0.00</div>
+          </div>
+          <div class="kpi-card" style="padding:8px 12px; background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">Settlement Status</div>
+            <div class="kpi-value" id="mc-kpi-status" style="font-size:0.85rem; font-weight:700; color:var(--yellow); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Select a Transaction</div>
+          </div>
+        </div>
+
+        <!-- Transaction Metadata Strip & Guidance Banner -->
+        <div style="background:rgba(15,23,42,0.6); border:1px solid var(--border-subtle); border-radius:6px; padding:10px 14px; margin-bottom:12px;">
+          <div id="mc-banner-txn" style="font-size:0.82rem; font-weight:700; color:#ffffff; margin-bottom:4px;">-</div>
+          <div style="font-size:0.75rem; color:var(--text-dim); line-height:1.4;">
+            Suggestions stay strict: exact amount + useful party + date. When you manually confirm, a final document residual within the configured ₹1.00 round-off tolerance is settled explicitly without changing the actual bank amount. The total actual allocation must still equal the bank amount.
+          </div>
+        </div>
+
+        <!-- 10-Column Candidate Table -->
+        <div class="data-panel" style="max-height:360px; overflow-y:auto; border:1px solid var(--border-subtle); border-radius:6px;">
+          <table class="data-table" id="mc-candidate-table">
             <thead>
               <tr>
-                <th style="width:60px; text-align:center;">MATCH</th>
-                <th style="width:90px;">TYPE</th>
-                <th style="width:120px;">DOCUMENT #</th>
-                <th>PARTY / ENTITY</th>
-                <th style="width:100px;">DATE</th>
-                <th style="text-align:right; width:110px;">TOTAL (&#8377;)</th>
-                <th style="text-align:right; width:110px;">DUE (&#8377;)</th>
-                <th style="text-align:center; width:120px;">ACTION</th>
+                <th style="width:40px; text-align:center;">
+                  <input type="checkbox" id="mc-chk-all" onchange="window.BankStatementController.onToggleAllCandidates(this.checked)" title="Select all visible match candidates">
+                </th>
+                <th style="width:60px; text-align:center;">Score</th>
+                <th style="width:80px;">Type</th>
+                <th style="width:130px;">Document</th>
+                <th>Customer / Supplier</th>
+                <th style="width:95px;">Date</th>
+                <th style="text-align:right; width:110px;">Total (₹)</th>
+                <th style="text-align:right; width:100px;">Paid (₹)</th>
+                <th style="text-align:right; width:110px;">Outstanding</th>
+                <th style="text-align:right; width:120px;">Allocation (₹)</th>
               </tr>
             </thead>
             <tbody id="mc-candidates-tbody">
-              <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-dim);">Loading match candidates...</td></tr>
+              <tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-dim);">Loading match candidates...</td></tr>
             </tbody>
           </table>
         </div>
-        <div class="modal-footer" style="padding-top:14px; margin-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.75rem; color:var(--text-dim);">Matches are ranked using fuzzy string similarity, amount tolerances, and reference heuristics.</span>
-          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-match-candidate')">Close</button>
+
+        <!-- Footer Summary Line & Actions -->
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+          <div id="mc-footer-summary" style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">
+            0 selected • Bank allocated ₹ 0.00 • Round-off ₹ 0.00 • Bank remaining ₹ 0.00 • Document residual ₹ 0.00
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.refreshSuggestions()" style="display:inline-flex; align-items:center; gap:6px;">
+              <span>🔄</span> Refresh Suggestions
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-match-candidate')">
+              <span>❌</span> Cancel
+            </button>
+            <button type="button" id="mc-btn-confirm" class="btn btn-primary" onclick="window.BankStatementController.confirmCurrentAllocations()" style="display:inline-flex; align-items:center; gap:6px;">
+              <span>✅</span> Confirm Match
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -11835,67 +11929,67 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.12"></script>
+  <script src="js/version.js?v=10.0.34.13"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/FormatUtil.js?v=10.0.34.12"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.12"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.12"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.12"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.12"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.12"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.12"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.12"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.12"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.12"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.12"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.12"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.12"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.12"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.12"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.13"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.13"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.13"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.13"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.13"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.13"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.13"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.13"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.13"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.13"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.13"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.13"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.13"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.13"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.13"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.12"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.12"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.12"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.12"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.12"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.12"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.12"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.12"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.12"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.13"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.13"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.13"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.13"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.13"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.13"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.13"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.13"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.13"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.12"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.12"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.13"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.13"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.12"></script>
-  <script src="js/app.js?v=10.0.34.12"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.13"></script>
+  <script src="js/app.js?v=10.0.34.13"></script>
 </body>
 </html>
 

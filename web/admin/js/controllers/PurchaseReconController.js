@@ -136,14 +136,21 @@ window.PurchaseReconController = (function() {
           <td><span class="pill-badge pill-neutral">${r.source || 'MANUAL'}</span></td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn-purple" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-                ::: Actions
+              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:2px 8px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
+                Actions ▼
               </button>
               <div id="recon-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:200px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PurchaseReconController.openEditRecon(${r.id})"><span style="margin-right:8px;">👁️</span> View Recon</div>
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditRecon(${r.id})"><span style="margin-right:8px;">✏️</span> Edit Recon</div>
-                <div class="action-menu-item" onclick="window.PurchaseReconController.viewBankLinks(${r.id})"><span style="margin-right:8px;">🔗</span> Bank Statement Links</div>
+                ${((r.linkedAmount && r.linkedAmount > 0.009) || (r.bankAllocatedAmount && r.bankAllocatedAmount > 0.009)) ? `
+                  <div class="action-menu-item" onclick="window.PurchaseReconController.viewBankLinks(${r.id})"><span style="margin-right:8px;">🏦</span> Open Bank Statement</div>
+                ` : ''}
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
-                <div class="action-menu-item" style="color:var(--red);" onclick="window.PurchaseReconController.deleteReconRecord(${r.id})"><span style="margin-right:8px;">🗑️</span> Delete Record</div>
+                ${((r.linkedAmount && r.linkedAmount > 0.009) || (r.bankAllocatedAmount && r.bankAllocatedAmount > 0.009)) ? `
+                  <div class="action-menu-item disabled" style="opacity:0.4; cursor:not-allowed;" title="Cannot delete record with linked bank statement amount"><span style="margin-right:8px;">🗑️</span> Delete Record</div>
+                ` : `
+                  <div class="action-menu-item" style="color:var(--red);" onclick="window.PurchaseReconController.deleteReconRecord(${r.id})"><span style="margin-right:8px;">🗑️</span> Delete Record</div>
+                `}
               </div>
             </div>
           </td>
@@ -186,6 +193,44 @@ window.PurchaseReconController = (function() {
           targetMenu.style.top = `${top}px`;
           targetMenu.style.left = `${left}px`;
 
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
+    }
+  }
+
+  function toggleSupplierActionMenu(id, event) {
+    if (event) event.stopPropagation();
+    const menuId = 'supplier-action-menu-' + id;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event?.currentTarget || event?.target;
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 180;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+          const menuHeight = targetMenu.offsetHeight || 120;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top = (spaceBelow < menuHeight && rect.top > menuHeight) ? Math.max(10, rect.top - menuHeight - 4) : rect.bottom + 4;
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
           const closeHandler = (e) => {
             if (!targetMenu.contains(e.target) && e.target !== btn) {
               targetMenu.style.display = 'none';
@@ -405,16 +450,19 @@ window.PurchaseReconController = (function() {
   }
 
   async function viewBankLinks(id) {
-    try {
-      const links = await window.ReconService.getReconBankLinks(id);
-      if (!links || links.length === 0) {
-        alert(`No bank statement linkages found for Purchase Recon record ${id}.`);
-        return;
-      }
-      const listStr = links.map(l => `• Date: ${formatDate(l.date)} | Ref: ${l.reference || '-'} | Amount: ${formatMoney(l.allocatedAmount)}`).join('\n');
-      alert(`Linked Bank Statement Transactions:\n\n${listStr}`);
-    } catch (e) {
-      alert('Error fetching bank links: ' + e.message);
+    const r = (reconRecords || []).find(x => x.id === id);
+    const searchRef = r ? (r.purchaseRef || r.invoiceNo || ('PRC-' + id)) : ('PRC-' + id);
+    if (window.NavigationRouter) {
+      window.NavigationRouter.selectNav('view-bank-statement');
+      setTimeout(() => {
+        const s = document.getElementById('txtSearch');
+        if (s) {
+          s.value = searchRef;
+          if (window.BankStatementController && window.BankStatementController.applyFilters) {
+            window.BankStatementController.applyFilters();
+          }
+        }
+      }, 250);
     }
   }
 
@@ -506,9 +554,20 @@ window.PurchaseReconController = (function() {
             ${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.openEditSupplier(${s.id})" style="padding:2px 6px; font-size:0.72rem;" title="Edit Supplier">✏️ Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="window.PurchaseReconController.deleteSupplier(${s.id})" style="padding:2px 6px; font-size:0.72rem;" title="Delete Supplier">🗑️</button>
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.toggleSupplierActionMenu(${s.id}, event)" style="padding:2px 8px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
+                Actions ▼
+              </button>
+              <div id="supplier-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">👁️</span> View Supplier</div>
+                <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">✏️</span> Edit Supplier</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                ${(s.reconRecordsCount && s.reconRecordsCount > 0) ? `
+                  <div class="action-menu-item disabled" style="opacity:0.4; cursor:not-allowed;" title="Suppliers linked to Purchase Recon records cannot be deleted"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
+                ` : `
+                  <div class="action-menu-item" style="color:var(--red);" onclick="window.PurchaseReconController.deleteSupplier(${s.id})"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
+                `}
+              </div>
             </div>
           </td>
         </tr>
@@ -679,6 +738,7 @@ window.PurchaseReconController = (function() {
     openNewSupplier,
     openEditSupplier,
     onSupplierRowClick,
+    toggleSupplierActionMenu,
     saveSupplier,
     deleteSupplier,
     closeSupplierEditor

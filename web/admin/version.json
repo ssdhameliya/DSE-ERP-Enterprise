@@ -1,16 +1,19 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 12,
-  "webVersion": "10.0.34.12",
-  "tag": "web-v10.0.34.12",
-  "releaseDate": "2026-10-18T19:00:00+05:30",
+  "webBuild": 13,
+  "webVersion": "10.0.34.13",
+  "tag": "web-v10.0.34.13",
+  "releaseDate": "2026-10-18T20:30:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.12 Enterprise Release - Full Desktop Parity for Bank & Expense, Bank Statement Reconciliation, Categorized Actions Context Menu, and Screenshot 5 Linked Transactions Modal",
+  "summary": "10.0.34.13 Enterprise Release - Full Desktop Parity for Matching Workspace, Native Drive CSV Import, Pre-Reversal Delete Impact Analysis, Cross-Module Deep Linking, and Branding Binary Uploads",
   "highlights": [
-    "1. Bank & Expense Module (BankExpense.fxml Parity): Unified workspace, in-place mode switching, dynamic 4 KPIs with grey/green/orange/blue pills, FY date pickers, bill attachment uploader, and dynamic lookups via MasterService",
-    "2. Bank Statement Reconciliation (BankStatement.fxml Parity): Account masking, 8 Title Case KPIs, 3-row filter toolbar with batch progress bar, guidance banner, and 50/100/200 pagination",
-    "3. Categorized Context Menu (Screenshot 4 Parity): VIEW (Transaction Details with 500-char ERP note editor, Imported Statement with raw CSV and SHA-256 fingerprint copy, Audit History), RECONCILIATION (View Match/Linked Record, Review Suggested Match, Move to Expense, View Bank Entry), REVERSAL (Unmatch/Reverse), and STATUS (Mark for Review, Mark as Ignored)",
-    "4. Linked Transactions Modal (Screenshot 5 Parity): Information modal with 5 metric cards (Bank Ref, Linked Count, Bank Linked, Round-off, Difference), multi-allocation table with direct workflow navigation",
-    "5. Modals & Safety: 1040px Browse Statements History dialog with 4 filters, two-step DELETE confirmation safety modal, reason prompt dialogs for review/ignore, and bulk move dialog"
+    "1. Matching Workspace Engine (Desktop BankStatementController.java:680-776 Parity): 6 live KPI cards (Bank Amount, Allocated, Round-off, Bank Remaining, Doc Residual, Settlement Status), 10-column candidate table with checkboxes, confidence scores, and editable allocation inputs with rounding tolerance calculation and partial settlement confirmation",
+    "2. Native Drive CSV Selection & Master Account Resolution: Direct file chooser without mock popups, Kotak/Standard CSV parser, automated account matching, and choice dialog modal for master data bank account mapping",
+    "3. Two-Phase Pre-Reversal Delete Impact Analysis: Safety modal with Phase 1 pre-reversal impact metric preview (transactions, matched, expenses, ignored) and Phase 2 uppercase 'DELETE' verification",
+    "4. Cross-Module Deep-Linking & Re-Entrancy Guard: Unified openLinkedDocument for PRC-, EXP-, BANK-, INV-, and PO- records with NavigationRouter re-entrancy prevention guard",
+    "5. Dedicated Note Updates & Context Menu Parity: POST /api/bank-statements/transactions/{id}/note endpoint integration allowing note edits on matched records without status mutation; neutral secondary Actions dropdown with strict status-based action categorization",
+    "6. Purchase Recon & Recon Supplier Actions: Desktop Actions dropdown with View, Edit, direct Open Bank Statement navigation, and dependency deletion protection",
+    "7. Server-Resource Branding Binary Upload & Email Test Guard: Raw binary PUT /api/authority/resources/BUSINESS_ASSET/{key} with server-resource: pointer resolution and empty-password safe email testing",
+    "8. DOM Structural Integrity: Closed orphaned container in Business Settings restoring full access to Security and Module Management tabs"
   ]
 }

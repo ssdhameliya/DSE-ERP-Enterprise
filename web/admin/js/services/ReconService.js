@@ -97,6 +97,10 @@ window.ReconService = {
     return window.ApiService.post(`/api/bank-statements/transactions/${txnId}/review`, { note, user, rowVersion });
   },
 
+  async updateTransactionNote(txnId, note = '', user = 'Admin', rowVersion = 0) {
+    return window.ApiService.post(`/api/bank-statements/transactions/${txnId}/note`, { note, user, rowVersion });
+  },
+
   async reverseTransaction(txnId, user = 'Admin') {
     return window.ApiService.post(`/api/bank-statements/transactions/${txnId}/reverse?user=${encodeURIComponent(user)}`, {});
   },

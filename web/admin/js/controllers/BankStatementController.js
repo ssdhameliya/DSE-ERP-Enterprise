@@ -172,6 +172,75 @@ window.BankStatementController = (function() {
     }
   }
 
+  function renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink) {
+    const isUnmatchedGroup = ['UNMATCHED', 'SUGGESTED', 'REVIEW'].includes(status);
+    let html = `
+      <!-- Category: VIEW -->
+      <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--text-muted); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">VIEW</div>
+      <div class="action-menu-item" onclick="window.BankStatementController.openTxnDetailsDialog(${t.id})"><span style="margin-right:8px;">👁️</span> View Transaction Details</div>
+      <div class="action-menu-item" onclick="window.BankStatementController.viewStatementSource(${t.id})"><span style="margin-right:8px;">📄</span> View Imported Statement</div>
+      <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_RECON', ${t.id}, '${(t.reference || t.description || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">🕒</span> View Audit History</div>
+    `;
+
+    if (isUnmatchedGroup) {
+      html += `
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: RECONCILIATION -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
+        <div class="action-menu-item" onclick="window.BankStatementController.openMatchModal(${t.id})"><span style="margin-right:8px;">${status === 'SUGGESTED' ? '💡 Review Suggested Match' : '🎯 Match Transaction'}</span></div>
+        ${debit > 0 ? `<div class="action-menu-item" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})"><span style="margin-right:8px;">💸</span> Move to Expense</div>` : ''}
+        <div class="action-menu-item" onclick="window.BankStatementController.quickMoveBankEntry(${t.id}, ${debit > 0 ? debit : credit}, '${debit > 0 ? 'DEBIT' : 'CREDIT'}')"><span style="margin-right:8px;">🏦</span> Move to Bank Entry</div>
+
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: STATUS -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--yellow); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">STATUS</div>
+        ${status !== 'REVIEW' ? `<div class="action-menu-item" onclick="window.BankStatementController.singleMarkReview(${t.id})"><span style="margin-right:8px;">🚩</span> Mark for Review</div>` : ''}
+        <div class="action-menu-item" onclick="window.BankStatementController.singleIgnore(${t.id})"><span style="margin-right:8px;">🚫</span> Mark as Ignored</div>
+      `;
+    } else if (status === 'MATCHED') {
+      html += `
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: RECONCILIATION -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
+        ${hasMultiAlloc ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.showLinkedAllocations(${t.id})"><span style="margin-right:8px;">🔗</span> View Match / Linked Record (${t.linkedAllocations.length})</div>
+        ` : (docLink ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🔗</span> View Match / Linked Record</div>
+        ` : '')}
+        ${docLink && (docLink.startsWith('BANK') || t.linkedTargetType === 'BANK_ENTRY') ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🏦</span> View Bank Entry</div>
+        ` : ''}
+
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: REVERSAL -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--red); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">REVERSAL</div>
+        <div class="action-menu-item danger" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩️</span> Unmatch / Reverse</div>
+      `;
+    } else if (status === 'EXPENSE') {
+      html += `
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: RECONCILIATION -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
+        ${docLink ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">💸</span> View Expense</div>
+        ` : ''}
+
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: REVERSAL -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--red); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">REVERSAL</div>
+        <div class="action-menu-item danger" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩️</span> Unmatch / Reverse</div>
+      `;
+    } else if (status === 'IGNORED') {
+      html += `
+        <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
+        <!-- Category: STATUS -->
+        <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--yellow); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">STATUS</div>
+        <div class="action-menu-item" onclick="window.BankStatementController.unignoreTransaction(${t.id})"><span style="margin-right:8px;">↩️</span> Return to Unmatched</div>
+      `;
+    }
+    return html;
+  }
+
   function renderTable(rows) {
     const tbody = document.getElementById('bank-statement-tbody');
     if (!tbody) return;
@@ -237,45 +306,11 @@ window.BankStatementController = (function() {
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn-purple" onclick="window.BankStatementController.toggleActionMenu(${t.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Reconciliation Actions">
-                ::: Actions
+              <button class="btn-secondary" onclick="window.BankStatementController.toggleActionMenu(${t.id}, event)" style="padding:4px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Reconciliation Actions">
+                Actions <span style="font-size:0.65rem;">▼</span>
               </button>
               <div id="bs-action-menu-${t.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:230px; white-space:nowrap; padding:6px 0; text-align:left;">
-                <!-- Category: VIEW -->
-                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--text-muted); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">VIEW</div>
-                <div class="action-menu-item" onclick="window.BankStatementController.openTxnDetailsDialog(${t.id})"><span style="margin-right:8px;">👁️</span> View Transaction Details</div>
-                <div class="action-menu-item" onclick="window.BankStatementController.viewStatementSource(${t.id})"><span style="margin-right:8px;">📄</span> View Imported Statement</div>
-                <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_RECON', ${t.id}, '${(t.reference || t.description || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">🕒</span> View Audit History</div>
-                
-                <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
-                
-                <!-- Category: RECONCILIATION -->
-                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
-                ${hasMultiAlloc ? `
-                  <div class="action-menu-item" onclick="window.BankStatementController.showLinkedAllocations(${t.id})"><span style="margin-right:8px;">🔗</span> View Match / Linked Record (${t.linkedAllocations.length})</div>
-                ` : (docLink ? `
-                  <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🔗</span> View Match / Linked Record</div>
-                ` : `
-                  <div class="action-menu-item" onclick="window.BankStatementController.openMatchModal(${t.id})"><span style="margin-right:8px;">${t.suggestedConfidence ? '💡 Review Suggested Match' : '🎯 Match Transaction'}</span></div>
-                  ${debit > 0 ? `<div class="action-menu-item" onclick="window.BankStatementController.quickMoveExpense(${t.id}, ${debit})"><span style="margin-right:8px;">💸</span> Move to Expense</div>` : ''}
-                  <div class="action-menu-item" onclick="window.BankStatementController.quickMoveBankEntry(${t.id}, ${debit > 0 ? debit : credit}, '${debit > 0 ? 'DEBIT' : 'CREDIT'}')"><span style="margin-right:8px;">🏦</span> Move to Bank Entry</div>
-                `)}
-                ${docLink ? `
-                  <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">${docLink.startsWith('EXP') ? '💸 View Expense' : '🏦 View Bank Entry'}</span></div>
-                ` : ''}
-
-                ${(status === 'MATCHED' || status === 'EXPENSE' || docLink) ? `
-                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
-                  <!-- Category: REVERSAL -->
-                  <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--red); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">REVERSAL</div>
-                  <div class="action-menu-item danger" onclick="window.BankStatementController.reverseMatch(${t.id})"><span style="margin-right:8px;">↩️</span> Unmatch / Reverse</div>
-                ` : ''}
-
-                <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
-                <!-- Category: STATUS -->
-                <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--yellow); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">STATUS</div>
-                <div class="action-menu-item" onclick="window.BankStatementController.singleMarkReview(${t.id})"><span style="margin-right:8px;">🚩</span> Mark for Review</div>
-                <div class="action-menu-item" onclick="window.BankStatementController.singleIgnore(${t.id})"><span style="margin-right:8px;">🚫</span> Mark as Ignored</div>
+                ${renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink)}
               </div>
             </div>
           </td>
@@ -507,8 +542,228 @@ window.BankStatementController = (function() {
   }
 
   // ==========================================
-  // 3. MATCHING WORKSPACE MODAL
+  // 3. MATCHING WORKSPACE MODAL (Desktop Parity BankStatementController.java:680-776)
   // ==========================================
+
+  function roundingFor(outstanding, amount, tolerance = 1.00) {
+    const diff = Math.round((outstanding - amount) * 100) / 100;
+    if (Math.abs(diff) <= 0.0001) return 0;
+    return tolerance > 0 && Math.abs(diff) <= tolerance + 0.0001 ? diff : 0;
+  }
+
+  function signedMoney(v) {
+    if (Math.abs(v) <= 0.0001) return '₹ 0.00';
+    return (v >= 0 ? '+' : '-') + formatMoney(Math.abs(v));
+  }
+
+  function recalculateMatchMetrics() {
+    if (!activeMatchingTxn) return;
+    const bankAmount = parseFloat(activeMatchingTxn.debit) > 0 ? parseFloat(activeMatchingTxn.debit) : parseFloat(activeMatchingTxn.credit) || 0;
+    const tolerance = 1.00;
+
+    let totalAllocated = 0;
+    let totalRoundOff = 0;
+    let totalResidual = 0;
+    let selectedCount = 0;
+
+    activeCandidates.forEach(r => {
+      if (r.selected) {
+        selectedCount++;
+        const val = parseFloat(r.allocation) || 0;
+        totalAllocated += val;
+        const ro = roundingFor(r.outstanding, val, tolerance);
+        r.roundOff = ro;
+        r.residual = Math.max(0, Math.round((r.outstanding - val - ro) * 100) / 100);
+        totalRoundOff += ro;
+        totalResidual += r.residual;
+      } else {
+        r.roundOff = 0;
+        r.residual = r.outstanding || 0;
+      }
+    });
+
+    const remainingAmount = Math.round((bankAmount - totalAllocated) * 100) / 100;
+    const bankComplete = Math.abs(remainingAmount) <= 0.01;
+    const documentsComplete = selectedCount > 0 && totalResidual <= 0.01;
+
+    let state = 'Select a Transaction';
+    if (selectedCount === 0) state = 'Select a Transaction';
+    else if (!bankComplete) state = 'Bank Not Fully Allocated';
+    else if (documentsComplete) state = Math.abs(totalRoundOff) > 0.0001 ? 'Full Match + Round-off' : 'Full Match';
+    else state = 'Document Remains Partial';
+
+    const elBank = document.getElementById('mc-kpi-bank-amount');
+    if (elBank) elBank.innerText = formatMoney(bankAmount);
+
+    const elAlloc = document.getElementById('mc-kpi-allocated');
+    if (elAlloc) elAlloc.innerText = formatMoney(totalAllocated);
+
+    const elRo = document.getElementById('mc-kpi-roundoff');
+    if (elRo) {
+      elRo.innerText = signedMoney(totalRoundOff);
+      elRo.style.color = Math.abs(totalRoundOff) > 0 ? 'var(--cyan)' : 'var(--yellow)';
+    }
+
+    const elRem = document.getElementById('mc-kpi-remaining');
+    if (elRem) {
+      elRem.innerText = formatMoney(remainingAmount);
+      elRem.style.color = bankComplete ? 'var(--green)' : '#f87171';
+    }
+
+    const elRes = document.getElementById('mc-kpi-residual');
+    if (elRes) {
+      elRes.innerText = formatMoney(totalResidual);
+      elRes.style.color = totalResidual <= 0.01 ? 'var(--green)' : 'var(--cyan)';
+    }
+
+    const elStatus = document.getElementById('mc-kpi-status');
+    if (elStatus) {
+      elStatus.innerText = state;
+      elStatus.style.color = bankComplete && documentsComplete ? 'var(--green)' : 'var(--yellow)';
+    }
+
+    const elSummary = document.getElementById('mc-footer-summary');
+    if (elSummary) {
+      elSummary.innerText = `${selectedCount} selected  •  Bank allocated ${formatMoney(totalAllocated)}  •  Round-off ${signedMoney(totalRoundOff)}  •  Bank remaining ${formatMoney(remainingAmount)}  •  Document residual ${formatMoney(totalResidual)}`;
+    }
+
+    const chkAll = document.getElementById('mc-chk-all');
+    if (chkAll) {
+      chkAll.indeterminate = selectedCount > 0 && selectedCount < activeCandidates.length;
+      if (!chkAll.indeterminate) {
+        chkAll.checked = selectedCount > 0 && selectedCount === activeCandidates.length;
+      }
+    }
+
+    const btnConfirm = document.getElementById('mc-btn-confirm');
+    if (btnConfirm) {
+      btnConfirm.disabled = selectedCount === 0 || totalAllocated <= 0;
+      btnConfirm.innerHTML = `<span>✅</span> Confirm Match (${selectedCount})`;
+    }
+  }
+
+  function renderCandidateRows() {
+    const tbody = document.getElementById('mc-candidates-tbody');
+    if (!tbody) return;
+
+    if (!activeCandidates || activeCandidates.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">
+            <div>⚠️ No matching open Sale, Purchase, or Return transaction found.</div>
+            <div style="font-size:0.75rem; margin-top:4px;">You can record this transaction directly as an Operating Expense or Bank Entry.</div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = activeCandidates.map((c, idx) => {
+      const conf = c.confidence || 0;
+      let confColor = 'var(--text-muted)';
+      if (conf >= 80) confColor = 'var(--green)';
+      else if (conf >= 50) confColor = 'var(--yellow)';
+
+      const total = parseFloat(c.totalAmount) || 0;
+      const outstanding = parseFloat(c.outstanding) || 0;
+      const paid = Math.max(0, total - outstanding);
+
+      return `
+        <tr style="${c.selected ? 'background:rgba(56,189,248,0.08);' : ''}">
+          <td style="text-align:center;">
+            <input type="checkbox" ${c.selected ? 'checked' : ''} onchange="window.BankStatementController.onCandidateRowToggle(${idx}, this.checked)" title="Select candidate">
+          </td>
+          <td style="text-align:center;">
+            <span style="font-weight:700; color:${confColor}; font-size:0.75rem;">${conf.toFixed(0)}%</span>
+          </td>
+          <td><span class="pill-badge pill-neutral">${c.type}</span></td>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace; font-size:0.8rem;">${c.documentNo}</td>
+          <td style="font-weight:600; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${c.partyName || ''}">${c.partyName || '-'}</td>
+          <td style="white-space:nowrap; font-size:0.75rem;">${formatDate(c.documentDate)}</td>
+          <td style="text-align:right; font-weight:600;">${formatMoney(total)}</td>
+          <td style="text-align:right; color:var(--text-muted); font-size:0.78rem;">${formatMoney(paid)}</td>
+          <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(outstanding)}</td>
+          <td style="text-align:right;">
+            <input type="number" step="0.01" min="0" max="${outstanding + 1.00}" value="${c.allocation != null ? c.allocation : 0}" style="width:110px; text-align:right; font-weight:700; font-size:0.82rem; padding:3px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.5); color:#ffffff;" oninput="window.BankStatementController.onAllocationInputChanged(${idx}, this.value)" onclick="event.stopPropagation();">
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function onToggleAllCandidates(checked) {
+    if (!activeMatchingTxn) return;
+    const bankAmount = parseFloat(activeMatchingTxn.debit) > 0 ? parseFloat(activeMatchingTxn.debit) : parseFloat(activeMatchingTxn.credit) || 0;
+
+    if (!checked) {
+      activeCandidates.forEach(r => {
+        r.allocation = 0;
+        r.selected = false;
+      });
+      renderCandidateRows();
+      recalculateMatchMetrics();
+      return;
+    }
+
+    let left = bankAmount;
+    for (const r of activeCandidates) {
+      const val = Math.min(r.outstanding, Math.max(0, left));
+      r.allocation = val;
+      r.selected = val > 0.0001;
+      left -= val;
+      if (left <= 0.01) left = 0;
+    }
+    renderCandidateRows();
+    recalculateMatchMetrics();
+  }
+
+  function onCandidateRowToggle(idx, checked) {
+    const r = activeCandidates[idx];
+    if (!r) return;
+    r.selected = checked;
+    if (checked && (!r.allocation || r.allocation <= 0.0001)) {
+      const bankAmount = parseFloat(activeMatchingTxn.debit) > 0 ? parseFloat(activeMatchingTxn.debit) : parseFloat(activeMatchingTxn.credit) || 0;
+      const used = activeCandidates.filter((x, i) => i !== idx && x.selected).reduce((sum, x) => sum + (parseFloat(x.allocation) || 0), 0);
+      r.allocation = Math.min(r.outstanding, Math.max(0, bankAmount - used));
+    } else if (!checked) {
+      r.allocation = 0;
+    }
+    renderCandidateRows();
+    recalculateMatchMetrics();
+  }
+
+  function onAllocationInputChanged(idx, val) {
+    const r = activeCandidates[idx];
+    if (!r) return;
+    const value = parseFloat(val) || 0;
+    r.allocation = value;
+    r.selected = value > 0.0001;
+    recalculateMatchMetrics();
+  }
+
+  async function refreshSuggestions() {
+    if (!activeMatchingTxn) return;
+    const tbody = document.getElementById('mc-candidates-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-dim);"><span class="loading-spinner"></span> Refreshing match candidates...</td></tr>`;
+
+    try {
+      const candidates = await window.ReconService.suggestMatch(activeMatchingTxn.id);
+      activeCandidates = (candidates || []).map(c => ({
+        ...c,
+        outstanding: parseFloat(c.outstanding) || 0,
+        totalAmount: parseFloat(c.totalAmount) || 0,
+        selected: false,
+        allocation: 0,
+        roundOff: 0,
+        residual: parseFloat(c.outstanding) || 0
+      }));
+      renderCandidateRows();
+      recalculateMatchMetrics();
+    } catch (err) {
+      console.error('Refresh match suggestion failed:', err);
+      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--red);">Failed to refresh suggestions: ${err.message || 'Server error'}</td></tr>`;
+    }
+  }
 
   async function openMatchModal(txnId) {
     activeMatchingTxn = currentTransactions.find(t => t.id === txnId);
@@ -517,74 +772,108 @@ window.BankStatementController = (function() {
     const modal = document.getElementById('modal-match-candidate');
     if (!modal) return;
 
-    const bankAmount = activeMatchingTxn.debit > 0 ? activeMatchingTxn.debit : activeMatchingTxn.credit;
-    document.getElementById('mc-txn-info').innerText = `${formatDate(activeMatchingTxn.transactionDate)} • Ref: ${activeMatchingTxn.reference || 'N/A'} • ${activeMatchingTxn.description || ''}`;
-    document.getElementById('mc-txn-amount').innerText = formatMoney(bankAmount);
+    const bankAmount = parseFloat(activeMatchingTxn.debit) > 0 ? parseFloat(activeMatchingTxn.debit) : parseFloat(activeMatchingTxn.credit) || 0;
+    const bannerTxn = document.getElementById('mc-banner-txn');
+    if (bannerTxn) {
+      bannerTxn.innerText = `${formatDate(activeMatchingTxn.transactionDate)}  •  ${activeMatchingTxn.reference || 'REF-N/A'}  •  ${activeMatchingTxn.description || '-'}`;
+    }
 
     const tbody = document.getElementById('mc-candidates-tbody');
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-dim);"><span class="loading-spinner"></span> Searching ERP transactions (Invoices, Bills, Refunds)...</td></tr>`;
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-dim);"><span class="loading-spinner"></span> Searching ERP transactions (Invoices, Bills, Refunds)...</td></tr>`;
+    }
     modal.style.display = 'flex';
 
     try {
       const candidates = await window.ReconService.suggestMatch(txnId);
-      activeCandidates = candidates || [];
+      activeCandidates = (candidates || []).map(c => ({
+        ...c,
+        outstanding: parseFloat(c.outstanding) || 0,
+        totalAmount: parseFloat(c.totalAmount) || 0,
+        selected: false,
+        allocation: 0,
+        roundOff: 0,
+        residual: parseFloat(c.outstanding) || 0
+      }));
 
-      if (activeCandidates.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">
-              <div>⚠️ No matching open Sale, Purchase, or Return transaction found.</div>
-              <div style="font-size:0.75rem; margin-top:4px;">You can record this transaction directly as an Operating Expense or Bank Entry.</div>
-            </td>
-          </tr>
-        `;
-        return;
+      // Desktop parity auto-match: if single candidate with exact match, pre-select it
+      if (activeCandidates.length === 1 && Math.abs(activeCandidates[0].outstanding - bankAmount) <= 1.00) {
+        activeCandidates[0].selected = true;
+        activeCandidates[0].allocation = bankAmount;
       }
 
-      tbody.innerHTML = activeCandidates.map((c, idx) => {
-        const conf = c.confidence || 0;
-        let confColor = 'var(--text-muted)';
-        if (conf >= 80) confColor = 'var(--green)';
-        else if (conf >= 50) confColor = 'var(--yellow)';
-
-        return `
-          <tr>
-            <td style="text-align:center;">
-              <span style="font-weight:700; color:${confColor};">${conf.toFixed(0)}%</span>
-            </td>
-            <td><span class="pill-badge pill-neutral">${c.type}</span></td>
-            <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${c.documentNo}</td>
-            <td style="font-weight:600;">${c.partyName || '-'}</td>
-            <td>${formatDate(c.documentDate)}</td>
-            <td style="text-align:right;">${formatMoney(c.totalAmount)}</td>
-            <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(c.outstanding)}</td>
-            <td style="text-align:center;">
-              <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.confirmMatch(${txnId}, '${c.type}', ${c.id}, ${Math.min(c.outstanding, bankAmount)})" style="padding:2px 8px; font-size:0.75rem;">Link &amp; Reconcile</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
+      renderCandidateRows();
+      recalculateMatchMetrics();
     } catch (err) {
       console.error('Match suggestion failed:', err);
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--red);">Failed to retrieve match suggestions: ${err.message || 'Server error'}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--red);">Failed to retrieve match suggestions: ${err.message || 'Server error'}</td></tr>`;
     }
   }
 
-  async function confirmMatch(txnId, targetType, targetId, amount) {
+  async function confirmCurrentAllocations() {
+    if (!activeMatchingTxn) return;
+    const bankAmount = parseFloat(activeMatchingTxn.debit) > 0 ? parseFloat(activeMatchingTxn.debit) : parseFloat(activeMatchingTxn.credit) || 0;
+    const tolerance = 1.00;
+
+    const allocations = [];
+    let allocated = 0;
+
+    for (const r of activeCandidates) {
+      if (!r.selected) continue;
+      const value = parseFloat(r.allocation) || 0;
+      const ro = roundingFor(r.outstanding, value, tolerance);
+      if (value <= 0 || (value - r.outstanding > tolerance + 0.0001) || (value - r.outstanding > 0.01 && Math.abs(ro) <= 0.0001)) {
+        alert(`Allocation needs attention:\n\nEach selected allocation must be greater than zero. Any final difference from outstanding must be within the configured ₹${formatMoney(tolerance)} round-off tolerance.`);
+        return;
+      }
+      allocations.push({
+        targetType: r.type,
+        targetId: r.id,
+        amount: value
+      });
+      allocated += value;
+    }
+
+    if (allocations.length === 0) {
+      alert('Select at least one eligible Sale, Purchase or Return refund transaction.');
+      return;
+    }
+
+    if (Math.abs(allocated - bankAmount) > 0.01) {
+      alert(`Allocation needs attention:\n\nAllocated amount must equal the bank amount.\nBank Amount: ${formatMoney(bankAmount)}\nTotal Allocated: ${formatMoney(allocated)}\nRemaining: ${formatMoney(bankAmount - allocated)}`);
+      return;
+    }
+
+    let documentResidual = 0;
+    activeCandidates.filter(r => r.selected).forEach(r => {
+      const ro = roundingFor(r.outstanding, r.allocation, tolerance);
+      documentResidual += Math.max(0, Math.round((r.outstanding - r.allocation - ro) * 100) / 100);
+    });
+
+    if (documentResidual > 0.01) {
+      const proceed = confirm(`Partial Document Settlement:\n\nBank allocation: ${formatMoney(allocated)}\nDocument residual after this match: ${formatMoney(documentResidual)}\n\nThis will leave one or more documents PARTIAL. Continue only if this bank transaction is genuinely a partial settlement.`);
+      if (!proceed) return;
+    }
+
+    const btnConfirm = document.getElementById('mc-btn-confirm');
+    if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.innerText = 'Reconciling...'; }
+
     try {
       const payload = {
         user: 'Admin',
-        allocations: [
-          { targetType: targetType, targetId: targetId, amount: amount }
-        ]
+        allocations: allocations
       };
-      const res = await window.ReconService.matchTransaction(txnId, payload);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(res?.message || 'Transaction reconciled successfully!');
+      const res = await window.ReconService.matchTransaction(activeMatchingTxn.id, payload);
+      if (window.AppDialogService) {
+        window.AppDialogService.toastSuccess(res?.message || 'Transaction matched successfully.');
+      }
       closeModal('modal-match-candidate');
       loadBatch(currentBatchId);
     } catch (err) {
-      alert('Failed to reconcile match: ' + (err.message || 'Server error'));
+      console.error('Match confirmation failed:', err);
+      alert('Match confirmation failed: ' + (err.message || 'Server error'));
+    } finally {
+      if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.innerHTML = '<span>✅</span> Confirm Match'; }
     }
   }
 
@@ -639,89 +928,95 @@ window.BankStatementController = (function() {
   }
 
   // ==========================================
-  // 4. STATEMENT CSV IMPORT DIALOG
+  // 4. STATEMENT CSV IMPORT (Desktop FileChooser & Account Resolution Parity)
   // ==========================================
 
-  async function openImportModal() {
-    const modal = document.getElementById('modal-import-statement');
-    if (!modal) return;
-    document.getElementById('import-file-name').innerText = 'No file selected';
-    document.getElementById('import-csv-file').value = '';
-    document.getElementById('import-preview-count').innerText = '0 rows';
+  let pendingImportParsedData = null;
+  let bankAccountOptionsCache = [];
 
-    // Load BANK_NAME and BANK_ACCOUNT lookups from Master Data (Desktop Parity)
-    try {
-      const bankSelect = document.getElementById('import-bank-name');
-      const accInput = document.getElementById('import-bank-acc');
-      if (bankSelect && window.MasterService) {
-        const [bankNames, bankAccounts] = await Promise.all([
-          window.MasterService.getLookupValues('BANK_NAME').catch(() => []),
-          window.MasterService.getLookups('BANK_ACCOUNT').catch(() => [])
-        ]);
-
-        const banks = (bankNames && bankNames.length > 0) ? bankNames : ['Kotak Mahindra Bank', 'HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 'Bank of Baroda'];
-        const activeAccounts = Array.isArray(bankAccounts) ? bankAccounts.filter(l => l.active !== false && (l.lookupValue || l.value)) : [];
-
-        bankSelect.innerHTML = banks.map(b => `<option value="${b}">${b}</option>`).join('');
-
-        const updateAccForBank = (selectedBank) => {
-          if (!accInput) return;
-          const matchingAcc = activeAccounts.filter(a => {
-            const desc = (a.description || a.lookupCode || '').toLowerCase();
-            return desc.includes(selectedBank.toLowerCase()) || selectedBank.toLowerCase().includes(desc);
-          });
-          if (matchingAcc.length > 0) {
-            accInput.value = (matchingAcc[0].lookupValue || matchingAcc[0].value || '').trim();
-          } else if (activeAccounts.length > 0) {
-            accInput.value = (activeAccounts[0].lookupValue || activeAccounts[0].value || '').trim();
-          }
-        };
-
-        bankSelect.onchange = function() {
-          updateAccForBank(bankSelect.value);
-        };
-        updateAccForBank(bankSelect.value);
-      }
-    } catch (e) {
-      console.warn('Could not populate BANK_NAME and BANK_ACCOUNT master lookups:', e);
+  function importStatement() {
+    const fileInput = document.getElementById('bank-csv-file-input');
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.click();
     }
-
-    modal.style.display = 'flex';
   }
 
-  let parsedImportRows = [];
+  function compactAccount(value) {
+    return (value || '').toString().replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  }
+
+  async function configureBankAccountMaster() {
+    try {
+      if (window.MasterService) {
+        const accounts = await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
+        bankAccountOptionsCache = Array.isArray(accounts) 
+          ? accounts.filter(l => l.active !== false && (l.lookupValue || l.value)).map(l => ({
+              accountNumber: (l.lookupValue || l.value || '').trim(),
+              bankName: (l.description || l.lookupCode || 'Bank Account').trim()
+            }))
+          : [];
+      }
+    } catch (e) {
+      console.warn('Failed to load BANK_ACCOUNT lookups:', e);
+      bankAccountOptionsCache = [];
+    }
+  }
 
   function onCsvFileSelected(event) {
-    const file = event.target.files[0];
+    const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    document.getElementById('import-file-name').innerText = file.name;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
       const text = e.target.result;
-      parseCsvText(text, file.name);
+      try {
+        await parseAndResolveStatementCsv(text, file.name);
+      } catch (err) {
+        console.error('CSV parse failed:', err);
+        alert('Failed to parse statement CSV: ' + (err.message || 'Invalid format'));
+      }
     };
     reader.readAsText(file);
   }
 
-  function parseCsvText(content, fileName) {
-    parsedImportRows = [];
+  async function parseAndResolveStatementCsv(content, fileName) {
     const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length < 2) {
       alert('CSV file is empty or does not contain header rows.');
       return;
     }
 
+    let detectedBank = 'Kotak Mahindra Bank';
+    let detectedAccount = '';
+
+    // Inspect pre-header lines for bank name and account number metadata
+    for (let i = 0; i < Math.min(lines.length, 25); i++) {
+      const lineLower = lines[i].toLowerCase();
+      if (lineLower.includes('kotak')) detectedBank = 'Kotak Mahindra Bank';
+      else if (lineLower.includes('hdfc')) detectedBank = 'HDFC Bank';
+      else if (lineLower.includes('icici')) detectedBank = 'ICICI Bank';
+      else if (lineLower.includes('axis')) detectedBank = 'Axis Bank';
+      else if (lineLower.includes('state bank') || lineLower.includes('sbi')) detectedBank = 'State Bank of India';
+
+      const accMatch = lines[i].match(/(?:account\s*(?:no|number)?|a\/c\s*no\.?)[:\s]+([A-Za-z0-9\-]+)/i);
+      if (accMatch && accMatch[1]) {
+        detectedAccount = accMatch[1].trim();
+      }
+    }
+
     // Header detection matching KotakBankStatementCsvParser
     let headerIdx = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().includes('sl. no.') || lines[i].toLowerCase().includes('date') && lines[i].toLowerCase().includes('balance')) {
+      const l = lines[i].toLowerCase();
+      if (l.includes('sl. no.') || (l.includes('date') && l.includes('balance'))) {
         headerIdx = i;
         break;
       }
     }
 
     const startLine = headerIdx >= 0 ? headerIdx + 1 : 1;
+    const rows = [];
     let runningOpening = null;
     let runningClosing = null;
 
@@ -729,18 +1024,18 @@ window.BankStatementController = (function() {
       const cols = parseCsvLine(lines[i]);
       if (cols.length < 5) continue;
 
-      const dateStr = cols[1] || cols[0];
-      const desc = cols[3] || cols[2] || 'Bank transaction';
-      const ref = cols[4] || cols[3] || 'REF-' + (i);
+      const dateStr = (cols[1] || cols[0] || '').trim();
+      const valueDateStr = (cols[2] || cols[1] || dateStr).trim();
+      const desc = (cols[3] || cols[2] || 'Bank transaction').trim();
+      const ref = (cols[4] || cols[3] || 'REF-' + i).trim();
 
       let debit = 0;
       let credit = 0;
       let balance = 0;
 
-      // Detect standard format (Amount + DR/CR) or separate Debit/Credit columns
-      if (cols.length >= 8 && (cols[6] === 'DR' || cols[6] === 'CR')) {
+      if (cols.length >= 8 && (cols[6]?.trim() === 'DR' || cols[6]?.trim() === 'CR')) {
         const amt = parseFloat(cols[5].replace(/,/g, '')) || 0;
-        if (cols[6] === 'DR') debit = amt; else credit = amt;
+        if (cols[6].trim() === 'DR') debit = amt; else credit = amt;
         balance = parseFloat(cols[7].replace(/,/g, '')) || 0;
       } else {
         debit = parseFloat(cols[4]?.replace(/,/g, '')) || 0;
@@ -751,13 +1046,23 @@ window.BankStatementController = (function() {
       if (runningOpening === null) runningOpening = balance - credit + debit;
       runningClosing = balance;
 
-      parsedImportRows.push({
+      // Format ISO date if valid
+      let isoDate = new Date().toISOString().slice(0, 10);
+      try {
+        const dateParts = dateStr.split(/[\/\-]/);
+        if (dateParts.length === 3) {
+          if (dateParts[0].length === 4) isoDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+          else if (dateParts[2].length === 4) isoDate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+        }
+      } catch (ignored) {}
+
+      rows.push({
         sourceRowNumber: i,
         transactionTimestamp: new Date().toISOString(),
-        transactionDate: new Date().toISOString().slice(0, 10),
-        valueDate: new Date().toISOString().slice(0, 10),
-        description: desc.trim(),
-        reference: ref.trim(),
+        transactionDate: isoDate,
+        valueDate: isoDate,
+        description: desc,
+        reference: ref,
         debit: debit,
         credit: credit,
         balance: balance,
@@ -765,63 +1070,117 @@ window.BankStatementController = (function() {
       });
     }
 
-    document.getElementById('import-preview-count').innerText = `${parsedImportRows.length} valid transactions`;
-  }
-
-  function parseCsvLine(line) {
-    const result = [];
-    let cur = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') inQuotes = !inQuotes;
-      else if (c === ',' && !inQuotes) { result.push(cur); cur = ''; }
-      else cur += c;
-    }
-    result.push(cur);
-    return result;
-  }
-
-  async function submitImport() {
-    if (parsedImportRows.length === 0) {
-      alert('Please select and parse a valid CSV statement file first.');
+    if (rows.length === 0) {
+      alert('Could not find any valid transaction rows in the selected statement.');
       return;
     }
 
-    const bankName = document.getElementById('import-bank-name')?.value || 'Kotak Mahindra Bank';
-    const bankAccount = document.getElementById('import-bank-acc')?.value || '50200012345678';
-    const fileName = document.getElementById('import-file-name')?.innerText || 'Statement.csv';
-
-    const payload = {
-      bankName: bankName,
-      bankAccount: bankAccount,
+    pendingImportParsedData = {
+      bankName: detectedBank,
+      accountNumber: detectedAccount,
       accountHolder: 'Jasvi Industries Pvt Ltd',
-      statementFrom: parsedImportRows[0]?.transactionDate || new Date().toISOString().slice(0, 10),
-      statementTo: parsedImportRows[parsedImportRows.length - 1]?.transactionDate || new Date().toISOString().slice(0, 10),
+      statementFrom: rows[0]?.transactionDate || new Date().toISOString().slice(0, 10),
+      statementTo: rows[rows.length - 1]?.transactionDate || new Date().toISOString().slice(0, 10),
       currency: 'INR',
-      openingBalance: parsedImportRows[0]?.balance || 0,
-      closingBalance: parsedImportRows[parsedImportRows.length - 1]?.balance || 0,
+      openingBalance: runningOpening || 0,
+      closingBalance: runningClosing || 0,
       sourceFingerprint: 'FP-' + Date.now(),
       sourceFileName: fileName,
-      sourceCsv: 'CSV DATA',
-      importedBy: 'Admin',
-      dryRun: false,
-      rows: parsedImportRows
+      sourceCsv: content.slice(0, 4000),
+      rows: rows
     };
 
-    const btn = document.getElementById('btn-submit-import');
-    if (btn) { btn.disabled = true; btn.innerText = 'Importing...'; }
+    // Load Master Bank Accounts
+    await configureBankAccountMaster();
+    if (bankAccountOptionsCache.length === 0) {
+      alert('Configure at least one active BANK ACCOUNT in Master Data before importing a statement.');
+      return;
+    }
+
+    // Check if detected account matches an active option
+    const incoming = compactAccount(detectedAccount);
+    let matchedOption = null;
+    if (incoming) {
+      matchedOption = bankAccountOptionsCache.find(opt => compactAccount(opt.accountNumber) === incoming);
+    }
+
+    if (matchedOption) {
+      // Direct resolution
+      await executeStatementImport(matchedOption.bankName || detectedBank, matchedOption.accountNumber);
+    } else {
+      // Prompt user with Choice Dialog Modal (Desktop resolveBankAccount parity)
+      promptSelectBankAccount(detectedBank, detectedAccount);
+    }
+  }
+
+  function promptSelectBankAccount(detectedBank, detectedAccount) {
+    const modal = document.getElementById('modal-select-bank-account');
+    if (!modal) return;
+
+    const detectedInfo = document.getElementById('msba-detected-info');
+    if (detectedInfo) {
+      const detText = (detectedBank + ' ' + (detectedAccount || '')).trim();
+      detectedInfo.innerText = detText ? `Detected from CSV: ${detText}` : 'The statement did not expose a recognized account number.';
+    }
+
+    const select = document.getElementById('msba-account-select');
+    if (select) {
+      select.innerHTML = bankAccountOptionsCache.map((opt, i) => `
+        <option value="${i}">${opt.bankName} (${opt.accountNumber})</option>
+      `).join('');
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  async function confirmAccountAndImport() {
+    const select = document.getElementById('msba-account-select');
+    if (!select || !pendingImportParsedData) return;
+
+    const idx = parseInt(select.value, 10);
+    const chosen = bankAccountOptionsCache[idx] || bankAccountOptionsCache[0];
+    if (!chosen) {
+      alert('Please select a valid bank account.');
+      return;
+    }
+
+    closeModal('modal-select-bank-account');
+    await executeStatementImport(chosen.bankName, chosen.accountNumber);
+  }
+
+  async function executeStatementImport(bankName, bankAccount) {
+    if (!pendingImportParsedData) return;
+
+    const payload = {
+      ...pendingImportParsedData,
+      bankName: bankName,
+      bankAccount: bankAccount,
+      importedBy: 'Admin',
+      dryRun: false
+    };
 
     try {
+      if (window.AppDialogService) window.AppDialogService.toastInfo('Importing statement transactions...');
       const res = await window.ReconService.importStatement(payload);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(res?.message || `Imported ${res?.importedRows || parsedImportRows.length} transactions!`);
-      closeModal('modal-import-statement');
-      loadStatementWorkspace(res?.batch?.id);
+
+      if (res?.alreadyImported && res?.batch) {
+        const openExisting = confirm(`This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`);
+        if (openExisting) {
+          loadStatementWorkspace(res.batch.id);
+        }
+      } else if (res?.batch) {
+        if (window.AppDialogService) {
+          window.AppDialogService.toastSuccess(`Imported: ${res.importedRows || payload.rows.length} transactions.\nDuplicates skipped: ${res.duplicateRows || 0}`);
+        }
+        loadStatementWorkspace(res.batch.id);
+      } else {
+        alert('All transactions in this statement were already present, so no new statement batch was created.');
+      }
     } catch (err) {
       console.error('Import statement failed:', err);
-      alert('Import failed: ' + (err.message || 'Server error'));
+      alert('Import statement failed: ' + (err.message || 'Server error'));
     } finally {
-      if (btn) { btn.disabled = false; btn.innerText = 'Import Statement'; }
+      pendingImportParsedData = null;
     }
   }
 
@@ -971,8 +1330,8 @@ window.BankStatementController = (function() {
     const note = notesInput ? notesInput.value.trim() : '';
 
     try {
-      await window.ReconService.reviewTransaction(activeSelectedTxnId, note || 'Audit note updated', 'Admin');
       const t = currentTransactions.find(x => x.id === activeSelectedTxnId);
+      await window.ReconService.updateTransactionNote(activeSelectedTxnId, note, 'Admin', t?.rowVersion);
       if (t) t.notes = note;
       if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction audit notes saved.');
       closeModal('modal-statement-txn-details');
@@ -1138,30 +1497,62 @@ window.BankStatementController = (function() {
   }
 
   // ==========================================
-  // 9. TWO-STEP DELETE CONFIRMATION MODAL
+  // 9. TWO-STEP DELETE CONFIRMATION (Desktop Parity BankStatementController.java:352-373)
   // ==========================================
 
-  let pendingDeleteBatchId = null;
+  let pendingDeleteBatch = null;
 
-  function deleteStatement(id = null) {
-    pendingDeleteBatchId = id || currentBatchId;
-    if (!pendingDeleteBatchId) return;
+  async function deleteStatement(id = null) {
+    const targetId = id || currentBatchId;
+    if (!targetId) return;
+
+    pendingDeleteBatch = batches.find(b => b.id === targetId) || { id: targetId };
 
     const modal = document.getElementById('modal-statement-delete-confirm');
     if (!modal) return;
 
-    const confirmInput = document.getElementById('msdc-confirm-input');
-    if (confirmInput) confirmInput.value = '';
+    // Reset to Phase 1
+    const phase1 = document.getElementById('msdc-phase-1');
+    const phase2 = document.getElementById('msdc-phase-2');
+    if (phase1) phase1.style.display = 'block';
+    if (phase2) phase2.style.display = 'none';
 
-    const btnDelete = document.getElementById('msdc-btn-delete');
-    if (btnDelete) btnDelete.disabled = true;
+    const lbl = document.getElementById('msdc-batch-label');
+    if (lbl) {
+      lbl.innerText = `Batch #${pendingDeleteBatch.id}: ${pendingDeleteBatch.bankName || 'Bank'} (${maskAccount(pendingDeleteBatch.bankAccount)}) • ${pendingDeleteBatch.transactionCount || 0} Transactions`;
+    }
 
-    const impactText = document.getElementById('msdc-impact');
-    if (impactText) {
-      impactText.innerText = `Deleting batch #${pendingDeleteBatchId} will permanently remove all associated transactions, unmatch all ERP allocations, and reset reconciliation metrics.`;
+    // Load or calculate metrics
+    try {
+      const metrics = await window.ReconService.getMetrics(pendingDeleteBatch.id);
+      document.getElementById('msdc-metric-total').innerText = metrics?.total || pendingDeleteBatch.transactionCount || 0;
+      document.getElementById('msdc-metric-matched').innerText = metrics?.matched || 0;
+      document.getElementById('msdc-metric-expenses').innerText = metrics?.expenses || 0;
+      document.getElementById('msdc-metric-ignored').innerText = metrics?.ignored || 0;
+    } catch (e) {
+      document.getElementById('msdc-metric-total').innerText = pendingDeleteBatch.transactionCount || 0;
+      document.getElementById('msdc-metric-matched').innerText = '-';
+      document.getElementById('msdc-metric-expenses').innerText = '-';
+      document.getElementById('msdc-metric-ignored').innerText = '-';
     }
 
     modal.style.display = 'flex';
+  }
+
+  function proceedToDeleteStepTwo() {
+    const phase1 = document.getElementById('msdc-phase-1');
+    const phase2 = document.getElementById('msdc-phase-2');
+    if (phase1) phase1.style.display = 'none';
+    if (phase2) phase2.style.display = 'block';
+
+    const confirmInput = document.getElementById('msdc-confirm-input');
+    if (confirmInput) {
+      confirmInput.value = '';
+      confirmInput.focus();
+    }
+
+    const btnDelete = document.getElementById('msdc-btn-delete');
+    if (btnDelete) btnDelete.disabled = true;
   }
 
   function onDeleteConfirmInput(val) {
@@ -1171,16 +1562,43 @@ window.BankStatementController = (function() {
     }
   }
 
-  async function confirmDeleteStatement() {
-    if (!pendingDeleteBatchId) return;
+  async function executeBatchDelete() {
+    if (!pendingDeleteBatch) return;
+
+    const btnDelete = document.getElementById('msdc-btn-delete');
+    if (btnDelete) {
+      btnDelete.disabled = true;
+      btnDelete.innerText = 'Deleting...';
+    }
+
     try {
-      await window.ReconService.deleteBatch(pendingDeleteBatchId, 'DELETE', 'Admin');
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Statement batch #${pendingDeleteBatchId} permanently deleted.`);
+      const res = await window.ReconService.deleteBatch(pendingDeleteBatch.id, 'DELETE', 'Admin');
+      if (window.AppDialogService) {
+        window.AppDialogService.toastSuccess(res?.message || `Bank statement #${pendingDeleteBatch.id} deleted successfully.`);
+      }
       closeModal('modal-statement-delete-confirm');
       closeModal('modal-statement-history');
-      loadStatementWorkspace();
+      await loadStatementWorkspace();
     } catch (err) {
-      alert('Delete statement failed: ' + (err.message || 'Server error'));
+      console.error('Delete batch failed:', err);
+      alert('Delete failed: ' + (err.message || 'Server error'));
+    } finally {
+      if (btnDelete) {
+        btnDelete.disabled = false;
+        btnDelete.innerText = 'Delete Statement';
+      }
+      pendingDeleteBatch = null;
+    }
+  }
+
+  async function unignoreTransaction(id) {
+    if (!confirm('Return this transaction to UNMATCHED status?')) return;
+    try {
+      await window.ReconService.reverseTransaction(id, 'Admin');
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction returned to UNMATCHED status.');
+      loadBatch(currentBatchId);
+    } catch (err) {
+      alert('Failed to return transaction: ' + (err.message || 'Server error'));
     }
   }
 
@@ -1488,7 +1906,16 @@ window.BankStatementController = (function() {
   function openLinkedDocument(docRef) {
     if (!docRef) return;
     const ref = docRef.trim().toUpperCase();
-    if (ref.startsWith('INV') || ref.startsWith('SAL')) {
+    if (ref.startsWith('PRC')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-purchase-recon');
+      setTimeout(() => {
+        const searchInput = document.getElementById('pr-search-input');
+        if (searchInput) {
+          searchInput.value = docRef;
+          if (window.PurchaseReconController) window.PurchaseReconController.applyFilters();
+        }
+      }, 250);
+    } else if (ref.startsWith('INV') || ref.startsWith('SAL')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-sales-register');
       setTimeout(() => {
         const searchInput = document.getElementById('sales-search');
@@ -1506,16 +1933,26 @@ window.BankStatementController = (function() {
           if (window.PurchaseController) window.PurchaseController.applyFilters();
         }
       }, 250);
-    } else if (ref.startsWith('PAY') || ref.startsWith('REC')) {
-      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-record-payment');
-    } else if (ref.startsWith('EXP') || ref.startsWith('VCH') || ref.startsWith('BANK')) {
-      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-expense');
+    } else if (ref.startsWith('EXP') || ref.startsWith('VCH')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
       setTimeout(() => {
-        if (window.FinanceController) {
-          if (ref.startsWith('EXP')) window.FinanceController.loadExpenseMode();
-          else window.FinanceController.loadBankMode();
+        const searchInput = document.getElementById('fe-search');
+        if (searchInput) {
+          searchInput.value = docRef;
+          if (window.FinanceController) window.FinanceController.applyFilters();
         }
       }, 250);
+    } else if (ref.startsWith('BANK') || ref.startsWith('JRN')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
+      setTimeout(() => {
+        const searchInput = document.getElementById('fe-search');
+        if (searchInput) {
+          searchInput.value = docRef;
+          if (window.FinanceController) window.FinanceController.applyFilters();
+        }
+      }, 250);
+    } else if (ref.startsWith('PAY') || ref.startsWith('REC')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-record-payment');
     } else {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Linked document: ${docRef}`);
     }
@@ -1542,22 +1979,37 @@ window.BankStatementController = (function() {
     bulkIgnore,
     moveSelectedToExpense() { openBulkMove('EXPENSE'); },
     moveSelectedToBankEntry() { openBulkMove('BANK'); },
+
+    // Match Workspace (Desktop Parity)
     openMatchModal,
-    confirmMatch,
+    onToggleAllCandidates,
+    onCandidateRowToggle,
+    onAllocationInputChanged,
+    refreshSuggestions,
+    confirmCurrentAllocations,
+
     quickMoveExpense,
     quickMoveBankEntry,
     reverseMatch,
-    openImportModal,
+    unignoreTransaction,
+
+    // CSV Import (Desktop FileChooser & Account Resolution Parity)
+    importStatement,
     onCsvFileSelected,
-    submitImport,
+    confirmAccountAndImport,
+
     toggleStatementHistory,
     loadStatementHistory,
     applyHistoryFilters,
     resetHistoryFilters,
     openHistoryBatch,
+
+    // 2-Step Delete (Desktop Parity)
     deleteStatement,
+    proceedToDeleteStepTwo,
     onDeleteConfirmInput,
-    confirmDeleteStatement,
+    executeBatchDelete,
+
     closeModal,
     toggleActionMenu,
 

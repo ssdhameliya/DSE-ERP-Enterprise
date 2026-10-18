@@ -66,9 +66,6 @@ window.FinanceController = {
 
   async loadBankMode() {
     this.currentMode = 'BANK';
-    if (window.NavigationRouter && window.NavigationRouter.currentNavId !== 'view-bank-entry') {
-      window.NavigationRouter.selectNav('view-bank-entry');
-    }
     this.initDateFilters();
     this.updateModeButtons('BANK');
     await this.loadFinanceLookups();
@@ -77,9 +74,6 @@ window.FinanceController = {
 
   async loadExpenseMode() {
     this.currentMode = 'EXPENSE';
-    if (window.NavigationRouter && window.NavigationRouter.currentNavId !== 'view-expense-entry') {
-      window.NavigationRouter.selectNav('view-expense-entry');
-    }
     this.initDateFilters();
     this.updateModeButtons('EXPENSE');
     await this.loadFinanceLookups();
