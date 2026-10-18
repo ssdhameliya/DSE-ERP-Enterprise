@@ -77,18 +77,18 @@ window.PurchaseController = (function() {
   }
 
   function getStatusBadge(status) {
-    const s = (status || '').toUpperCase().trim();
-    if (s === 'FULLY RETURNED' || s === 'FULLY_RETURNED') {
-      return `<span class="pill-badge pill-success">🔄 FULLY RET..</span>`;
+    const s = (status || '').toUpperCase().trim().replace(/_/g, ' ');
+    if (s === 'FULLY RETURNED') {
+      return `<span class="pill-badge pill-success" style="white-space:nowrap;">🔄 FULLY RETURNED</span>`;
     }
-    if (s === 'PARTIALLY RETURNED' || s === 'PARTIALLY_RETURNED') {
-      return `<span class="pill-badge pill-warning">🔄 PARTIAL RET..</span>`;
+    if (s === 'PARTIALLY RETURNED') {
+      return `<span class="pill-badge pill-info" style="white-space:nowrap;">🔄 PARTIALLY RETURNED</span>`;
     }
-    if (s === 'PENDING APPROVAL' || s === 'PENDING_APPROVAL') {
-      return `<span class="pill-badge pill-danger">⏳ PEND APPROV..</span>`;
+    if (s === 'PENDING APPROVAL') {
+      return `<span class="pill-badge pill-warning" style="white-space:nowrap;">⏳ PENDING APPROVAL</span>`;
     }
-    if (s === 'NOT_RETURNED' || s === 'N/A' || s === 'NO_RETURN' || s === 'NONE') {
-      return `<span class="pill-badge pill-neutral">📄 N/A</span>`;
+    if (s === 'NOT RETURNED' || s === 'N/A' || s === 'NO RETURN' || s === 'NONE') {
+      return `<span class="pill-badge pill-neutral" style="white-space:nowrap;">📄 N/A</span>`;
     }
     if (s === 'APPROVED' || s === 'ACCEPTED' || s === 'PAID') {
       return `<span class="pill-badge pill-success">${s}</span>`;
@@ -149,17 +149,26 @@ window.PurchaseController = (function() {
       try {
         const invNos = purchases.map(p => p.invoiceNo || p.billNo || p.number).filter(Boolean);
         if (invNos.length > 0 && window.ApiService) {
-          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=PURCHASE_RETURN&invoices=${encodeURIComponent(invNos.join(','))}`);
+          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=${encodeURIComponent('PURCHASE RETURN')}&invoices=${encodeURIComponent(invNos.join(','))}`);
           const settlements = Array.isArray(settlementsRes) ? settlementsRes : (settlementsRes && (settlementsRes.data || settlementsRes.rows || [])) || [];
           const settMap = {};
           settlements.forEach(st => {
             const k = st.invoiceNo || st.sourceInvoiceNo || st.originalInvoiceNo;
-            if (k) settMap[k] = st.returnStatus || st.status;
+            if (k) settMap[k] = st;
           });
           purchases.forEach(p => {
             const inv = p.invoiceNo || p.billNo || p.number;
-            if (settMap[inv]) {
-              p.returnStatus = settMap[inv];
+            const st = settMap[inv];
+            if (st) {
+              p.returnSettlement = st;
+              p.returnStatus = st.returnStatus || st.status || 'N/A';
+              p.refundStatus = st.refundStatus || '';
+              p.approvedReturnAmount = Number(st.approvedReturnAmount || st.settledAmount || 0);
+              p.returnPendingAmount = Number(st.returnPendingAmount || st.pendingAmount || 0);
+              p.returnedQuantity = Number(st.returnedQuantity || 0);
+              p.originalQuantity = Number(st.originalQuantity || 0);
+              p.returnDueDate = st.returnDueDate || st.dueDate || null;
+              p.hasReturnSettlement = true;
             } else if (!p.returnStatus) {
               p.returnStatus = 'N/A';
             }
@@ -246,6 +255,22 @@ window.PurchaseController = (function() {
       const suppGstin = (p.supplier && p.supplier.gstin) || p.supplierGstin || p.gstin || '-';
       const pendingBalance = Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0));
 
+      let dueDisplay = formatDate(p.dueDate);
+      if (p.returnDueDate && (p.returnPendingAmount > 0 || (p.returnStatus && p.returnStatus !== 'N/A' && p.refundStatus !== 'SETTLED'))) {
+        try {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const rDue = new Date(p.returnDueDate); rDue.setHours(0,0,0,0);
+          const diffDays = Math.round((rDue - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            dueDisplay = `<span style="color:#f87171; font-weight:600;" title="Return Refund Overdue">Ret: -${Math.abs(diffDays)}d</span>`;
+          } else if (diffDays === 0) {
+            dueDisplay = `<span style="color:#fbbf24; font-weight:600;" title="Return Refund Due Today">Ret: Today</span>`;
+          } else {
+            dueDisplay = `<span style="color:#38bdf8; font-weight:600;" title="Return Refund Due in ${diffDays}d">Ret: in ${diffDays}d</span>`;
+          }
+        } catch {}
+      }
+
       return `
         <tr onclick="window.PurchaseController.onRowClick('${invNo}', event)" style="cursor:pointer;" data-id="${invNo}" data-invoice-no="${invNo}" class="${selectedDrawerBillNo === invNo ? 'active-selected-row' : ''}">
           <td style="font-family:'Space Grotesk', monospace; font-weight:700; color:var(--cyan);">${invNo}</td>
@@ -256,7 +281,7 @@ window.PurchaseController = (function() {
           <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(p.totalAmount)}</td>
           <td style="text-align:right; font-weight:600; color:var(--green);">${formatMoney(p.paidAmount)}</td>
           <td style="text-align:right; font-weight:600; color:${pendingBalance > 0 ? 'var(--red)' : 'var(--text-dim)'};">${formatMoney(pendingBalance)}</td>
-          <td>${formatDate(p.dueDate)}</td>
+          <td>${dueDisplay}</td>
           <td>${getStatusBadge(p.documentStatus || 'APPROVED')}</td>
           <td>${getStatusBadge(p.paymentStatus || 'UNPAID')}</td>
           <td>${getStatusBadge(p.returnStatus || 'NOT_RETURNED')}</td>
@@ -477,6 +502,30 @@ window.PurchaseController = (function() {
     const pdPayStatus = document.getElementById('pd-pay-status');
     if (pdPayStatus) {
       pdPayStatus.innerHTML = `<span class="pill-badge ${paySt === 'PAID' ? 'pill-success' : (paySt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}">${paySt}</span>`;
+    }
+
+    // Populate Return Settlement card in Purchase Drawer (Desktop Parity)
+    const pdRetSec = document.getElementById('pd-return-section');
+    if (pdRetSec) {
+      const retSt = (p.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
+      if (retSt !== 'N/A' || p.hasReturnSettlement) {
+        pdRetSec.style.display = 'block';
+        const elRetBadge = document.getElementById('pd-ret-status-badge');
+        if (elRetBadge) {
+          elRetBadge.innerText = retSt;
+          elRetBadge.className = `pill-badge ${retSt === 'FULLY RETURNED' ? 'pill-success' : (retSt === 'PARTIALLY RETURNED' ? 'pill-info' : (retSt === 'PENDING APPROVAL' ? 'pill-warning' : 'pill-neutral'))}`;
+        }
+        const elRetQty = document.getElementById('pd-ret-qty');
+        if (elRetQty) elRetQty.innerText = (p.returnedQuantity || 0).toFixed(2);
+        const elRetAppr = document.getElementById('pd-ret-approved');
+        if (elRetAppr) elRetAppr.innerText = formatMoney(p.approvedReturnAmount || 0);
+        const elRetPend = document.getElementById('pd-ret-pending');
+        if (elRetPend) elRetPend.innerText = formatMoney(p.returnPendingAmount || 0);
+        const elRetRefSt = document.getElementById('pd-ret-refund-status');
+        if (elRetRefSt) elRetRefSt.innerText = p.refundStatus || (retSt === 'FULLY RETURNED' ? 'SETTLED' : 'PENDING');
+      } else {
+        pdRetSec.style.display = 'none';
+      }
     }
 
     const approvalBox = document.getElementById('pd-approval-box');
@@ -972,7 +1021,41 @@ window.PurchaseController = (function() {
     }
   }
 
+  function isReturnEligible(p) {
+    if (!p) return { eligible: false, reason: 'Purchase record not found' };
+    const docSt = (p.documentStatus || 'APPROVED').toUpperCase();
+    if (docSt === 'CANCELLED' || docSt === 'REJECTED') return { eligible: false, reason: `Cannot create return for a ${docSt} purchase bill.` };
+    if (docSt === 'DRAFT' || docSt === 'PENDING APPROVAL' || docSt === 'PENDING') return { eligible: false, reason: 'Cannot create return for an unapproved purchase bill.' };
+    const paySt = (p.paymentStatus || '').toUpperCase();
+    const total = p.totalAmount != null ? p.totalAmount : (p.amount != null ? p.amount : 0);
+    const paid = p.paidAmount != null ? p.paidAmount : (paySt === 'PAID' ? total : 0);
+    const pending = Math.max(0, total - paid);
+    if (pending > 0.01 && paySt !== 'PAID') {
+      return { eligible: false, reason: 'Cannot create return for an UNPAID or partially paid bill. Purchase must be fully settled first.' };
+    }
+    const retSt = (p.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
+    if (retSt === 'FULLY RETURNED') {
+      return { eligible: false, reason: 'This purchase bill has already been FULLY RETURNED.' };
+    }
+    if (retSt === 'PENDING APPROVAL') {
+      return { eligible: false, reason: 'A return for this purchase bill is already PENDING APPROVAL.' };
+    }
+    return { eligible: true };
+  }
+
   function openReturnPrompt(invoiceNo) {
+    const p = purchases.find(x => (x.invoiceNo || x.billNo || x.number) === invoiceNo);
+    if (p) {
+      const check = isReturnEligible(p);
+      if (!check.eligible) {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning(check.reason);
+        } else {
+          alert(check.reason);
+        }
+        return;
+      }
+    }
     if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
       if (window.ReturnsController.setType) window.ReturnsController.setType('PURCHASE RETURN');
       window.ReturnsController.openCreateReturnModal(invoiceNo, 'PURCHASE RETURN');
@@ -1839,6 +1922,7 @@ window.PurchaseController = (function() {
     printInwardBarcode,
     sendEmailPrompt,
     openReturnPrompt,
+    isReturnEligible,
     showAllDates,
     showToday,
     showYesterday,

@@ -392,6 +392,8 @@ window.ReturnsController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} approved successfully!`);
       loadReturns(currentType, currentPage);
       if (selectedReturn && selectedReturn.no === no) showDetails(no);
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       if (window.AppDialogService) window.AppDialogService.toastError('Approval failed: ' + err.message);
     }
@@ -405,6 +407,8 @@ window.ReturnsController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} rejected.`);
       loadReturns(currentType, currentPage);
       if (selectedReturn && selectedReturn.no === no) showDetails(no);
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       if (window.AppDialogService) window.AppDialogService.toastError('Rejection failed: ' + err.message);
     }
@@ -417,6 +421,8 @@ window.ReturnsController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} cancelled successfully.`);
       loadReturns(currentType, currentPage);
       closeDrawer();
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       if (window.AppDialogService) window.AppDialogService.toastError('Cancellation failed: ' + err.message);
     }
@@ -429,6 +435,8 @@ window.ReturnsController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} deleted from register.`);
       loadReturns(currentType, currentPage);
       closeDrawer();
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       if (window.AppDialogService) window.AppDialogService.toastError('Deletion failed: ' + err.message);
     }
@@ -507,13 +515,22 @@ window.ReturnsController = (function() {
     }
     if (currentType === 'SALES RETURN') {
       window.NavigationRouter.selectNav('view-sales-register');
-      const search = document.getElementById('sales-search-input');
+      const search = document.getElementById('sr-search-input') || document.getElementById('sales-search-input');
       if (search) {
         search.value = docNo;
-        window.SalesController.loadSales();
+        if (window.SalesController && window.SalesController.loadSales) {
+          window.SalesController.loadSales();
+        }
       }
     } else {
       window.NavigationRouter.selectNav('view-purchase-register');
+      const purSearch = document.getElementById('pur-filter-search');
+      if (purSearch) {
+        purSearch.value = docNo;
+        if (window.PurchaseController && window.PurchaseController.loadPurchases) {
+          window.PurchaseController.loadPurchases(0);
+        }
+      }
     }
   }
 
@@ -822,6 +839,8 @@ window.ReturnsController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`${currentType} ${newNo} created successfully!`);
       closeModal('modal-create-return');
       loadReturns(currentType, 0);
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       console.error('Failed to create return:', err);
       alert('Failed to create return: ' + (err.message || 'Server error'));
@@ -1133,6 +1152,8 @@ window.ReturnsController = (function() {
       window.AppDialogService.closeModal('modal-return-refund');
       loadReturns(currentType, currentPage);
       if (selectedReturn && selectedReturn.no === returnNo) showDetails(returnNo);
+      window.SalesController?.loadSales?.();
+      window.PurchaseController?.loadPurchases?.();
     } catch (err) {
       console.error('Failed to record refund:', err);
       alert('Failed to record refund: ' + (err.message || 'Server error'));

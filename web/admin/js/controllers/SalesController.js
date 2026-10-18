@@ -273,17 +273,26 @@ window.SalesController = {
       try {
         const invNos = list.map(s => s.invoiceNo || s.number).filter(Boolean);
         if (invNos.length > 0 && window.ApiService) {
-          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=SALES_RETURN&invoices=${encodeURIComponent(invNos.join(','))}`);
+          const settlementsRes = await window.ApiService.get(`/api/returns/settlements?type=${encodeURIComponent('SALES RETURN')}&invoices=${encodeURIComponent(invNos.join(','))}`);
           const settlements = Array.isArray(settlementsRes) ? settlementsRes : (settlementsRes && (settlementsRes.data || settlementsRes.rows || [])) || [];
           const settMap = {};
           settlements.forEach(st => {
             const k = st.invoiceNo || st.sourceInvoiceNo || st.originalInvoiceNo;
-            if (k) settMap[k] = st.returnStatus || st.status;
+            if (k) settMap[k] = st;
           });
           list.forEach(s => {
             const inv = s.invoiceNo || s.number;
-            if (settMap[inv]) {
-              s.returnStatus = settMap[inv];
+            const st = settMap[inv];
+            if (st) {
+              s.returnSettlement = st;
+              s.returnStatus = st.returnStatus || st.status || 'N/A';
+              s.refundStatus = st.refundStatus || '';
+              s.approvedReturnAmount = Number(st.approvedReturnAmount || st.settledAmount || 0);
+              s.returnPendingAmount = Number(st.returnPendingAmount || st.pendingAmount || 0);
+              s.returnedQuantity = Number(st.returnedQuantity || 0);
+              s.originalQuantity = Number(st.originalQuantity || 0);
+              s.returnDueDate = st.returnDueDate || st.dueDate || null;
+              s.hasReturnSettlement = true;
             } else if (!s.returnStatus) {
               s.returnStatus = 'N/A';
             }
@@ -431,18 +440,55 @@ window.SalesController = {
       const paid = isCancelled ? 0 : (s.paidAmount != null ? s.paidAmount : (isPaid ? grandTotal : 0));
       const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
 
-      const dueLabel = isCancelled ? '<span style="color:#f87171;">✕ Cancelled</span>' : (pending === 0 ? '<span style="color:#34d399;">✔ Settled</span>' : '<span style="color:#fbbf24;">Pending</span>');
+      // Dynamic Due / Return Settlement Label matching Desktop TableCell
+      let dueLabel = '<span style="color:#fbbf24;">Pending</span>';
+      if (isCancelled) {
+        dueLabel = '<span style="color:#f87171;">✕ Cancelled</span>';
+      } else if (s.returnDueDate && (s.returnPendingAmount > 0 || (s.returnStatus && s.returnStatus !== 'N/A' && s.refundStatus !== 'SETTLED'))) {
+        try {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const rDue = new Date(s.returnDueDate); rDue.setHours(0,0,0,0);
+          const diffDays = Math.round((rDue - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            dueLabel = `<span style="color:#f87171; font-weight:600;" title="Return Refund Overdue">Return Overdue by ${Math.abs(diffDays)}d</span>`;
+          } else if (diffDays === 0) {
+            dueLabel = '<span style="color:#fbbf24; font-weight:600;" title="Return Refund Due Today">Return Due Today</span>';
+          } else {
+            dueLabel = `<span style="color:#38bdf8; font-weight:600;" title="Return Refund Due in ${diffDays}d">Return Due in ${diffDays}d</span>`;
+          }
+        } catch {
+          dueLabel = '<span style="color:#38bdf8; font-weight:600;">Return Due</span>';
+        }
+      } else if (pending <= 0.01) {
+        dueLabel = '<span style="color:#34d399;">✔ Settled</span>';
+      } else if (s.dueDate) {
+        try {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const invDue = new Date(s.dueDate); invDue.setHours(0,0,0,0);
+          const diffDays = Math.round((invDue - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            dueLabel = `<span style="color:#f87171; font-weight:600;">Overdue by ${Math.abs(diffDays)}d</span>`;
+          } else if (diffDays === 0) {
+            dueLabel = '<span style="color:#fbbf24; font-weight:600;">Due Today</span>';
+          } else {
+            dueLabel = `<span style="color:#fbbf24;">Due in ${diffDays}d</span>`;
+          }
+        } catch {
+          dueLabel = '<span style="color:#fbbf24;">Pending</span>';
+        }
+      }
+
       const docBadge = isCancelled ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">✕ CANCELLED</span>' : '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">✔ APPROVED</span>';
       const payBadge = isPaid ? '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399;">💳 PAID</span>' : '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24;">⏱ PENDING</span>';
       
       const rStatus = (s.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
-      let retLabel = '<span class="badge" style="background:rgba(148,163,184,0.15); color:var(--text-dim); border:1px solid rgba(148,163,184,0.25);">📄 N/A</span>';
+      let retLabel = '<span class="badge pill-badge pill-neutral" style="background:rgba(148,163,184,0.15); color:var(--text-dim); border:1px solid rgba(148,163,184,0.25); white-space:nowrap;">📄 N/A</span>';
       if (rStatus === 'FULLY RETURNED') {
-        retLabel = '<span class="badge" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35);">🔄 FULLY RET..</span>';
+        retLabel = '<span class="badge pill-badge pill-success" style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35); white-space:nowrap;">🔄 FULLY RETURNED</span>';
       } else if (rStatus === 'PARTIALLY RETURNED') {
-        retLabel = '<span class="badge" style="background:rgba(251,191,36,0.18); color:#fbbf24; border:1px solid rgba(251,191,36,0.35);">🔄 PARTIAL RET..</span>';
+        retLabel = '<span class="badge pill-badge pill-info" style="background:rgba(56,189,248,0.18); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); white-space:nowrap;">🔄 PARTIALLY RETURNED</span>';
       } else if (rStatus === 'PENDING APPROVAL') {
-        retLabel = '<span class="badge" style="background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.35);">⏳ PEND APPROV..</span>';
+        retLabel = '<span class="badge pill-badge pill-warning" style="background:rgba(251,191,36,0.18); color:#fbbf24; border:1px solid rgba(251,191,36,0.35); white-space:nowrap;">⏳ PENDING APPROVAL</span>';
       }
 
       const emailPill = s.emailSent
@@ -599,7 +645,41 @@ window.SalesController = {
     }
   },
 
+  isReturnEligible(sale) {
+    if (!sale) return { eligible: false, reason: 'Sale record not found' };
+    const docSt = (sale.documentStatus || 'APPROVED').toUpperCase();
+    if (docSt === 'CANCELLED') return { eligible: false, reason: 'Cannot create return for a CANCELLED invoice.' };
+    if (docSt === 'DRAFT' || docSt === 'PENDING APPROVAL') return { eligible: false, reason: 'Cannot create return for an unapproved invoice.' };
+    const paySt = (sale.paymentStatus || '').toUpperCase();
+    const grandTotal = sale.totalAmount != null ? sale.totalAmount : (sale.total || 0);
+    const paid = sale.paidAmount != null ? sale.paidAmount : (paySt === 'PAID' ? grandTotal : 0);
+    const pending = Math.max(0, grandTotal - paid);
+    if (pending > 0.01 && paySt !== 'PAID') {
+      return { eligible: false, reason: 'Cannot create return for an UNPAID or partially paid invoice. Invoices must be fully settled first.' };
+    }
+    const retSt = (sale.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
+    if (retSt === 'FULLY RETURNED') {
+      return { eligible: false, reason: 'This invoice has already been FULLY RETURNED.' };
+    }
+    if (retSt === 'PENDING APPROVAL') {
+      return { eligible: false, reason: 'A return for this invoice is already PENDING APPROVAL.' };
+    }
+    return { eligible: true };
+  },
+
   createSalesReturn(invNo) {
+    const sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+    if (sale) {
+      const check = this.isReturnEligible(sale);
+      if (!check.eligible) {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning(check.reason);
+        } else {
+          alert(check.reason);
+        }
+        return;
+      }
+    }
     if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
       if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
       window.ReturnsController.openCreateReturnModal(invNo, 'SALES RETURN');
@@ -3225,6 +3305,30 @@ window.SalesController = {
           const person = s.contactPerson || '';
           const pMobile = s.contactPersonMobile || '';
           elSidePerson.innerText = person ? `${person}${pMobile ? ' (' + pMobile + ')' : ''}` : 'Not Applicable';
+        }
+
+        // Populate Return Settlement card in inline drawer (Desktop Parity)
+        const sideRetSec = document.getElementById('side-return-section');
+        if (sideRetSec) {
+          const retSt = (s.returnStatus || 'N/A').toUpperCase().replace(/_/g, ' ');
+          if (retSt !== 'N/A' || s.hasReturnSettlement) {
+            sideRetSec.style.display = 'block';
+            const elSideRetBadge = document.getElementById('side-ret-status-badge');
+            if (elSideRetBadge) {
+              elSideRetBadge.innerText = retSt;
+              elSideRetBadge.className = `badge pill-badge ${retSt === 'FULLY RETURNED' ? 'pill-success' : (retSt === 'PARTIALLY RETURNED' ? 'pill-info' : (retSt === 'PENDING APPROVAL' ? 'pill-warning' : 'pill-neutral'))}`;
+            }
+            const elSideRetQty = document.getElementById('side-ret-qty');
+            if (elSideRetQty) elSideRetQty.innerText = (s.returnedQuantity || 0).toFixed(2);
+            const elSideRetAppr = document.getElementById('side-ret-approved');
+            if (elSideRetAppr) elSideRetAppr.innerText = window.FormatUtil.formatRupees(s.approvedReturnAmount || 0);
+            const elSideRetPend = document.getElementById('side-ret-pending');
+            if (elSideRetPend) elSideRetPend.innerText = window.FormatUtil.formatRupees(s.returnPendingAmount || 0);
+            const elSideRetRefSt = document.getElementById('side-ret-refund-status');
+            if (elSideRetRefSt) elSideRetRefSt.innerText = s.refundStatus || (retSt === 'FULLY RETURNED' ? 'SETTLED' : 'PENDING');
+          } else {
+            sideRetSec.style.display = 'none';
+          }
         }
 
         // Display the inline drawer docked beside table (Screenshots 3 & 4)
