@@ -1,15 +1,17 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 10,
-  "webVersion": "10.0.34.10",
-  "tag": "web-v10.0.34.10",
-  "releaseDate": "2026-10-18T18:15:00+05:30",
+  "webBuild": 11,
+  "webVersion": "10.0.34.11",
+  "tag": "web-v10.0.34.11",
+  "releaseDate": "2026-10-18T18:45:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.10 Enterprise Release - Complete Desktop Parity for Payment Due Status & Return Workflows across Sales & Purchase Registers",
+  "summary": "10.0.34.11 Enterprise Release - Complete 5-Screen Desktop Parity for Settings Studio, LiveOperationDialog Email Testing, and PascalCase Template Tokens",
   "highlights": [
-    "1. Sales & Purchase Register Due Column: Full 1:1 Desktop parity with dueLabel / due(p) semantic cell badges (Settled, Overdue by X days, Due today, Due in X days, Awaiting Approval, Return Overdue, Return Due)",
-    "2. Return Payment Workflow Parity: Updated payment status logic to render Return Pending Approval, Return Paid, Return Partial, and Return Pending",
-    "3. Detail Drawers Due Tracking: Synchronized Sales inline drawer, Sales details modal, and Purchase inspect drawer with authoritative due dates and return settlement schedules",
-    "4. Centralized Runtime Version: Bumped version registry, DOM injectors, and login badges to 10.0.34.10"
+    "1. Settings Screen 1 (Company & Billing): 4-column master grid, PAN, Industry, Business Type, FY Start, and dual application branding preview cards",
+    "2. Settings Screen 2 (Payment & Bank): 3-column commercial bank layout, max ₹5.00 reconciliation tolerance constraint with explanation card, and UPI QR code layout",
+    "3. Settings Screen 3 (Invoice & Delivery): Billing/shipping addresses, Place of Supply, Website, Currency, Timezone, Date/Time formats, and dual Logo & Signature preview cards",
+    "4. Settings Screen 4 & 5 (Email & Communication): SMTP credentials with password eye toggle, Google App Password setup guidance modal, signature image uploader, PascalCase template tokens, and LiveOperationDialog 3-stage email diagnostic test modal",
+    "5. Centralized Version Sync: Bumped version registry, DOM injectors, and cache-busting query strings to 10.0.34.11"
   ]
 }
+

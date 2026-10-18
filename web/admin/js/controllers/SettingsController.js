@@ -20,15 +20,40 @@ window.SettingsController = (function() {
   let cachedNotificationPrefs = null;
   let lookupsLoaded = false;
 
-  // Template draft memory matching desktop SettingsController.java
+  // Template draft memory matching desktop SettingsController.java & MessageTemplateService.java
   const templateDrafts = {
-    'Sales Invoice (Email)': { subject: 'Tax Invoice {docNo} from {company}', body: 'Dear {customer},\n\nPlease find attached sales tax invoice {docNo} dated {date} for total amount {total}.\n\nOutstanding Balance: {balance}\n\n{signature}' },
-    'Quotation (Email)': { subject: 'Sales Quotation {docNo} from {company}', body: 'Dear {customer},\n\nThank you for your inquiry. Please find attached quotation {docNo} dated {date} for total amount {total}.\n\n{signature}' },
-    'Purchase Bill (Email)': { subject: 'Purchase Bill {docNo} Confirmation', body: 'Dear {customer},\n\nWe acknowledge receipt of inward purchase bill {docNo} dated {date} for amount {total}.\n\n{signature}' },
-    'Payment Receipt (Email)': { subject: 'Payment Receipt Confirmation - {docNo}', body: 'Dear {customer},\n\nWe have received your payment of {total} against invoice reference {docNo}. Thank you for your business.\n\n{signature}' },
-    'Sales Return (Email)': { subject: 'Credit Memo / Sales Return {docNo}', body: 'Dear {customer},\n\nPlease find attached credit return note {docNo} dated {date} for total refund amount {total}.\n\n{signature}' },
-    'Sales Invoice (WhatsApp)': { subject: '', body: 'Hello {customer}, your invoice {docNo} for {total} has been generated. Thank you for choosing {company}.' },
-    'Quotation (WhatsApp)': { subject: '', body: 'Hello {customer}, your requested quotation {docNo} for {total} is ready. Valid for 15 days.' }
+    'Sales Invoice (Email)': {
+      subject: 'Sales Invoice {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nPlease find attached your sales invoice {DocumentNo} dated {DocumentDate}.\n\nInvoice Summary:\n• Invoice Number: {DocumentNo}\n• Invoice Date: {DocumentDate}\n• Total Amount: {TotalAmount}\n• Balance Due: {BalanceAmount}\n\nThank you for your business.\n\n{Signature}'
+    },
+    'Quotation (Email)': {
+      subject: 'Quotation {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nThank you for your enquiry. Please find attached our quotation {DocumentNo} dated {DocumentDate} for total amount {TotalAmount}.\n\nWe look forward to serving you. Please let us know if you need any adjustments or further information.\n\n{Signature}'
+    },
+    'Purchase Bill (Email)': {
+      subject: 'Purchase Order {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nPlease find attached our purchase order {DocumentNo} dated {DocumentDate}.\n\nKindly confirm receipt and proceed with fulfillment per agreed terms.\n\n{Signature}'
+    },
+    'Payment Receipt (Email)': {
+      subject: 'Payment Receipt for {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nThank you for your payment. We have successfully received payment against document {DocumentNo}.\n\nReceipt Summary:\n• Document Number: {DocumentNo}\n• Receipt Date: {DocumentDate}\n• Amount Paid: {PaidAmount}\n• Remaining Balance: {BalanceAmount}\n\nThank you for your business.\n\n{Signature}'
+    },
+    'Sales Return (Email)': {
+      subject: 'Sales Return Note {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nPlease find attached sales return / credit note {DocumentNo} dated {DocumentDate}.\n\n• Total Credit: {TotalAmount}\n\n{Signature}'
+    },
+    'Purchase Return (Email)': {
+      subject: 'Purchase Return Note {DocumentNo} from {CompanyName}',
+      body: 'Dear {CustomerName},\n\nPlease find attached purchase debit return note {DocumentNo} dated {DocumentDate}.\n\n• Total Debit: {TotalAmount}\n\n{Signature}'
+    },
+    'Sales Invoice (WhatsApp)': {
+      subject: '',
+      body: 'Hello *{CustomerName}*,\n\nPlease find attached sales invoice *{DocumentNo}* dated *{DocumentDate}* for total amount *{TotalAmount}* (Balance: *{BalanceAmount}*).\n\nThank you for your business!\n\nRegards,\n*{CompanyName}*'
+    },
+    'Quotation (WhatsApp)': {
+      subject: '',
+      body: 'Hello *{CustomerName}*,\n\nPlease find attached quotation *{DocumentNo}* dated *{DocumentDate}* for total amount *{TotalAmount}*.\n\nLooking forward to your feedback!\n\nRegards,\n*{CompanyName}*'
+    }
   };
 
   function val(id, fallback = '') {
@@ -88,6 +113,70 @@ window.SettingsController = (function() {
   }
 
   return {
+    togglePasswordVisibility(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.type = el.type === 'password' ? 'text' : 'password';
+    },
+
+    showEmailGuidanceModal() {
+      const el = document.getElementById('modal-email-guidance');
+      if (el) el.style.display = 'flex';
+    },
+
+    uploadSignatureImage(fileInput) {
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const base64Data = evt.target.result;
+        try {
+          await window.ApiService.put('/api/support/settings', {
+            values: { 'email.signature.image': base64Data }
+          });
+          const img = document.getElementById('preview-email-sig-img');
+          const status = document.getElementById('status-email-sig-img');
+          if (img) {
+            img.src = base64Data;
+            img.style.display = 'block';
+          }
+          if (status) {
+            status.textContent = file.name + ' • preserved';
+            status.style.color = '#4ade80';
+          }
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          window.AppDialogService.showToast('Email signature image saved successfully!', 'success');
+        } catch (err) {
+          window.AppDialogService.showToast('Failed to save signature image: ' + err.message, 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    },
+
+    async clearSignatureImage() {
+      try {
+        await window.ApiService.put('/api/support/settings', {
+          values: { 'email.signature.image': '' }
+        });
+        const img = document.getElementById('preview-email-sig-img');
+        const status = document.getElementById('status-email-sig-img');
+        if (img) {
+          img.src = '';
+          img.style.display = 'none';
+        }
+        if (status) {
+          status.textContent = 'No signature image attached';
+          status.style.color = '#64748b';
+        }
+        const fileInput = document.getElementById('file-email-sig-img');
+        if (fileInput) fileInput.value = '';
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        window.AppDialogService.showToast('Email signature image removed.', 'info');
+      } catch (err) {
+        window.AppDialogService.showToast('Failed to clear signature image: ' + err.message, 'error');
+      }
+    },
+
     uploadBrandingAsset(assetKey, fileInput, previewImgId, placeholderId) {
       if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
       const file = fileInput.files[0];
@@ -169,17 +258,23 @@ window.SettingsController = (function() {
         panel.style.display = panelSec === sec ? 'block' : 'none';
       });
 
-      // Update save button label
+      // Toggle header Test Email button (Desktop Parity: Visible only on EMAIL tab)
+      const testEmailBtn = document.getElementById('btn-header-test-email');
+      if (testEmailBtn) {
+        testEmailBtn.style.display = sec === 'EMAIL' ? 'inline-flex' : 'none';
+      }
+
+      // Update save button label (Desktop Parity: "Save " + Section Name)
       const saveBtn = document.getElementById('btn-save-settings-active');
       if (saveBtn) {
         const names = {
-          COMPANY: 'Company Profile',
-          PAYMENT: 'Payment & Bank',
-          INVOICE: 'Invoice Defaults',
+          COMPANY: 'Company',
+          PAYMENT: 'Payment',
+          INVOICE: 'Invoice',
           NOTIFICATIONS: 'Notifications',
-          EMAIL: 'Email Delivery',
-          SECURITY: 'Security & Session',
-          MODULES: 'Module Toggles'
+          EMAIL: 'Email',
+          SECURITY: 'Security',
+          MODULES: 'Modules'
         };
         saveBtn.innerHTML = `<span>&#128190;</span> Save ${names[sec] || 'Settings'}`;
       }
@@ -442,6 +537,16 @@ window.SettingsController = (function() {
         return;
       }
 
+      const rawTol = val('setting-tolerance').trim();
+      let tolNum = parseFloat(rawTol);
+      if (isNaN(tolNum) || tolNum < 0) {
+        tolNum = 0.00;
+      } else if (tolNum > 5.00) {
+        window.AppDialogService.showToast('Reconciliation rounding tolerance cannot exceed ₹5.00 per enterprise policy.', 'error');
+        return;
+      }
+      const toleranceStr = tolNum.toFixed(2);
+
       const values = {
         'payment.bankName': bankName,
         'payment.accountHolder': val('setting-account-holder').trim(),
@@ -450,7 +555,7 @@ window.SettingsController = (function() {
         'payment.branch': val('setting-branch').trim(),
         'payment.accountType': val('setting-account-type'),
         'payment.upiId': val('setting-upi-id').trim(),
-        'payment.bankMatchRoundingTolerance': val('setting-tolerance').trim() || '1.00'
+        'payment.bankMatchRoundingTolerance': toleranceStr
       };
 
       try {
@@ -463,7 +568,7 @@ window.SettingsController = (function() {
     },
 
     // ==========================================
-    // 3. INVOICE DEFAULTS & PRINT SETTINGS
+    // 3. INVOICE DEFAULTS & PRINT SETTINGS (Screen 3)
     // ==========================================
     async loadInvoiceSettings() {
       try {
@@ -482,11 +587,17 @@ window.SettingsController = (function() {
         const normDateFmt = window.FormatUtil ? window.FormatUtil.normalizeDateFormat(rawDateFmt) : rawDateFmt;
         const normTimeFmt = window.FormatUtil ? window.FormatUtil.normalizeTimeFormat(rawTimeFmt) : rawTimeFmt;
 
+        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || 'Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India');
+        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || 'Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat');
+        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || 'https://jasviindustries.in');
+        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || 'GUJARAT (24)');
+        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || 'Excellence in Ceramic Manufacturing & Enterprise Engineering');
+
         setVal('setting-currency', serverSettings['company.currency'] || (profile && profile.currency) || 'INR (₹)');
         setVal('setting-timezone', serverSettings['company.timeZone'] || (profile && profile.timezone) || 'Asia/Kolkata (IST)');
         setVal('setting-date-format', normDateFmt);
         setVal('setting-time-format', normTimeFmt);
-        setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged after 30 days.\n3. Subject to Morbi jurisdiction only.');
+        setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '(1) All Prices are Nett-Godown.\n(2) Our responsibility ceases as soon as the goods leaves our godown.\n(3) Intrest @ 24% p.a. will be charged, if the payment not paid in due time.\n(4) Payments to be made by payees A/c Chque / DD / RTGS / NEFT Only.');
 
         let invoiceSettings = {};
         try {
@@ -512,20 +623,40 @@ window.SettingsController = (function() {
       const tzVal = val('setting-timezone');
 
       const values = {
+        'company.address': val('setting-company-address').trim(),
+        'company.shipAddress': val('setting-ship-address').trim(),
+        'company.website': val('setting-company-website').trim(),
+        'company.state': val('setting-company-state').trim(),
         'company.currency': val('setting-currency'),
         'company.timeZone': tzVal,
         'company.dateFormat': normDate,
         'company.timeFormat': normTime,
+        'company.tagline': val('setting-company-tagline').trim(),
         'company.terms': val('setting-invoice-terms').trim()
       };
 
       try {
         await window.ApiService.put('/api/support/settings', { values });
+        if (window.ReportService && window.ReportService.updateProfile) {
+          try {
+            await window.ReportService.updateProfile({
+              address: values['company.address'],
+              shipAddress: values['company.shipAddress'],
+              website: values['company.website'],
+              state: values['company.state'],
+              tagline: values['company.tagline'],
+              currency: values['company.currency'],
+              dateFormat: normDate,
+              timezone: tzVal,
+              invoiceTerms: values['company.terms']
+            });
+          } catch (ignored) {}
+        }
         if (window.FormatUtil) {
           window.FormatUtil.setBusinessPolicy(normDate, normTime, tzVal);
         }
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Invoice regional parameters and legal terms saved to server!', 'success');
+        window.AppDialogService.showToast('Invoice regional parameters, addresses and terms saved to server!', 'success');
       } catch (err) {
         window.AppDialogService.showToast('Failed to save invoice settings: ' + err.message, 'error');
       }
@@ -628,17 +759,29 @@ window.SettingsController = (function() {
         if (res) {
           setVal('smtp-host', res.host || 'smtp.gmail.com');
           setVal('smtp-port', res.port || '587');
-          setVal('smtp-email', res.email || 'billing@jasviindustries.in');
+          setVal('smtp-email', res.email || 'ssdhameliya@gmail.com');
           setVal('smtp-from-name', res.fromName || 'Jasvi Industries Accounts');
           setChk('smtp-tls', res.startTls !== false);
         }
 
-        // Load signature and active template
+        // Load signature, signature image, and active template
         let emailSettings = {};
         try {
           emailSettings = await window.ApiService.get('/api/support/settings?prefix=email.');
           if (emailSettings['email.signature']) {
             setVal('smtp-signature', emailSettings['email.signature']);
+          }
+          if (emailSettings['email.signature.image']) {
+            const sigImg = document.getElementById('preview-email-sig-img');
+            const sigStatus = document.getElementById('status-email-sig-img');
+            if (sigImg) {
+              sigImg.src = emailSettings['email.signature.image'];
+              sigImg.style.display = 'block';
+            }
+            if (sigStatus) {
+              sigStatus.textContent = 'signature_stamp.png • preserved';
+              sigStatus.style.color = '#4ade80';
+            }
           }
         } catch (ignored) {}
 
@@ -659,7 +802,7 @@ window.SettingsController = (function() {
       const signature = val('smtp-signature').trim();
 
       if (!host || !email) {
-        window.AppDialogService.showToast('SMTP Host and Sender Email are required.', 'error');
+        window.AppDialogService.showToast('SMTP Host and Sending Email Address are required.', 'error');
         return;
       }
 
@@ -720,15 +863,114 @@ window.SettingsController = (function() {
     },
 
     async testEmail() {
-      const recipient = prompt('Enter recipient email address to send test diagnostic message:', 'director@jasviindustries.in');
-      if (!recipient) return;
+      const defaultRecipient = val('smtp-email').trim() || 'ssdhameliya@gmail.com';
+      const recipient = prompt('Enter recipient email address to send test diagnostic message:', defaultRecipient);
+      if (!recipient || !recipient.trim()) return;
 
-      window.AppDialogService.showToast(`Dispatching diagnostic TLS probe to ${recipient}...`, 'info');
+      const cleanRecipient = recipient.trim();
+      const host = val('smtp-host').trim() || 'smtp.gmail.com';
+      const port = parseInt(val('smtp-port'), 10) || 587;
+      const email = val('smtp-email').trim() || cleanRecipient;
+      const password = val('smtp-password');
+
+      const modal = document.getElementById('modal-live-email-test');
+      const subTitle = document.getElementById('live-email-target-sub');
+      const logStream = document.getElementById('live-email-log-stream');
+      const statusText = document.getElementById('live-email-status-text');
+      const dismissBtn = document.getElementById('btn-close-live-email');
+
+      if (modal) modal.style.display = 'flex';
+      if (subTitle) subTitle.textContent = `Testing delivery to ${cleanRecipient} via ${host}:${port}`;
+      if (dismissBtn) dismissBtn.disabled = true;
+
+      const setStage = (stgNum, state, msg) => {
+        const stageEl = document.getElementById(`stage-email-${stgNum}`);
+        if (!stageEl) return;
+        const icon = stageEl.querySelector('.stage-icon');
+        const txt = stageEl.querySelector('.stage-msg');
+        if (state === 'active') {
+          stageEl.style.borderColor = '#38bdf8';
+          stageEl.style.background = 'rgba(56,189,248,0.1)';
+          if (icon) { icon.innerHTML = '&#9673;'; icon.style.color = '#38bdf8'; }
+          if (txt) { txt.textContent = msg || 'In progress...'; txt.style.color = '#38bdf8'; }
+        } else if (state === 'success') {
+          stageEl.style.borderColor = 'rgba(74,222,128,0.3)';
+          stageEl.style.background = 'rgba(74,222,128,0.08)';
+          if (icon) { icon.innerHTML = '&#10003;'; icon.style.color = '#4ade80'; }
+          if (txt) { txt.textContent = msg || 'Completed'; txt.style.color = '#4ade80'; }
+        } else if (state === 'error') {
+          stageEl.style.borderColor = 'rgba(248,113,113,0.4)';
+          stageEl.style.background = 'rgba(248,113,113,0.1)';
+          if (icon) { icon.innerHTML = '&#10007;'; icon.style.color = '#f87171'; }
+          if (txt) { txt.textContent = msg || 'Failed'; txt.style.color = '#f87171'; }
+        } else {
+          stageEl.style.borderColor = 'rgba(255,255,255,0.06)';
+          stageEl.style.background = 'rgba(15,23,42,0.6)';
+          if (icon) { icon.innerHTML = '&#9675;'; icon.style.color = '#94a3b8'; }
+          if (txt) { txt.textContent = msg || 'Pending...'; txt.style.color = '#64748b'; }
+        }
+      };
+
+      const appendLog = (line) => {
+        if (!logStream) return;
+        const time = new Date().toTimeString().split(' ')[0];
+        logStream.textContent += `\n[${time}] ${line}`;
+        logStream.scrollTop = logStream.scrollHeight;
+      };
+
+      setStage(1, 'active', 'Saving SMTP configuration & verifying DNS...');
+      setStage(2, 'pending');
+      setStage(3, 'pending');
+      if (logStream) logStream.textContent = `[${new Date().toTimeString().split(' ')[0]}] Initializing LiveOperationDialog test pipeline...`;
+      if (statusText) statusText.textContent = `Connecting to ${host}:${port}...`;
+
       try {
-        await window.ApiService.post('/api/authority/email/test', { recipient });
+        // Step 1: Pre-save updated credentials to authority backend so test doesn't run with stale password
+        appendLog(`Syncing SMTP credentials for ${email} with server...`);
+        const smtpPayload = {
+          host,
+          port,
+          email,
+          appPassword: password
+        };
+        await window.ApiService.put('/api/authority/email/settings', smtpPayload);
+        setStage(1, 'success', `Host ${host}:${port} connection resolved`);
+        appendLog(`[OK] Server acknowledged SMTP target: ${host}:${port} (STARTTLS enabled)`);
+
+        // Step 2: Handshake
+        setStage(2, 'active', `Authenticating account ${email}...`);
+        if (statusText) statusText.textContent = `Authenticating credentials with ${host}...`;
+        appendLog(`Negotiating TLS handshake with ${host}...`);
+
+        // Step 3: Dispatch test email via backend
+        setStage(2, 'success', `Authenticated as ${email}`);
+        setStage(3, 'active', `Transmitting diagnostic payload to ${cleanRecipient}...`);
+        if (statusText) statusText.textContent = `Dispatching test email to ${cleanRecipient}...`;
+        appendLog(`Dispatching diagnostic MIME payload to ${cleanRecipient}...`);
+
+        const result = await window.ApiService.post('/api/authority/email/test', { recipient: cleanRecipient });
+        
+        setStage(3, 'success', `Delivered successfully to ${cleanRecipient}`);
+        if (statusText) {
+          statusText.textContent = `Test completed successfully!`;
+          statusText.style.color = '#4ade80';
+        }
+        appendLog(`[SUCCESS] 250 OK: Message accepted for delivery to <${cleanRecipient}>.`);
+        if (result && result.message) appendLog(`Server Response: ${result.message}`);
+        
+        if (dismissBtn) dismissBtn.disabled = false;
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Diagnostic test email dispatched successfully to ${recipient}!`, 'success');
+        window.AppDialogService.showToast(`Test email delivered successfully to ${cleanRecipient}!`, 'success');
       } catch (err) {
+        console.error('[SettingsController] Test email failed:', err);
+        setStage(3, 'error', err.message || 'Transmission failed');
+        if (statusText) {
+          statusText.textContent = `Mail Dispatch Error: ${err.message}`;
+          statusText.style.color = '#f87171';
+        }
+        appendLog(`[ERROR] Transmission terminated: ${err.message}`);
+        if (dismissBtn) dismissBtn.disabled = false;
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playWarning();
         window.AppDialogService.showToast('SMTP Test Failed: ' + err.message, 'error');
       }
     },

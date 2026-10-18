@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 10,
-  webVersion: "10.0.34.10",
-  tag: "web-v10.0.34.10",
-  releaseDate: "2026-10-18T18:15:00+05:30",
+  webBuild: 11,
+  webVersion: "10.0.34.11",
+  tag: "web-v10.0.34.11",
+  releaseDate: "2026-10-18T18:45:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.10 Enterprise Release - Complete Desktop Parity for Payment Due Status & Return Workflows across Sales & Purchase Registers"
+  summary: "10.0.34.11 Enterprise Release - Complete 5-Screen Desktop Parity for Settings Studio, LiveOperationDialog Email Testing, and PascalCase Template Tokens"
 };
 
 // Automatic UI Version Injection
