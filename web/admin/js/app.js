@@ -33,45 +33,8 @@ window.App = (function() {
 
   async function syncFooterCompanyProfile() {
     try {
-      let profile = null;
-      if (window.AuthService && window.AuthService.getCurrentUser) {
-        const u = window.AuthService.getCurrentUser();
-        if (u && u.companyProfile) profile = u.companyProfile;
-      }
-      if (!profile && window.ApiService) {
-        profile = await window.ApiService.get('/api/authority/business-profile').catch(() => null);
-      }
-      if (!profile && window.MasterService && window.MasterService.getCompanyProfile) {
-        profile = await window.MasterService.getCompanyProfile().catch(() => null);
-      }
-      if (profile) {
-        const nameEl = document.getElementById('footer-company-name');
-        const phoneEl = document.getElementById('footer-phone');
-        const emailEl = document.getElementById('footer-email');
-        const webEl = document.getElementById('footer-website');
-
-        const compName = profile.legalName || profile.tradeName || profile.companyName || 'Jasvi Industries';
-        if (nameEl) nameEl.innerHTML = `🏢 ${compName}`;
-
-        const ph = profile.phone || profile.mobile || '9099939193';
-        if (phoneEl) {
-          phoneEl.innerHTML = `📞 ${ph}`;
-          phoneEl.style.display = ph ? 'inline' : 'none';
-        }
-
-        const em = profile.email || 'info@jasviindustries.in';
-        if (emailEl) {
-          emailEl.innerHTML = `✉️ ${em}`;
-          emailEl.style.display = em ? 'inline' : 'none';
-        }
-
-        const web = profile.website || 'https://jasviindustries.in';
-        if (webEl) {
-          const webUrl = web.startsWith('http') ? web : 'https://' + web;
-          const webDisplay = web.replace(/^https?:\/\//, '');
-          webEl.innerHTML = `<a href="${webUrl}" target="_blank" style="color:inherit; text-decoration:none;">🌐 ${webDisplay}</a>`;
-          webEl.style.display = web ? 'inline' : 'none';
-        }
+      if (window.BrandingService && window.BrandingService.refresh) {
+        await window.BrandingService.refresh();
       }
     } catch (_) {}
   }
@@ -414,7 +377,8 @@ window.App = (function() {
 
       if (tab === 'login') {
         if (cardTitle) cardTitle.innerText = 'Sign in to your account';
-        if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+        const brandDesc = window.BrandingService ? window.BrandingService.loginDescription() : 'Role-aware secure access';
+        if (cardSub) cardSub.innerText = brandDesc;
         if (window.loadLoginRoles) window.loadLoginRoles();
         if (window.updateLoginMode) window.updateLoginMode();
         const identInput = document.getElementById('login-identity');
@@ -424,20 +388,26 @@ window.App = (function() {
         if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
         if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
         if (window.loadRegistrationRoles) window.loadRegistrationRoles();
-        const otpGroup = document.getElementById('reg-email-otp-group');
-        const submitBtn = document.getElementById('btn-reg-submit');
-        if (otpGroup) otpGroup.style.display = 'none';
-        if (submitBtn) submitBtn.style.display = 'block';
+        const regOtp = document.getElementById('reg-email-otp');
+        if (regOtp) regOtp.value = '';
+        const regStatus = document.getElementById('reg-authenticator-status');
+        if (regStatus) regStatus.innerText = 'Awaiting email verification...';
         const regName = document.getElementById('reg-name');
         if (regName) setTimeout(() => regName.focus(), 60);
       } else if (tab === 'forgot') {
         if (cardTitle) cardTitle.innerText = 'Reset your password';
         if (cardSub) cardSub.innerText = 'Admin keeps the existing email-OTP recovery flow. Non-Admin users must also enter their current authenticator code.';
+        currentForgotChallengeId = null;
+        const s1 = document.getElementById('forgot-step1-group');
+        const s2 = document.getElementById('forgot-step2-group');
+        if (s1) s1.style.display = 'block';
+        if (s2) s2.style.display = 'none';
         const forgotIdent = document.getElementById('forgot-identity');
         if (forgotIdent) setTimeout(() => forgotIdent.focus(), 60);
       } else if (tab === 'mfa') {
         if (cardTitle) cardTitle.innerText = 'Sign in to your account';
-        if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Industries';
+        const brandDesc = window.BrandingService ? window.BrandingService.loginDescription() : 'Role-aware secure access';
+        if (cardSub) cardSub.innerText = brandDesc;
         if (window.updateLoginMode) window.updateLoginMode();
         const mfaCodeInput = document.getElementById('login-mfa-code');
         if (mfaCodeInput) {
@@ -481,8 +451,12 @@ window.loadLoginRoles = async function() {
   try {
     const roles = await window.AuthService.getLoginRoles();
     if (Array.isArray(roles) && roles.length > 0) {
-      const current = roleSelect.value || 'ADMIN';
-      roleSelect.innerHTML = roles.map(r => `<option value="${r.code}" ${r.code === current ? 'selected' : ''}>${r.displayName || r.code}</option>`).join('');
+      const current = roleSelect.value;
+      const opts = roles.map(r => `<option value="${r.code}" ${r.code === current ? 'selected' : ''}>${r.displayName || r.code}</option>`).join('');
+      roleSelect.innerHTML = current ? opts : `<option value="" disabled selected>Select your role</option>` + opts;
+      if (current && roles.some(r => r.code === current)) {
+        roleSelect.value = current;
+      }
     }
   } catch (e) {
     console.warn('Could not load login roles:', e);
@@ -1043,63 +1017,81 @@ window.refreshRegistrationCaptcha = async function() {
   }
 };
 
+let currentRegistrationRoleCode = 'Sales';
+
 window.loadRegistrationRoles = async function() {
   const roleEl = document.getElementById('reg-role');
   if (!roleEl) return;
   try {
     const roles = await window.AuthService.getRegistrationRoles();
     if (Array.isArray(roles) && roles.length > 0) {
-      roleEl.innerHTML = roles.map(r => `<option value="${r.code}">${r.displayName || r.code}</option>`).join('');
+      const firstRole = roles[0];
+      currentRegistrationRoleCode = firstRole.code;
+      if (roleEl.tagName === 'INPUT') {
+        roleEl.value = firstRole.displayName || firstRole.code;
+      } else {
+        roleEl.innerHTML = roles.map(r => `<option value="${r.code}">${r.displayName || r.code}</option>`).join('');
+      }
     }
   } catch (err) {
     console.warn('Registration roles error:', err);
   }
 };
 
-window.handleRegisterSubmit = async function(e) {
+window.handleSendRegistrationOtp = async function(e) {
   if (e) e.preventDefault();
   const name = ((document.getElementById('reg-name') || {}).value || '').trim();
   const username = ((document.getElementById('reg-username') || {}).value || '').trim();
   const email = ((document.getElementById('reg-email') || {}).value || '').trim();
-  const role = ((document.getElementById('reg-role') || {}).value || 'Sales').trim();
+  const role = currentRegistrationRoleCode || ((document.getElementById('reg-role') || {}).value || 'Sales').trim();
   const password = (document.getElementById('reg-password') || {}).value;
   const confirm = (document.getElementById('reg-confirm') || {}).value;
   const captchaAnswer = ((document.getElementById('reg-captcha-answer') || {}).value || '').trim();
   const alertEl = document.getElementById('auth-alert');
-  const btn = document.getElementById('btn-reg-submit');
+  const btn = document.getElementById('btn-reg-send-otp') || document.getElementById('btn-reg-submit');
 
   if (!name || !username || !email || !password || !confirm) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Please complete all required fields.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Please complete all required fields.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
 
   if (password !== confirm) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Passwords do not match. Please re-enter.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Passwords do not match. Please re-enter.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
 
   if (!captchaAnswer) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Security CAPTCHA calculation answer is required.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Security CAPTCHA calculation answer is required.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
 
   if (!currentRegistrationCaptchaId) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Security CAPTCHA challenge is loading. Please wait or refresh the challenge.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Security CAPTCHA challenge is loading. Please wait or refresh the challenge.';
+      alertEl.style.display = 'block';
+    }
     window.refreshRegistrationCaptcha();
     return;
   }
 
-  btn.disabled = true;
-  btn.innerText = 'Sending email OTP...';
-  alertEl.style.display = 'none';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Sending email OTP...';
+  }
+  if (alertEl) alertEl.style.display = 'none';
 
   try {
     currentRegistrationPending = { username, fullName: name, email, role, password };
@@ -1115,50 +1107,71 @@ window.handleRegisterSubmit = async function(e) {
     const res = await window.AuthService.requestRegistrationOtp(payload);
     if (res.success || res.challengeId) {
       currentRegistrationChallengeId = res.challengeId;
-      document.getElementById('reg-email-otp-group').style.display = 'block';
-      document.getElementById('btn-reg-submit').style.display = 'none';
-      document.getElementById('reg-email-otp').focus();
-      alertEl.className = 'auth-alert success';
-      alertEl.innerText = res.message ? `${res.message}. Enter the OTP below.` : 'Verification code sent to your registered email! Enter the 6-digit OTP below.';
-      alertEl.style.display = 'block';
+      const otpGroup = document.getElementById('reg-email-otp-group');
+      if (otpGroup) otpGroup.style.display = 'block';
+      const otpIn = document.getElementById('reg-email-otp');
+      if (otpIn) {
+        otpIn.disabled = false;
+        setTimeout(() => otpIn.focus(), 80);
+      }
+      if (alertEl) {
+        alertEl.className = 'auth-alert success';
+        alertEl.innerText = res.message ? `${res.message}. Enter the OTP below.` : 'Verification code sent to your registered email! Enter the 6-digit OTP below.';
+        alertEl.style.display = 'block';
+      }
+      if (btn) {
+        btn.innerText = '✉ Resend Email OTP';
+      }
+      window.AppDialogService.showToast('Email OTP sent to ' + email, 'info');
     } else {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = res.message || 'Unable to request registration OTP.';
-      alertEl.style.display = 'block';
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Unable to request registration OTP.';
+        alertEl.style.display = 'block';
+      }
       window.refreshRegistrationCaptcha();
     }
   } catch (err) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = err.message || 'Error processing registration.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = err.message || 'Error processing registration.';
+      alertEl.style.display = 'block';
+    }
     window.refreshRegistrationCaptcha();
   } finally {
-    btn.disabled = false;
-    btn.innerText = 'Send Email Verification Code';
+    if (btn) btn.disabled = false;
   }
 };
+window.handleRegisterSubmit = window.handleSendRegistrationOtp;
 
 window.handleVerifyRegistrationEmail = async function() {
   const otp = ((document.getElementById('reg-email-otp') || {}).value || '').trim();
   const alertEl = document.getElementById('auth-alert');
   const btn = document.getElementById('btn-reg-verify-otp');
+  const statusEl = document.getElementById('reg-authenticator-status');
 
   if (!otp || !otp.match(/^\d{6}$/)) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Please enter the valid 6-digit email OTP.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Please enter the valid 6-digit email OTP.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
 
   if (!currentRegistrationPending || !currentRegistrationChallengeId) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = 'Please complete CAPTCHA and send email OTP first.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = 'Please complete CAPTCHA and send email OTP first.';
+      alertEl.style.display = 'block';
+    }
     return;
   }
 
-  btn.disabled = true;
-  btn.innerText = 'Verifying email...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Verifying email...';
+  }
 
   try {
     const payload = {
@@ -1175,9 +1188,14 @@ window.handleVerifyRegistrationEmail = async function() {
     if (res && (res.registrationId || res.manualSecret)) {
       currentRegistrationId = res.registrationId;
 
-      alertEl.className = 'auth-alert success';
-      alertEl.innerText = '✓ Email verified! Please scan the QR code to configure your Authenticator app and complete enrollment.';
-      alertEl.style.display = 'block';
+      if (statusEl) {
+        statusEl.innerHTML = '&#10003; Email verified. Complete authenticator setup in the QR scanner window.';
+      }
+      if (alertEl) {
+        alertEl.className = 'auth-alert success';
+        alertEl.innerText = '✓ Email verified! Please scan the QR code to configure your Authenticator app and complete enrollment.';
+        alertEl.style.display = 'block';
+      }
 
       if (window.openAuthenticatorSetupModal) {
         window.openAuthenticatorSetupModal(res, 'registration');
@@ -1197,17 +1215,23 @@ window.handleVerifyRegistrationEmail = async function() {
         if (totpIn) { totpIn.value = ''; totpIn.focus(); }
       }, 100);
     } else {
-      alertEl.className = 'auth-alert error';
-      alertEl.innerText = res.message || 'Email OTP verification failed.';
-      alertEl.style.display = 'block';
+      if (alertEl) {
+        alertEl.className = 'auth-alert error';
+        alertEl.innerText = res.message || 'Email OTP verification failed.';
+        alertEl.style.display = 'block';
+      }
     }
   } catch (err) {
-    alertEl.className = 'auth-alert error';
-    alertEl.innerText = err.message || 'Error verifying email OTP.';
-    alertEl.style.display = 'block';
+    if (alertEl) {
+      alertEl.className = 'auth-alert error';
+      alertEl.innerText = err.message || 'Error verifying email OTP.';
+      alertEl.style.display = 'block';
+    }
   } finally {
-    btn.disabled = false;
-    btn.innerText = 'Verify Email & Configure Authenticator';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '✓ Verify Email OTP';
+    }
   }
 };
 
@@ -1308,8 +1332,12 @@ window.requestPasswordResetOtp = async function() {
     const res = await window.AuthService.requestPasswordReset(identity);
     if (res.success || res.challengeId) {
       currentForgotChallengeId = res.challengeId;
+      const step1 = document.getElementById('forgot-step1-group');
+      const step2 = document.getElementById('forgot-step2-group');
+      if (step1) step1.style.display = 'none';
+      if (step2) step2.style.display = 'block';
       const otpIn = document.getElementById('forgot-otp');
-      if (otpIn) otpIn.focus();
+      if (otpIn) setTimeout(() => otpIn.focus(), 80);
       if (alertEl) {
         alertEl.className = 'auth-alert success';
         alertEl.innerText = (res.message || 'Verification code sent to registered email') + '. Enter code and new password below.';

@@ -1418,6 +1418,40 @@
       border: 1px solid rgba(56, 189, 248, 0.22); border-radius: 16px;
       padding: 34px 30px; box-shadow: 0 24px 60px rgba(0,0,0,0.65);
       position: relative;
+      transition: width 0.2s ease, max-width 0.2s ease;
+    }
+    .auth-card-col.wide-card {
+      width: 520px; max-width: 95vw;
+    }
+    .registration-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .registration-form-grid .full-col {
+      grid-column: span 2;
+    }
+    .registration-step-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .registration-step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .registration-step-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .auth-shield-icon-box {
       width: 46px; height: 46px;

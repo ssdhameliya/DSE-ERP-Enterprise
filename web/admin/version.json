@@ -1,20 +1,17 @@
 {
   "desktopVersion": "10.0.34",
-  "webBuild": 16,
-  "webVersion": "10.0.34.16",
-  "tag": "web-v10.0.34.16",
-  "releaseDate": "2026-10-18T22:35:00+05:30",
+  "webBuild": 17,
+  "webVersion": "10.0.34.17",
+  "tag": "web-v10.0.34.17",
+  "releaseDate": "2026-10-18T23:30:00+05:30",
   "environment": "UAT",
-  "summary": "10.0.34.16 Enterprise Release - User Access & Permissions Desktop Parity, Dynamic Role Lookups, Dedicated Registration Approvals & Permission Matrix, Supplier Import Persistence, Footer Spacing, and Report Scheduler",
+  "summary": "10.0.34.17 Enterprise Release - Full 8-Loader Desktop Import Parity, Robust Upsert & Conflict Handling, Dynamic Logic Screens & Progressive Disclosure, Dynamic Settings Branding, Universal Footer Disappearance, and Mock Data Removal",
   "highlights": [
-    "1. Desktop Parity 10-Column User Access Table: Full alignment with UserAccess.fxml containing User, Email / Username, Role, Department, Access, Branch, Status, Last Login, MFA, and Actions dropdown menu (.btn-purple) with 7 actions + delete.",
-    "2. Dynamic Server-Owned Role Lookups: Real roles fetched from GET /api/admin/roles populating all filter, dialog, approval, and permission dropdowns without mock data.",
-    "3. Add vs Edit User Account Modal Parity: Password mandatory on Add User, optional on Edit User ('Leave blank to keep current password') preserving password on empty submission, with eye visibility toggles, MFA policy, and Authenticator reset.",
-    "4. Dedicated Registration Approvals Workspace: Full-screen #view-registration-approvals with 2 KPI cards, applicant queue table, final role assignment, and Approve/Reject controls.",
-    "5. Manage Roles Master Data Delegation: Navigates to Masters workspace and automatically activates category 'ROLE'.",
-    "6. Permission Matrix Workspace: 31 modules across 10 categories replicating PermissionCatalog.java, common capabilities, special capabilities with compact N/M dropdowns, 4 templates, copy from role, search, granted-only filter, dynamic effective preview, and optimistic locking save.",
-    "7. Data Import Supplier Upsert Persistence: Preserved existing party ID and rowVersion in ImportService.js to resolve 'Party id is required' server error during supplier imports.",
-    "8. Universal Application Footer Spacing: Upgraded .app-footer-bar to 38px height with generous gaps, paddings, and alignment matching desktop SharedApplicationFooter.java.",
-    "9. Report Scheduler Tab Fix: Correctly parsed res.schedules and bound 4 KPI summary cards from ReportScheduleDtos.SchedulePage."
+    "1. Full 8-Loader Desktop Import Parity: Complete alignment against desktop ImportService.java, ImportMergePolicy.java, PurchaseReconImportCoordinator.java, and BankStatementImportCoordinator.java for all 8 loaders (Items, Customers/CRM, Suppliers/HRM, Sales, Purchases, Master Categories & Values, Purchase Recon, and Bank Statement).",
+    "2. Customer & Supplier Import Conflict Resolution: Force cache refresh on import start, targeted server existence lookup, safe upsert retaining ID and rowVersion, in-memory cache update preventing intra-sheet collisions, and duplicate key conflict recovery.",
+    "3. Three Authentication Screens Logic & UI Desktop Parity: Screen 1 Sign In with dynamic server-owned roles from GET /api/auth/login-roles and morphing button modes; Screen 2 Create New Account with 2-column grid, readonly assigned role from GET /api/auth/registration-roles, sequential Step 1 CAPTCHA, Step 2 Email OTP, Step 3 Authenticator QR modal, and Admin approval submission; Screen 3 Reset Password with progressive disclosure Step 1 OTP request and Step 2 verification/reset.",
+    "4. Dynamic Branding & Settings Integration: Created BrandingService singleton dynamically binding company name (Jashvi Engineers), tagline, and quotes from database settings (application_setting table via company.* keys) replacing hardcoded strings.",
+    "5. Universal Dynamic Footer Disappearance Rule: SharedApplicationFooter parity ensuring blank phone, email, and website vanish completely (display: none) without mock fallbacks or static pipe delimiters, accompanied by live IST date and time clock.",
+    "6. Complete Mock Data Removal: Eradicated hardcoded role options, mock company fallbacks, and hardcoded contact phone/email across auth screens and application footer."
   ]
 }

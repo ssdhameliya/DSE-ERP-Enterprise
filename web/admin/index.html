@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.16">
+    <link rel="stylesheet" href="css/app.css?v=10.0.34.17">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -167,26 +167,27 @@
     
     <div class="auth-desktop-wrapper">
       <!-- LEFT BRAND COLUMN -->
+      <!-- LEFT BRAND COLUMN -->
       <div class="auth-brand-col">
         <div class="auth-brand-logo-card">
-          <img src="assets/logo.png" alt="Jasvi Industries Logo">
+          <img src="assets/logo.png" alt="Company Logo" id="auth-brand-logo-img">
         </div>
-        <h1 class="auth-brand-title">Jasvi Industries</h1>
+        <h1 class="auth-brand-title">Jashvi Engineers</h1>
         <div class="auth-brand-line"></div>
-        <div class="auth-brand-subtitle">Business Management Suite</div>
-        <div class="auth-brand-tagline">Role-aware secure access to Jasvi Industries</div>
+        <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
+        <div class="auth-brand-tagline">Role-aware secure access to Jashvi Engineers</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.34.11</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.34</span>
           <div id="auth-desktop-baseline" style="font-size: 0.68rem; color: #94a3b8; margin-top: 4px; font-weight: 500;">Desktop Baseline: v10.0.34</div>
         </div>
       </div>
 
       <!-- RIGHT CARD COLUMN -->
-      <div class="auth-card-col">
+      <div class="auth-card-col" id="auth-card-col">
         <div class="auth-shield-icon-box">&#128737;&#65039;</div>
         <div style="text-align: center; color: #a78bfa; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Welcome Back</div>
         <h2 style="text-align: center; font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 4px 0;" id="auth-card-title">Sign in to your account</h2>
-        <p style="text-align: center; font-size: 0.74rem; color: #64748b; margin: 0 0 18px 0;" id="auth-card-subtitle">Role-aware secure access to Jasvi Industries</p>
+        <p style="text-align: center; font-size: 0.74rem; color: #64748b; margin: 0 0 18px 0;" id="auth-card-subtitle">Role-aware secure access to Jashvi Engineers</p>
 
         <div id="auth-alert" class="auth-alert" style="display: none; margin-bottom: 14px;"></div>
 
@@ -213,15 +214,8 @@
             <label class="form-label" style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
               <span>&#128101;</span> Role *
             </label>
-            <select id="login-role" class="form-select" required style="height: 38px; font-weight: 600;">
-              <option value="ADMIN" selected>Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="SALES">Sales</option>
-              <option value="PURCHASE">Purchase</option>
-              <option value="ACCOUNTANT">Accountant</option>
-              <option value="AUDITOR">Auditor</option>
-              <option value="STAFF">Staff</option>
-              <option value="USER">User</option>
+            <select id="login-role" class="form-select" required style="height: 38px; font-weight: 600;" onchange="window.updateLoginMode && window.updateLoginMode()">
+              <option value="" disabled selected>Select your role</option>
             </select>
           </div>
 
@@ -289,131 +283,159 @@
           <button type="button" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 10px; height: 38px;" onclick="window.cancelMfa()">&#10005; Back to Login</button>
         </form>
 
-        <!-- 3. RESET PASSWORD FORM (Matching desktop media_1791907431639.png) -->
+        <!-- 3. RESET PASSWORD FORM: PROGRESSIVE DISCLOSURE PARITY -->
         <form id="form-forgot" onsubmit="handleForgotPasswordSubmit(event)" style="display: none;">
           <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 14px; line-height: 1.4;">
             Admin keeps the existing email-OTP recovery flow. Non-Admin users must also enter their current authenticator code.
           </div>
 
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Email or username *</label>
-            <input type="text" id="forgot-identity" class="form-input" placeholder="Email or username" required style="height: 36px;">
+          <!-- Step 1: Request Reset Code -->
+          <div id="forgot-step1-group">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Email or username *</label>
+              <input type="text" id="forgot-identity" class="form-input" placeholder="Email or username" required style="height: 36px;">
+            </div>
+
+            <button type="button" id="btn-forgot-request-otp" class="auth-btn-purple-outline" style="margin-bottom: 12px; height: 36px;" onclick="requestPasswordResetOtp()">
+              <span>&#9993; SEND RESET CODE</span>
+            </button>
           </div>
 
-          <button type="button" id="btn-forgot-request-otp" class="auth-btn-purple-outline" style="margin-bottom: 12px; height: 36px;" onclick="requestPasswordResetOtp()">
-            <span>&#9993; SEND RESET CODE</span>
-          </button>
+          <!-- Step 2: Progressive Verification & New Password Fields -->
+          <div id="forgot-step2-group" style="display: none;">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Reset verification code *</label>
+              <input type="text" id="forgot-otp" class="form-input" placeholder="6-digit verification code" maxlength="6" style="height: 36px;">
+            </div>
 
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Reset verification code *</label>
-            <input type="text" id="forgot-otp" class="form-input" placeholder="6-digit verification code" maxlength="6" style="height: 36px;">
-          </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Authenticator code (only while the current authenticator is active)</label>
+              <input type="text" id="forgot-authenticator" class="form-input" placeholder="Leave blank after an admin authenticator reset" style="height: 36px;">
+            </div>
 
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Authenticator code (only while the current authenticator is active)</label>
-            <input type="text" id="forgot-authenticator" class="form-input" placeholder="Leave blank after an admin authenticator reset" style="height: 36px;">
-          </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">New password *</label>
+              <div style="position: relative;">
+                <input type="password" id="forgot-new-pwd" class="form-input" placeholder="8+ characters, letter and number" minlength="8" style="height: 36px; padding-right: 36px;">
+                <button type="button" onclick="window.togglePasswordVisibility('forgot-new-pwd', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 4px;">&#128065;</button>
+              </div>
+            </div>
 
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">New password *</label>
-            <div style="position: relative;">
-              <input type="password" id="forgot-new-pwd" class="form-input" placeholder="8+ characters, letter and number" minlength="8" style="height: 36px; padding-right: 36px;">
-              <button type="button" onclick="window.togglePasswordVisibility('forgot-new-pwd', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 4px;">&#128065;</button>
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Confirm new password *</label>
+              <div style="position: relative;">
+                <input type="password" id="forgot-confirm-pwd" class="form-input" placeholder="Repeat new password" minlength="8" style="height: 36px; padding-right: 36px;">
+                <button type="button" onclick="window.togglePasswordVisibility('forgot-confirm-pwd', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 4px;">&#128065;</button>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+              <button type="button" class="btn btn-secondary" style="flex: 1; height: 38px; justify-content: center;" onclick="showAuthTab('login')">&#10005; Back to Login</button>
+              <button type="submit" id="btn-forgot-complete" class="auth-btn-purple" style="flex: 1.3; height: 38px; justify-content: center;">&#128273; RESET PASSWORD</button>
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" style="font-size: 0.74rem; color: #94a3b8;">Confirm new password *</label>
-            <div style="position: relative;">
-              <input type="password" id="forgot-confirm-pwd" class="form-input" placeholder="Repeat new password" minlength="8" style="height: 36px; padding-right: 36px;">
-              <button type="button" onclick="window.togglePasswordVisibility('forgot-confirm-pwd', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 4px;">&#128065;</button>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-            <button type="button" class="btn btn-secondary" style="flex: 1; height: 38px; justify-content: center;" onclick="showAuthTab('login')">&#10005; Back to Login</button>
-            <button type="submit" id="btn-forgot-complete" class="auth-btn-purple" style="flex: 1.3; height: 38px; justify-content: center;">&#128273; RESET PASSWORD</button>
-          </div>
-
-          <div style="font-size: 0.72rem; color: #10b981; text-align: center;">
+          <div style="font-size: 0.72rem; color: #10b981; text-align: center; margin-top: 6px;">
             Enter your email or username to receive a reset code.
           </div>
-        </form>
-
-        <!-- 4. REGISTRATION FORM (Desktop RegistrationController Parity) -->
-        <form id="form-register" onsubmit="handleRegisterSubmit(event)" style="display: none;">
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Full Legal Name *</label>
-            <input type="text" id="reg-name" class="form-input" placeholder="e.g. Shailesh Dhameliya" required style="height: 34px;">
-          </div>
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Username *</label>
-            <input type="text" id="reg-username" class="form-input" placeholder="e.g. shailesh" required style="height: 34px;">
-          </div>
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Corporate Email *</label>
-            <input type="email" id="reg-email" class="form-input" placeholder="name@jasviindustries.in" required style="height: 34px;">
-          </div>
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Registration Role *</label>
-            <select id="reg-role" class="form-select" required style="height: 34px;">
-              <option value="SALES">SALES &bull; Sales Officer</option>
-              <option value="PURCHASE">PURCHASE &bull; Purchase Manager</option>
-              <option value="ACCOUNTANT">ACCOUNTANT &bull; Accounts</option>
-              <option value="STAFF">STAFF &bull; Standard Staff</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Password *</label>
-            <div style="position: relative;">
-              <input type="password" id="reg-password" class="form-input" required minlength="8" placeholder="8+ characters" style="height: 34px; padding-right: 36px;">
-              <button type="button" onclick="window.togglePasswordVisibility('reg-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">&#128065;</button>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 8px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Confirm Password *</label>
-            <div style="position: relative;">
-              <input type="password" id="reg-confirm" class="form-input" required minlength="8" placeholder="Re-type password" style="height: 34px; padding-right: 36px;">
-              <button type="button" onclick="window.togglePasswordVisibility('reg-confirm', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">&#128065;</button>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Security Challenge *</label>
-            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-              <div id="reg-captcha-question" style="flex: 1; padding: 6px 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); border-radius: 6px; font-weight: 600; font-size: 0.8rem; color: var(--cyan);">Loading...</div>
-              <button type="button" class="btn btn-secondary" onclick="window.refreshRegistrationCaptcha()" style="padding: 0 10px; height: 32px;">&#128260;</button>
-            </div>
-            <input type="text" id="reg-captcha-answer" class="form-input" placeholder="Enter answer" required style="height: 34px;">
-          </div>
-
-          <div id="reg-email-otp-group" style="display: none; padding-top: 10px; border-top: 1px dashed var(--border-subtle); margin-top: 10px; margin-bottom: 10px;">
-            <div class="form-group" style="margin-bottom: 8px;">
-              <label class="form-label" style="font-size: 0.72rem;">6-Digit Email Verification Code</label>
-              <input type="text" id="reg-email-otp" class="form-input" placeholder="Enter code received" maxlength="6" style="height: 34px;">
-            </div>
-            <button type="button" id="btn-reg-verify-otp" class="btn btn-success" style="width: 100%; justify-content: center; height: 38px;" onclick="window.handleVerifyRegistrationEmail()">Verify Email &amp; Configure Authenticator</button>
-          </div>
-
-          <button type="submit" id="btn-reg-submit" class="auth-btn-purple" style="height: 38px;">Send Verification Code</button>
-          <div style="text-align: center; margin-top: 10px;">
+          <div style="text-align: center; margin-top: 10px;" id="forgot-back-link">
             <a href="javascript:void(0)" onclick="showAuthTab('login')" style="color: #94a3b8; font-size: 0.76rem; text-decoration: none;">&#10005; Back to Sign In</a>
           </div>
         </form>
+
+        <!-- 4. REGISTRATION FORM: 2-COLUMN GRID & 3 SEQUENTIAL STEP CARDS (RegistrationController.java Parity) -->
+        <form id="form-register" onsubmit="handleRegisterSubmit(event)" style="display: none;">
+          <div class="registration-form-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Full Name *</label>
+              <input type="text" id="reg-name" class="form-input" placeholder="e.g. Shailesh Dhameliya" required style="height: 34px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Username *</label>
+              <input type="text" id="reg-username" class="form-input" placeholder="e.g. shailesh" required style="height: 34px;">
+            </div>
+            <div class="form-group full-col" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Email *</label>
+              <input type="email" id="reg-email" class="form-input" placeholder="name@company.com" required style="height: 34px;">
+            </div>
+            <div class="form-group full-col" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Registration Role</label>
+              <input type="text" id="reg-role" class="form-input" readonly value="Sales" style="height: 34px; background: rgba(255,255,255,0.03); color: #38bdf8; font-weight: 600; cursor: default;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Password *</label>
+              <div style="position: relative;">
+                <input type="password" id="reg-password" class="form-input" required minlength="8" placeholder="8+ chars" style="height: 34px; padding-right: 36px;">
+                <button type="button" onclick="window.togglePasswordVisibility('reg-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">&#128065;</button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; color: #94a3b8;">Confirm Password *</label>
+              <div style="position: relative;">
+                <input type="password" id="reg-confirm" class="form-input" required minlength="8" placeholder="Re-type" style="height: 34px; padding-right: 36px;">
+                <button type="button" onclick="window.togglePasswordVisibility('reg-confirm', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">&#128065;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 1 Card: CAPTCHA -->
+          <div class="registration-step-card" id="reg-card-step1">
+            <div class="registration-step-header">
+              <span class="registration-step-title">&#128737;&#65039; Step 1 &bull; CAPTCHA</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="window.refreshRegistrationCaptcha()" style="padding: 2px 8px; font-size: 0.70rem;">&#128260; Refresh</button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+              <div id="reg-captcha-question" style="flex: 1; padding: 6px 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); border-radius: 6px; font-weight: 600; font-size: 0.78rem; color: #38bdf8;">Loading question...</div>
+              <input type="text" id="reg-captcha-answer" class="form-input" placeholder="Answer" required style="width: 100px; height: 32px;">
+            </div>
+            <button type="button" id="btn-reg-send-otp" class="btn btn-secondary" style="width: 100%; justify-content: center; height: 34px; font-size: 0.75rem;" onclick="window.handleSendRegistrationOtp()">
+              &#9993; Send email OTP
+            </button>
+          </div>
+
+          <!-- Step 2 Card: Email OTP -->
+          <div class="registration-step-card" id="reg-card-step2">
+            <div class="registration-step-header">
+              <span class="registration-step-title">&#9993; Step 2 &bull; Email OTP</span>
+            </div>
+            <input type="text" id="reg-email-otp" class="form-input" placeholder="Enter email OTP" maxlength="6" style="height: 34px; margin-bottom: 8px;">
+            <button type="button" id="btn-reg-verify-otp" class="btn btn-secondary" style="width: 100%; justify-content: center; height: 34px; font-size: 0.75rem;" onclick="window.handleVerifyRegistrationEmail()">
+              &#10003; Verify Email OTP
+            </button>
+          </div>
+
+          <!-- Step 3 Card: Authenticator Setup -->
+          <div class="registration-step-card" id="reg-card-step3">
+            <div class="registration-step-header">
+              <span class="registration-step-title">&#128273; Step 3 &bull; Google / Microsoft Authenticator</span>
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8; line-height: 1.35; margin-bottom: 4px;">
+              Verify your email first. The QR scanner will open automatically. After authenticator verification, Submit for Admin Approval.
+            </div>
+            <div id="reg-authenticator-status" style="font-size: 0.72rem; color: #a78bfa; font-weight: 600;">
+              Awaiting email verification...
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 14px;">
+            <button type="button" class="btn btn-secondary" style="padding: 6px 20px; font-size: 0.75rem;" onclick="showAuthTab('login')">
+              &#10005; Back to login
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
-    <!-- DESKTOP FIXED FOOTER BAR -->
+    <!-- DESKTOP UNIVERSAL FOOTER BAR (Desktop SharedApplicationFooter.java Parity) -->
     <div class="auth-desktop-footer">
       <div>
-        <span style="color: #38bdf8; font-weight: 700;">Secure Local Reliable</span> &nbsp;|&nbsp; <span>Jasvi Industries</span>
+        <span style="color: #38bdf8; font-weight: 700;">Secure &nbsp; Local &nbsp; Reliable</span>
       </div>
       <div>
-        <span>&#128222; 9099939193</span> &nbsp;|&nbsp; <span>&#9993; ssdhameliya@gmail.com</span> &nbsp;|&nbsp; <span>&#128279; www.company.com</span>
-      </div>
-      <div>
-        <span id="auth-footer-clock">Tuesday, 13/10/2026 | 09:32:35 PM | IST</span>
+        <span id="auth-footer-clock" class="auth-clock"></span>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -12517,68 +12539,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.34.16"></script>
+  <script src="js/version.js?v=10.0.34.17"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.34.16"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.34.16"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.16"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.16"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.34.16"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.16"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.16"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.34.16"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.16"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.16"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.16"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.16"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.34.16"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.34.16"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.34.16"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.34.16"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.34.17"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.34.17"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.34.17"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.34.17"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.34.17"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.34.17"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.34.17"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.34.17"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.34.17"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.34.17"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.34.17"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.34.17"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.34.17"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.34.17"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.34.17"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.34.17"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/ApiService.js?v=10.0.34.16"></script>
-  <script src="js/services/AuthService.js?v=10.0.34.16"></script>
-  <script src="js/services/NotificationService.js?v=10.0.34.16"></script>
-  <script src="js/services/MasterService.js?v=10.0.34.16"></script>
-  <script src="js/services/OperationsService.js?v=10.0.34.16"></script>
-  <script src="js/services/ReportService.js?v=10.0.34.16"></script>
-  <script src="js/services/ReconService.js?v=10.0.34.16"></script>
-  <script src="js/services/AccountingService.js?v=10.0.34.16"></script>
-  <script src="js/services/ImportService.js?v=10.0.34.16"></script>
+  <script src="js/services/BrandingService.js?v=10.0.34.17"></script>
+  <script src="js/services/ApiService.js?v=10.0.34.17"></script>
+  <script src="js/services/AuthService.js?v=10.0.34.17"></script>
+  <script src="js/services/NotificationService.js?v=10.0.34.17"></script>
+  <script src="js/services/MasterService.js?v=10.0.34.17"></script>
+  <script src="js/services/OperationsService.js?v=10.0.34.17"></script>
+  <script src="js/services/ReportService.js?v=10.0.34.17"></script>
+  <script src="js/services/ReconService.js?v=10.0.34.17"></script>
+  <script src="js/services/AccountingService.js?v=10.0.34.17"></script>
+  <script src="js/services/ImportService.js?v=10.0.34.17"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/GstController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.16"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.16"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/GstController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.34.17"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.34.17"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.34.16"></script>
-  <script src="js/app.js?v=10.0.34.16"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.34.17"></script>
+  <script src="js/app.js?v=10.0.34.17"></script>
 </body>
 </html>
 

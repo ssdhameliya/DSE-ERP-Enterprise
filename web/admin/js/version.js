@@ -4,12 +4,12 @@
  */
 window.DSE_VERSION = {
   desktopVersion: "10.0.34",
-  webBuild: 16,
-  webVersion: "10.0.34.16",
-  tag: "web-v10.0.34.16",
-  releaseDate: "2026-10-18T22:35:00+05:30",
+  webBuild: 17,
+  webVersion: "10.0.34.17",
+  tag: "web-v10.0.34.17",
+  releaseDate: "2026-10-18T23:30:00+05:30",
   environment: "UAT",
-  summary: "10.0.34.16 Enterprise Release - User Access & Permissions Desktop Parity, Dynamic Role Lookups, Dedicated Registration Approvals & Permission Matrix, Supplier Import Persistence, Footer Spacing, and Report Scheduler"
+  summary: "10.0.34.17 Enterprise Release - Full 8-Loader Desktop Import Parity, Robust Upsert & Conflict Handling, Dynamic Logic Screens & Progressive Disclosure, Dynamic Settings Branding, Universal Footer Disappearance, and Mock Data Removal"
 };
 
 // Automatic UI Version Injection

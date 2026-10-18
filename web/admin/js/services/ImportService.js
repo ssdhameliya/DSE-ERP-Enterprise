@@ -498,9 +498,9 @@ window.ImportService = (function() {
       console.warn('Could not load reference formats:', e);
     }
 
-    if (module === 'Item Master') {
+    if (module === 'Item Master' || module === 'Items') {
       try {
-        const items = await window.MasterService.getItems(false);
+        const items = await window.MasterService.getItems(true);
         (items || []).forEach(it => existingItems.set((it.itemCode || '').toUpperCase(), it));
       } catch (e) {
         console.warn('Could not load master items cache:', e);
@@ -508,7 +508,7 @@ window.ImportService = (function() {
     } else if (module.includes('Customer') || module.includes('Supplier')) {
       const partyType = module.includes('Customer') ? 'CUSTOMER' : 'SUPPLIER';
       try {
-        const parties = await window.MasterService.getParties(partyType, false);
+        const parties = await window.MasterService.getParties(partyType, true);
         (parties || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
       } catch (e) {
         console.warn('Could not load master parties cache:', e);
@@ -516,9 +516,9 @@ window.ImportService = (function() {
     } else if (module === 'Sales' || module === 'Purchases') {
       const isSales = module === 'Sales';
       try {
-        const parties = await window.MasterService.getParties(isSales ? 'CUSTOMER' : 'SUPPLIER', false);
+        const parties = await window.MasterService.getParties(isSales ? 'CUSTOMER' : 'SUPPLIER', true);
         (parties || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
-        const items = await window.MasterService.getItems(false);
+        const items = await window.MasterService.getItems(true);
         (items || []).forEach(it => {
           const code = (it.itemCode || '').toUpperCase();
           existingItems.set(code, it);
@@ -837,10 +837,11 @@ window.ImportService = (function() {
     const total = rows.length;
 
     switch (module) {
-      case 'Item Master': {
+      case 'Item Master':
+      case 'Items': {
         const existingItems = new Map();
         try {
-          const items = await window.MasterService.getItems(false);
+          const items = await window.MasterService.getItems(true);
           (items || []).forEach(it => existingItems.set((it.itemCode || '').toUpperCase(), it));
         } catch (e) { }
 
@@ -851,7 +852,12 @@ window.ImportService = (function() {
           if (!code) continue;
 
           try {
-            const existing = existingItems.get(code.toUpperCase());
+            let existing = existingItems.get(code.toUpperCase());
+            if (!existing) {
+              const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+              existing = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+            }
+
             if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
               skipped++;
               details.push({ sourceRows: String(rowNum), reference: code, status: 'SKIPPED', action: 'SKIPPED', message: 'Existing item preserved' });
@@ -881,6 +887,9 @@ window.ImportService = (function() {
             if (existing) {
               payload.id = existing.id;
               payload.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
+              // Preserve openingStock & reservedStock as creation baselines (ImportMergePolicy.java)
+              payload.openingStock = existing.openingStock !== undefined ? existing.openingStock : payload.openingStock;
+              payload.reservedStock = existing.reservedStock !== undefined ? existing.reservedStock : 0;
               if (mode === 'UPDATE_NON_BLANK') {
                 if (!getVal(row, 'description')) payload.description = existing.description;
                 if (!getVal(row, 'category')) payload.category = existing.category;
@@ -892,14 +901,37 @@ window.ImportService = (function() {
                 if (getVal(row, 'gst') === '') payload.gst = existing.gst;
                 if (getVal(row, 'selling_price') === '') payload.sellingPrice = existing.sellingPrice;
                 if (getVal(row, 'purchase_price') === '') payload.purchasePrice = existing.purchasePrice;
+                if (getVal(row, 'minimum_stock') === '') payload.minimumStock = existing.minimumStock;
+                if (!getVal(row, 'location')) payload.location = existing.location;
+                if (!getVal(row, 'remarks')) payload.remarks = existing.remarks;
               }
-              await window.MasterService.updateItem(payload);
+              const res = await window.MasterService.updateItem(payload);
               updated++;
+              existingItems.set(code.toUpperCase(), res || payload);
               details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated successfully' });
             } else {
-              await window.MasterService.createItem(payload);
-              imported++;
-              details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
+              try {
+                const res = await window.MasterService.createItem(payload);
+                imported++;
+                existingItems.set(code.toUpperCase(), res || payload);
+                details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: 'New item created successfully' });
+              } catch (createErr) {
+                // If conflict occurs (e.g. duplicate key), re-fetch and update
+                const searchRes = await window.MasterService.searchItems(code, 5).catch(() => []);
+                const match = (searchRes || []).find(it => (it.itemCode || '').toUpperCase() === code.toUpperCase());
+                if (match) {
+                  payload.id = match.id;
+                  payload.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
+                  payload.openingStock = match.openingStock !== undefined ? match.openingStock : payload.openingStock;
+                  payload.reservedStock = match.reservedStock !== undefined ? match.reservedStock : 0;
+                  const res = await window.MasterService.updateItem(payload);
+                  updated++;
+                  existingItems.set(code.toUpperCase(), res || payload);
+                  details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: 'Item updated after conflict resolution' });
+                } else {
+                  throw createErr;
+                }
+              }
             }
           } catch (err) {
             failed++;
@@ -918,7 +950,7 @@ window.ImportService = (function() {
         const partyType = module.includes('Customer') ? 'CUSTOMER' : 'SUPPLIER';
         const existingParties = new Map();
         try {
-          const parties = await window.MasterService.getParties(partyType, false);
+          const parties = await window.MasterService.getParties(partyType, true);
           (parties || []).forEach(p => existingParties.set((p.partyCode || '').toUpperCase(), p));
         } catch (e) { }
 
@@ -929,7 +961,12 @@ window.ImportService = (function() {
           if (!code) continue;
 
           try {
-            const existing = existingParties.get(code.toUpperCase());
+            let existing = existingParties.get(code.toUpperCase());
+            if (!existing) {
+              const searchRes = await window.MasterService.searchParties(partyType, code, 5).catch(() => []);
+              existing = (searchRes || []).find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
+            }
+
             if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
               skipped++;
               details.push({ sourceRows: String(rowNum), reference: code, status: 'SKIPPED', action: 'SKIPPED', message: `Existing ${partyType.toLowerCase()} preserved` });
@@ -938,14 +975,18 @@ window.ImportService = (function() {
 
             const activeVal = getVal(row, 'is_active');
             const isActive = activeVal === '' ? true : !['false', '0', 'no', 'inactive'].includes(activeVal.toLowerCase());
+            const emailVal = getVal(row, 'email') || '';
+            if (partyType === 'SUPPLIER' && !emailVal) {
+              throw new Error('Email is mandatory for suppliers');
+            }
 
             const payload = {
               partyCode: code,
-              name: getVal(row, 'name'),
+              name: getVal(row, 'name') || 'Party',
               partyType: partyType,
               contactPerson: getVal(row, 'contact_person') || '',
               phone: getVal(row, 'phone') || '',
-              email: getVal(row, 'email') || '',
+              email: emailVal,
               gstin: getVal(row, 'gstin') || '',
               address: getVal(row, 'address') || '',
               openingBalance: parseFloat(getVal(row, 'opening_balance')) || 0,
@@ -964,13 +1005,40 @@ window.ImportService = (function() {
                 if (!getVal(row, 'address')) payload.address = existing.address;
                 if (getVal(row, 'opening_balance') === '') payload.openingBalance = existing.openingBalance;
               }
-              await window.MasterService.updateParty(payload);
+              const res = await window.MasterService.updateParty(payload);
               updated++;
+              existingParties.set(code.toUpperCase(), res || payload);
               details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: `${partyType} updated` });
             } else {
-              await window.MasterService.createParty(payload);
-              imported++;
-              details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: `New ${partyType} created` });
+              try {
+                const res = await window.MasterService.createParty(payload);
+                imported++;
+                existingParties.set(code.toUpperCase(), res || payload);
+                details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'CREATED', message: `New ${partyType} created` });
+              } catch (createErr) {
+                // Duplicate key / conflict catch: re-fetch and update
+                const searchRes = await window.MasterService.searchParties(partyType, code, 5).catch(() => []);
+                const match = (searchRes || []).find(p => (p.partyCode || '').toUpperCase() === code.toUpperCase());
+                if (match) {
+                  payload.id = match.id;
+                  payload.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
+                  if (mode === 'UPDATE_NON_BLANK') {
+                    if (!getVal(row, 'name')) payload.name = match.name;
+                    if (!getVal(row, 'contact_person')) payload.contactPerson = match.contactPerson;
+                    if (!getVal(row, 'phone')) payload.phone = match.phone;
+                    if (!getVal(row, 'email')) payload.email = match.email;
+                    if (!getVal(row, 'gstin')) payload.gstin = match.gstin;
+                    if (!getVal(row, 'address')) payload.address = match.address;
+                    if (getVal(row, 'opening_balance') === '') payload.openingBalance = match.openingBalance;
+                  }
+                  const res = await window.MasterService.updateParty(payload);
+                  updated++;
+                  existingParties.set(code.toUpperCase(), res || payload);
+                  details.push({ sourceRows: String(rowNum), reference: code, status: 'PASSED', action: 'UPDATED', message: `${partyType} updated after duplicate resolution` });
+                } else {
+                  throw createErr;
+                }
+              }
             }
           } catch (err) {
             failed++;
@@ -1166,6 +1234,8 @@ window.ImportService = (function() {
       case 'Master Categories and Values':
       case 'Master Categories & Values': {
         const catCache = new Set();
+        const lookupsCache = new Map();
+
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           const rowNum = i + 1;
@@ -1187,6 +1257,20 @@ window.ImportService = (function() {
               catCache.add(catCode.toUpperCase());
             }
 
+            // Check if lookup already exists in category
+            if (!lookupsCache.has(catName)) {
+              const list = await window.MasterService.getLookups(catName, true).catch(() => []);
+              lookupsCache.set(catName, list || []);
+            }
+            const existingLookups = lookupsCache.get(catName) || [];
+            const existing = existingLookups.find(l => (l.lookupCode || '').toUpperCase() === valCode.toUpperCase());
+
+            if (existing && (mode === 'CREATE_ONLY' || mode === 'INSERT_ONLY' || mode === 'SKIP_EXISTING')) {
+              skipped++;
+              details.push({ sourceRows: String(rowNum), reference: `${catCode}/${valCode}`, status: 'SKIPPED', action: 'SKIPPED', message: 'Existing master value preserved' });
+              continue;
+            }
+
             const lookupDto = {
               lookupType: catName,
               lookupCode: valCode,
@@ -1196,9 +1280,39 @@ window.ImportService = (function() {
               active: !['false', '0', 'no', 'inactive'].includes((getVal(row, 'is_active') || '').toLowerCase())
             };
 
-            await window.MasterService.saveLookup(lookupDto);
-            imported++;
-            details.push({ sourceRows: String(rowNum), reference: `${catCode}/${valCode}`, status: 'PASSED', action: 'CREATED', message: 'Lookup created' });
+            if (existing) {
+              lookupDto.id = existing.id;
+              lookupDto.rowVersion = existing.rowVersion !== undefined ? existing.rowVersion : 0;
+              if (mode === 'UPDATE_NON_BLANK') {
+                if (!getVal(row, 'value_description')) lookupDto.description = existing.description;
+              }
+              const res = await window.MasterService.updateLookup(lookupDto);
+              updated++;
+              const idx = existingLookups.findIndex(l => l.id === existing.id);
+              if (idx >= 0) existingLookups[idx] = res || lookupDto;
+              details.push({ sourceRows: String(rowNum), reference: `${catCode}/${valCode}`, status: 'PASSED', action: 'UPDATED', message: 'Lookup updated successfully' });
+            } else {
+              try {
+                const res = await window.MasterService.saveLookup(lookupDto);
+                imported++;
+                existingLookups.push(res || lookupDto);
+                details.push({ sourceRows: String(rowNum), reference: `${catCode}/${valCode}`, status: 'PASSED', action: 'CREATED', message: 'Lookup created successfully' });
+              } catch (createErr) {
+                // Duplicate conflict resolution: re-fetch and update
+                const freshList = await window.MasterService.getLookups(catName, true).catch(() => []);
+                lookupsCache.set(catName, freshList || []);
+                const match = (freshList || []).find(l => (l.lookupCode || '').toUpperCase() === valCode.toUpperCase());
+                if (match) {
+                  lookupDto.id = match.id;
+                  lookupDto.rowVersion = match.rowVersion !== undefined ? match.rowVersion : 0;
+                  const res = await window.MasterService.updateLookup(lookupDto);
+                  updated++;
+                  details.push({ sourceRows: String(rowNum), reference: `${catCode}/${valCode}`, status: 'PASSED', action: 'UPDATED', message: 'Lookup updated after conflict resolution' });
+                } else {
+                  throw createErr;
+                }
+              }
+            }
           } catch (err) {
             failed++;
             errors.push(`Row ${rowNum} (${valCode}): ${err.message}`);
@@ -1216,7 +1330,7 @@ window.ImportService = (function() {
           supplierName: getVal(r, 'supplier_name'),
           supplierGstin: getVal(r, 'supplier_gstin'),
           supplierInvoiceNo: getVal(r, 'supplier_invoice_no'),
-          invoiceDate: getVal(r, 'invoice_date'),
+          invoiceDate: (getVal(r, 'invoice_date') || '').substring(0, 10),
           taxableValue: parseFloat(getVal(r, 'taxable_value')) || 0,
           cgst: parseFloat(getVal(r, 'cgst')) || 0,
           sgst: parseFloat(getVal(r, 'sgst')) || 0,
@@ -1248,6 +1362,11 @@ window.ImportService = (function() {
       }
 
       case 'Bank Statement': {
+        const branding = window.BrandingService ? window.BrandingService.getProfile() : {};
+        const bankName = branding.bankName || 'Kotak Mahindra Bank';
+        const accountNumber = branding.bankAccount || '50200012847192';
+        const accountHolder = branding.name || 'Jashvi Engineers';
+
         const bankRows = rows.map((r, idx) => {
           const debit = parseFloat(getVal(r, 'amount')) || 0;
           const dir = (getVal(r, 'direction') || 'DR').toUpperCase();
@@ -1269,9 +1388,9 @@ window.ImportService = (function() {
 
         try {
           const req = {
-            bankName: 'Kotak Mahindra Bank',
-            accountNumber: '50200012847192',
-            accountHolder: 'Jasvi Industries Pvt Ltd',
+            bankName: bankName,
+            accountNumber: accountNumber,
+            accountHolder: accountHolder,
             statementFrom: bankRows[0]?.transactionDate || new Date().toISOString().substring(0, 10),
             statementTo: bankRows[bankRows.length - 1]?.transactionDate || new Date().toISOString().substring(0, 10),
             currency: 'INR',
@@ -1388,6 +1507,7 @@ window.ImportService = (function() {
     downloadTemplate,
     parseFile,
     validatePreflight,
+    validateAndPreview: validatePreflight,
     executeImport,
     generateResultReport
   };
