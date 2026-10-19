@@ -42,7 +42,9 @@ window.NavigationRouter = (function() {
     'view-barcode': { title: 'Barcode Studio', breadcrumb: 'Thermal Label & Security Seal Studio', icon: '📏' },
     'view-barcode-studio': { title: 'Barcode Studio', breadcrumb: 'Thermal Label & Security Seal Studio', icon: '📏' },
     'view-customers': { title: 'CRM / Customers', breadcrumb: 'Client Profiles & Credit Limits', icon: '👥' },
+    'view-customer-360': { title: 'Customer 360°', breadcrumb: 'CRM / One Customer View across Records', icon: '🌐' },
     'view-suppliers': { title: 'HRM / Suppliers', breadcrumb: 'Vendor Profiles & Payment Registers', icon: '🏢' },
+    'view-supplier-360': { title: 'Supplier 360°', breadcrumb: 'HRM / One Supplier View across Records', icon: '🌐' },
     'view-reports': { title: 'Reports & BI', breadcrumb: 'Executive Analytics & Drilldown', icon: '📊' },
     'view-reminders': { title: 'Reminder Center', breadcrumb: 'Payment Follow-ups & Tasks', icon: '⏰' },
     'view-user-access': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
@@ -394,8 +396,18 @@ window.NavigationRouter = (function() {
         case 'view-customers':
           if (window.PartyController) window.PartyController.loadCustomers();
           break;
+        case 'view-customer-360':
+          if (window.PartyController && typeof window.PartyController.renderActiveCustomer360 === 'function') {
+            window.PartyController.renderActiveCustomer360();
+          }
+          break;
         case 'view-suppliers':
           if (window.PartyController) window.PartyController.loadSuppliers();
+          break;
+        case 'view-supplier-360':
+          if (window.PartyController && typeof window.PartyController.renderActiveSupplier360 === 'function') {
+            window.PartyController.renderActiveSupplier360();
+          }
           break;
         case 'view-quotations':
           if (window.QuotationController) window.QuotationController.loadQuotations();

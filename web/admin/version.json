@@ -3,15 +3,17 @@
   "webBuild": 4,
   "webVersion": "10.0.35.04",
   "tag": "web-v10.0.35.04",
-  "releaseDate": "2026-10-19T14:15:00+05:30",
+  "releaseDate": "2026-10-19T14:45:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.35.04 Enterprise Release - Executive Reporting Parity: 100% server-driven favorites sync with Desktop, active refresh feedback, authentic SheetJS Excel (.xlsx) / RFC 4180 CSV / Executive PDF exports, Dynamic Viewer & Saved Reports catalog recovery, and company date & timestamp formatting.",
+  "summary": "10.0.35.04 Enterprise Release - Executive Reporting Parity (Favorites sync, active refresh feedback, authentic SheetJS Excel/PDF/CSV exports, Dynamic Viewer & Saved Reports recovery, Company Date/Time formatting), Supplier 360° & Customer 360° Full Desktop Parity, and Master Data Lookup fixes.",
   "highlights": [
     "1. Report Center Server-Driven Favorites Parity (Tab 2): Aligned report ID constants to canonical server IDs (PROFITABILITY, GST_TAX, RETURNS_ANALYSIS, STOCK_SUMMARY, RECEIVABLE_AGEING, PAYABLE_AGEING, BANK_RECONCILIATION). Synchronized favorites unconditionally with /api/support/saved-views (screen: REPORT_FAVORITES) ensuring 1:1 parity between Desktop and Web.",
     "2. Active Refresh Action Feedback: Added visual spinner animation, temporary button disabling during network query, audio synthesizer chime upon completion, and toast notification across all 4 reporting tabs.",
     "3. Authentic Multi-Format Exports (Excel .xlsx, PDF, CSV): Replaced dummy CSV export with real Microsoft Excel (.xlsx) workbooks generated via SheetJS (xlsx.full.min.js), RFC 4180 compliant CSV with UTF-8 BOM, and formatted executive PDF reports with company letterhead, metadata, zebra styling, and totals.",
     "4. Saved Reports Catalog & Dropdown Recovery (Tab 3): Resolved fatal TypeError bug (string.length() -> string.length) when parsing REPORT_V2 JSON, restoring populated saved report dropdown and catalog table.",
     "5. Dynamic Viewer & Filter Parity: Aligned dynamic query payload with backend /api/reporting/run contract (from, to, documentStatus, sortKey, numeric minAmount/maxAmount). Restored semantic header icons, column formatting, and TableUiEnhancer styling on refresh.",
-    "6. Enterprise Date & Timestamp Formatting: Integrated FormatUtil company date/time configuration (company.dateFormat / company.timeFormat) across all reporting tables and Tab 4 Scheduled Reports KPI cards and delivery schedules."
+    "6. Enterprise Date & Timestamp Formatting: Integrated FormatUtil company date/time configuration (company.dateFormat / company.timeFormat) across all reporting tables and Tab 4 Scheduled Reports KPI cards and delivery schedules.",
+    "7. Supplier 360° & Customer 360° Full Desktop Parity: Implemented view-supplier-360 workspace matching Supplier360.fxml and customer 360 matching Customer360.fxml with Overview (recent bills/quotes), Contacts Modal with CRUD, Purchases/Invoices, Payments, Notes Modal with CRUD, and Document Attachments.",
+    "8. Master Data Lookup Engine: Resolved onLookupValueInput exception, enabled automatic server-side code generation for new lookup values and manual editing for ROLE definitions."
   ]
 }

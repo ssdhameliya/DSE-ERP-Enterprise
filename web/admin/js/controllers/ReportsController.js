@@ -2090,7 +2090,7 @@ window.ReportsController = (function() {
       if (menu) menu.style.display = 'none';
 
       const dateStamp = new Date().toISOString().slice(0, 10);
-      const repTitle = (this.currentDefinition?.title || currentReportId || 'Executive_Report');
+      const repTitle = (currentDefinition?.title || currentReportId || 'Executive_Report');
       const safeTitle = repTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
 
       // Helper to trigger file download

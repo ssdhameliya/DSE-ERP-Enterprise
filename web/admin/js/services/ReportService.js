@@ -32,11 +32,20 @@ window.ReportService = {
   async getCustomer360Contacts(id) {
     return await window.ApiService.get(`/api/customer-360/${id}/contacts`);
   },
+  async saveCustomerContact(id, contactPayload) {
+    return await window.ApiService.post(`/api/customer-360/${id}/contacts`, contactPayload);
+  },
+  async deleteCustomerContact(id, contactId, rowVersion = 0) {
+    return await window.ApiService.delete(`/api/customer-360/${id}/contacts/${contactId}?rowVersion=${rowVersion}`);
+  },
   async getCustomer360Notes(id) {
     return await window.ApiService.get(`/api/customer-360/${id}/notes`);
   },
   async saveCustomerNote(id, notePayload) {
     return await window.ApiService.post(`/api/customer-360/${id}/notes`, notePayload);
+  },
+  async deleteCustomerNote(id, noteId, rowVersion = 0) {
+    return await window.ApiService.delete(`/api/customer-360/${id}/notes/${noteId}?rowVersion=${rowVersion}`);
   },
 
   // 3. Supplier 360 API (Supplier360Controller Parity)
@@ -52,11 +61,28 @@ window.ReportService = {
   async getSupplier360Contacts(id) {
     return await window.ApiService.get(`/api/supplier-360/${id}/contacts`);
   },
+  async saveSupplierContact(id, contactPayload) {
+    return await window.ApiService.post(`/api/supplier-360/${id}/contacts`, contactPayload);
+  },
+  async deleteSupplierContact(id, contactId, rowVersion = 0) {
+    return await window.ApiService.delete(`/api/supplier-360/${id}/contacts/${contactId}?rowVersion=${rowVersion}`);
+  },
   async getSupplier360Notes(id) {
     return await window.ApiService.get(`/api/supplier-360/${id}/notes`);
   },
   async saveSupplierNote(id, notePayload) {
     return await window.ApiService.post(`/api/supplier-360/${id}/notes`, notePayload);
+  },
+  async deleteSupplierNote(id, noteId, rowVersion = 0) {
+    return await window.ApiService.delete(`/api/supplier-360/${id}/notes/${noteId}?rowVersion=${rowVersion}`);
+  },
+
+  // Support Attachments API Parity
+  async getPartyDocuments(partyType, id) {
+    return await window.ApiService.get(`/api/attachments/document/${encodeURIComponent(partyType)}/${id}`);
+  },
+  async deletePartyDocument(partyType, id, metaId) {
+    return await window.ApiService.delete(`/api/attachments/document/${encodeURIComponent(partyType)}/${id}/${metaId}`);
   },
 
   // 4. Global Audit & Governance (AuditController Parity)

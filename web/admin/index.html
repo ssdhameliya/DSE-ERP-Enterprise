@@ -16,7 +16,7 @@
       html.auth-required #auth-overlay { display: flex !important; z-index: 999999 !important; }
       html.auth-required #app-container { visibility: hidden !important; }
     </style>
-    <link rel="stylesheet" href="css/app.css?v=10.0.34.20">
+    <link rel="stylesheet" href="css/app.css?v=10.0.35.04">
     <script>
       window.toggleNavGroup = function(groupId) {
         if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -6121,6 +6121,263 @@
           </div>
         </div>
 
+        <!-- VIEW: CRM / CUSTOMER 360° (Customer360.fxml PARITY) -->
+        <div id="view-customer-360" class="module-view" style="display:none;">
+          <!-- Top Header Bar matching Customer360.fxml -->
+          <div class="view-header" style="align-items:center; margin-bottom:14px;">
+            <div class="view-title-group">
+              <h1 id="c360-page-title" style="display:flex; align-items:center; gap:8px;">
+                <span>🌐</span> <span id="c360-screen-name">Customer 360°</span>
+              </h1>
+              <p>One customer view across existing business records</p>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-secondary" onclick="window.PartyController.backToCustomers()">← Back to Customers</button>
+              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentCustomer360()">✏️ Edit Customer</button>
+              <button class="btn btn-purple" onclick="window.PartyController.newSaleForCustomer360()">🛒 New Sale</button>
+              <button class="btn btn-secondary" id="c360-btn-refresh" onclick="window.PartyController.refreshCustomer360()">⟳ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Customer Identity Card matching Customer360.fxml -->
+          <div class="data-panel" style="padding:14px 18px; margin-bottom:16px; border-radius:8px; background:var(--bg-card); border:1px solid var(--border-subtle);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+              <span style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">👤 Customer Details</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Status</span>
+                <span id="c360-status-pill" class="pill-badge pill-success">Active</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 18px; font-size:0.85rem;">
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Customer Code</div>
+                <div id="c360-det-code" style="font-family:monospace; font-weight:700; color:var(--cyan);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">GSTIN</div>
+                <div id="c360-det-gstin" style="font-family:monospace; font-weight:700; color:var(--purple);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Contact Person</div>
+                <div id="c360-det-contact" style="font-weight:600; color:var(--text-main);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Mobile</div>
+                <div id="c360-det-phone" style="font-weight:600; color:var(--text-main);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Email</div>
+                <div id="c360-det-email" style="font-weight:600; color:var(--cyan);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Address</div>
+                <div id="c360-det-address" style="color:var(--text-main);">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards matching Customer360.fxml -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:18px;">
+            <div class="kpi-card" style="border-left:3px solid var(--blue);">
+              <div class="kpi-header">
+                <span class="kpi-label">OUTSTANDING RECEIVABLE</span>
+                <span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Due</span>
+              </div>
+              <div class="kpi-value" id="c360-kpi-outstanding" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-meta">Combined ledger balance</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--green);">
+              <div class="kpi-header">
+                <span class="kpi-label">OPEN QUOTATIONS</span>
+                <span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Active</span>
+              </div>
+              <div class="kpi-value" id="c360-kpi-quotes" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-meta" id="c360-kpi-quotes-meta">0 open quotations</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--purple);">
+              <div class="kpi-header">
+                <span class="kpi-label">TOTAL SALES</span>
+                <span class="kpi-badge" style="background:rgba(168,85,247,0.15); color:var(--purple);">Total</span>
+              </div>
+              <div class="kpi-value" id="c360-kpi-sales" style="color:var(--purple);">&#8377; 0.00</div>
+              <div class="kpi-meta" id="c360-kpi-sales-meta">Cumulative invoiced</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--yellow);">
+              <div class="kpi-header">
+                <span class="kpi-label">LAST PAYMENT</span>
+                <span class="kpi-badge" style="background:rgba(59,130,246,0.15); color:var(--blue);">Paid</span>
+              </div>
+              <div class="kpi-value" id="c360-kpi-payment" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-meta" id="c360-kpi-payment-meta">No payment history</div>
+            </div>
+          </div>
+
+          <!-- 7-Tab Pane matching Customer360.fxml -->
+          <div class="sub-tabs-bar" style="margin-bottom:14px;">
+            <button class="sub-tab-btn active" id="tab-c360-overview" onclick="window.PartyController.select360Tab('overview')">Overview</button>
+            <button class="sub-tab-btn" id="tab-c360-contacts" onclick="window.PartyController.select360Tab('contacts')">Contacts</button>
+            <button class="sub-tab-btn" id="tab-c360-quotations" onclick="window.PartyController.select360Tab('quotations')">Quotations</button>
+            <button class="sub-tab-btn" id="tab-c360-invoices" onclick="window.PartyController.select360Tab('invoices')">Invoices</button>
+            <button class="sub-tab-btn" id="tab-c360-payments" onclick="window.PartyController.select360Tab('payments')">Payments</button>
+            <button class="sub-tab-btn" id="tab-c360-notes" onclick="window.PartyController.select360Tab('notes')">Notes</button>
+            <button class="sub-tab-btn" id="tab-c360-documents" onclick="window.PartyController.select360Tab('documents')">Documents</button>
+          </div>
+
+          <!-- TAB CONTENT: OVERVIEW -->
+          <div id="pane-c360-overview" class="sub-tab-pane">
+            <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:var(--text-main);">Recent Business Activity</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <!-- Recent Quotations Panel -->
+              <div class="data-panel" style="padding:14px; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Quotations</span>
+                  <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;" onclick="window.PartyController.select360Tab('quotations')">View All →</span>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Quotation</th><th>Date</th><th style="text-align:right;">Amount</th><th style="text-align:center;">Status</th></tr>
+                  </thead>
+                  <tbody id="c360-overview-quotes-tbody">
+                    <tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent quotations</td></tr>
+                  </tbody>
+                </table>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Double-click a record to open the existing Quotation screen.</div>
+              </div>
+              <!-- Recent Invoices Panel -->
+              <div class="data-panel" style="padding:14px; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Invoices</span>
+                  <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;" onclick="window.PartyController.select360Tab('invoices')">View All →</span>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Invoice</th><th>Date</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Outstanding</th></tr>
+                  </thead>
+                  <tbody id="c360-overview-invoices-tbody">
+                    <tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent invoices</td></tr>
+                  </tbody>
+                </table>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Double-click a record to open the existing Sales Register.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: CONTACTS -->
+          <div id="pane-c360-contacts" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Customer Contacts</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.openAddContactModal('CUSTOMER')">+ Add Contact</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Name</th><th>Designation</th><th>Department</th><th>Mobile</th><th>Email</th><th style="text-align:center;">Primary</th><th>Notes</th><th style="text-align:center;">Action</th></tr>
+                </thead>
+                <tbody id="c360-contacts-tbody">
+                  <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);">Loading contacts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: QUOTATIONS -->
+          <div id="pane-c360-quotations" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Customer Quotations</h4>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Quotation No.</th><th>Date</th><th>Valid Upto</th><th>Salesperson</th><th style="text-align:right;">Amount</th><th style="text-align:center;">Status</th><th>Follow-up</th></tr>
+                </thead>
+                <tbody id="c360-quotes-tbody">
+                  <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">Loading quotations...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click to open the existing Quotation register/detail.</div>
+          </div>
+
+          <!-- TAB CONTENT: INVOICES -->
+          <div id="pane-c360-invoices" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Sales Invoices</h4>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Invoice No.</th><th>Date</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Paid</th><th style="text-align:right;">Outstanding</th><th style="text-align:center;">Status</th></tr>
+                </thead>
+                <tbody id="c360-invoices-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">Loading invoices...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click to open the existing Sales Register. Customer 360° does not recalculate invoice totals.</div>
+          </div>
+
+          <!-- TAB CONTENT: PAYMENTS -->
+          <div id="pane-c360-payments" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Customer Payments / Receipts</h4>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Payment ID</th><th>Date</th><th>Invoice</th><th>Mode</th><th>Reference</th><th style="text-align:right;">Amount</th><th>Notes</th></tr>
+                </thead>
+                <tbody id="c360-payments-tbody">
+                  <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">Loading payments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click a payment to open its linked Sale. Payment posting remains in the existing payment flow.</div>
+          </div>
+
+          <!-- TAB CONTENT: NOTES -->
+          <div id="pane-c360-notes" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Customer-level Notes</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.openAddNoteModal('CUSTOMER')">+ Add Note</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th style="width:160px;">Date / Time</th><th style="width:140px;">User</th><th>Note</th><th style="text-align:center; width:90px;">Action</th></tr>
+                </thead>
+                <tbody id="c360-notes-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">Loading notes...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: DOCUMENTS -->
+          <div id="pane-c360-documents" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Customer Documents</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.uploadPartyDocument('CUSTOMER')">+ Add Document</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Document</th><th>Uploaded</th><th>Uploaded By</th><th style="text-align:center; width:100px;">Action</th></tr>
+                </thead>
+                <tbody id="c360-documents-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No documents attached</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Documents are stored through the existing server-managed attachment infrastructure.</div>
+          </div>
+        </div>
+
         <!-- VIEW: HRM / SUPPLIERS -->
         <div id="view-suppliers" class="module-view">
           <div class="view-header">
@@ -6254,6 +6511,244 @@
                 <button class="btn btn-secondary btn-sm" onclick="window.PartyController.drawerNewPurchase()">&#128230; Record Bill</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- VIEW: HRM / SUPPLIER 360° (Supplier360.fxml PARITY) -->
+        <div id="view-supplier-360" class="module-view" style="display:none;">
+          <!-- Top Header Bar matching Supplier360.fxml -->
+          <div class="view-header" style="align-items:center; margin-bottom:14px;">
+            <div class="view-title-group">
+              <h1 id="s360-page-title" style="display:flex; align-items:center; gap:8px;">
+                <span>🌐</span> <span id="s360-screen-name">Supplier 360°</span>
+              </h1>
+              <p>Complete supplier profile, purchases, payables, payments, contacts, notes and documents</p>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-secondary" onclick="window.PartyController.backToSuppliers()">← Back to Suppliers</button>
+              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentSupplier360()">✏️ Edit Supplier</button>
+              <button class="btn btn-purple" onclick="window.PartyController.newPurchaseForSupplier360()">🛒 New Purchase</button>
+              <button class="btn btn-secondary" id="s360-btn-refresh" onclick="window.PartyController.refreshSupplier360()">⟳ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Supplier Identity Card matching Supplier360.fxml -->
+          <div class="data-panel" style="padding:14px 18px; margin-bottom:16px; border-radius:8px; background:var(--bg-card); border:1px solid var(--border-subtle);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+              <span style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">🏢 Supplier Details</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Status</span>
+                <span id="s360-status-pill" class="pill-badge pill-success">Active</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 18px; font-size:0.85rem;">
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Supplier Code</div>
+                <div id="s360-det-code" style="font-family:monospace; font-weight:700; color:var(--cyan);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">GSTIN</div>
+                <div id="s360-det-gstin" style="font-family:monospace; font-weight:700; color:var(--purple);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Contact Person</div>
+                <div id="s360-det-contact" style="font-weight:600; color:var(--text-main);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Mobile</div>
+                <div id="s360-det-phone" style="font-weight:600; color:var(--text-main);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Email</div>
+                <div id="s360-det-email" style="font-weight:600; color:var(--cyan);">-</div>
+              </div>
+              <div>
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:2px;">Address</div>
+                <div id="s360-det-address" style="color:var(--text-main);">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards matching Supplier360.fxml -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:18px;">
+            <div class="kpi-card" style="border-left:3px solid var(--blue);">
+              <div class="kpi-header">
+                <span class="kpi-label">OUTSTANDING PAYABLE</span>
+                <span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Payable</span>
+              </div>
+              <div class="kpi-value" id="s360-kpi-outstanding" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-meta">Current settlement due</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--green);">
+              <div class="kpi-header">
+                <span class="kpi-label">PURCHASE DOCUMENTS</span>
+                <span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Orders</span>
+              </div>
+              <div class="kpi-value" id="s360-kpi-count" style="color:var(--green);">0 purchases</div>
+              <div class="kpi-meta">Recorded purchase bills</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--purple);">
+              <div class="kpi-header">
+                <span class="kpi-label">TOTAL PURCHASES</span>
+                <span class="kpi-badge" style="background:rgba(168,85,247,0.15); color:var(--purple);">Total</span>
+              </div>
+              <div class="kpi-value" id="s360-kpi-total" style="color:var(--purple);">&#8377; 0.00</div>
+              <div class="kpi-meta">Cumulative procurement</div>
+            </div>
+            <div class="kpi-card" style="border-left:3px solid var(--yellow);">
+              <div class="kpi-header">
+                <span class="kpi-label">LAST PAYMENT</span>
+                <span class="kpi-badge" style="background:rgba(59,130,246,0.15); color:var(--blue);">Paid</span>
+              </div>
+              <div class="kpi-value" id="s360-kpi-payment" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-meta" id="s360-kpi-payment-meta">No payment history</div>
+            </div>
+          </div>
+
+          <!-- 6-Tab Pane matching Supplier360.fxml -->
+          <div class="sub-tabs-bar" style="margin-bottom:14px;">
+            <button class="sub-tab-btn active" id="tab-s360-overview" onclick="window.PartyController.selectSupplier360Tab('overview')">Overview</button>
+            <button class="sub-tab-btn" id="tab-s360-contacts" onclick="window.PartyController.selectSupplier360Tab('contacts')">Contacts</button>
+            <button class="sub-tab-btn" id="tab-s360-purchases" onclick="window.PartyController.selectSupplier360Tab('purchases')">Purchases</button>
+            <button class="sub-tab-btn" id="tab-s360-payments" onclick="window.PartyController.selectSupplier360Tab('payments')">Payments</button>
+            <button class="sub-tab-btn" id="tab-s360-notes" onclick="window.PartyController.selectSupplier360Tab('notes')">Notes</button>
+            <button class="sub-tab-btn" id="tab-s360-documents" onclick="window.PartyController.selectSupplier360Tab('documents')">Documents</button>
+          </div>
+
+          <!-- TAB CONTENT: OVERVIEW -->
+          <div id="pane-s360-overview" class="sub-tab-pane">
+            <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:var(--text-main);">Recent Business Activity</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <!-- Recent Purchases Panel -->
+              <div class="data-panel" style="padding:14px; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Purchases</span>
+                  <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;" onclick="window.PartyController.selectSupplier360Tab('purchases')">View All →</span>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Purchase</th><th>Date</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Outstanding</th></tr>
+                  </thead>
+                  <tbody id="s360-overview-purchases-tbody">
+                    <tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent purchases</td></tr>
+                  </tbody>
+                </table>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Double-click a record to open the existing Purchase register.</div>
+              </div>
+              <!-- Recent Payments Panel -->
+              <div class="data-panel" style="padding:14px; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Payments</span>
+                  <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;" onclick="window.PartyController.selectSupplier360Tab('payments')">View All →</span>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Date</th><th>Purchase</th><th style="text-align:right;">Amount</th><th>Mode</th></tr>
+                  </thead>
+                  <tbody id="s360-overview-payments-tbody">
+                    <tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent payments</td></tr>
+                  </tbody>
+                </table>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Double-click a payment to open its linked Purchase.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: CONTACTS -->
+          <div id="pane-s360-contacts" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Supplier Contacts</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.openAddContactModal('SUPPLIER')">+ Add Contact</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Name</th><th>Designation</th><th>Department</th><th>Mobile</th><th>Email</th><th style="text-align:center;">Primary</th><th>Notes</th><th style="text-align:center;">Action</th></tr>
+                </thead>
+                <tbody id="s360-contacts-tbody">
+                  <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);">Loading contacts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: PURCHASES -->
+          <div id="pane-s360-purchases" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Supplier Purchases</h4>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Purchase No.</th><th>Date</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Paid</th><th style="text-align:right;">Outstanding</th><th style="text-align:center;">Status</th></tr>
+                </thead>
+                <tbody id="s360-purchases-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">Loading purchases...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click to open the existing Purchase register. Supplier 360° does not recalculate purchase totals.</div>
+          </div>
+
+          <!-- TAB CONTENT: PAYMENTS -->
+          <div id="pane-s360-payments" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Supplier Payments</h4>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Date</th><th>Purchase</th><th>Mode</th><th>Reference</th><th style="text-align:right;">Amount</th><th>Notes</th></tr>
+                </thead>
+                <tbody id="s360-payments-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">Loading payments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click a payment to open its linked Purchase. Payment posting remains in the existing payment flow.</div>
+          </div>
+
+          <!-- TAB CONTENT: NOTES -->
+          <div id="pane-s360-notes" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Supplier-level Notes</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.openAddNoteModal('SUPPLIER')">+ Add Note</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th style="width:160px;">Date / Time</th><th style="width:140px;">User</th><th>Note</th><th style="text-align:center; width:90px;">Action</th></tr>
+                </thead>
+                <tbody id="s360-notes-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">Loading notes...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: DOCUMENTS -->
+          <div id="pane-s360-documents" class="sub-tab-pane" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Supplier Documents</h4>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.PartyController.uploadPartyDocument('SUPPLIER')">+ Add Document</button>
+              </div>
+            </div>
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Document</th><th>Uploaded</th><th>Uploaded By</th><th style="text-align:center; width:100px;">Action</th></tr>
+                </thead>
+                <tbody id="s360-documents-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No documents attached</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Documents are stored through the existing server-managed attachment infrastructure.</div>
           </div>
         </div>
 
@@ -11846,6 +12341,87 @@ Outstanding Balance: {BalanceAmount}
     <div class="actions-menu-divider"></div>
     <div class="actions-menu-item" style="color: #f87171;" onclick="window.UserAccessController.deleteSelectedUser()">
       <span class="actions-menu-icon">&#128465;</span> <span>Delete User Account</span>
+    </div>
+  </div>
+
+  <!-- PARTY 360 CONTACT MODAL -->
+  <div class="modal-overlay" id="modal-party-contact" style="display: none;">
+    <div class="modal-box" style="max-width: 520px; width: 100%;">
+      <div class="modal-header">
+        <h3 id="party-contact-modal-title">Add Contact</h3>
+        <button class="modal-close" onclick="window.PartyController.closeContactModal()">&times;</button>
+      </div>
+      <form id="form-party-contact" onsubmit="window.PartyController.submitContactForm(event)">
+        <div class="modal-body" style="padding: 16px;">
+          <input type="hidden" id="pcontact-party-type" value="CUSTOMER">
+          <input type="hidden" id="pcontact-party-id" value="">
+          <input type="hidden" id="pcontact-id" value="">
+          <input type="hidden" id="pcontact-row-version" value="0">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" id="pcontact-name" class="form-input" placeholder="e.g. Rahul Sharma" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Designation</label>
+              <input type="text" id="pcontact-designation" class="form-input" placeholder="e.g. Purchase Head">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input type="text" id="pcontact-department" class="form-input" placeholder="e.g. Commercial">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mobile Number</label>
+              <input type="text" id="pcontact-mobile" class="form-input" placeholder="e.g. 9825012345">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="pcontact-email" class="form-input" placeholder="e.g. rahul@company.com">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="pcontact-primary"> <span>Primary Contact Person</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes / Remarks</label>
+            <textarea id="pcontact-notes" class="form-input" rows="2" placeholder="Additional details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px;">
+          <button type="button" class="btn btn-secondary" onclick="window.PartyController.closeContactModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PARTY 360 NOTE MODAL -->
+  <div class="modal-overlay" id="modal-party-note" style="display: none;">
+    <div class="modal-box" style="max-width: 480px; width: 100%;">
+      <div class="modal-header">
+        <h3 id="party-note-modal-title">Add Note</h3>
+        <button class="modal-close" onclick="window.PartyController.closeNoteModal()">&times;</button>
+      </div>
+      <form id="form-party-note" onsubmit="window.PartyController.submitNoteForm(event)">
+        <div class="modal-body" style="padding: 16px;">
+          <input type="hidden" id="pnote-party-type" value="CUSTOMER">
+          <input type="hidden" id="pnote-party-id" value="">
+          <input type="hidden" id="pnote-id" value="">
+          <input type="hidden" id="pnote-row-version" value="0">
+          <div class="form-group">
+            <label class="form-label">Note Content *</label>
+            <textarea id="pnote-text" class="form-input" rows="4" placeholder="Enter notes, meeting minutes, payment agreements, or reminders..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px;">
+          <button type="button" class="btn btn-secondary" onclick="window.PartyController.closeNoteModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Note</button>
+        </div>
+      </form>
     </div>
   </div>
 

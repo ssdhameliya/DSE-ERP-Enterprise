@@ -731,61 +731,266 @@ window.PartyController = (function() {
   }
 
   // ==========================================
-  // 4. CUSTOMER 360° PROFILE (Customer360.fxml Parity)
+  // 4. CUSTOMER 360° & SUPPLIER 360° (Desktop Parity)
   // ==========================================
 
+  let activeCustomer360Tab = 'overview';
+  let activeSupplier360Tab = 'overview';
+  let customer360SummaryData = null;
+  let supplier360SummaryData = null;
+
+  function fmtDate(d) {
+    if (!d) return '-';
+    if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
+      return window.FormatUtil.formatDate(d);
+    }
+    return d;
+  }
+
+  function fmtTimestamp(ts) {
+    if (!ts) return '-';
+    if (window.FormatUtil && typeof window.FormatUtil.formatTimestamp === 'function') {
+      return window.FormatUtil.formatTimestamp(ts);
+    }
+    return ts;
+  }
+
+  function backToCustomers() {
+    if (window.NavigationRouter) window.NavigationRouter.navigateTo('view-customers');
+  }
+
+  function backToSuppliers() {
+    if (window.NavigationRouter) window.NavigationRouter.navigateTo('view-suppliers');
+  }
+
+  function editCurrentCustomer360() {
+    if (selectedCustomerId) openEditPartyModal(selectedCustomerId, 'CUSTOMER');
+  }
+
+  function editCurrentSupplier360() {
+    if (selectedSupplierId) openEditPartyModal(selectedSupplierId, 'SUPPLIER');
+  }
+
+  function newSaleForCustomer360() {
+    if (!selectedCustomerId) return;
+    const cust = customers.find(c => c.id === selectedCustomerId) || (customer360SummaryData && customer360SummaryData.customer);
+    if (window.SalesInvoiceController && typeof window.SalesInvoiceController.createForCustomer === 'function') {
+      window.SalesInvoiceController.createForCustomer(cust || { id: selectedCustomerId });
+    } else if (window.NavigationRouter) {
+      window.NavigationRouter.navigateTo('view-invoices');
+    }
+  }
+
+  function newPurchaseForSupplier360() {
+    if (!selectedSupplierId) return;
+    const sup = suppliers.find(s => s.id === selectedSupplierId) || (supplier360SummaryData && supplier360SummaryData.supplier);
+    if (window.PurchaseInvoiceController && typeof window.PurchaseInvoiceController.createForSupplier === 'function') {
+      window.PurchaseInvoiceController.createForSupplier(sup || { id: selectedSupplierId });
+    } else if (window.NavigationRouter) {
+      window.NavigationRouter.navigateTo('view-purchases');
+    }
+  }
+
   async function openCustomer360(id) {
-    active360PartyId = id;
-    const modal = document.getElementById('modal-customer-360');
-    if (!modal) return;
-    modal.classList.add('open');
-    modal.style.display = 'flex';
+    selectedCustomerId = Number(id);
+    active360PartyId = selectedCustomerId;
+    if (window.NavigationRouter) {
+      window.NavigationRouter.navigateTo('view-customer-360');
+    }
+    await renderActiveCustomer360();
+  }
 
-    // Reset tabs to Invoices
-    switch360Tab('c360-tab-invoices', 'c360-pane-invoices');
+  async function openSupplier360(id) {
+    selectedSupplierId = Number(id);
+    active360PartyId = selectedSupplierId;
+    if (window.NavigationRouter) {
+      window.NavigationRouter.navigateTo('view-supplier-360');
+    }
+    await renderActiveSupplier360();
+  }
 
+  async function refreshCustomer360() {
+    const btn = document.getElementById('c360-btn-refresh');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.innerHTML = `<span class="loading-spinner"></span> Refreshing...`;
+      btn.disabled = true;
+    }
     try {
-      let sum = null;
+      await renderActiveCustomer360();
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playChime();
+      if (window.AppDialogService && window.AppDialogService.showToast) {
+        window.AppDialogService.showToast('Customer 360° profile refreshed.', 'success');
+      }
+    } finally {
+      if (btn) {
+        btn.innerHTML = origHtml || '⟳ Refresh';
+        btn.disabled = false;
+      }
+    }
+  }
+
+  async function refreshSupplier360() {
+    const btn = document.getElementById('s360-btn-refresh');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.innerHTML = `<span class="loading-spinner"></span> Refreshing...`;
+      btn.disabled = true;
+    }
+    try {
+      await renderActiveSupplier360();
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playChime();
+      if (window.AppDialogService && window.AppDialogService.showToast) {
+        window.AppDialogService.showToast('Supplier 360° profile refreshed.', 'success');
+      }
+    } finally {
+      if (btn) {
+        btn.innerHTML = origHtml || '⟳ Refresh';
+        btn.disabled = false;
+      }
+    }
+  }
+
+  async function renderActiveCustomer360() {
+    if (!selectedCustomerId) {
+      if (customers && customers.length > 0) {
+        selectedCustomerId = customers[0].id;
+      } else {
+        try {
+          const data = await window.MasterService.getParties('CUSTOMER');
+          customers = data || [];
+          if (customers.length > 0) selectedCustomerId = customers[0].id;
+        } catch (_) {}
+      }
+    }
+    if (!selectedCustomerId) {
+      backToCustomers();
+      return;
+    }
+    active360PartyId = selectedCustomerId;
+
+    const id = selectedCustomerId;
+    let sum = null;
+    try {
       if (window.ReportService) {
         sum = await window.ReportService.getCustomer360Summary(id);
       }
-      const rawCust = customers.find(c => c.id === id);
-      const cust = (sum && sum.customer) ? sum.customer : (rawCust || {
-        name: 'Customer Client',
-        code: `CUST-${id}`,
-        gstin: '24AAACR1234F1Z1',
-        phone: '9825012345',
-        email: 'billing@client.com',
-        address: 'Surat, Gujarat',
-        openingBalance: 125000
-      });
-
-      const outstanding = (sum && sum.outstandingReceivable !== undefined) ? sum.outstandingReceivable : (sum ? sum.outstandingBalance : cust.openingBalance);
-      const totalSales = (sum && sum.totalSales !== undefined) ? sum.totalSales : 0;
-      const invoiceCount = (sum && sum.recentInvoices) ? sum.recentInvoices.length : (sum?.invoiceCount || 0);
-      const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
-
-      document.getElementById('c360-title').innerText = cust.name || 'Customer 360° Profile';
-      document.getElementById('c360-code').innerText = cust.code || cust.partyCode || '-';
-      document.getElementById('c360-gstin').innerText = cust.gstin || '-';
-      document.getElementById('c360-contact').innerText = cust.contactPerson || '-';
-      document.getElementById('c360-phone').innerText = cust.phone || '-';
-      document.getElementById('c360-email').innerText = cust.email || '-';
-      document.getElementById('c360-address').innerText = cust.address || '-';
-
-      document.getElementById('c360-kpi-outstanding').innerText = formatMoney(outstanding || 0);
-      document.getElementById('c360-kpi-count').innerText = `${invoiceCount} Invoices`;
-      document.getElementById('c360-kpi-total').innerText = formatMoney(totalSales || 0);
-      document.getElementById('c360-kpi-last-payment').innerText = formatMoney(lastPayment || 0);
-
-      // Load all sub-tabs asynchronously
-      loadCustomer360Invoices(id);
-      loadCustomer360Quotes(id);
-      loadCustomer360Payments(id);
-      loadCustomer360Contacts(id);
-      loadCustomer360Notes(id);
     } catch (err) {
-      console.warn('Customer 360 load warning:', err);
+      console.warn('Customer 360 summary load warning:', err);
+    }
+    customer360SummaryData = sum;
+
+    const rawCust = customers.find(c => c.id === id);
+    const cust = (sum && sum.customer) ? sum.customer : (rawCust || {
+      name: 'Customer Client',
+      code: `CUST-${id}`,
+      partyCode: `CUST-${id}`,
+      gstin: '-',
+      phone: '-',
+      email: '-',
+      address: '-',
+      openingBalance: 0,
+      active: true
+    });
+
+    const screenNameEl = document.getElementById('c360-screen-name');
+    if (screenNameEl) screenNameEl.innerText = `Customer 360° — ${cust.name || 'Profile'}`;
+    const statusPill = document.getElementById('c360-status-pill');
+    if (statusPill) {
+      const isActive = cust.active !== false;
+      statusPill.className = isActive ? 'pill-badge pill-success' : 'pill-badge pill-neutral';
+      statusPill.innerText = isActive ? 'Active' : 'Inactive';
+    }
+    const setTxt = (elId, val) => { const el = document.getElementById(elId); if (el) el.innerText = val || '-'; };
+    setTxt('c360-det-code', cust.partyCode || cust.code || '-');
+    setTxt('c360-det-gstin', cust.gstin || '-');
+    setTxt('c360-det-contact', cust.contactPerson || '-');
+    setTxt('c360-det-phone', cust.phone || '-');
+    setTxt('c360-det-email', cust.email || '-');
+    setTxt('c360-det-address', cust.address || '-');
+
+    const outstanding = (sum && sum.outstandingReceivable !== undefined) ? sum.outstandingReceivable : (sum ? sum.outstandingBalance : cust.openingBalance);
+    const totalSales = (sum && sum.totalSales !== undefined) ? sum.totalSales : 0;
+    const openQuotes = (sum && sum.openQuotationsAmount !== undefined) ? sum.openQuotationsAmount : (sum?.openQuotationsTotal || 0);
+    const quotesCount = (sum && sum.openQuotationsCount !== undefined) ? sum.openQuotationsCount : (sum?.recentQuotations?.length || 0);
+    const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
+    const lastPayDate = (sum && sum.lastPaymentDate) ? fmtDate(sum.lastPaymentDate) : '';
+
+    setTxt('c360-kpi-outstanding', formatMoney(outstanding || 0));
+    setTxt('c360-kpi-quotes', formatMoney(openQuotes || 0));
+    const quotesMetaEl = document.getElementById('c360-kpi-quotes-meta');
+    if (quotesMetaEl) quotesMetaEl.innerText = `${quotesCount} open quotations`;
+    setTxt('c360-kpi-sales', formatMoney(totalSales || 0));
+    setTxt('c360-kpi-payment', formatMoney(lastPayment || 0));
+    const payMetaEl = document.getElementById('c360-kpi-payment-meta');
+    if (payMetaEl) payMetaEl.innerText = lastPayDate ? `Paid on ${lastPayDate}` : 'No payment history';
+
+    select360Tab(activeCustomer360Tab || 'overview');
+  }
+
+  function select360Tab(tabKey) {
+    activeCustomer360Tab = tabKey;
+    const tabs = ['overview', 'contacts', 'quotations', 'invoices', 'payments', 'notes', 'documents'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-c360-${t}`);
+      const pane = document.getElementById(`pane-c360-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabKey);
+      if (pane) pane.style.display = (t === tabKey) ? 'block' : 'none';
+    });
+
+    const id = selectedCustomerId;
+    if (!id) return;
+
+    if (tabKey === 'overview') {
+      renderCustomerOverview(id, customer360SummaryData);
+    } else if (tabKey === 'contacts') {
+      loadCustomer360Contacts(id);
+    } else if (tabKey === 'quotations') {
+      loadCustomer360Quotes(id);
+    } else if (tabKey === 'invoices') {
+      loadCustomer360Invoices(id);
+    } else if (tabKey === 'payments') {
+      loadCustomer360Payments(id);
+    } else if (tabKey === 'notes') {
+      loadCustomer360Notes(id);
+    } else if (tabKey === 'documents') {
+      loadCustomer360Documents(id);
+    }
+  }
+
+  function renderCustomerOverview(id, sum) {
+    const qTbody = document.getElementById('c360-overview-quotes-tbody');
+    if (qTbody) {
+      const quotes = (sum && sum.recentQuotations) ? sum.recentQuotations : [];
+      if (quotes.length === 0) {
+        qTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent quotations</td></tr>`;
+      } else {
+        qTbody.innerHTML = quotes.map(q => `
+          <tr ondblclick="window.QuotationController && window.QuotationController.openQuotationView && window.QuotationController.openQuotationView('${q.quotationNo || q.no}')" style="cursor:pointer;">
+            <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${q.quotationNo || q.no || '-'}</td>
+            <td>${fmtDate(q.quotationDate || q.date)}</td>
+            <td style="text-align:right; font-weight:700;">${formatMoney(q.amount || q.totalAmount)}</td>
+            <td style="text-align:center;"><span class="badge ${q.status === 'ACCEPTED' ? 'badge-paid' : 'badge-pending'}">${q.status || 'SENT'}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    const iTbody = document.getElementById('c360-overview-invoices-tbody');
+    if (iTbody) {
+      const invs = (sum && sum.recentInvoices) ? sum.recentInvoices : [];
+      if (invs.length === 0) {
+        iTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent invoices</td></tr>`;
+      } else {
+        iTbody.innerHTML = invs.map(inv => `
+          <tr ondblclick="window.SalesInvoiceController && window.SalesInvoiceController.openInvoiceView && window.SalesInvoiceController.openInvoiceView('${inv.invoiceNo}')" style="cursor:pointer;">
+            <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${inv.invoiceNo || '-'}</td>
+            <td>${fmtDate(inv.invoiceDate)}</td>
+            <td style="text-align:right; font-weight:700;">${formatMoney(inv.totalAmount)}</td>
+            <td style="text-align:right; font-weight:700; color:${(inv.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(inv.outstanding || 0)}</td>
+          </tr>
+        `).join('');
+      }
     }
   }
 
@@ -796,17 +1001,15 @@ window.PartyController = (function() {
 
     try {
       let list = [];
-      if (window.ReportService) {
-        list = await window.ReportService.getCustomer360Invoices(id);
-      }
+      if (window.ReportService) list = await window.ReportService.getCustomer360Invoices(id);
       if (!list || list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No sales invoices recorded for this customer.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(inv => `
-        <tr>
+        <tr ondblclick="window.SalesInvoiceController && window.SalesInvoiceController.openInvoiceView && window.SalesInvoiceController.openInvoiceView('${inv.invoiceNo}')" style="cursor:pointer;">
           <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${inv.invoiceNo || '-'}</td>
-          <td>${inv.invoiceDate || '-'}</td>
+          <td>${fmtDate(inv.invoiceDate)}</td>
           <td style="text-align:right; font-weight:700;">${formatMoney(inv.totalAmount || 0)}</td>
           <td style="text-align:right; color:var(--accent-green);">${formatMoney(inv.paidAmount || 0)}</td>
           <td style="text-align:right; font-weight:700; color:${(inv.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(inv.outstanding || 0)}</td>
@@ -825,21 +1028,19 @@ window.PartyController = (function() {
 
     try {
       let list = [];
-      if (window.ReportService) {
-        list = await window.ReportService.getCustomer360Quotations(id);
-      }
+      if (window.ReportService) list = await window.ReportService.getCustomer360Quotations(id);
       if (!list || list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No quotations recorded for this customer.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(q => `
-        <tr>
-          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${q.no || '-'}</td>
-          <td>${q.date || '-'}</td>
-          <td style="color:var(--text-muted);">${q.valid || '-'}</td>
+        <tr ondblclick="window.QuotationController && window.QuotationController.openQuotationView && window.QuotationController.openQuotationView('${q.quotationNo || q.no}')" style="cursor:pointer;">
+          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${q.quotationNo || q.no || '-'}</td>
+          <td>${fmtDate(q.quotationDate || q.date)}</td>
+          <td style="color:var(--text-muted);">${fmtDate(q.validUntil || q.valid || '-')}</td>
           <td>${q.salesperson || '-'}</td>
-          <td style="text-align:right; font-weight:700;">${formatMoney(q.amount || 0)}</td>
-          <td style="text-align:center;"><span class="badge badge-paid">${q.status || 'SENT'}</span></td>
+          <td style="text-align:right; font-weight:700;">${formatMoney(q.amount || q.totalAmount || 0)}</td>
+          <td style="text-align:center;"><span class="badge ${q.status === 'ACCEPTED' ? 'badge-paid' : 'badge-pending'}">${q.status || 'SENT'}</span></td>
           <td style="color:var(--text-muted);">${q.followUp || '-'}</td>
         </tr>
       `).join('');
@@ -851,36 +1052,39 @@ window.PartyController = (function() {
   async function loadCustomer360Payments(id) {
     const tbody = document.getElementById('c360-payments-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading payments...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getCustomer360Payments(id);
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);">No receipt vouchers recorded.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No receipt vouchers recorded.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(p => `
         <tr>
           <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${p.referenceNo || p.receiptNo || 'RCT-' + p.id}</td>
-          <td>${p.paymentDate || '-'}</td>
-          <td><span class="badge badge-neutral">${p.paymentMode || p.mode || 'BANK'}</span></td>
+          <td>${fmtDate(p.paymentDate || p.date)}</td>
           <td style="font-family:monospace;">${p.invoiceNo || '-'}</td>
+          <td><span class="badge badge-neutral">${p.paymentMode || p.mode || 'BANK'}</span></td>
+          <td style="color:var(--text-muted);">${p.referenceNo || '-'}</td>
           <td style="text-align:right; font-weight:700; color:var(--accent-green);">${formatMoney(p.amount)}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${p.notes || '-'}</td>
         </tr>
       `).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--text-dim);">No receipt records found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No receipt records found.</td></tr>`;
     }
   }
 
   async function loadCustomer360Contacts(id) {
     const tbody = document.getElementById('c360-contacts-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading contacts...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getCustomer360Contacts(id);
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No additional contacts linked.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);">No contacts recorded. Click "+ Add Contact" to add one.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(c => `
@@ -892,117 +1096,217 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted);">${c.email || '-'}</td>
           <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditContactModal("CUSTOMER", ${JSON.stringify(c).replace(/'/g, "&apos;")})' title="Edit Contact" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteContact("CUSTOMER", ${c.id}, ${c.rowVersion || 0})' title="Delete Contact" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
         </tr>
       `).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
     }
   }
 
   async function loadCustomer360Notes(id) {
     const tbody = document.getElementById('c360-notes-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading notes...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getCustomer360Notes(id);
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded for this customer yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded yet. Click "+ Add Note" to create one.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(n => `
         <tr>
+          <td style="color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">${fmtTimestamp(n.updatedAt || n.createdAt)}</td>
+          <td style="color:var(--cyan); font-weight:600;">${n.updatedBy || n.createdBy || 'Admin'}</td>
           <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
-          <td style="color:var(--cyan);">${n.createdBy || 'Admin'}</td>
-          <td style="color:var(--text-muted); font-size:0.75rem;">${n.createdAt || '-'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditNoteModal("CUSTOMER", ${JSON.stringify(n).replace(/'/g, "&apos;")})' title="Edit Note" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteNote("CUSTOMER", ${n.id}, ${n.rowVersion || 0})' title="Delete Note" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
         </tr>
       `).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
     }
   }
 
-  async function addCustomerNote() {
-    const input = document.getElementById('c360-new-note');
-    if (!input) return;
-    const noteText = input.value.trim();
-    if (!noteText) {
-      if (window.AppDialogService) window.AppDialogService.toastWarning('Please enter note text first.');
-      else alert('Please enter note text.');
+  async function loadCustomer360Documents(id) {
+    const tbody = document.getElementById('c360-documents-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading documents...</td></tr>`;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getPartyDocuments('CUSTOMER', id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No documents attached. Click "+ Add Document" to upload.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(d => `
+        <tr>
+          <td style="font-weight:600; color:var(--cyan);">📄 ${d.fileName || d.name || 'Document'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${fmtTimestamp(d.createdAt)}</td>
+          <td style="color:var(--text-main);">${d.createdBy || 'Admin'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.previewPartyDocument("CUSTOMER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")' title="Download / Preview" style="padding:2px 8px; font-size:0.75rem;">📥</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deletePartyDocument("CUSTOMER", ${id}, ${d.id})' title="Delete Document" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No documents found.</td></tr>`;
+    }
+  }
+
+  // ==========================================
+  // SUPPLIER 360° IMPLEMENTATION
+  // ==========================================
+
+  async function renderActiveSupplier360() {
+    if (!selectedSupplierId) {
+      if (suppliers && suppliers.length > 0) {
+        selectedSupplierId = suppliers[0].id;
+      } else {
+        try {
+          const data = await window.MasterService.getParties('SUPPLIER');
+          suppliers = data || [];
+          if (suppliers.length > 0) selectedSupplierId = suppliers[0].id;
+        } catch (_) {}
+      }
+    }
+    if (!selectedSupplierId) {
+      backToSuppliers();
       return;
     }
-    if (!active360PartyId) return;
+    active360PartyId = selectedSupplierId;
 
+    const id = selectedSupplierId;
+    let sum = null;
     try {
-      await window.ReportService.saveCustomerNote(active360PartyId, { note: noteText, rowVersion: 0 });
-      input.value = '';
-      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
-      loadCustomer360Notes(active360PartyId);
-    } catch (err) {
-      alert('Failed to save note: ' + (err.message || 'Server error'));
-    }
-  }
-
-  // ==========================================
-  // 5. SUPPLIER 360° PROFILE (Supplier360.fxml Parity)
-  // ==========================================
-
-  async function openSupplier360(id) {
-    active360PartyId = id;
-    const modal = document.getElementById('modal-supplier-360');
-    if (!modal) return;
-    modal.classList.add('open');
-    modal.style.display = 'flex';
-
-    switch360Tab('s360-tab-bills', 's360-pane-bills');
-
-    try {
-      let sum = null;
       if (window.ReportService) {
         sum = await window.ReportService.getSupplier360Summary(id);
       }
-      const rawSup = suppliers.find(s => s.id === id);
-      const sup = (sum && sum.supplier) ? sum.supplier : (rawSup || {
-        name: 'Supplier Vendor',
-        code: `SUPP-${id}`,
-        gstin: '20AAACT0012F1Z3',
-        phone: '9824011223',
-        email: 'sales@vendor.com',
-        address: 'Hazira, Surat',
-        openingBalance: 85000
-      });
-
-      const outstanding = (sum && sum.outstandingPayable !== undefined) ? sum.outstandingPayable : (sum ? sum.outstandingBalance : sup.openingBalance);
-      const totalPurchases = (sum && sum.totalPurchases !== undefined) ? sum.totalPurchases : 0;
-      const purchaseCount = (sum && sum.recentPurchases) ? sum.recentPurchases.length : (sum?.purchaseCount || 0);
-      const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
-
-      document.getElementById('s360-title').innerText = sup.name || 'Supplier 360° Profile';
-      document.getElementById('s360-code').innerText = sup.code || sup.partyCode || '-';
-      document.getElementById('s360-gstin').innerText = sup.gstin || '-';
-      document.getElementById('s360-contact').innerText = sup.contactPerson || '-';
-      document.getElementById('s360-phone').innerText = sup.phone || '-';
-      document.getElementById('s360-email').innerText = sup.email || '-';
-      document.getElementById('s360-address').innerText = sup.address || '-';
-
-      document.getElementById('s360-kpi-outstanding').innerText = formatMoney(outstanding || 0);
-      document.getElementById('s360-kpi-count').innerText = `${purchaseCount} Bills`;
-      document.getElementById('s360-kpi-total').innerText = formatMoney(totalPurchases || 0);
-      document.getElementById('s360-kpi-last-payment').innerText = formatMoney(lastPayment || 0);
-
-      // Load all sub-tabs asynchronously
-      loadSupplier360Purchases(id);
-      loadSupplier360Payments(id);
-      loadSupplier360Contacts(id);
-      loadSupplier360Notes(id);
     } catch (err) {
-      console.warn('Supplier 360 load warning:', err);
+      console.warn('Supplier 360 summary load warning:', err);
+    }
+    supplier360SummaryData = sum;
+
+    const rawSup = suppliers.find(s => s.id === id);
+    const sup = (sum && sum.supplier) ? sum.supplier : (rawSup || {
+      name: 'Supplier Vendor',
+      code: `SUPP-${id}`,
+      partyCode: `SUPP-${id}`,
+      gstin: '-',
+      phone: '-',
+      email: '-',
+      address: '-',
+      openingBalance: 0,
+      active: true
+    });
+
+    const screenNameEl = document.getElementById('s360-screen-name');
+    if (screenNameEl) screenNameEl.innerText = `Supplier 360° — ${sup.name || 'Profile'}`;
+    const statusPill = document.getElementById('s360-status-pill');
+    if (statusPill) {
+      const isActive = sup.active !== false;
+      statusPill.className = isActive ? 'pill-badge pill-success' : 'pill-badge pill-neutral';
+      statusPill.innerText = isActive ? 'Active' : 'Inactive';
+    }
+    const setTxt = (elId, val) => { const el = document.getElementById(elId); if (el) el.innerText = val || '-'; };
+    setTxt('s360-det-code', sup.partyCode || sup.code || '-');
+    setTxt('s360-det-gstin', sup.gstin || '-');
+    setTxt('s360-det-contact', sup.contactPerson || '-');
+    setTxt('s360-det-phone', sup.phone || '-');
+    setTxt('s360-det-email', sup.email || '-');
+    setTxt('s360-det-address', sup.address || '-');
+
+    const outstanding = (sum && sum.outstandingPayable !== undefined) ? sum.outstandingPayable : (sum ? sum.outstandingBalance : sup.openingBalance);
+    const totalPurchases = (sum && sum.totalPurchases !== undefined) ? sum.totalPurchases : 0;
+    const purchaseCount = (sum && sum.recentPurchases) ? sum.recentPurchases.length : (sum?.purchaseCount || 0);
+    const lastPayment = (sum && sum.lastPaymentAmount !== undefined) ? sum.lastPaymentAmount : 0;
+    const lastPayDate = (sum && sum.lastPaymentDate) ? fmtDate(sum.lastPaymentDate) : '';
+
+    setTxt('s360-kpi-outstanding', formatMoney(outstanding || 0));
+    setTxt('s360-kpi-count', `${purchaseCount} purchases`);
+    setTxt('s360-kpi-total', formatMoney(totalPurchases || 0));
+    setTxt('s360-kpi-payment', formatMoney(lastPayment || 0));
+    const payMetaEl = document.getElementById('s360-kpi-payment-meta');
+    if (payMetaEl) payMetaEl.innerText = lastPayDate ? `Paid on ${lastPayDate}` : 'No payment history';
+
+    selectSupplier360Tab(activeSupplier360Tab || 'overview');
+  }
+
+  function selectSupplier360Tab(tabKey) {
+    activeSupplier360Tab = tabKey;
+    const tabs = ['overview', 'contacts', 'purchases', 'payments', 'notes', 'documents'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-s360-${t}`);
+      const pane = document.getElementById(`pane-s360-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabKey);
+      if (pane) pane.style.display = (t === tabKey) ? 'block' : 'none';
+    });
+
+    const id = selectedSupplierId;
+    if (!id) return;
+
+    if (tabKey === 'overview') {
+      renderSupplierOverview(id, supplier360SummaryData);
+    } else if (tabKey === 'contacts') {
+      loadSupplier360Contacts(id);
+    } else if (tabKey === 'purchases') {
+      loadSupplier360Purchases(id);
+    } else if (tabKey === 'payments') {
+      loadSupplier360Payments(id);
+    } else if (tabKey === 'notes') {
+      loadSupplier360Notes(id);
+    } else if (tabKey === 'documents') {
+      loadSupplier360Documents(id);
+    }
+  }
+
+  function renderSupplierOverview(id, sum) {
+    const pTbody = document.getElementById('s360-overview-purchases-tbody');
+    if (pTbody) {
+      const purchases = (sum && sum.recentPurchases) ? sum.recentPurchases : [];
+      if (purchases.length === 0) {
+        pTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent purchases</td></tr>`;
+      } else {
+        pTbody.innerHTML = purchases.map(p => `
+          <tr ondblclick="window.PurchaseInvoiceController && window.PurchaseInvoiceController.openPurchaseView && window.PurchaseInvoiceController.openPurchaseView('${p.invoiceNo}')" style="cursor:pointer;">
+            <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${p.invoiceNo || '-'}</td>
+            <td>${fmtDate(p.invoiceDate)}</td>
+            <td style="text-align:right; font-weight:700;">${formatMoney(p.totalAmount)}</td>
+            <td style="text-align:right; font-weight:700; color:${(p.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(p.outstanding || 0)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    const payTbody = document.getElementById('s360-overview-payments-tbody');
+    if (payTbody) {
+      const payments = (sum && sum.recentPayments) ? sum.recentPayments : [];
+      if (payments.length === 0) {
+        payTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No recent payments</td></tr>`;
+      } else {
+        payTbody.innerHTML = payments.map(pay => `
+          <tr>
+            <td>${fmtDate(pay.paymentDate)}</td>
+            <td style="font-family:monospace; font-weight:600; color:var(--cyan);">${pay.invoiceNo || '-'}</td>
+            <td style="text-align:right; font-weight:700; color:var(--accent-green);">${formatMoney(pay.amount)}</td>
+            <td><span class="badge badge-neutral">${pay.paymentMode || 'BANK'}</span></td>
+          </tr>
+        `).join('');
+      }
     }
   }
 
   async function loadSupplier360Purchases(id) {
-    const tbody = document.getElementById('s360-bills-tbody');
+    const tbody = document.getElementById('s360-purchases-tbody');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading vendor bills...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading purchases...</td></tr>`;
 
     try {
       let list = [];
@@ -1012,9 +1316,9 @@ window.PartyController = (function() {
         return;
       }
       tbody.innerHTML = list.map(b => `
-        <tr>
+        <tr ondblclick="window.PurchaseInvoiceController && window.PurchaseInvoiceController.openPurchaseView && window.PurchaseInvoiceController.openPurchaseView('${b.invoiceNo || b.billNo}')" style="cursor:pointer;">
           <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${b.invoiceNo || b.billNo || '-'}</td>
-          <td>${b.invoiceDate || b.billDate || '-'}</td>
+          <td>${fmtDate(b.invoiceDate || b.billDate)}</td>
           <td style="text-align:right; font-weight:700;">${formatMoney(b.totalAmount || b.total || 0)}</td>
           <td style="text-align:right; color:var(--accent-green);">${formatMoney(b.paidAmount || 0)}</td>
           <td style="text-align:right; font-weight:700; color:${(b.outstanding || 0) > 0 ? 'var(--accent-red)' : 'var(--text-dim)'};">${formatMoney(b.outstanding || 0)}</td>
@@ -1029,6 +1333,7 @@ window.PartyController = (function() {
   async function loadSupplier360Payments(id) {
     const tbody = document.getElementById('s360-payments-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading payments...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getSupplier360Payments(id);
@@ -1038,10 +1343,10 @@ window.PartyController = (function() {
       }
       tbody.innerHTML = list.map(p => `
         <tr>
-          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${p.referenceNo || p.voucherNo || 'PV-' + p.id}</td>
-          <td>${p.paymentDate || p.date || '-'}</td>
+          <td>${fmtDate(p.paymentDate || p.date)}</td>
+          <td style="font-family:monospace; font-weight:600; color:var(--cyan);">${p.invoiceNo || '-'}</td>
           <td><span class="badge badge-neutral">${p.paymentMode || p.bank || 'BANK'}</span></td>
-          <td style="font-family:monospace;">${p.invoiceNo || '-'}</td>
+          <td style="color:var(--text-muted);">${p.referenceNo || p.voucherNo || '-'}</td>
           <td style="text-align:right; font-weight:700; color:var(--accent-red);">${formatMoney(p.amount)}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${p.notes || '-'}</td>
         </tr>
@@ -1054,11 +1359,12 @@ window.PartyController = (function() {
   async function loadSupplier360Contacts(id) {
     const tbody = document.getElementById('s360-contacts-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading contacts...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getSupplier360Contacts(id);
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No additional contacts linked.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-dim);">No contacts recorded. Click "+ Add Contact" to add one.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(c => `
@@ -1070,65 +1376,356 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted);">${c.email || '-'}</td>
           <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditContactModal("SUPPLIER", ${JSON.stringify(c).replace(/'/g, "&apos;")})' title="Edit Contact" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteContact("SUPPLIER", ${c.id}, ${c.rowVersion || 0})' title="Delete Contact" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
         </tr>
       `).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--text-dim);">No contacts found.</td></tr>`;
     }
   }
 
   async function loadSupplier360Notes(id) {
     const tbody = document.getElementById('s360-notes-tbody');
     if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading notes...</td></tr>`;
     try {
       let list = [];
       if (window.ReportService) list = await window.ReportService.getSupplier360Notes(id);
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded for this vendor yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No notes recorded yet. Click "+ Add Note" to create one.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(n => `
         <tr>
+          <td style="color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">${fmtTimestamp(n.updatedAt || n.createdAt)}</td>
+          <td style="color:var(--cyan); font-weight:600;">${n.updatedBy || n.createdBy || 'Admin'}</td>
           <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
-          <td style="color:var(--cyan);">${n.createdBy || 'Admin'}</td>
-          <td style="color:var(--text-muted); font-size:0.75rem;">${n.createdAt || '-'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditNoteModal("SUPPLIER", ${JSON.stringify(n).replace(/'/g, "&apos;")})' title="Edit Note" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteNote("SUPPLIER", ${n.id}, ${n.rowVersion || 0})' title="Delete Note" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
         </tr>
       `).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No notes found.</td></tr>`;
     }
   }
 
-  async function addSupplierNote() {
-    const input = document.getElementById('s360-new-note');
-    if (!input) return;
-    const noteText = input.value.trim();
-    if (!noteText) {
-      if (window.AppDialogService) window.AppDialogService.toastWarning('Please enter note text first.');
-      else alert('Please enter note text.');
+  async function loadSupplier360Documents(id) {
+    const tbody = document.getElementById('s360-documents-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading documents...</td></tr>`;
+    try {
+      let list = [];
+      if (window.ReportService) list = await window.ReportService.getPartyDocuments('SUPPLIER', id);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">No documents attached. Click "+ Add Document" to upload.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(d => `
+        <tr>
+          <td style="font-weight:600; color:var(--cyan);">📄 ${d.fileName || d.name || 'Document'}</td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${fmtTimestamp(d.createdAt)}</td>
+          <td style="color:var(--text-main);">${d.createdBy || 'Admin'}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.previewPartyDocument("SUPPLIER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")' title="Download / Preview" style="padding:2px 8px; font-size:0.75rem;">📥</button>
+            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deletePartyDocument("SUPPLIER", ${id}, ${d.id})' title="Delete Document" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-dim);">No documents found.</td></tr>`;
+    }
+  }
+
+  // ==========================================
+  // CONTACTS & NOTES MODAL ACTIONS
+  // ==========================================
+
+  function openAddContactModal(partyType) {
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+    if (!partyId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No active party selected.');
       return;
     }
-    if (!active360PartyId) return;
+
+    document.getElementById('party-contact-modal-title').innerText = `Add ${type === 'CUSTOMER' ? 'Customer' : 'Supplier'} Contact`;
+    document.getElementById('pcontact-party-type').value = type;
+    document.getElementById('pcontact-party-id').value = partyId;
+    document.getElementById('pcontact-id').value = '';
+    document.getElementById('pcontact-row-version').value = '0';
+    document.getElementById('pcontact-name').value = '';
+    document.getElementById('pcontact-designation').value = '';
+    document.getElementById('pcontact-department').value = '';
+    document.getElementById('pcontact-mobile').value = '';
+    document.getElementById('pcontact-email').value = '';
+    document.getElementById('pcontact-primary').checked = false;
+    document.getElementById('pcontact-notes').value = '';
+
+    const modal = document.getElementById('modal-party-contact');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('pcontact-name')?.focus();
+  }
+
+  function openEditContactModal(partyType, contact) {
+    if (!contact) return;
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+
+    document.getElementById('party-contact-modal-title').innerText = `Edit ${type === 'CUSTOMER' ? 'Customer' : 'Supplier'} Contact`;
+    document.getElementById('pcontact-party-type').value = type;
+    document.getElementById('pcontact-party-id').value = partyId || contact.partyId;
+    document.getElementById('pcontact-id').value = contact.id || '';
+    document.getElementById('pcontact-row-version').value = contact.rowVersion || 0;
+    document.getElementById('pcontact-name').value = contact.name || '';
+    document.getElementById('pcontact-designation').value = contact.designation || '';
+    document.getElementById('pcontact-department').value = contact.department || '';
+    document.getElementById('pcontact-mobile').value = contact.mobile || '';
+    document.getElementById('pcontact-email').value = contact.email || '';
+    document.getElementById('pcontact-primary').checked = Boolean(contact.primary);
+    document.getElementById('pcontact-notes').value = contact.notes || '';
+
+    const modal = document.getElementById('modal-party-contact');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('pcontact-name')?.focus();
+  }
+
+  function closeContactModal() {
+    const modal = document.getElementById('modal-party-contact');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function submitContactForm(e) {
+    if (e) e.preventDefault();
+    const type = document.getElementById('pcontact-party-type').value;
+    const partyId = Number(document.getElementById('pcontact-party-id').value);
+    const contactId = document.getElementById('pcontact-id').value ? Number(document.getElementById('pcontact-id').value) : null;
+    const rowVersion = Number(document.getElementById('pcontact-row-version').value) || 0;
+
+    const name = document.getElementById('pcontact-name').value.trim();
+    if (!name) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Contact name is required.');
+      return;
+    }
+
+    const payload = {
+      id: contactId,
+      name,
+      designation: document.getElementById('pcontact-designation').value.trim(),
+      department: document.getElementById('pcontact-department').value.trim(),
+      mobile: document.getElementById('pcontact-mobile').value.trim(),
+      email: document.getElementById('pcontact-email').value.trim(),
+      primary: document.getElementById('pcontact-primary').checked,
+      notes: document.getElementById('pcontact-notes').value.trim(),
+      rowVersion
+    };
 
     try {
-      await window.ReportService.saveSupplierNote(active360PartyId, { note: noteText, rowVersion: 0 });
-      input.value = '';
-      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
-      loadSupplier360Notes(active360PartyId);
+      if (type === 'CUSTOMER') {
+        await window.ReportService.saveCustomerContact(partyId, payload);
+      } else {
+        await window.ReportService.saveSupplierContact(partyId, payload);
+      }
+
+      closeContactModal();
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Contact saved successfully.');
+
+      if (type === 'CUSTOMER') loadCustomer360Contacts(partyId);
+      else loadSupplier360Contacts(partyId);
     } catch (err) {
-      alert('Failed to save note: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.showToast(`Failed to save contact: ${err.message}`, 'error');
+      else alert(`Failed to save contact: ${err.message}`);
     }
   }
 
-  function switch360Tab(btnId, paneId) {
-    const btn = document.getElementById(btnId);
-    if (!btn) return;
-    const parentContainer = btn.closest('.modal-card') || document;
-    parentContainer.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    parentContainer.querySelectorAll('.sub-tab-pane').forEach(p => p.style.display = 'none');
-    btn.classList.add('active');
-    const pane = document.getElementById(paneId);
-    if (pane) pane.style.display = 'block';
+  async function deleteContact(partyType, contactId, rowVersion) {
+    if (!confirm('Are you sure you want to delete this contact?')) return;
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+
+    try {
+      if (type === 'CUSTOMER') {
+        await window.ReportService.deleteCustomerContact(partyId, contactId, rowVersion || 0);
+        loadCustomer360Contacts(partyId);
+      } else {
+        await window.ReportService.deleteSupplierContact(partyId, contactId, rowVersion || 0);
+        loadSupplier360Contacts(partyId);
+      }
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Contact deleted successfully.');
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.showToast(`Failed to delete contact: ${err.message}`, 'error');
+      else alert(`Failed to delete contact: ${err.message}`);
+    }
+  }
+
+  function openAddNoteModal(partyType) {
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+    if (!partyId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No active party selected.');
+      return;
+    }
+
+    document.getElementById('party-note-modal-title').innerText = `Add ${type === 'CUSTOMER' ? 'Customer' : 'Supplier'} Note`;
+    document.getElementById('pnote-party-type').value = type;
+    document.getElementById('pnote-party-id').value = partyId;
+    document.getElementById('pnote-id').value = '';
+    document.getElementById('pnote-row-version').value = '0';
+    document.getElementById('pnote-text').value = '';
+
+    const modal = document.getElementById('modal-party-note');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('pnote-text')?.focus();
+  }
+
+  function openEditNoteModal(partyType, note) {
+    if (!note) return;
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+
+    document.getElementById('party-note-modal-title').innerText = `Edit ${type === 'CUSTOMER' ? 'Customer' : 'Supplier'} Note`;
+    document.getElementById('pnote-party-type').value = type;
+    document.getElementById('pnote-party-id').value = partyId || note.partyId;
+    document.getElementById('pnote-id').value = note.id || '';
+    document.getElementById('pnote-row-version').value = note.rowVersion || 0;
+    document.getElementById('pnote-text').value = note.note || '';
+
+    const modal = document.getElementById('modal-party-note');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('pnote-text')?.focus();
+  }
+
+  function closeNoteModal() {
+    const modal = document.getElementById('modal-party-note');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function submitNoteForm(e) {
+    if (e) e.preventDefault();
+    const type = document.getElementById('pnote-party-type').value;
+    const partyId = Number(document.getElementById('pnote-party-id').value);
+    const noteId = document.getElementById('pnote-id').value ? Number(document.getElementById('pnote-id').value) : null;
+    const rowVersion = Number(document.getElementById('pnote-row-version').value) || 0;
+
+    const noteText = document.getElementById('pnote-text').value.trim();
+    if (!noteText) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Note content cannot be empty.');
+      return;
+    }
+
+    const payload = {
+      id: noteId,
+      note: noteText,
+      rowVersion
+    };
+
+    try {
+      if (type === 'CUSTOMER') {
+        await window.ReportService.saveCustomerNote(partyId, payload);
+      } else {
+        await window.ReportService.saveSupplierNote(partyId, payload);
+      }
+
+      closeNoteModal();
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note saved successfully.');
+
+      if (type === 'CUSTOMER') loadCustomer360Notes(partyId);
+      else loadSupplier360Notes(partyId);
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.showToast(`Failed to save note: ${err.message}`, 'error');
+      else alert(`Failed to save note: ${err.message}`);
+    }
+  }
+
+  async function deleteNote(partyType, noteId, rowVersion) {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+
+    try {
+      if (type === 'CUSTOMER') {
+        await window.ReportService.deleteCustomerNote(partyId, noteId, rowVersion || 0);
+        loadCustomer360Notes(partyId);
+      } else {
+        await window.ReportService.deleteSupplierNote(partyId, noteId, rowVersion || 0);
+        loadSupplier360Notes(partyId);
+      }
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Note deleted successfully.');
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.showToast(`Failed to delete note: ${err.message}`, 'error');
+      else alert(`Failed to delete note: ${err.message}`);
+    }
+  }
+
+  function uploadPartyDocument(partyType) {
+    const type = (partyType || 'CUSTOMER').toUpperCase();
+    const partyId = type === 'CUSTOMER' ? selectedCustomerId : selectedSupplierId;
+    if (!partyId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No active party selected.');
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.style.display = 'none';
+    input.onchange = async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        if (window.AppDialogService) window.AppDialogService.toastInfo(`Uploading ${file.name}...`);
+        const token = localStorage.getItem('token') || (window.Auth && window.Auth.getToken && window.Auth.getToken());
+        const res = await fetch(`/api/attachments/document/${encodeURIComponent(type)}/${partyId}`, {
+          method: 'POST',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          body: formData
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || `Server responded with ${res.status}`);
+        }
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Document "${file.name}" uploaded successfully.`);
+        if (type === 'CUSTOMER') loadCustomer360Documents(partyId);
+        else loadSupplier360Documents(partyId);
+      } catch (err) {
+        if (window.AppDialogService) window.AppDialogService.showToast(`Document upload failed: ${err.message}`, 'error');
+        else alert(`Document upload failed: ${err.message}`);
+      }
+    };
+    document.body.appendChild(input);
+    input.click();
+    setTimeout(() => { document.body.removeChild(input); }, 1000);
+  }
+
+  function previewPartyDocument(partyType, partyId, metaId, fileName) {
+    const url = `/api/attachments/document/${encodeURIComponent(partyType)}/${partyId}/${metaId}/download`;
+    window.open(url, '_blank');
+  }
+
+  async function deletePartyDocument(partyType, partyId, metaId) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    try {
+      await window.ReportService.deletePartyDocument(partyType, partyId, metaId);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Document deleted.');
+      if (partyType === 'CUSTOMER') loadCustomer360Documents(partyId);
+      else loadSupplier360Documents(partyId);
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.showToast(`Failed to delete document: ${err.message}`, 'error');
+      else alert(`Failed to delete document: ${err.message}`);
+    }
   }
 
   return {
@@ -1149,11 +1746,37 @@ window.PartyController = (function() {
     submitSaveParty,
     deleteParty,
     closeModal,
+
+    // 360 Workspace & Methods
     openCustomer360,
     openSupplier360,
-    switch360Tab,
-    addCustomerNote,
-    addSupplierNote,
+    renderActiveCustomer360,
+    renderActiveSupplier360,
+    refreshCustomer360,
+    refreshSupplier360,
+    backToCustomers,
+    backToSuppliers,
+    editCurrentCustomer360,
+    editCurrentSupplier360,
+    newSaleForCustomer360,
+    newPurchaseForSupplier360,
+    select360Tab,
+    selectSupplier360Tab,
+
+    // Contacts & Notes Modals
+    openAddContactModal,
+    openEditContactModal,
+    closeContactModal,
+    submitContactForm,
+    deleteContact,
+    openAddNoteModal,
+    openEditNoteModal,
+    closeNoteModal,
+    submitNoteForm,
+    deleteNote,
+    uploadPartyDocument,
+    previewPartyDocument,
+    deletePartyDocument,
 
     // Customer Drawer Methods
     onCustomerRowClick,
@@ -1174,6 +1797,30 @@ window.PartyController = (function() {
     drawerNewPurchase,
 
     exportCustomers() {
+      try {
+        if (window.XLSX && customers && customers.length > 0) {
+          const rows = customers.map(c => ({
+            'Party Code': c.partyCode || c.code || '',
+            'Customer Name': c.name || '',
+            'Contact Person': c.contactPerson || '',
+            'Mobile': c.phone || '',
+            'Email': c.email || '',
+            'GSTIN': c.gstin || '',
+            'Address': c.address || '',
+            'Opening Balance': c.openingBalance != null ? Number(c.openingBalance) : 0,
+            'Status': c.active !== false ? 'ACTIVE' : 'INACTIVE'
+          }));
+          const ws = window.XLSX.utils.json_to_sheet(rows);
+          const wb = window.XLSX.utils.book_new();
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+          window.XLSX.writeFile(wb, `Customers_Master_${new Date().toISOString().slice(0, 10)}.xlsx`);
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Customers exported to Excel successfully.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Local XLSX export error:', err);
+      }
       if (window.ApiService && typeof window.ApiService.downloadFile === 'function') {
         window.ApiService.downloadFile('/api/master/parties/export?type=CUSTOMER', 'Customers_Master.xlsx');
       } else {
@@ -1181,6 +1828,30 @@ window.PartyController = (function() {
       }
     },
     exportSuppliers() {
+      try {
+        if (window.XLSX && suppliers && suppliers.length > 0) {
+          const rows = suppliers.map(s => ({
+            'Party Code': s.partyCode || s.code || '',
+            'Supplier Name': s.name || '',
+            'Contact Person': s.contactPerson || '',
+            'Mobile': s.phone || '',
+            'Email': s.email || '',
+            'GSTIN': s.gstin || '',
+            'Address': s.address || '',
+            'Opening Balance': s.openingBalance != null ? Number(s.openingBalance) : 0,
+            'Status': s.active !== false ? 'ACTIVE' : 'INACTIVE'
+          }));
+          const ws = window.XLSX.utils.json_to_sheet(rows);
+          const wb = window.XLSX.utils.book_new();
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Suppliers');
+          window.XLSX.writeFile(wb, `Suppliers_Master_${new Date().toISOString().slice(0, 10)}.xlsx`);
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Suppliers exported to Excel successfully.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Local XLSX export error:', err);
+      }
       if (window.ApiService && typeof window.ApiService.downloadFile === 'function') {
         window.ApiService.downloadFile('/api/master/parties/export?type=SUPPLIER', 'Suppliers_Master.xlsx');
       } else {

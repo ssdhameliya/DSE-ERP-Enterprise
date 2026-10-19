@@ -8,9 +8,9 @@ window.DSE_VERSION = {
   webBuild: 4,
   webVersion: "10.0.35.04",
   tag: "web-v10.0.35.04",
-  releaseDate: "2026-10-19T14:15:00+05:30",
+  releaseDate: "2026-10-19T14:45:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.35.04 Enterprise Release - Executive Reporting Parity: 100% server-driven favorites sync with Desktop, active refresh feedback, authentic SheetJS Excel (.xlsx) / RFC 4180 CSV / Executive PDF exports, Dynamic Viewer & Saved Reports catalog recovery, and company date & timestamp formatting."
+  summary: "10.0.35.04 Enterprise Release - Executive Reporting Parity (Favorites sync, active refresh feedback, authentic SheetJS Excel/PDF/CSV exports, Dynamic Viewer & Saved Reports recovery, Company Date/Time formatting), Supplier 360° & Customer 360° Full Desktop Parity, and Master Data Lookup fixes."
 };
 
 // Automatic UI Version Injection
