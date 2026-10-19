@@ -6770,7 +6770,7 @@
               <button class="btn btn-secondary" onclick="window.ReportsController.handleRefreshAction()" title="Refresh Current Tab Data">↻ Refresh</button>
               <div class="dropdown-wrap" style="position:relative; display:inline-block;">
                 <button class="btn btn-purple" onclick="window.ReportsController.toggleExportDropdown(event)" style="font-weight:600;">Export ▼</button>
-                <div id="rep-export-menu" class="action-dropdown-menu" style="display:none; position:absolute; right:0; top:100%; margin-top:4px; z-index:10005; background:#0b1324; border:1px solid rgba(255,255,255,0.15); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:180px; padding:6px 0;">
+                <div id="rep-export-menu" class="rep-export-dropdown-menu" style="display:none; position:absolute !important; right:0 !important; top:calc(100% + 4px) !important; z-index:10005 !important; background:#0b1324 !important; border:1px solid rgba(255,255,255,0.18) !important; border-radius:8px !important; box-shadow:0 10px 30px rgba(0,0,0,0.8) !important; min-width:200px !important; padding:6px 0 !important;">
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('EXCEL')"><span style="margin-right:8px;">📊</span> Export to Excel (.xlsx)</div>
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('PDF')"><span style="margin-right:8px;">📄</span> Export to PDF</div>
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('CSV')"><span style="margin-right:8px;">📑</span> Export to CSV</div>
@@ -7359,7 +7359,7 @@
 
             <!-- SCHEDULES TABLE -->
             <div class="data-panel" style="overflow-x:auto;">
-              <table class="data-table" style="font-size:0.8rem;">
+              <table class="data-table" id="rep-sch-table" style="font-size:0.8rem;">
                 <thead>
                   <tr>
                     <th>Schedule</th>

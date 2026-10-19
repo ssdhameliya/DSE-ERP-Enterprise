@@ -52,6 +52,9 @@ window.ReportsController = (function() {
   ];
 
   function formatMoney(val) {
+    if (window.FormatUtil && window.FormatUtil.formatRupees) {
+      return window.FormatUtil.formatRupees(val);
+    }
     const num = parseFloat(val) || 0;
     return '₹ ' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -104,6 +107,21 @@ window.ReportsController = (function() {
       case 'document': return '📄';
       case 'bank': return '🏦';
       default: return '📊';
+    }
+  }
+
+  function colourForSemantic(sem) {
+    switch (sem) {
+      case 'calendar': return 'purple';
+      case 'customer': return 'blue';
+      case 'supplier': return 'indigo';
+      case 'item': return 'orange';
+      case 'tax': return 'orange';
+      case 'status': return 'purple';
+      case 'currency': return 'green';
+      case 'document': return 'purple';
+      case 'bank': return 'blue';
+      default: return 'teal';
     }
   }
 
@@ -1064,21 +1082,24 @@ window.ReportsController = (function() {
         pageEl.innerText = `Page ${viewerPage + 1} / ${totalPages}`;
       }
 
-      // Render Header with semantic icons
+      // Render Header with single canonical colorful semantic badge (Image 1 / Image 2 Parity)
       if (thead) {
         thead.innerHTML = `
           <tr>
-            <th style="width:40px; text-align:center;">#</th>
+            <th style="width:40px; text-align:center;" data-erp-header-enhanced="true">
+              <span style="font-weight:700; color:var(--text-muted); font-size:0.75rem;">#</span>
+            </th>
             ${cols.map(c => {
               const sem = semanticForColumn(c.key || c.label);
               const icon = iconForSemantic(sem);
+              const colour = colourForSemantic(sem);
               const isRight = c.align === 'RIGHT' || c.numeric;
               return `
-                <th style="${isRight ? 'text-align:right;' : ''}">
-                  <span style="display:inline-flex; align-items:center; gap:6px; ${isRight ? 'justify-content:flex-end;' : ''}">
-                    <span style="font-size:0.85rem; opacity:0.85;">${icon}</span>
-                    <span>${c.label}</span>
-                  </span>
+                <th style="${isRight ? 'text-align:right;' : ''}" data-erp-header-enhanced="true" class="erp-th-theme-${colour}">
+                  <div class="erp-th-badge erp-th-${colour}" style="${isRight ? 'margin-left:auto;' : ''}">
+                    <span class="erp-th-icon">${icon}</span>
+                    <span class="erp-th-label">${c.label}</span>
+                  </div>
                 </th>
               `;
             }).join('')}
@@ -1178,12 +1199,12 @@ window.ReportsController = (function() {
 
       if (req.reportId.includes('PURCHASE')) {
         cols = [
-          { label: 'Bill No.', align: 'LEFT', type: 'CODE' },
-          { label: 'Date', align: 'LEFT' },
-          { label: 'Supplier', align: 'LEFT' },
-          { label: 'Taxable (₹)', align: 'RIGHT' },
-          { label: 'Total (₹)', align: 'RIGHT' },
-          { label: 'Status', align: 'LEFT' }
+          { key: 'billNumber', label: 'Bill No.', align: 'LEFT', type: 'CODE' },
+          { key: 'billDate', label: 'Date', align: 'LEFT', type: 'DATE' },
+          { key: 'supplierName', label: 'Supplier', align: 'LEFT' },
+          { key: 'taxableAmount', label: 'Taxable (₹)', align: 'RIGHT', type: 'MONEY' },
+          { key: 'totalAmount', label: 'Total (₹)', align: 'RIGHT', type: 'MONEY' },
+          { key: 'paymentStatus', label: 'Status', align: 'LEFT', type: 'STATUS' }
         ];
         if (window.OperationsService) {
           const res = await window.OperationsService.getPurchases(0, 50).catch(() => []);
@@ -1194,20 +1215,20 @@ window.ReportsController = (function() {
               p.billNumber || p.billNo || '-',
               formatDate(p.billDate),
               p.supplierName || p.partyName || '-',
-              formatMoney(p.taxableAmount || 0),
-              formatMoney(p.totalAmount || p.total || 0),
+              p.taxableAmount || 0,
+              p.totalAmount || p.total || 0,
               p.paymentStatus || 'CONFIRMED'
             ]
           }));
         }
       } else {
         cols = [
-          { label: 'Invoice No.', align: 'LEFT', type: 'CODE' },
-          { label: 'Date', align: 'LEFT' },
-          { label: 'Customer', align: 'LEFT' },
-          { label: 'Taxable (₹)', align: 'RIGHT' },
-          { label: 'Total (₹)', align: 'RIGHT' },
-          { label: 'Status', align: 'LEFT' }
+          { key: 'invoiceNumber', label: 'Invoice No.', align: 'LEFT', type: 'CODE' },
+          { key: 'invoiceDate', label: 'Date', align: 'LEFT', type: 'DATE' },
+          { key: 'customerName', label: 'Customer', align: 'LEFT' },
+          { key: 'taxableAmount', label: 'Taxable (₹)', align: 'RIGHT', type: 'MONEY' },
+          { key: 'totalAmount', label: 'Total (₹)', align: 'RIGHT', type: 'MONEY' },
+          { key: 'paymentStatus', label: 'Status', align: 'LEFT', type: 'STATUS' }
         ];
         if (window.OperationsService) {
           const res = await window.OperationsService.getSales(0, 50).catch(() => []);
@@ -1218,8 +1239,8 @@ window.ReportsController = (function() {
               s.invoiceNumber || s.invoiceNo || '-',
               formatDate(s.invoiceDate),
               s.customerName || s.partyName || '-',
-              formatMoney(s.taxableAmount || 0),
-              formatMoney(s.totalAmount || s.total || 0),
+              s.taxableAmount || 0,
+              s.totalAmount || s.total || 0,
               s.paymentStatus || 'CONFIRMED'
             ]
           }));
@@ -1525,6 +1546,9 @@ window.ReportsController = (function() {
           </td>
         </tr>
       `).join('');
+      if (window.TableUiEnhancer) {
+        window.TableUiEnhancer.enhance(document.getElementById('saved-reports-table'));
+      }
     },
 
     onSavedSearch(val) {
@@ -1791,6 +1815,9 @@ window.ReportsController = (function() {
           </tr>
         `;
       }).join('');
+      if (window.TableUiEnhancer) {
+        window.TableUiEnhancer.enhance(document.getElementById('rep-sch-table'));
+      }
     },
 
     toggleScheduleActionMenu(id, event) {
@@ -2068,20 +2095,25 @@ window.ReportsController = (function() {
     // 6. EXPORT ACTIONS
     // ==========================================
     toggleExportDropdown(event) {
-      if (event) event.stopPropagation();
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
       const menu = document.getElementById('rep-export-menu');
       if (!menu) return;
       const isShow = menu.style.display === 'block';
       menu.style.display = isShow ? 'none' : 'block';
 
       if (!isShow) {
-        const closeMenu = (e) => {
-          if (!menu.contains(e.target)) {
-            menu.style.display = 'none';
-            document.removeEventListener('click', closeMenu);
-          }
-        };
-        document.addEventListener('click', closeMenu);
+        setTimeout(() => {
+          const closeMenu = (e) => {
+            if (!menu.contains(e.target)) {
+              menu.style.display = 'none';
+              document.removeEventListener('click', closeMenu);
+            }
+          };
+          document.addEventListener('click', closeMenu);
+        }, 20);
       }
     },
 
@@ -2115,10 +2147,30 @@ window.ReportsController = (function() {
         return `"${s}"`;
       };
 
-      // 1. DYNAMIC VIEWER TAB EXPORT
-      if (activeMainTab === 'viewer' && currentResult && currentResult.columns && currentResult.columns.length > 0) {
-        const cols = currentResult.columns || [];
-        const rows = currentResult.rows || [];
+      // 1. DYNAMIC VIEWER TAB EXPORT (With DOM Extraction Fallback)
+      let cols = (currentResult && currentResult.columns) ? [...currentResult.columns] : [];
+      let rows = (currentResult && currentResult.rows) ? [...currentResult.rows] : [];
+      let totals = (currentResult && currentResult.totals) ? currentResult.totals : null;
+
+      if ((activeMainTab === 'viewer' || activeMainTab === 'saved') && cols.length === 0) {
+        const vTable = document.getElementById('viewer-table');
+        if (vTable) {
+          const ths = Array.from(vTable.querySelectorAll('thead th')).slice(1); // skip sequence #
+          if (ths.length > 0) {
+            cols = ths.map(th => {
+              const lbl = th.querySelector('.erp-th-label')?.innerText || th.innerText.trim();
+              return { label: lbl, key: lbl, align: th.style.textAlign === 'right' ? 'RIGHT' : 'LEFT' };
+            });
+            const trs = Array.from(vTable.querySelectorAll('tbody tr:not(.empty-row)'));
+            rows = trs.map(tr => {
+              const tds = Array.from(tr.querySelectorAll('td')).slice(1);
+              return { values: tds.map(td => td.innerText.trim()) };
+            });
+          }
+        }
+      }
+
+      if (cols.length > 0 && (activeMainTab === 'viewer' || activeMainTab === 'saved')) {
         const colLabels = cols.map(c => c.label || c.key || 'Column');
 
         if (format === 'EXCEL') {
@@ -2129,15 +2181,15 @@ window.ReportsController = (function() {
             });
 
             // Add Totals row if present
-            if (currentResult.totals) {
+            if (totals) {
               const totalsRow = ['TOTAL'];
               for (let i = 1; i < cols.length; i++) {
                 const c = cols[i];
                 let tot = '';
-                if (Array.isArray(currentResult.totals)) {
-                  tot = currentResult.totals[i] || '';
-                } else if (typeof currentResult.totals === 'object') {
-                  tot = currentResult.totals[c.key] || currentResult.totals[c.label] || '';
+                if (Array.isArray(totals)) {
+                  tot = totals[i] || '';
+                } else if (typeof totals === 'object') {
+                  tot = totals[c.key] || totals[c.label] || '';
                 }
                 totalsRow.push(tot);
               }
@@ -2168,13 +2220,13 @@ window.ReportsController = (function() {
           const rowLines = rows.map(r => (r.values || []).map(escapeCsvCell).join(','));
           let csvText = '\uFEFF' + [headerLine, ...rowLines].join('\r\n');
 
-          if (currentResult.totals) {
+          if (totals) {
             const totCells = ['TOTAL'];
             for (let i = 1; i < cols.length; i++) {
               const c = cols[i];
               let tot = '';
-              if (Array.isArray(currentResult.totals)) tot = currentResult.totals[i] || '';
-              else if (typeof currentResult.totals === 'object') tot = currentResult.totals[c.key] || currentResult.totals[c.label] || '';
+              if (Array.isArray(totals)) tot = totals[i] || '';
+              else if (typeof totals === 'object') tot = totals[c.key] || totals[c.label] || '';
               totCells.push(tot);
             }
             csvText += '\r\n' + totCells.map(escapeCsvCell).join(',');
@@ -2185,7 +2237,7 @@ window.ReportsController = (function() {
           if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${repTitle} to CSV!`);
           return;
         } else if (format === 'PDF') {
-          this.printFormattedReport(repTitle, cols, rows, currentResult.totals);
+          this.printFormattedReport(repTitle, cols, rows, totals);
           return;
         }
       }

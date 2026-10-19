@@ -963,12 +963,14 @@
     .actions-dropdown-menu.show { display: block; animation: fadeInMenu 0.15s ease-out; }
     @keyframes fadeInMenu { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .actions-menu-item,
+    .rep-export-dropdown-menu .action-menu-item,
     .action-dropdown-menu .action-menu-item {
       display: flex; align-items: center; gap: 10px; padding: 7px 14px;
       font-size: 0.78rem; color: var(--text-main); cursor: pointer; transition: background 0.12s;
       white-space: nowrap;
     }
     .actions-menu-item:hover,
+    .rep-export-dropdown-menu .action-menu-item:hover,
     .action-dropdown-menu .action-menu-item:hover { background: rgba(56, 189, 248, 0.12); color: var(--cyan); }
     .actions-menu-item.danger,
     .action-dropdown-menu .action-menu-item.danger { color: #f87171; }
