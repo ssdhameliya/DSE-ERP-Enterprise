@@ -113,7 +113,7 @@ window.ItemMasterController = (function() {
           </td>
           <td style="font-weight:700; color:var(--cyan); font-family:'Space Grotesk', monospace;">${i.itemCode}</td>
           <td style="font-weight:600; color:var(--text-main);">${i.description}</td>
-          <td><span class="pill-badge pill-neutral">${i.category || 'General'}</span></td>
+          <td><span>${i.category || 'General'}</span></td>
           <td style="font-weight:600;">${i.unit || 'PCS'}</td>
           <td style="font-family:monospace;">${i.hsn || '73063000'}</td>
           <td style="text-align:right;">${(i.gst || 18).toFixed(1)}%</td>
@@ -125,7 +125,6 @@ window.ItemMasterController = (function() {
             ${isLow ? '<span style="font-size:0.65rem; color:var(--red); display:block; font-weight:800;">LOW STOCK</span>' : ''}
           </td>
           <td style="text-align:right; color:var(--text-muted);">${minStock.toFixed(2)}</td>
-          <td>${i.location || '-'}</td>
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${i.remarks || ''}">${i.remarks || '-'}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
@@ -133,9 +132,9 @@ window.ItemMasterController = (function() {
                 ::: Actions
               </button>
               <div id="item-action-menu-${(i.itemCode || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
-                <div class="action-menu-item" onclick="window.ItemMasterController.viewItemDetails('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">👁️</span> View Item Details</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openNewItemModal()"><span style="margin-right:8px;">➕</span> Create Item</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.viewItemDetails('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">👁️</span> View Item</div>
                 <div class="action-menu-item" onclick="window.ItemMasterController.openEditItemModal('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">✏️</span> Edit Item</div>
-                <div class="action-menu-item" onclick="window.ItemMasterController.printBarcode('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🏷️</span> Print Barcode</div>
                 <div class="action-menu-item" onclick="window.ItemMasterController.viewAuditTrail('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
                 <div class="action-menu-item" onclick="window.ItemMasterController.createSale('${(i.itemCode || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🛒</span> Create Sale</div>
@@ -672,12 +671,15 @@ window.ItemMasterController = (function() {
 
   function populateInventoryCategories(items) {
     const sel = document.getElementById('inv-category-filter');
-    if (!sel || sel.options.length > 1) return;
+    if (!sel) return;
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">All Categories</option>';
     const cats = Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort();
     cats.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c;
       opt.innerText = c;
+      if (c === currentVal) opt.selected = true;
       sel.appendChild(opt);
     });
   }
@@ -691,7 +693,6 @@ window.ItemMasterController = (function() {
       const code = (i.itemCode || i.code || '').toLowerCase();
       const desc = (i.description || i.name || '').toLowerCase();
       const hsn = (i.hsn || '').toLowerCase();
-      const itemCat = (i.category || '').toLowerCase();
       const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
       const min = parseFloat(i.minimumStock || 10);
 
@@ -722,9 +723,9 @@ window.ItemMasterController = (function() {
     tbody.innerHTML = items.map(item => {
       const code = item.itemCode || item.code || '';
       const desc = item.description || item.name || '';
-      const cat = item.category || 'GENERAL';
+      const cat = item.category || 'General';
       const hsn = item.hsn || '-';
-      const unit = item.unit || 'NOS';
+      const unit = item.unit || 'PCS';
       const gst = parseFloat(item.gst || 18).toFixed(1);
       const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
       const available = parseFloat(item.availableStock != null ? item.availableStock : stock);
@@ -732,38 +733,38 @@ window.ItemMasterController = (function() {
       const cost = parseFloat(item.purchasePrice || item.costPrice || 0);
       const valuation = stock * cost;
 
-      let statusBadge = '<span class="badge badge-paid">HEALTHY</span>';
+      let statusDisplay = `<span style="display:inline-flex; align-items:center; gap:6px; color:var(--text-main); font-weight:500; font-size:0.82rem;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e;"></span> In Stock</span>`;
       if (stock <= 0) {
-        statusBadge = '<span class="badge badge-cancelled">OUT OF STOCK</span>';
+        statusDisplay = `<span style="display:inline-flex; align-items:center; gap:6px; color:var(--text-main); font-weight:500; font-size:0.82rem;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444;"></span> Out of Stock</span>`;
       } else if (stock <= min) {
-        statusBadge = '<span class="badge badge-pending">LOW STOCK</span>';
+        statusDisplay = `<span style="display:inline-flex; align-items:center; gap:6px; color:var(--text-main); font-weight:500; font-size:0.82rem;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span> Low Stock</span>`;
       }
 
       return `
         <tr onclick="window.ItemMasterController.onInventoryRowClick('${code}', event)" data-inv-code="${code}" style="cursor:pointer;">
-          <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${code}</td>
-          <td style="font-weight:600;">${desc}</td>
-          <td><span class="badge badge-neutral">${cat}</span></td>
+          <td style="font-family:'Space Grotesk', monospace; font-weight:700; color:var(--cyan);">${code}</td>
+          <td style="font-weight:600; color:var(--text-main);">${desc}</td>
+          <td><span>${cat}</span></td>
           <td style="font-family:monospace;">${hsn}</td>
           <td>${unit}</td>
           <td>${gst}%</td>
-          <td style="text-align:right; font-weight:700; color:${stock <= min ? 'var(--accent-red)' : 'var(--accent-green)'};">
+          <td style="text-align:right; font-weight:700; color:${stock <= min ? 'var(--red)' : 'var(--green)'};">
             ${stock.toFixed(2)}
           </td>
           <td style="text-align:right; font-weight:600;">${available.toFixed(2)}</td>
-          <td style="text-align:right; color:var(--text-dim);">${min.toFixed(2)}</td>
+          <td style="text-align:right; color:var(--text-muted);">${min.toFixed(2)}</td>
           <td style="text-align:right; font-weight:700;">${formatMoney(valuation)}</td>
-          <td style="text-align:center;">${statusBadge}</td>
+          <td style="text-align:center;">${statusDisplay}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.ItemMasterController.toggleInventoryActionMenu('${code}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Inventory Actions">
                 ::: Actions
               </button>
-              <div id="inv-action-menu-${(code || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
-                <div class="action-menu-item" onclick="window.ItemMasterController.openStockAdjustment('${code}')"><span style="margin-right:8px;">⚡</span> Stock Adjustment</div>
-                <div class="action-menu-item" onclick="window.ItemMasterController.openStockHistory('${code}')"><span style="margin-right:8px;">📜</span> Stock Movement History</div>
-                <div class="action-menu-item" onclick="window.ItemMasterController.printBarcode('${code}')"><span style="margin-right:8px;">🏷️</span> Barcode Label Print</div>
-                <div class="action-menu-item" onclick="window.ItemMasterController.openStockRevaluation('${code}')"><span style="margin-right:8px;">💰</span> Stock Revaluation</div>
+              <div id="inv-action-menu-${(code || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.ItemMasterController.showInventoryDetails('${code}')"><span style="margin-right:8px;">👁️</span> View Item</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.drawerEditFromInv('${code}')"><span style="margin-right:8px;">✏️</span> Edit Item</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openStockAdjustment('${code}')"><span style="margin-right:8px;">⚡</span> Adjust Stock</div>
+                <div class="action-menu-item" onclick="window.ItemMasterController.openStockHistory('${code}')"><span style="margin-right:8px;">📜</span> View History</div>
               </div>
             </div>
           </td>
@@ -1101,12 +1102,61 @@ window.ItemMasterController = (function() {
     if (selectedInvCode) openStockHistory(selectedInvCode);
   }
 
-  function drawerEditFromInv() {
-    if (selectedInvCode) {
-      window.NavigationRouter?.selectNav('view-items');
+  function drawerEditFromInv(code) {
+    const targetCode = code || selectedInvCode;
+    if (targetCode) {
+      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+        window.NavigationRouter.selectNav('view-item-master');
+      }
       setTimeout(() => {
-        openEditItemModal(selectedInvCode);
+        openEditItemModal(targetCode);
       }, 300);
+    }
+  }
+
+  function editSelectedItem() {
+    if (selectedCodes.size === 1) {
+      const code = Array.from(selectedCodes)[0];
+      openEditItemModal(code);
+    } else if (selectedCodes.size === 0 && selectedItemCode) {
+      openEditItemModal(selectedItemCode);
+    } else if (selectedCodes.size === 0) {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) window.AppDialogService.toastWarning('Please select an item to edit.');
+      else alert('Please select an item to edit.');
+    } else {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) window.AppDialogService.toastWarning('Please select only one item to edit.');
+      else alert('Please select only one item to edit.');
+    }
+  }
+
+  function deleteSelectedItem() {
+    if (selectedCodes.size > 0) {
+      deleteSelectedItems();
+    } else if (selectedItemCode) {
+      const item = items.find(i => i.itemCode === selectedItemCode);
+      deleteSingleItem(selectedItemCode, item ? (item.rowVersion || 0) : 0);
+    } else {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) window.AppDialogService.toastWarning('Please select an item to delete.');
+      else alert('Please select an item to delete.');
+    }
+  }
+
+  function refreshItems() {
+    loadItems();
+  }
+
+  async function exportInventoryExcel() {
+    try {
+      await window.ApiService.downloadFile('/api/inventory/export/excel', `Stock_Register_${new Date().toISOString().slice(0, 10)}.xlsx`).catch(async () => {
+        await window.ApiService.downloadFile('/api/master/items/export/excel', `Stock_Register_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      });
+    } catch (err) {
+      console.error('Failed to export inventory:', err);
+      if (window.AppDialogService && window.AppDialogService.toastError) {
+        window.AppDialogService.toastError('Export Failed: ' + (err.message || 'Could not export stock records'));
+      } else {
+        alert('Export Failed: ' + (err.message || 'Could not export stock records'));
+      }
     }
   }
 
@@ -1127,6 +1177,9 @@ window.ItemMasterController = (function() {
     submitSaveItem,
     deleteSingleItem,
     deleteSelectedItems,
+    editSelectedItem,
+    deleteSelectedItem,
+    refreshItems,
     printBarcode,
     closeModal,
     toggleActionMenu,

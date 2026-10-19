@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.35.02",
+  version: "10.0.35.03",
   desktopVersion: "10.0.35",
-  webBuild: 2,
-  webVersion: "10.0.35.02",
-  tag: "web-v10.0.35.02",
-  releaseDate: "2026-10-19T12:40:00+05:30",
+  webBuild: 3,
+  webVersion: "10.0.35.03",
+  tag: "web-v10.0.35.03",
+  releaseDate: "2026-10-19T13:40:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.35.02 Enterprise Release - Master Lookup Edit button handler fix, login screen desktop baseline version badge, and full import loaders parity contracts & permissive format matching"
+  summary: "10.0.35.03 Enterprise Release - Item Master & Stock Register UI/action desktop parity, RFC 4180 Bank Statement CSV import parser with Kotak metadata & SHA-256 fingerprinting, and Master Lookup system-generated code immutability"
 };
 
 // Automatic UI Version Injection

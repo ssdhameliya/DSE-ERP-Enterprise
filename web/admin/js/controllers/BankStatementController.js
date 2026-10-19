@@ -963,6 +963,82 @@ window.BankStatementController = (function() {
     }
   }
 
+  function parseCsvLine(line) {
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === ',' && !inQuotes) {
+        out.push(cur.trim());
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  function parseIsoDate(str) {
+    if (!str) return new Date().toISOString().slice(0, 10);
+    const cleaned = str.trim().replace(/\//g, '-');
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      } else if (parts[2].length === 4) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    return str;
+  }
+
+  function parseIsoTimestamp(str) {
+    if (!str) return new Date().toISOString();
+    const parts = str.trim().split(' ');
+    const datePart = parseIsoDate(parts[0]);
+    const timePart = parts[1] || '00:00:00';
+    return `${datePart}T${timePart}`;
+  }
+
+  async function sha256Hex(str) {
+    if (window.crypto && window.crypto.subtle) {
+      try {
+        const msgUint8 = new TextEncoder().encode(str);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        // fallback
+      }
+    }
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(16, '0');
+  }
+
+  function parseStatementNum(val) {
+    if (val == null) return 0;
+    const str = String(val).replace(/,/g, '').replace(/₹/g, '').trim();
+    if (!str) return 0;
+    const num = parseFloat(str);
+    return isNaN(num) ? 0 : num;
+  }
+
   function onCsvFileSelected(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -975,6 +1051,8 @@ window.BankStatementController = (function() {
       } catch (err) {
         console.error('CSV parse failed:', err);
         alert('Failed to parse statement CSV: ' + (err.message || 'Invalid format'));
+      } finally {
+        if (event.target) event.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -989,9 +1067,46 @@ window.BankStatementController = (function() {
 
     let detectedBank = 'Kotak Mahindra Bank';
     let detectedAccount = '';
+    let accountHolder = 'Jasvi Industries Pvt Ltd';
+    let currency = 'INR';
+    let branch = '';
+    let from = '';
+    let to = '';
+    let headerIdx = -1;
 
-    // Inspect pre-header lines for bank name and account number metadata
-    for (let i = 0; i < Math.min(lines.length, 25); i++) {
+    // Line 1 may contain account holder
+    if (lines.length > 1) {
+      const holderRow = parseCsvLine(lines[1]);
+      if (holderRow.length > 0 && holderRow[0].trim()) {
+        accountHolder = holderRow[0].trim();
+      }
+    }
+
+    // Inspect pre-header lines for metadata
+    for (let i = 0; i < lines.length; i++) {
+      const c = parseCsvLine(lines[i]);
+      if (c.length > 0 && c[0].trim().toLowerCase() === 'sl. no.') {
+        headerIdx = i;
+        break;
+      }
+      for (let j = 0; j + 1 < c.length; j++) {
+        const k = c[j].trim().toLowerCase();
+        const v = c[j + 1].trim();
+        if (k === 'account no.' || k === 'account no' || k === 'a/c no.') {
+          detectedAccount = v;
+        } else if (k === 'currency') {
+          currency = v;
+        } else if (k === 'branch') {
+          branch = v;
+        } else if (k === 'period') {
+          const p = v.replace(/^from\s+/i, '').split(/\s+to\s+/i);
+          if (p.length === 2) {
+            from = parseIsoDate(p[0]);
+            to = parseIsoDate(p[1]);
+          }
+        }
+      }
+
       const lineLower = lines[i].toLowerCase();
       if (lineLower.includes('kotak')) detectedBank = 'Kotak Mahindra Bank';
       else if (lineLower.includes('hdfc')) detectedBank = 'HDFC Bank';
@@ -999,94 +1114,122 @@ window.BankStatementController = (function() {
       else if (lineLower.includes('axis')) detectedBank = 'Axis Bank';
       else if (lineLower.includes('state bank') || lineLower.includes('sbi')) detectedBank = 'State Bank of India';
 
-      const accMatch = lines[i].match(/(?:account\s*(?:no|number)?|a\/c\s*no\.?)[:\s]+([A-Za-z0-9\-]+)/i);
-      if (accMatch && accMatch[1]) {
-        detectedAccount = accMatch[1].trim();
+      if (!detectedAccount) {
+        const accMatch = lines[i].match(/(?:account\s*(?:no|number)?|a\/c\s*no\.?)[:\s]+([A-Za-z0-9\-]+)/i);
+        if (accMatch && accMatch[1]) detectedAccount = accMatch[1].trim();
       }
     }
 
-    // Header detection matching KotakBankStatementCsvParser
-    let headerIdx = -1;
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i].toLowerCase();
-      if (l.includes('sl. no.') || (l.includes('date') && l.includes('balance'))) {
-        headerIdx = i;
-        break;
+    // Fallback header detection if "Sl. No." wasn't found in first cell
+    if (headerIdx < 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i].toLowerCase();
+        if (l.includes('sl. no.') || (l.includes('date') && l.includes('balance'))) {
+          headerIdx = i;
+          break;
+        }
       }
     }
 
-    const startLine = headerIdx >= 0 ? headerIdx + 1 : 1;
+    if (headerIdx < 0) {
+      throw new Error('Kotak transaction header (Sl. No.) was not found in the CSV file.');
+    }
+
+    const startLine = headerIdx + 1;
     const rows = [];
+    const invalidRows = [];
     let runningOpening = null;
     let runningClosing = null;
 
     for (let i = startLine; i < lines.length; i++) {
-      const cols = parseCsvLine(lines[i]);
-      if (cols.length < 5) continue;
+      const c = parseCsvLine(lines[i]);
+      if (c.length === 0 || !c[0] || !c[0].trim()) continue;
+      const first = c[0].trim();
+      if (!/^\d+$/.test(first)) continue;
 
-      const dateStr = (cols[1] || cols[0] || '').trim();
-      const valueDateStr = (cols[2] || cols[1] || dateStr).trim();
-      const desc = (cols[3] || cols[2] || 'Bank transaction').trim();
-      const ref = (cols[4] || cols[3] || 'REF-' + i).trim();
-
-      let debit = 0;
-      let credit = 0;
-      let balance = 0;
-
-      if (cols.length >= 8 && (cols[6]?.trim() === 'DR' || cols[6]?.trim() === 'CR')) {
-        const amt = parseFloat(cols[5].replace(/,/g, '')) || 0;
-        if (cols[6].trim() === 'DR') debit = amt; else credit = amt;
-        balance = parseFloat(cols[7].replace(/,/g, '')) || 0;
-      } else {
-        debit = parseFloat(cols[4]?.replace(/,/g, '')) || 0;
-        credit = parseFloat(cols[5]?.replace(/,/g, '')) || 0;
-        balance = parseFloat(cols[6]?.replace(/,/g, '')) || 0;
-      }
-
-      if (runningOpening === null) runningOpening = balance - credit + debit;
-      runningClosing = balance;
-
-      // Format ISO date if valid
-      let isoDate = new Date().toISOString().slice(0, 10);
       try {
-        const dateParts = dateStr.split(/[\/\-]/);
-        if (dateParts.length === 3) {
-          if (dateParts[0].length === 4) isoDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
-          else if (dateParts[2].length === 4) isoDate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
-        }
-      } catch (ignored) {}
+        if (c.length < 5) throw new Error('expected transaction columns');
+        const sourceRowNumber = parseInt(first, 10);
+        let ts = new Date().toISOString();
+        let date = ts.slice(0, 10);
+        let value = date;
+        let desc = 'Bank transaction';
+        let ref = 'REF-' + i;
+        let debit = 0;
+        let credit = 0;
+        let balance = 0;
 
-      rows.push({
-        sourceRowNumber: i,
-        transactionTimestamp: new Date().toISOString(),
-        transactionDate: isoDate,
-        valueDate: isoDate,
-        description: desc,
-        reference: ref,
-        debit: debit,
-        credit: credit,
-        balance: balance,
-        transactionFingerprint: `${ref}|${debit}|${credit}|${balance}|${i}`
-      });
+        if (c.length >= 8 && (c[6].trim().toUpperCase() === 'DR' || c[6].trim().toUpperCase() === 'CR')) {
+          ts = parseIsoTimestamp(c[1]);
+          date = ts.slice(0, 10);
+          value = parseIsoDate(c[2]);
+          desc = (c[3] || '').trim();
+          ref = (c[4] || '').trim();
+          const amount = parseStatementNum(c[5]);
+          const dir = c[6].trim().toUpperCase();
+          balance = parseStatementNum(c[7]);
+          debit = dir === 'DR' ? amount : 0;
+          credit = dir === 'CR' ? amount : 0;
+        } else {
+          date = parseIsoDate(c[1] || c[0]);
+          ts = `${date}T00:00:00`;
+          value = parseIsoDate(c[2] || date);
+          desc = (c[3] || c[2] || 'Bank transaction').trim();
+          ref = (c[4] || c[3] || 'REF-' + i).trim();
+          debit = parseStatementNum(c[4]);
+          credit = parseStatementNum(c[5]);
+          balance = parseStatementNum(c[6]);
+        }
+
+        if (runningOpening === null) runningOpening = balance - credit + debit;
+        runningClosing = balance;
+
+        const fpPayload = `${detectedAccount}|${ts}|${ref}|${debit.toFixed(2)}|${credit.toFixed(2)}|${balance.toFixed(2)}`;
+        const fp = await sha256Hex(fpPayload);
+
+        rows.push({
+          sourceRowNumber,
+          transactionTimestamp: ts,
+          transactionDate: date,
+          valueDate: value,
+          description: desc,
+          reference: ref,
+          debit,
+          credit,
+          balance,
+          transactionFingerprint: fp
+        });
+      } catch (rowErr) {
+        invalidRows.push(`CSV line ${i + 1} / transaction ${first}: ${rowErr.message || 'invalid values'}`);
+      }
+    }
+
+    if (invalidRows.length > 0) {
+      const detail = invalidRows.slice(0, 8).join('\n') + (invalidRows.length > 8 ? `\n... and ${invalidRows.length - 8} more` : '');
+      throw new Error(`Bank statement contains ${invalidRows.length} invalid transaction row(s). Nothing was imported.\n\n${detail}`);
     }
 
     if (rows.length === 0) {
-      alert('Could not find any valid transaction rows in the selected statement.');
-      return;
+      throw new Error('No usable transactions were found in the Kotak CSV file.');
     }
+
+    if (!from) from = rows[0].transactionDate;
+    if (!to) to = rows[rows.length - 1].transactionDate;
+
+    const fileFp = await sha256Hex(content);
 
     pendingImportParsedData = {
       bankName: detectedBank,
       accountNumber: detectedAccount,
-      accountHolder: 'Jasvi Industries Pvt Ltd',
-      statementFrom: rows[0]?.transactionDate || new Date().toISOString().slice(0, 10),
-      statementTo: rows[rows.length - 1]?.transactionDate || new Date().toISOString().slice(0, 10),
-      currency: 'INR',
+      accountHolder: accountHolder,
+      statementFrom: from,
+      statementTo: to,
+      currency: currency || 'INR',
       openingBalance: runningOpening || 0,
       closingBalance: runningClosing || 0,
-      sourceFingerprint: 'FP-' + Date.now(),
+      sourceFingerprint: fileFp,
       sourceFileName: fileName,
-      sourceCsv: content.slice(0, 4000),
+      sourceCsv: content,
       rows: rows
     };
 

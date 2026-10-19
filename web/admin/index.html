@@ -188,7 +188,7 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.35.02</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.35.03</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline: v10.0.35</div>
         </div>
       </div>
@@ -3182,93 +3182,103 @@
           </div>
         </div>
 
-        <!-- VIEW: ITEM MASTER -->
+        <!-- VIEW: ITEM MASTER (ItemMaster.fxml Desktop Parity) -->
         <div id="view-item-master" class="module-view">
           <div class="view-header">
-            <div class="view-title-group">
-              <h1><span>&#127991;&#65039;</span> Item Master &amp; SKU Catalog</h1>
-              <p>SKU catalog, pricing tiers, HSN/SAC codes, tax rates, inventory valuations and bulk operations</p>
+            <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:8px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">&#128188;</div>
+              <div>
+                <h1 style="margin:0; font-size:1.4rem; font-weight:700;">Items Master</h1>
+                <p style="margin:2px 0 0; color:var(--text-muted); font-size:0.8rem;">Manage product codes, tax, pricing and reorder settings</p>
+              </div>
             </div>
             <div class="view-actions">
-              <input type="text" id="item-search" class="filter-input" placeholder="Search SKU, name, HSN, category..." oninput="window.ItemMasterController.filterItems(this.value)">
-              <button class="btn btn-secondary" onclick="window.ItemMasterController.loadItems()">&#8635; Refresh</button>
-              <button class="btn btn-secondary" onclick="window.ItemMasterController.exportItems()">&#128196; Export</button>
-              <button class="btn btn-primary" onclick="window.ItemMasterController.openNewItemModal()">+ Add New Item</button>
+              <button class="btn btn-primary" onclick="window.ItemMasterController.openNewItemModal()" style="font-weight:700;">+ New Item</button>
             </div>
           </div>
 
           <!-- KPI Cards Desktop Parity -->
-          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
-            <div class="kpi-card">
-              <div class="kpi-header">
-                <span class="kpi-label">TOTAL ITEMS</span>
-                <span class="kpi-badge">Catalog</span>
+          <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="metric-label">TOTAL ITEMS</span>
+                <span class="metric-trend-pill trend-neutral">All</span>
               </div>
-              <div class="kpi-value" id="item-kpi-total">0</div>
-              <div class="kpi-meta">Active SKU definitions</div>
+              <div class="metric-value" id="item-kpi-total">0</div>
+              <div class="metric-note">Catalog records</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header">
-                <span class="kpi-label">CATEGORIES</span>
-                <span class="kpi-badge">Groups</span>
+            <div class="standard-kpi-card kpi-purple">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="metric-label">CATEGORIES</span>
+                <span class="metric-trend-pill trend-info">Groups</span>
               </div>
-              <div class="kpi-value" id="item-kpi-categories">0</div>
-              <div class="kpi-meta">Distinct product categories</div>
+              <div class="metric-value" id="item-kpi-categories">0</div>
+              <div class="metric-note">Active item groups</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header">
-                <span class="kpi-label">LOW STOCK ALERT</span>
-                <span class="kpi-badge" style="background:rgba(239,68,68,0.15); color:var(--red);">Alert</span>
+            <div class="standard-kpi-card kpi-orange">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="metric-label">LOW STOCK</span>
+                <span class="metric-trend-pill trend-warning">Alert</span>
               </div>
-              <div class="kpi-value" id="item-kpi-low-stock" style="color:var(--red);">0</div>
-              <div class="kpi-meta">Items below minimum stock</div>
+              <div class="metric-value" id="item-kpi-low-stock" style="color:var(--orange);">0</div>
+              <div class="metric-note">At or below minimum</div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-header">
-                <span class="kpi-label">INVENTORY VALUATION</span>
-                <span class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Valuation</span>
+            <div class="standard-kpi-card kpi-green">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="metric-label">CATALOG VALUE</span>
+                <span class="metric-trend-pill trend-positive">Value</span>
               </div>
-              <div class="kpi-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
-              <div class="kpi-meta">Purchase rate &times; stock</div>
+              <div class="metric-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="metric-note">Opening stock valuation</div>
             </div>
+          </div>
+
+          <!-- ENTITY TOOLBAR (ItemMaster.fxml Parity) -->
+          <div class="entity-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+            <input type="text" id="item-search" class="form-input" placeholder="Search item code, name, category or brand..." style="flex:1;" oninput="window.ItemMasterController.filterItems(this.value)">
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.editSelectedItem()">&#9998; Edit</button>
+            <button class="btn btn-danger" onclick="window.ItemMasterController.deleteSelectedItem()">&#128465; Delete Item</button>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.loadItems()">&#8634; Refresh</button>
+            <div style="width:1px; height:24px; background:var(--border-subtle); margin:0 4px;"></div>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.importItemsExcel()">&#128229; Import Excel</button>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.exportItems()">&#128202; Export Excel</button>
           </div>
 
           <!-- Item Master Register Workspace (ItemMaster.fxml Parity) -->
           <div class="register-workspace" id="item-master-workspace">
             <div class="register-table-panel data-panel" style="overflow-x:auto;">
-              <table class="data-table">
+              <table class="data-table clean-desktop-table" id="item-master-table">
                 <thead>
                   <tr>
-                    <th style="width:36px; text-align:center;"><input type="checkbox" onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
+                    <th style="width:40px; text-align:center;"><input type="checkbox" onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
                     <th>Item Code</th>
-                    <th>Item Name / Description</th>
+                    <th>Item Name</th>
                     <th>Category</th>
                     <th>Unit</th>
-                    <th>HSN Code</th>
-                    <th style="text-align:right;">GST %</th>
-                    <th style="text-align:right;">Disc %</th>
+                    <th>HSN/SAC</th>
+                    <th style="text-align:right;">% GST</th>
+                    <th style="text-align:right;">% Discount</th>
                     <th style="text-align:right;">Purchase Price</th>
                     <th style="text-align:right;">Selling Price</th>
-                    <th style="text-align:right;">Stock</th>
+                    <th style="text-align:right;">In Stock</th>
                     <th style="text-align:right;">Min Stock</th>
-                    <th>Location</th>
                     <th>Remarks</th>
                     <th style="text-align:center;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="items-table-tbody">
-                  <tr><td colspan="15" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item catalog...</td></tr>
+                  <tr><td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item catalog...</td></tr>
                 </tbody>
               </table>
 
               <!-- Multi-Select Bulk Footer matching ItemMaster.fxml -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border-top:1px solid var(--border-subtle); border-radius:0 0 8px 8px; font-size:0.85rem; margin-top:-1px;">
                 <div style="display:flex; align-items:center; gap:16px;">
-                  <span id="item-record-count" style="color:var(--text-muted);">0 of 0 items in catalog</span>
                   <span id="item-selected-count" style="font-weight:600; color:var(--cyan);">0 selected</span>
+                  <button id="item-btn-delete-selected" class="btn btn-danger btn-sm" onclick="window.ItemMasterController.deleteSelectedItems()" disabled style="padding:4px 12px; font-size:0.8rem;">Delete Selected (0)</button>
                 </div>
                 <div>
-                  <button id="item-btn-delete-selected" class="btn btn-danger btn-sm" onclick="window.ItemMasterController.deleteSelectedItems()" disabled style="padding:5px 14px; font-size:0.8rem;">Delete Selected (0)</button>
+                  <span id="item-record-count" style="color:var(--text-muted); font-size:0.8rem;">Showing 0 Records</span>
                 </div>
               </div>
             </div>
@@ -5758,9 +5768,9 @@
               <option value="">All Categories</option>
             </select>
             <select id="inv-status-filter" class="form-select" style="width:160px;" onchange="window.ItemMasterController.filterInventory()">
-              <option value="">All Stock Status</option>
-              <option value="IN_STOCK">In Stock (Healthy)</option>
-              <option value="LOW_STOCK">Low Stock (Warning)</option>
+              <option value="">All Status</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock</option>
               <option value="OUT_OF_STOCK">Out of Stock</option>
             </select>
             <button class="btn btn-secondary" onclick="window.ItemMasterController.loadInventory()">&#8634; Refresh</button>
@@ -5770,21 +5780,21 @@
           <!-- INVENTORY DATA TABLE WITH DOCKED SPLIT (Inventory.fxml Parity) -->
           <div class="register-workspace" id="inventory-workspace">
             <div class="register-table-panel data-panel" style="overflow-x:auto;">
-              <table class="data-table">
+              <table class="data-table clean-desktop-table" id="inventory-table">
                 <thead>
                   <tr>
-                    <th style="width:110px;">ITEM CODE</th>
-                    <th>ITEM NAME</th>
-                    <th style="width:110px;">CATEGORY</th>
+                    <th style="width:110px;">Item Code</th>
+                    <th>Item Name</th>
+                    <th style="width:110px;">Category</th>
                     <th style="width:90px;">HSN/SAC</th>
-                    <th style="width:70px;">UNIT</th>
-                    <th style="width:70px;">GST %</th>
-                    <th style="text-align:right; width:90px;">IN STOCK</th>
-                    <th style="text-align:right; width:90px;">AVAILABLE</th>
-                    <th style="text-align:right; width:90px;">MIN STOCK</th>
-                    <th style="text-align:right; width:120px;">VALUATION (&#8377;)</th>
-                    <th style="text-align:center; width:110px;">STATUS</th>
-                    <th style="text-align:center; width:180px;">ACTIONS</th>
+                    <th style="width:70px;">Unit</th>
+                    <th style="width:70px;">% GST</th>
+                    <th style="text-align:right; width:90px;">In Stock</th>
+                    <th style="text-align:right; width:90px;">Available</th>
+                    <th style="text-align:right; width:90px;">Min Stock</th>
+                    <th style="text-align:right; width:120px;">Value</th>
+                    <th style="text-align:center; width:110px;">Status</th>
+                    <th style="text-align:center; width:110px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="inventory-tbody">
@@ -11283,25 +11293,32 @@ Outstanding Balance: {BalanceAmount}
 
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; margin-bottom:14px;">
             <div class="form-group">
-              <label class="form-label">GST Tax Rate (%)</label>
-              <select id="m-item-gst" class="form-select">
-                <option value="0">0% (Nil / Exempt)</option>
+              <label class="form-label">GST % *</label>
+              <select id="m-item-gst" class="form-select" required>
+                <option value="0">0%</option>
                 <option value="5">5%</option>
                 <option value="12">12%</option>
-                <option value="18" selected>18% (Standard)</option>
+                <option value="18" selected>18%</option>
                 <option value="28">28%</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Standard Disc (%)</label>
-              <input type="number" step="0.01" min="0" max="100" id="m-item-discount" class="form-input" value="0.00">
+              <label class="form-label">Default Discount % *</label>
+              <select id="m-item-discount" class="form-select" required>
+                <option value="0" selected>0.00%</option>
+                <option value="2">2.00%</option>
+                <option value="5">5.00%</option>
+                <option value="10">10.00%</option>
+                <option value="15">15.00%</option>
+                <option value="20">20.00%</option>
+              </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Purchase Rate (&#8377;)</label>
+              <label class="form-label">Purchase Price (&#8377;)</label>
               <input type="number" step="0.01" min="0" id="m-item-purchase-price" class="form-input" value="0.00" style="font-weight:600;">
             </div>
             <div class="form-group">
-              <label class="form-label">Selling Rate (&#8377;)</label>
+              <label class="form-label">Selling Price (&#8377;)</label>
               <input type="number" step="0.01" min="0" id="m-item-selling-price" class="form-input" value="0.00" style="font-weight:700; color:var(--yellow);">
             </div>
           </div>
@@ -11887,8 +11904,9 @@ Outstanding Balance: {BalanceAmount}
           <input type="text" id="m-lookup-category" class="form-input" disabled style="background: rgba(0,0,0,0.2);">
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
-          <label class="form-label">Lookup Code * (Uppercase Key)</label>
-          <input type="text" id="m-lookup-code" class="form-input" placeholder="e.g. NET_30_DAYS" style="background: rgba(0,0,0,0.2);">
+          <label class="form-label" id="lbl-lookup-code-title">Lookup Code * (System Generated)</label>
+          <input type="text" id="m-lookup-code" class="form-input" readonly placeholder="Auto-generated" style="background: rgba(0,0,0,0.35); cursor: not-allowed;" title="System-generated master identifier">
+          <small id="lbl-lookup-code-hint" style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:2px;">System-generated master identifier</small>
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Lookup Display Value *</label>
@@ -12634,69 +12652,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.35.02"></script>
+  <script src="js/version.js?v=10.0.35.03"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.35.02"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.35.02"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.35.02"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.35.02"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.35.02"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.35.02"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.35.02"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.35.02"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.35.02"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.35.02"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.35.02"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.35.02"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.35.02"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.35.02"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.35.02"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.35.02"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.35.03"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.35.03"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.35.03"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.35.03"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.35.03"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.35.03"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.35.03"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.35.03"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.35.03"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.35.03"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.35.03"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.35.03"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.35.03"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.35.03"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.35.03"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.35.03"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.35.02"></script>
-  <script src="js/services/ApiService.js?v=10.0.35.02"></script>
-  <script src="js/services/AuthService.js?v=10.0.35.02"></script>
-  <script src="js/services/NotificationService.js?v=10.0.35.02"></script>
-  <script src="js/services/MasterService.js?v=10.0.35.02"></script>
-  <script src="js/services/OperationsService.js?v=10.0.35.02"></script>
-  <script src="js/services/ReportService.js?v=10.0.35.02"></script>
-  <script src="js/services/ReconService.js?v=10.0.35.02"></script>
-  <script src="js/services/AccountingService.js?v=10.0.35.02"></script>
-  <script src="js/services/ImportService.js?v=10.0.35.02"></script>
+  <script src="js/services/BrandingService.js?v=10.0.35.03"></script>
+  <script src="js/services/ApiService.js?v=10.0.35.03"></script>
+  <script src="js/services/AuthService.js?v=10.0.35.03"></script>
+  <script src="js/services/NotificationService.js?v=10.0.35.03"></script>
+  <script src="js/services/MasterService.js?v=10.0.35.03"></script>
+  <script src="js/services/OperationsService.js?v=10.0.35.03"></script>
+  <script src="js/services/ReportService.js?v=10.0.35.03"></script>
+  <script src="js/services/ReconService.js?v=10.0.35.03"></script>
+  <script src="js/services/AccountingService.js?v=10.0.35.03"></script>
+  <script src="js/services/ImportService.js?v=10.0.35.03"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/GstController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.35.02"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.35.02"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/GstController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.35.03"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.35.03"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.35.02"></script>
-  <script src="js/app.js?v=10.0.35.02"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.35.03"></script>
+  <script src="js/app.js?v=10.0.35.03"></script>
 </body>
 </html>
 

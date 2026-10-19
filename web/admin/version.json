@@ -1,24 +1,16 @@
 {
   "desktopVersion": "10.0.35",
-  "webBuild": 2,
-  "webVersion": "10.0.35.02",
-  "tag": "web-v10.0.35.02",
-  "releaseDate": "2026-10-19T12:40:00+05:30",
+  "webBuild": 3,
+  "webVersion": "10.0.35.03",
+  "tag": "web-v10.0.35.03",
+  "releaseDate": "2026-10-19T13:40:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.35.02 Enterprise Release - Master Lookup Edit button handler fix, login screen desktop baseline version badge, and full import loaders parity contracts & permissive format matching",
+  "summary": "10.0.35.03 Enterprise Release - Item Master & Stock Register UI/action desktop parity, RFC 4180 Bank Statement CSV import parser with Kotak metadata & SHA-256 fingerprinting, and Master Lookup system-generated code immutability",
   "highlights": [
-    "1. Master Lookup Edit: Fixed ReferenceError: item is not defined in MasterDataController.js, allowing row context menu, detail drawer edit button, and toolbar button to properly open and prefill lookup modal.",
-    "2. Login Screen Version Display: Updated auth login badge to display Web Studio version (10.0.35.02) with Desktop Baseline (v10.0.35) subtitle and bumped script cachebusters.",
-    "3. Data Import Studio 8 Loaders: Permissive reference code format matching fallback across both Desktop (ImportDocumentPolicy.java) and Web (ImportService.js) supporting customer, supplier, sales, purchase, item prefixes with hyphens, plus complete LineDto 12-field contracts.",
-    "4. Data Import Studio 8 Loaders DTO Contracts: Restored full Java 17+ record DTO contracts (id: null, rowVersion: 0L, full primitive fields) across all 8 loaders. Added createItem/updateItem split in Item Master with automatic duplicate conflict recovery matching Desktop ImportService.",
-    "5. Reporting KPI Cards: Replaced plain text KPI boxes in Tab 1 (6 metrics) and Tab 4 (4 metrics) with 84px horizontal cards featuring 34x34px rounded icon badges, trend pills, bold 16px values, and action notes matching Desktop ReportsController.",
-    "6. Saved Reports 2-Way Workflow: Implemented server-side persistence in saveCurrentReportConfig() via POST /api/support/saved-views (screen='REPORT_CENTER', data='REPORT_V2:...'), Tab 3 Saved Reports Catalog table, and instant filter restoration into Report Viewer.",
-    "7. Scheduled Reports Dropdown: Fixed Saved Report select in New Schedule modal to query opt.name and opt.title/opt.reportId from server SavedReportOption record, completely eliminating undefined values.",
-    "8. Report Viewer Dynamic Filters: Added configureFilterVisibility() based on ReportDefinition.supportedFilters to conditionally display relevant filters per report type.",
-    "9. Report Favorites Synchronization: Unified report favorites cross-platform sync with POST/GET /api/support/saved-views (screen='REPORT_FAVORITES', name='__favorites__').",
-    "10. Address Interlocking: Enforced live readonly attribute and automatic mirroring from billing address/GSTIN to delivery address/GSTIN in Sales and Purchase when Same as Billing is checked.",
-    "11. Fast Item Line Entry: Expanded autocomplete item search bar to full toolbar width and eliminated redundant select dropdown in Sales Creation.",
-    "12. Permission Matrix Optimistic Locking: Updated ReportService to call /api/admin/permissions/set?role= and tracked rowVersion in UserAccessController.js, eliminating HTTP 409 ConcurrentEditException.",
-    "13. Settings 5 Business Assets Lifetime DB Storage: Centralized all 5 branding assets (App Banner, Mark, Logo, Seal, Payment QR) in PostgreSQL server_resource table via /api/authority/resources/BUSINESS_ASSET/{key} with authenticated blob resolution and real-time dimension badges."
+    "1. Item Master UI & Functional Parity: Restored Desktop typography, title 'Items Master', subtitle, '+ New Item' primary button, entity toolbar (Search, Edit, Delete Item, Refresh, Import Excel, Export Excel) with complete selection-aware handlers, and full row context menu (+ Create Item, View Item, Edit Item, Audit Trail, Create Sale, Create Purchase, Delete Item).",
+    "2. Stock Register UI & Functional Parity: Restored 5 KPI cards matching Desktop Inventory.fxml, entity toolbar with live dynamic category loading, status indicators with colored dots ('In Stock' [green], 'Low Stock' [amber], 'Out of Stock' [red]), and aligned row actions (View Item, Edit Item, Adjust Stock, View History).",
+    "3. Item Master Modal ComboBoxes: Added dropdown selection for Default Discount % (0%, 2%, 5%, 10%, 15%, 20%) alongside GST %, Category, and Unit LOVs dynamically populated from master lookup service.",
+    "4. Bank Statement CSV Import (Kotak Parity): Fixed 'parseCsvLine is not defined' error by implementing an RFC 4180 character-by-character CSV parser. Ported KotakBankStatementCsvParser end-to-end including pre-header metadata extraction (Account No., Currency, Branch, Period), numeric row filtering, running opening/closing balance computation, and SHA-256 row & file fingerprints submitted to /api/bank-statements/imports.",
+    "5. Master Lookup Code Auto-Generation & Immutability: Locked 'Lookup Code' as read-only and immutable for non-role lookup categories. Populated next code directly from reference sequence (REF_LOOKUP). Removed slug overwriting from display value input so system-generated codes remain permanent."
   ]
 }
