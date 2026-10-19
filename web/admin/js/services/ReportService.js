@@ -77,12 +77,12 @@ window.ReportService = {
     return await window.ApiService.delete(`/api/supplier-360/${id}/notes/${noteId}?rowVersion=${rowVersion}`);
   },
 
-  // Support Attachments API Parity
+  // Support Attachments API Parity (SupportController.java Parity)
   async getPartyDocuments(partyType, id) {
-    return await window.ApiService.get(`/api/attachments/document/${encodeURIComponent(partyType)}/${id}`);
+    return await window.ApiService.get(`/api/support/documents/${encodeURIComponent(partyType)}/${id}/attachments`);
   },
   async deletePartyDocument(partyType, id, metaId) {
-    return await window.ApiService.delete(`/api/attachments/document/${encodeURIComponent(partyType)}/${id}/${metaId}`);
+    return await window.ApiService.delete(`/api/support/documents/${encodeURIComponent(partyType)}/${id}/attachments/${metaId}`);
   },
 
   // 4. Global Audit & Governance (AuditController Parity)

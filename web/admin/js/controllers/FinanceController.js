@@ -497,6 +497,24 @@ window.FinanceController = {
 
   drawerBankPrint() {
     if (this.selectedBankId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedBankId);
+      if (v) {
+        const headers = ['Field', 'Value'];
+        const rows = [
+          ['Voucher #', v.voucherNo || ('BNK-' + v.id)],
+          ['Voucher Date', v.voucherDate || v.date || ''],
+          ['Voucher Type', v.voucherType || 'Bank Entry'],
+          ['Bank Account', v.accountName || v.bankAccount || ''],
+          ['Payment Mode', v.paymentMode || 'NEFT'],
+          ['Reference / UTR', v.referenceNo || '-'],
+          ['Amount (₹)', Number(v.amount || 0).toFixed(2)],
+          ['Narration / Description', v.notes || v.narration || '-']
+        ];
+        if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+          window.FormatUtil.downloadTablePdf(`Bank Entry Voucher ${v.voucherNo || v.id}`, headers, rows, `Bank_Voucher_${v.voucherNo || v.id}.pdf`);
+          return;
+        }
+      }
       window.print();
     }
   },
@@ -642,6 +660,25 @@ window.FinanceController = {
 
   drawerExpensePrint() {
     if (this.selectedExpenseId) {
+      const v = this.vouchersCache.find(x => x.id === this.selectedExpenseId);
+      if (v) {
+        const headers = ['Field', 'Value'];
+        const rows = [
+          ['Voucher #', v.voucherNo || ('EXP-' + v.id)],
+          ['Voucher Date', v.voucherDate || v.date || ''],
+          ['Category', v.category || 'Operating Expense'],
+          ['Paid Through', v.accountName || v.bankAccount || ''],
+          ['Payee / Paid To', v.partyName || '-'],
+          ['Payment Mode', v.paymentMode || 'NEFT'],
+          ['Bill / Invoice #', v.referenceNo || '-'],
+          ['Amount (₹)', Number(v.amount || 0).toFixed(2)],
+          ['Notes / Narration', v.notes || v.narration || '-']
+        ];
+        if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+          window.FormatUtil.downloadTablePdf(`Operating Expense Voucher ${v.voucherNo || v.id}`, headers, rows, `Expense_Voucher_${v.voucherNo || v.id}.pdf`);
+          return;
+        }
+      }
       window.print();
     }
   },
@@ -654,19 +691,25 @@ window.FinanceController = {
   async loadFinanceLookups() {
     try {
       if (!window.MasterService) return;
-      const [modes, accounts, categories] = await Promise.all([
+      let [modes, accounts, categories] = await Promise.all([
         window.MasterService.getLookupValuesByCategoryCode('PAYMENT_MODE').catch(async () => {
           return await window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => ['NEFT/RTGS', 'IMPS', 'CHEQUE', 'UPI', 'CASH']);
         }),
         window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(async () => {
           return await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
         }),
-        window.MasterService.getLookupValuesByCategoryCode('EXPENSE_HEAD').catch(async () => {
-          return await window.MasterService.getLookupValuesByCategoryCode('EXPENSE_CATEGORY').catch(async () => {
-            return await window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => ['OFFICE EXPENSES', 'TRAVEL & CONVEYANCE', 'PRINTING & STATIONERY', 'ELECTRICITY & UTILITY', 'RENT', 'SALARIES']);
-          });
-        })
+        window.MasterService.getLookupValuesByCategoryCode('EXPENSE_CATEGORY').catch(() => [])
       ]);
+
+      if (!Array.isArray(categories) || categories.length === 0) {
+        categories = await window.MasterService.getLookupValuesByCategoryCode('EXPENSE_HEAD').catch(() => []);
+      }
+      if (!Array.isArray(categories) || categories.length === 0) {
+        categories = await window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => []);
+      }
+      if (!Array.isArray(categories) || categories.length === 0) {
+        categories = ['OFFICE EXPENSES', 'TRAVEL & CONVEYANCE', 'PRINTING & STATIONERY', 'ELECTRICITY & UTILITY', 'RENT', 'SALARIES', 'REPAIRS & MAINTENANCE', 'PACKING & FREIGHT', 'MISCELLANEOUS EXPENSES'];
+      }
 
       const modeEl = document.getElementById('f-entry-mode');
       if (modeEl && Array.isArray(modes) && modes.length > 0) {
@@ -757,7 +800,7 @@ window.FinanceController = {
     modal.style.display = 'flex';
   },
 
-  openNewExpenseEntryModal() {
+  async openNewExpenseEntryModal() {
     this.editingFinanceId = null;
     this.editingFinanceVersion = 0;
     this.selectedBillFile = null;
@@ -782,9 +825,18 @@ window.FinanceController = {
       statusEl.style.color = 'var(--text-dim)';
     }
 
-    this.loadFinanceLookups();
+    await this.loadFinanceLookups();
     this.switchModalMode('EXPENSE');
     modal.style.display = 'flex';
+  },
+
+  openBankStatement(stmId) {
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-statement');
+    setTimeout(() => {
+      if (window.BankStatementController && window.BankStatementController.highlightTxn) {
+        window.BankStatementController.highlightTxn(stmId);
+      }
+    }, 300);
   },
 
   async openEditFinanceEntry(id) {
@@ -1397,7 +1449,26 @@ window.FinanceController = {
   },
 
   exportLedgerStatement() {
-    window.print();
+    const list = this.journalEntriesCache || [];
+    if (list.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No ledger records to export');
+      return;
+    }
+    const headers = ['Date', 'Voucher #', 'Account / Entity', 'Debit (₹)', 'Credit (₹)', 'Balance (₹)', 'Narration'];
+    const rows = list.map(v => [
+      v.entryDate || v.date || '',
+      v.entryNumber || v.voucherNo || '',
+      v.accountName || v.partyName || '',
+      v.debit ? Number(v.debit).toFixed(2) : '-',
+      v.credit ? Number(v.credit).toFixed(2) : '-',
+      v.balance ? Number(v.balance).toFixed(2) : '-',
+      v.narration || v.description || ''
+    ]);
+    if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+      window.FormatUtil.downloadTablePdf('General Ledger Statement', headers, rows, 'General_Ledger_Statement.pdf');
+    } else {
+      window.print();
+    }
   },
 
   // ==========================================
@@ -1544,7 +1615,31 @@ window.FinanceController = {
   },
 
   exportStatementsPdf() {
-    window.print();
+    const from = document.getElementById('fs-from-date')?.value || '';
+    const to = document.getElementById('fs-to-date')?.value || '';
+    const period = from && to ? `${from} to ${to}` : 'Current Period';
+    const rows = [];
+    const pnlTable = document.getElementById('fs-pnl-table');
+    if (pnlTable) {
+      rows.push(['--- PROFIT & LOSS STATEMENT ---', '', '']);
+      pnlTable.querySelectorAll('tbody tr').forEach(tr => {
+        const cells = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+        if (cells.length >= 2) rows.push(cells);
+      });
+    }
+    const bsTable = document.getElementById('fs-bs-table');
+    if (bsTable) {
+      rows.push(['--- BALANCE SHEET ---', '', '']);
+      bsTable.querySelectorAll('tbody tr').forEach(tr => {
+        const cells = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+        if (cells.length >= 2) rows.push(cells);
+      });
+    }
+    if (rows.length > 0 && window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+      window.FormatUtil.downloadTablePdf(`Financial Statements (${period})`, ['Particulars', 'Amount (₹)', 'Notes'], rows, `Financial_Statements_${Date.now()}.pdf`);
+    } else {
+      window.print();
+    }
   },
 
   // ==========================================

@@ -1620,13 +1620,49 @@ window.BankStatementController = (function() {
           <td style="text-align: center;">
             <span class="pill-badge ${isDone ? 'pill-success' : 'pill-warning'}">${b.status || 'IMPORTED'}</span>
           </td>
-          <td style="text-align: center; white-space: nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openHistoryBatch(${b.id})" style="padding: 2px 8px; font-size: 0.75rem;">📂 Open</button>
-            <button class="btn btn-danger btn-sm" onclick="window.BankStatementController.deleteStatement(${b.id})" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 4px;" title="Delete Batch">🗑️</button>
+          <td style="text-align: center; white-space: nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position: relative; display: inline-block;">
+              <button class="btn btn-purple btn-sm" onclick="window.BankStatementController.toggleBatchActionMenu(${b.id}, event)" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                Actions ▼
+              </button>
+              <div id="batch-action-menu-${b.id}" class="action-dropdown-menu" style="display: none; position: fixed; z-index: 100005; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; padding: 6px 0; text-align: left;">
+                <div class="action-menu-item" onclick="window.BankStatementController.openHistoryBatch(${b.id})"><span style="margin-right: 8px;">📂</span> Open Statement</div>
+                <div class="action-menu-divider" style="height: 1px; background: var(--border-subtle); margin: 4px 0;"></div>
+                <div class="action-menu-item" style="color: var(--red);" onclick="window.BankStatementController.deleteStatement(${b.id})"><span style="margin-right: 8px;">🗑️</span> Delete Statement</div>
+              </div>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleBatchActionMenu(batchId, event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const menu = document.getElementById(`batch-action-menu-${batchId}`);
+    if (!menu) return;
+
+    const isOpen = menu.style.display === 'block';
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => m.style.display = 'none');
+
+    if (!isOpen) {
+      menu.style.display = 'block';
+      if (event && event.currentTarget) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const top = rect.bottom + 4;
+        const left = Math.max(10, rect.right - 170);
+        menu.style.top = `${top}px`;
+        menu.style.left = `${left}px`;
+      }
+      const closeHandler = () => {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeHandler);
+      };
+      setTimeout(() => document.addEventListener('click', closeHandler), 10);
+    }
   }
 
   function resetHistoryFilters() {
@@ -2077,6 +2113,7 @@ window.BankStatementController = (function() {
       if (attempts >= maxAttempts) clearInterval(interval);
     }, 150);
   }
+  window.highlightRowInTable = highlightRowInTable;
 
   function openLinkedDocument(docRef, targetType = '') {
     if (!docRef) return;
@@ -2120,25 +2157,33 @@ window.BankStatementController = (function() {
       }, 250);
     }
     // 4. Operating Expense
-    else if (type === 'EXPENSE' || ref.startsWith('EXP') || ref.startsWith('VCH')) {
+    else if (type === 'EXPENSE' || ref.startsWith('EXP') || ref.startsWith('VCH') || ref.startsWith('OPEX')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
       setTimeout(() => {
-        const searchInput = document.getElementById('fe-search');
+        const searchInput = document.getElementById('exp-search');
         if (searchInput) {
           searchInput.value = docRef;
-          if (window.FinanceController) window.FinanceController.applyFilters();
+          searchInput.dispatchEvent(new Event('input'));
+          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
+            window.FinanceController.applyFinanceFilters();
+          }
         }
+        highlightRowInTable('expense-entry-tbody', docRef);
       }, 250);
     }
     // 5. Bank Journal / Bank Entry
-    else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN')) {
+    else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN') || ref.startsWith('DEP') || ref.startsWith('WDL')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
       setTimeout(() => {
-        const searchInput = document.getElementById('fe-search');
+        const searchInput = document.getElementById('bank-search');
         if (searchInput) {
           searchInput.value = docRef;
-          if (window.FinanceController) window.FinanceController.applyFilters();
+          searchInput.dispatchEvent(new Event('input'));
+          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
+            window.FinanceController.applyFinanceFilters();
+          }
         }
+        highlightRowInTable('bank-entry-tbody', docRef);
       }, 250);
     }
     // 6. Payment Receipt
@@ -2219,6 +2264,10 @@ window.BankStatementController = (function() {
     openBulkMove,
     submitBulkMove,
     highlightTxn,
+
+    openHistoryBatch,
+    deleteStatement,
+    toggleBatchActionMenu,
 
     // Drawer Parity
     onTxnRowClick,

@@ -216,24 +216,56 @@ window.ImportService = (function() {
     return out + '$';
   }
 
+  function toIsoDate(val) {
+    if (!val) return new Date().toISOString().substring(0, 10);
+    const s = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      return s.substring(0, 10);
+    }
+    const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+    if (dmy) {
+      const dd = dmy[1].padStart(2, '0');
+      const mm = dmy[2].padStart(2, '0');
+      const yyyy = dmy[3];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return new Date().toISOString().substring(0, 10);
+  }
+
+  function toIsoTimestamp(val, dateIso) {
+    if (!val) return `${dateIso}T00:00:00`;
+    const s = String(val).trim();
+    if (s.includes('T') && s.length >= 19) {
+      return s.substring(0, 19);
+    }
+    const timeMatch = s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+    if (timeMatch) {
+      let hh = parseInt(timeMatch[1], 10);
+      const mm = timeMatch[2];
+      const ss = timeMatch[3] || '00';
+      const ampm = (timeMatch[4] || '').toUpperCase();
+      if (ampm === 'PM' && hh < 12) hh += 12;
+      if (ampm === 'AM' && hh === 12) hh = 0;
+      const hhStr = String(hh).padStart(2, '0');
+      return `${dateIso}T${hhStr}:${mm}:${ss}`;
+    }
+    return `${dateIso}T12:00:00`;
+  }
+
   function matchesReferenceFormat(format, value, docDate) {
     if (!format || !value) return false;
     try {
       const reg = new RegExp(referenceToRegex(format.trim(), docDate), 'i');
-      if (reg.test(value.trim())) return true;
-      const val = value.trim();
-      const firstX = format.indexOf('X');
-      if (firstX > 0) {
-        const prefix = format.substring(0, firstX).replace(/[^A-Za-z0-9]/g, '');
-        if (prefix) {
-          const prefixRegex = new RegExp(`^${prefix}[-_/.\\s]*\\d+$`, 'i');
-          if (prefixRegex.test(val)) return true;
-          if (prefix.toUpperCase() === 'ITM' && /^ITEM[-_/.\\s]*\\d+$/i.test(val)) return true;
-        }
-      }
-      return /^[A-Za-z0-9][A-Za-z0-9_./\\-\\s]{1,49}$/.test(val);
+      return reg.test(value.trim());
     } catch (e) {
-      return true; // Fallback to permissive if invalid regex
+      return false;
     }
   }
 
@@ -550,7 +582,14 @@ window.ImportService = (function() {
         (items || []).forEach(it => {
           const code = (it.itemCode || '').toUpperCase();
           existingItems.set(code, it);
-          availableStockByItem.set(code, it.availableStock || 0);
+          const stock = (it.availableStock !== undefined && it.availableStock !== null)
+            ? Number(it.availableStock)
+            : (it.currentStock !== undefined && it.currentStock !== null)
+              ? Number(it.currentStock)
+              : (it.stockQty !== undefined && it.stockQty !== null)
+                ? Number(it.stockQty)
+                : Math.max(0, Number(it.openingStock || 0));
+          availableStockByItem.set(code, stock);
         });
         if (isSales) {
           const salesPage = await window.OperationsService.getSalesPage(0, 1000);
@@ -627,6 +666,15 @@ window.ImportService = (function() {
           }
         }
 
+        // Party reference format (REF_CUSTOMER / REF_SUPPLIER)
+        const partyMaskKey = isSales ? 'REF_CUSTOMER' : 'REF_SUPPLIER';
+        if (!rowError && refFormats[partyMaskKey] && party) {
+          const pMask = refFormats[partyMaskKey];
+          if (!matchesReferenceFormat(pMask, party, dateVal)) {
+            rowError = `${isSales ? 'Customer' : 'Supplier'} Code '${party}' does not match format ${pMask}`;
+          }
+        }
+
         // Duplicate check against posted documents
         if (!rowError && existingInvoices.has(invKey)) {
           skipped++;
@@ -653,11 +701,17 @@ window.ImportService = (function() {
 
         // Master check: items and stock
         if (!rowError) {
+          const itemMask = refFormats['REF_ITEM'];
           const itemQtys = new Map();
           for (const item of groupRows) {
-            const iCode = getVal(item.row, 'item_code').toUpperCase();
+            const rawICode = getVal(item.row, 'item_code');
+            const iCode = rawICode.toUpperCase();
+            if (itemMask && rawICode && !matchesReferenceFormat(itemMask, rawICode, dateVal)) {
+              rowError = `Item Code '${rawICode}' does not match REF_ITEM format ${itemMask}`;
+              break;
+            }
             if (!existingItems.has(iCode)) {
-              rowError = `Item not found in master data: ${iCode}`;
+              rowError = `Item not found in master data: ${rawICode}`;
               break;
             }
             const q = parseFloat(getVal(item.row, 'quantity')) || 0;
@@ -1551,14 +1605,16 @@ window.ImportService = (function() {
           if (dVal > 0 && cVal > 0) {
             cVal = 0; // Exactly one must be positive per server contract
           }
-          const dateStr = (getVal(r, 'transaction_date') || '').substring(0, 10);
-          const timeStr = getVal(r, 'transaction_date') || new Date().toISOString();
+          const rawDateStr = getVal(r, 'transaction_date');
+          const dateStr = toIsoDate(rawDateStr);
+          const timeStr = toIsoTimestamp(rawDateStr, dateStr);
+          const valDate = toIsoDate(getVal(r, 'value_date') || rawDateStr);
           const fp = `BS-ROW-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
           return {
             sourceRowNumber: idx + 1, // Server BankReconciliationDtos.ImportRow field is sourceRowNumber
             transactionTimestamp: timeStr,
             transactionDate: dateStr,
-            valueDate: (getVal(r, 'value_date') || dateStr).substring(0, 10),
+            valueDate: valDate,
             description: getVal(r, 'description') || 'Bank Txn',
             reference: getVal(r, 'reference') || `REF-${idx + 1}`,
             debit: dVal,

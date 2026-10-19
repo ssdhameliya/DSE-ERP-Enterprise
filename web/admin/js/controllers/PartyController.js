@@ -1684,16 +1684,17 @@ window.PartyController = (function() {
       const file = input.files && input.files[0];
       if (!file) return;
 
-      const formData = new FormData();
-      formData.append('file', file);
-
       try {
         if (window.AppDialogService) window.AppDialogService.toastInfo(`Uploading ${file.name}...`);
-        const token = localStorage.getItem('token') || (window.Auth && window.Auth.getToken && window.Auth.getToken());
-        const res = await fetch(`/api/attachments/document/${encodeURIComponent(type)}/${partyId}`, {
+        const token = localStorage.getItem('dse_access_token');
+        const endpoint = `/api/support/documents/${encodeURIComponent(type)}/${partyId}/attachments?filename=${encodeURIComponent(file.name)}`;
+        const res = await fetch(endpoint, {
           method: 'POST',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-          body: formData
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/octet-stream'
+          },
+          body: file
         });
         if (!res.ok) {
           const errText = await res.text();
@@ -1714,8 +1715,12 @@ window.PartyController = (function() {
   }
 
   function previewPartyDocument(partyType, partyId, metaId, fileName) {
-    const url = `/api/attachments/document/${encodeURIComponent(partyType)}/${partyId}/${metaId}/download`;
-    window.open(url, '_blank');
+    const endpoint = `/api/support/documents/${encodeURIComponent(partyType)}/${partyId}/attachments/${metaId}`;
+    if (window.ApiService && window.ApiService.viewFile) {
+      window.ApiService.viewFile(endpoint);
+    } else {
+      window.open(endpoint, '_blank');
+    }
   }
 
   async function deletePartyDocument(partyType, partyId, metaId) {

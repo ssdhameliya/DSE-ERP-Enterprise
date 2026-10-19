@@ -329,6 +329,193 @@
         return `<span class="pill-badge pill-warning" style="white-space:nowrap;">⏱ ${display}</span>`;
       }
       return `<span class="pill-badge pill-neutral" style="white-space:nowrap;">${display || 'UNPAID'}</span>`;
+    },
+
+    /**
+     * Universal Client-Side Tabular PDF Generator
+     * Generates standard PDF 1.4 binary file matching desktop export specifications
+     * Downloads directly without triggering browser print dialogs.
+     */
+    downloadTablePdf(title, headers, rows, filename = 'Export.pdf', meta = {}) {
+      try {
+        const cleanTitle = (title || 'Report').trim();
+        const genDate = this.formatDateTime ? this.formatDateTime(new Date()) : new Date().toLocaleString();
+        const safeFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+
+        // PDF dimensions: A4 Landscape (841.89 pt width, 595.28 pt height)
+        const pageWidth = 841.89;
+        const pageHeight = 595.28;
+        const marginX = 36;
+        const marginTop = 40;
+        const marginBottom = 40;
+        const contentWidth = pageWidth - (marginX * 2);
+
+        // Escape PDF special characters
+        const esc = (str) => {
+          if (str == null) return '';
+          return String(str)
+            .replace(/\\/g, '\\\\')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')
+            .replace(/[^\x20-\x7E]/g, ' '); // Keep printable ASCII
+        };
+
+        const numCols = Math.max(1, headers.length);
+        const colWidth = contentWidth / numCols;
+        const rowHeight = 18;
+        const headerHeight = 22;
+        const rowsPerPage = 22;
+
+        const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
+        const pages = [];
+
+        for (let p = 0; p < totalPages; p++) {
+          const pageRows = rows.slice(p * rowsPerPage, (p + 1) * rowsPerPage);
+          let stream = '';
+
+          // 1. Header Banner & Branding
+          stream += `0.15 0.23 0.42 rg\n`; // Dark blue
+          stream += `BT /F1 14 Tf ${marginX} ${pageHeight - marginTop} Td (${esc(cleanTitle)}) Tj ET\n`;
+          
+          stream += `0.4 0.45 0.5 rg\n`;
+          stream += `BT /F2 8 Tf ${marginX} ${pageHeight - marginTop - 12} Td (JASVI INDUSTRIES ERP - Precision Fasteners & Piping | Generated: ${esc(genDate)}) Tj ET\n`;
+
+          // Page Number
+          const pageStr = `Page ${p + 1} of ${totalPages}`;
+          stream += `BT /F2 8 Tf ${pageWidth - marginX - 60} ${pageHeight - marginTop} Td (${esc(pageStr)}) Tj ET\n`;
+
+          // Top divider line
+          stream += `0.85 0.88 0.92 RG 1 w\n`;
+          stream += `${marginX} ${pageHeight - marginTop - 18} m ${pageWidth - marginX} ${pageHeight - marginTop - 18} l S\n`;
+
+          // 2. Table Headers
+          let currentY = pageHeight - marginTop - 24;
+          
+          // Header Background
+          stream += `0.93 0.95 0.98 rg\n`;
+          stream += `${marginX} ${currentY - headerHeight} ${contentWidth} ${headerHeight} re f\n`;
+          stream += `0.75 0.8 0.88 RG 1 w\n`;
+          stream += `${marginX} ${currentY - headerHeight} ${contentWidth} ${headerHeight} re S\n`;
+
+          // Header Text
+          stream += `0.1 0.15 0.25 rg\n`;
+          headers.forEach((h, idx) => {
+            const x = marginX + (idx * colWidth) + 6;
+            const textY = currentY - 15;
+            stream += `BT /F1 8.5 Tf ${x} ${textY} Td (${esc(h).substring(0, Math.floor(colWidth / 5.5))}) Tj ET\n`;
+          });
+
+          currentY -= headerHeight;
+
+          // 3. Table Rows
+          pageRows.forEach((row, rIdx) => {
+            const isEven = rIdx % 2 === 0;
+            const rowY = currentY - rowHeight;
+
+            // Zebra background
+            if (isEven) {
+              stream += `0.98 0.99 1.0 rg\n`;
+              stream += `${marginX} ${rowY} ${contentWidth} ${rowHeight} re f\n`;
+            }
+
+            // Cell bottom border
+            stream += `0.9 0.92 0.95 RG 0.5 w\n`;
+            stream += `${marginX} ${rowY} m ${pageWidth - marginX} ${rowY} l S\n`;
+
+            // Row text
+            stream += `0.15 0.18 0.22 rg\n`;
+            (row || []).forEach((cell, cIdx) => {
+              if (cIdx >= numCols) return;
+              const x = marginX + (cIdx * colWidth) + 6;
+              const textY = rowY + 5;
+              const val = esc(cell != null ? String(cell) : '-').substring(0, Math.floor(colWidth / 5.5));
+              stream += `BT /F2 8 Tf ${x} ${textY} Td (${val}) Tj ET\n`;
+            });
+
+            currentY -= rowHeight;
+          });
+
+          // Outer table border
+          stream += `0.75 0.8 0.88 RG 1 w\n`;
+          const tableHeight = headerHeight + (pageRows.length * rowHeight);
+          stream += `${marginX} ${currentY} ${contentWidth} ${tableHeight} re S\n`;
+
+          // 4. Footer Note
+          stream += `0.55 0.6 0.65 rg\n`;
+          stream += `BT /F2 7.5 Tf ${marginX} ${marginBottom} Td (Confidential - Jasvi Industries Management Portal - Authoritative System Export) Tj ET\n`;
+
+          pages.push(stream);
+        }
+
+        // Build valid PDF Document Structure
+        let pdf = `%PDF-1.4\n`;
+        const objects = [];
+
+        // Obj 1: Catalog
+        objects.push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`);
+
+        // Obj 2: Pages
+        const kids = [];
+        for (let i = 0; i < totalPages; i++) {
+          kids.push(`${4 + (i * 2)} 0 R`);
+        }
+        objects.push(`2 0 obj\n<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${totalPages} >>\nendobj\n`);
+
+        // Obj 3: Font Resources
+        objects.push(`3 0 obj\n<< /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >>\nendobj\n`);
+
+        // Pages and Content Streams
+        for (let i = 0; i < totalPages; i++) {
+          const pageObjNum = 4 + (i * 2);
+          const streamObjNum = pageObjNum + 1;
+          const streamContent = pages[i];
+          const streamLen = streamContent.length;
+
+          // Page Obj
+          objects.push(`${pageObjNum} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources 3 0 R /Contents ${streamObjNum} 0 R >>\nendobj\n`);
+
+          // Stream Obj
+          objects.push(`${streamObjNum} 0 obj\n<< /Length ${streamLen} >>\nstream\n${streamContent}\nendstream\nendobj\n`);
+        }
+
+        // Assemble with Byte Offsets
+        const xref = [];
+        let offset = pdf.length;
+        xref.push('0000000000 65535 f \n');
+
+        for (let i = 0; i < objects.length; i++) {
+          xref.push(String(offset).padStart(10, '0') + ' 00000 n \n');
+          pdf += objects[i];
+          offset += objects[i].length;
+        }
+
+        const xrefOffset = offset;
+        pdf += `xref\n0 ${objects.length + 1}\n${xref.join('')}`;
+        pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+        // Trigger Direct File Download via Blob
+        const blob = new Blob([pdf], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safeFilename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+        if (window.AudioSynthesizer && typeof window.AudioSynthesizer.playSuccess === 'function') {
+          window.AudioSynthesizer.playSuccess();
+        }
+        if (window.AppDialogService) {
+          window.AppDialogService.toastSuccess(`Downloaded PDF: ${safeFilename}`);
+        }
+      } catch (err) {
+        console.error('[FormatUtil] downloadTablePdf error:', err);
+        if (window.AppDialogService) {
+          window.AppDialogService.toastError(`Could not generate PDF: ${err.message}`);
+        }
+      }
     }
   };
 })();

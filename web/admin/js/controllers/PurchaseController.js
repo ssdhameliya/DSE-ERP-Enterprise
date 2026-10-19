@@ -1078,16 +1078,32 @@ window.PurchaseController = (function() {
   }
 
   function exportPurchaseRegisterPdf() {
-    printPurchaseRegister();
+    const list = purchases || [];
+    if (list.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No purchase records to export');
+      return;
+    }
+    const headers = ['#', 'Invoice No', 'Date', 'Supplier', 'Amount (₹)', 'Paid (₹)', 'Outstanding (₹)', 'Status'];
+    const rows = list.map((p, idx) => [
+      idx + 1,
+      p.invoiceNo || p.billNo || '-',
+      p.invoiceDate || p.billDate || '-',
+      (p.supplier && p.supplier.name) || p.supplierName || '-',
+      Number(p.totalAmount || 0).toFixed(2),
+      Number(p.paidAmount || 0).toFixed(2),
+      Number(p.outstanding || ((p.totalAmount || 0) - (p.paidAmount || 0))).toFixed(2),
+      p.paymentStatus || p.status || 'APPROVED'
+    ]);
+    const dateStr = new Date().toISOString().substring(0, 10);
+    if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+      window.FormatUtil.downloadTablePdf('Purchase Register', headers, rows, `Purchase_Register_${dateStr}.pdf`);
+    } else {
+      window.print();
+    }
   }
 
   function printPurchaseRegister() {
-    const list = purchases || [];
-    if (list.length === 0) {
-      if (window.AppDialogService) window.AppDialogService.toastWarning('No purchase records to print');
-      return;
-    }
-    window.print();
+    exportPurchaseRegisterPdf();
   }
 
 

@@ -55,7 +55,12 @@ window.ApiService = (function() {
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.warn(`[ApiService] HTTP ${res.status} on ${endpoint}:`, errData);
-          const errorMsg = errData.message || errData.error || `Server error (${res.status})`;
+          let errorMsg = errData.message || errData.error || errData.details || `Server error (${res.status})`;
+          if (errData.details && errData.details !== errorMsg) {
+            errorMsg = `${errorMsg}: ${errData.details}`;
+          } else if (Array.isArray(errData.errors) && errData.errors.length > 0) {
+            errorMsg = `${errorMsg} (${errData.errors.join(', ')})`;
+          }
           const error = new Error(errorMsg);
           error.status = res.status;
           error.data = errData;
@@ -104,6 +109,27 @@ window.ApiService = (function() {
 
       return this.request(targetUrl, {
         method: 'PUT',
+        isBinaryUpload: true,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Accept': 'application/json'
+        },
+        body: fileBlobOrArrayBuffer
+      });
+    },
+
+    /**
+     * POST raw binary file bytes matching Desktop SupportApiClient:
+     * POST /api/support/documents/.../attachments?filename=...
+     * Content-Type: application/octet-stream
+     */
+    async postBinary(endpoint, filename, fileBlobOrArrayBuffer) {
+      const encName = encodeURIComponent(filename || 'attachment');
+      const separator = endpoint.includes('?') ? '&' : '?';
+      const targetUrl = `${endpoint}${separator}filename=${encName}`;
+
+      return this.request(targetUrl, {
+        method: 'POST',
         isBinaryUpload: true,
         headers: {
           'Content-Type': 'application/octet-stream',

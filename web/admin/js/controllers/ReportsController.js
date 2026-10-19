@@ -1336,7 +1336,15 @@ window.ReportsController = (function() {
     },
 
     printViewerReport() {
-      window.print();
+      const def = this.currentDefinition || definitions[0];
+      const title = def ? def.title : 'Executive Report';
+      const cols = currentResultColumns || [];
+      const rows = currentResultRows || [];
+      if (cols.length > 0 && rows.length > 0 && window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+        window.FormatUtil.downloadTablePdf(title, cols.map(c => c.label || c.key), rows.map(r => r.values || r), `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+      } else {
+        window.print();
+      }
     },
 
     async saveCurrentReportConfig() {
@@ -2394,7 +2402,11 @@ window.ReportsController = (function() {
           if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Dashboard summary to CSV!');
           return;
         } else if (format === 'PDF') {
-          window.print();
+          if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+            window.FormatUtil.downloadTablePdf('Reports Dashboard Summary', ['Metric / Indicator', 'Value'], kpiData.slice(1), `Reports_Dashboard_${dateStamp}.pdf`);
+          } else {
+            window.print();
+          }
           return;
         }
       }
@@ -2428,9 +2440,13 @@ window.ReportsController = (function() {
           if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Schedules to CSV!');
           return;
         } else if (format === 'PDF') {
-          const cols = schHeaders.map(h => ({ label: h, align: 'LEFT' }));
-          const rows = schRows.map(r => ({ values: r }));
-          this.printFormattedReport('Scheduled Reports Catalog', cols, rows, null);
+          if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+            window.FormatUtil.downloadTablePdf('Scheduled Reports Catalog', schHeaders, schRows, `Scheduled_Reports_${dateStamp}.pdf`);
+          } else {
+            const cols = schHeaders.map(h => ({ label: h, align: 'LEFT' }));
+            const rows = schRows.map(r => ({ values: r }));
+            this.printFormattedReport('Scheduled Reports Catalog', cols, rows, null);
+          }
           return;
         }
       }
@@ -2460,9 +2476,13 @@ window.ReportsController = (function() {
           if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Report Catalog to CSV!');
           return;
         } else if (format === 'PDF') {
-          const cols = catHeaders.map(h => ({ label: h, align: 'LEFT' }));
-          const rows = catRows.map(r => ({ values: r }));
-          this.printFormattedReport('Executive Report Catalog', cols, rows, null);
+          if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+            window.FormatUtil.downloadTablePdf('Executive Report Catalog', catHeaders, catRows, `Report_Catalog_${dateStamp}.pdf`);
+          } else {
+            const cols = catHeaders.map(h => ({ label: h, align: 'LEFT' }));
+            const rows = catRows.map(r => ({ values: r }));
+            this.printFormattedReport('Executive Report Catalog', cols, rows, null);
+          }
           return;
         }
       }
@@ -2476,6 +2496,13 @@ window.ReportsController = (function() {
     },
 
     printFormattedReport(title, cols, rows, totals) {
+      if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+        const headers = (cols || []).map(c => c.label || c.key);
+        const dataRows = (rows || []).map(r => r.values || r);
+        window.FormatUtil.downloadTablePdf(title, headers, dataRows, `${(title || 'Report').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+        return;
+      }
+
       const fromVal = document.getElementById('v-filter-from')?.value || '';
       const toVal = document.getElementById('v-filter-to')?.value || '';
       const partyVal = document.getElementById('v-filter-party')?.value || '';

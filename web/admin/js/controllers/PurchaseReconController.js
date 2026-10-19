@@ -117,15 +117,19 @@ window.PurchaseReconController = (function() {
       else if (status === 'REVIEW') badgeClass = 'pill-danger';
       else badgeClass = 'pill-neutral';
 
+      const linkedList = (r.bankLinks || []).map(b => b.financeVoucherNo || b.bankReference || ('STM-' + b.statementTransactionId)).filter(Boolean);
+      const linkedDisplay = linkedList.length > 0 ? linkedList.join(', ') : (r.linkedRef || '-');
+      const firstLink = linkedList.length > 0 ? linkedList[0] : '';
+
       return `
         <tr onclick="window.PurchaseReconController.onReconRowClick(${r.id}, event)" data-recon-id="${r.id}" style="cursor:pointer;">
-          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.systemRef || 'PRC-' + r.id}</td>
-          <td style="white-space:nowrap;">${formatDate(r.invoiceDate)}</td>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.reference || r.systemRef || ('PRC-' + r.id)}</td>
+          <td style="white-space:nowrap;">${window.FormatUtil ? window.FormatUtil.formatDate(r.invoiceDate) : formatDate(r.invoiceDate)}</td>
           <td style="font-weight:600; color:var(--text-main);">${r.supplierName || '-'}</td>
           <td style="font-family:monospace; color:var(--purple);">${r.supplierInvoiceNo || '-'}</td>
           <td style="text-align:right; font-weight:700;">${formatMoney(invVal)}</td>
-          <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--cyan);" title="${r.linkedRef || ''}">
-            ${r.linkedRef || '-'}
+          <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--cyan);" title="${linkedDisplay}">
+            ${firstLink ? `<span class="pill-badge pill-neutral" style="cursor:pointer; color:var(--cyan); border:1px solid rgba(56,189,248,0.3);" onclick="event.stopPropagation(); window.PurchaseReconController.openLinkedBankEntry('${firstLink}', ${r.id})">${linkedDisplay}</span>` : '-'}
           </td>
           <td style="text-align:right; font-weight:700; color:${balance > 0 ? 'var(--yellow)' : 'var(--green)'};">
             ${formatMoney(balance)}
@@ -509,7 +513,7 @@ window.PurchaseReconController = (function() {
     const total = list.length;
     const active = list.filter(s => (s.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
     const imported = list.filter(s => (s.source || '').toUpperCase().includes('IMPORT')).length;
-    const reconCount = list.reduce((sum, s) => sum + (s.reconRecordsCount || 0), 0);
+    const reconCount = list.reduce((sum, s) => sum + (s.reconCount != null ? s.reconCount : (s.reconRecordsCount || 0)), 0);
 
     const tEl = document.getElementById('rs-kpi-total');
     const aEl = document.getElementById('rs-kpi-active');
@@ -541,6 +545,7 @@ window.PurchaseReconController = (function() {
 
     tbody.innerHTML = rows.map(s => {
       const isActive = (s.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+      const sCount = (s.reconCount != null ? s.reconCount : (s.reconRecordsCount || 0));
 
       return `
         <tr onclick="window.PurchaseReconController.onSupplierRowClick(${s.id}, event)" data-supplier-id="${s.id}" style="cursor:pointer;">
@@ -548,21 +553,21 @@ window.PurchaseReconController = (function() {
           <td style="font-weight:600; color:var(--text-main);">${s.legalName}</td>
           <td style="font-family:monospace; color:var(--purple);">${s.gstin || 'Unregistered'}</td>
           <td>${s.phone || '-'}</td>
-          <td style="text-align:right; font-weight:700;">${s.reconRecordsCount || 0}</td>
+          <td style="text-align:right; font-weight:700;">${sCount}</td>
           <td><span class="pill-badge pill-neutral">${s.source || 'MANUAL'}</span></td>
           <td style="text-align:center;">
             ${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.toggleSupplierActionMenu(${s.id}, event)" style="padding:2px 8px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
+              <button class="btn btn-purple btn-sm" onclick="window.PurchaseReconController.toggleSupplierActionMenu(${s.id}, event)" style="padding:4px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
                 Actions ▼
               </button>
               <div id="supplier-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">👁️</span> View Supplier</div>
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">✏️</span> Edit Supplier</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
-                ${(s.reconRecordsCount && s.reconRecordsCount > 0) ? `
+                ${(sCount > 0) ? `
                   <div class="action-menu-item disabled" style="opacity:0.4; cursor:not-allowed;" title="Suppliers linked to Purchase Recon records cannot be deleted"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
                 ` : `
                   <div class="action-menu-item" style="color:var(--red);" onclick="window.PurchaseReconController.deleteSupplier(${s.id})"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
@@ -720,6 +725,62 @@ window.PurchaseReconController = (function() {
     }
   }
 
+  function openLinkedBankEntry(ref, reconId) {
+    if (!ref || ref === '-') return;
+    if (ref.startsWith('STM-')) {
+      const stmId = ref.replace('STM-', '');
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-statement');
+      setTimeout(() => {
+        if (window.BankStatementController && window.BankStatementController.highlightTxn) {
+          window.BankStatementController.highlightTxn(stmId);
+        }
+      }, 300);
+    } else if (ref.startsWith('EXP-') || ref.startsWith('OPEX-')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
+      setTimeout(() => {
+        const searchInput = document.getElementById('exp-search');
+        if (searchInput) {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input'));
+          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
+            window.FinanceController.applyFinanceFilters();
+          }
+        }
+        if (typeof window.highlightRowInTable === 'function') {
+          window.highlightRowInTable('expense-entry-tbody', ref);
+        }
+      }, 300);
+    } else {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
+      setTimeout(() => {
+        const searchInput = document.getElementById('bank-search');
+        if (searchInput) {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input'));
+          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
+            window.FinanceController.applyFinanceFilters();
+          }
+        }
+        if (typeof window.highlightRowInTable === 'function') {
+          window.highlightRowInTable('bank-entry-tbody', ref);
+        }
+      }, 300);
+    }
+  }
+
+  function viewBankLinks(id) {
+    const rec = allRecons.find(r => r.id === id);
+    if (!rec) return;
+    const links = rec.bankLinks || [];
+    if (links.length > 0) {
+      const first = links[0];
+      const targetRef = first.financeVoucherNo || first.bankReference || ('STM-' + first.statementTransactionId);
+      openLinkedBankEntry(targetRef, id);
+    } else {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-statement');
+    }
+  }
+
   return {
     loadPurchaseRecon,
     openNewRecon,
@@ -730,6 +791,7 @@ window.PurchaseReconController = (function() {
     saveReconRecord,
     deleteReconRecord,
     viewBankLinks,
+    openLinkedBankEntry,
     closeReconEditor,
     prevPage,
     nextPage,

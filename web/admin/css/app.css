@@ -2763,3 +2763,43 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* Segmented Pill Tab Bar (Reporting, Customer 360, Supplier 360 Registers) */
+    .register-tab-strip {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      overflow-x: auto;
+    }
+    .register-tab-btn,
+    .sub-tab-btn {
+      padding: 8px 18px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .register-tab-btn:hover,
+    .sub-tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .register-tab-btn.active,
+    .sub-tab-btn.active {
+      background: rgba(56, 189, 248, 0.15) !important;
+      color: var(--cyan) !important;
+      border: 1px solid rgba(56, 189, 248, 0.35) !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.1);
+    }
+

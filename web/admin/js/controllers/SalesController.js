@@ -2903,7 +2903,35 @@ window.SalesController = {
   },
 
   exportSalesRegisterPdf() {
-    this.printSalesRegister();
+    const list = this.currentRenderedSales || this.salesCache || [];
+    if (list.length === 0) {
+      window.AppDialogService.showToast('No sales records to export', 'warning');
+      return;
+    }
+    const headers = ['#', 'Invoice No', 'Date', 'Customer', 'GSTIN', 'Total (₹)', 'Paid (₹)', 'Balance (₹)', 'Status'];
+    const rows = list.map((x, idx) => {
+      const party = x.customer || {};
+      const amt = parseFloat(x.totalAmount || x.total || 0);
+      const paid = parseFloat(x.paidAmount || x.paid || 0);
+      const bal = parseFloat(x.balanceAmount != null ? x.balanceAmount : (amt - paid));
+      return [
+        idx + 1,
+        x.invoiceNo || x.number || '-',
+        x.invoiceDate || x.date || '-',
+        party.name || x.customerName || '-',
+        party.gstin || x.gstin || '-',
+        amt.toFixed(2),
+        paid.toFixed(2),
+        bal.toFixed(2),
+        x.paymentStatus || x.status || 'APPROVED'
+      ];
+    });
+    const dateStr = new Date().toISOString().substring(0, 10);
+    if (window.FormatUtil && window.FormatUtil.downloadTablePdf) {
+      window.FormatUtil.downloadTablePdf('Sales Register', headers, rows, `Sales_Register_${dateStr}.pdf`);
+    } else {
+      this.printSalesRegister();
+    }
   },
 
   printSalesRegister() {

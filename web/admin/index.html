@@ -4487,7 +4487,7 @@
                     <th>Type</th>
                     <th>Description / Narration</th>
                     <th>Bank Account</th>
-                    <th id="th-bank-mode" style="display: none;">Mode</th>
+                    <th id="th-bank-mode">Mode</th>
                     <th>Reference / UTR</th>
                     <th style="text-align: right;">Amount (₹)</th>
                     <th>Match / Link</th>
@@ -7190,44 +7190,59 @@
           <!-- 5 STANDARD KPI CARDS (Inventory.fxml Parity) -->
           <div class="kpi-grid" style="grid-template-columns:repeat(5, 1fr); margin-bottom:16px; gap:12px;">
             <div class="standard-kpi-card kpi-blue">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">TOTAL ITEMS</span>
-                <span class="metric-trend-pill trend-neutral">Catalog</span>
+              <div class="standard-kpi-icon">📦</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">TOTAL ITEMS</span>
+                  <span class="pill-badge pill-neutral metric-trend-pill">Catalog</span>
+                </div>
+                <div id="lbl-inv-total-items" class="metric-value">0</div>
+                <div class="metric-note">Inventory records</div>
               </div>
-              <div id="lbl-inv-total-items" class="metric-value">0</div>
-              <div class="metric-note">Inventory records</div>
             </div>
             <div class="standard-kpi-card kpi-green">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">IN STOCK</span>
-                <span class="metric-trend-pill trend-positive">Healthy</span>
+              <div class="standard-kpi-icon">✅</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">IN STOCK</span>
+                  <span class="pill-badge pill-success metric-trend-pill">Healthy</span>
+                </div>
+                <div id="lbl-inv-in-stock" class="metric-value">0</div>
+                <div class="metric-note">Healthy stock levels</div>
               </div>
-              <div id="lbl-inv-in-stock" class="metric-value">0</div>
-              <div class="metric-note">Healthy stock levels</div>
             </div>
             <div class="standard-kpi-card kpi-orange">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">LOW STOCK</span>
-                <span class="metric-trend-pill trend-warning">Warning</span>
+              <div class="standard-kpi-icon">⚠️</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">LOW STOCK</span>
+                  <span class="pill-badge pill-warning metric-trend-pill">Warning</span>
+                </div>
+                <div id="lbl-inv-low-stock" class="metric-value">0</div>
+                <div class="metric-note">Needs attention</div>
               </div>
-              <div id="lbl-inv-low-stock" class="metric-value">0</div>
-              <div class="metric-note">Needs attention</div>
             </div>
             <div class="standard-kpi-card kpi-red">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">OUT OF STOCK</span>
-                <span class="metric-trend-pill trend-negative">Depleted</span>
+              <div class="standard-kpi-icon">❌</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">OUT OF STOCK</span>
+                  <span class="pill-badge pill-negative metric-trend-pill">Depleted</span>
+                </div>
+                <div id="lbl-inv-out-stock" class="metric-value">0</div>
+                <div class="metric-note">Unavailable items</div>
               </div>
-              <div id="lbl-inv-out-stock" class="metric-value">0</div>
-              <div class="metric-note">Unavailable items</div>
             </div>
             <div class="standard-kpi-card kpi-purple">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">STOCK VALUE</span>
-                <span class="metric-trend-pill trend-info">Valuation</span>
+              <div class="standard-kpi-icon">💰</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">STOCK VALUE</span>
+                  <span class="pill-badge pill-neutral metric-trend-pill">Valuation</span>
+                </div>
+                <div id="lbl-inv-stock-value" class="metric-value">&#8377; 0.00</div>
+                <div class="metric-note">Current purchase valuation</div>
               </div>
-              <div id="lbl-inv-stock-value" class="metric-value">&#8377; 0.00</div>
-              <div class="metric-note">Current purchase valuation</div>
             </div>
           </div>
 
@@ -7797,21 +7812,21 @@
           </div>
 
           <!-- 7-Tab Pane matching Customer360.fxml -->
-          <div class="sub-tabs-bar" style="margin-bottom:14px;">
-            <button class="sub-tab-btn active" id="tab-c360-overview"
-              onclick="window.PartyController.select360Tab('overview')">Overview</button>
-            <button class="sub-tab-btn" id="tab-c360-contacts"
-              onclick="window.PartyController.select360Tab('contacts')">Contacts</button>
-            <button class="sub-tab-btn" id="tab-c360-quotations"
-              onclick="window.PartyController.select360Tab('quotations')">Quotations</button>
-            <button class="sub-tab-btn" id="tab-c360-invoices"
-              onclick="window.PartyController.select360Tab('invoices')">Invoices</button>
-            <button class="sub-tab-btn" id="tab-c360-payments"
-              onclick="window.PartyController.select360Tab('payments')">Payments</button>
-            <button class="sub-tab-btn" id="tab-c360-notes"
-              onclick="window.PartyController.select360Tab('notes')">Notes</button>
-            <button class="sub-tab-btn" id="tab-c360-documents"
-              onclick="window.PartyController.select360Tab('documents')">Documents</button>
+          <div class="register-tab-strip" style="margin-bottom:14px;">
+            <button class="register-tab-btn active" id="tab-c360-overview"
+              onclick="window.PartyController.select360Tab('overview')">📈 Overview</button>
+            <button class="register-tab-btn" id="tab-c360-contacts"
+              onclick="window.PartyController.select360Tab('contacts')">👥 Contacts</button>
+            <button class="register-tab-btn" id="tab-c360-quotations"
+              onclick="window.PartyController.select360Tab('quotations')">💬 Quotations</button>
+            <button class="register-tab-btn" id="tab-c360-invoices"
+              onclick="window.PartyController.select360Tab('invoices')">📄 Invoices</button>
+            <button class="register-tab-btn" id="tab-c360-payments"
+              onclick="window.PartyController.select360Tab('payments')">💳 Payments</button>
+            <button class="register-tab-btn" id="tab-c360-notes"
+              onclick="window.PartyController.select360Tab('notes')">📝 Notes</button>
+            <button class="register-tab-btn" id="tab-c360-documents"
+              onclick="window.PartyController.select360Tab('documents')">📎 Documents</button>
           </div>
 
           <!-- TAB CONTENT: OVERVIEW -->
@@ -8343,19 +8358,19 @@
           </div>
 
           <!-- 6-Tab Pane matching Supplier360.fxml -->
-          <div class="sub-tabs-bar" style="margin-bottom:14px;">
-            <button class="sub-tab-btn active" id="tab-s360-overview"
-              onclick="window.PartyController.selectSupplier360Tab('overview')">Overview</button>
-            <button class="sub-tab-btn" id="tab-s360-contacts"
-              onclick="window.PartyController.selectSupplier360Tab('contacts')">Contacts</button>
-            <button class="sub-tab-btn" id="tab-s360-purchases"
-              onclick="window.PartyController.selectSupplier360Tab('purchases')">Purchases</button>
-            <button class="sub-tab-btn" id="tab-s360-payments"
-              onclick="window.PartyController.selectSupplier360Tab('payments')">Payments</button>
-            <button class="sub-tab-btn" id="tab-s360-notes"
-              onclick="window.PartyController.selectSupplier360Tab('notes')">Notes</button>
-            <button class="sub-tab-btn" id="tab-s360-documents"
-              onclick="window.PartyController.selectSupplier360Tab('documents')">Documents</button>
+          <div class="register-tab-strip" style="margin-bottom:14px;">
+            <button class="register-tab-btn active" id="tab-s360-overview"
+              onclick="window.PartyController.selectSupplier360Tab('overview')">📈 Overview</button>
+            <button class="register-tab-btn" id="tab-s360-contacts"
+              onclick="window.PartyController.selectSupplier360Tab('contacts')">👥 Contacts</button>
+            <button class="register-tab-btn" id="tab-s360-purchases"
+              onclick="window.PartyController.selectSupplier360Tab('purchases')">📦 Purchases</button>
+            <button class="register-tab-btn" id="tab-s360-payments"
+              onclick="window.PartyController.selectSupplier360Tab('payments')">💳 Payments</button>
+            <button class="register-tab-btn" id="tab-s360-notes"
+              onclick="window.PartyController.selectSupplier360Tab('notes')">📝 Notes</button>
+            <button class="register-tab-btn" id="tab-s360-documents"
+              onclick="window.PartyController.selectSupplier360Tab('documents')">📎 Documents</button>
           </div>
 
           <!-- TAB CONTENT: OVERVIEW -->
@@ -16670,69 +16685,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.35.06"></script>
+  <script src="js/version.js?v=10.0.35.07"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.35.06"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.35.06"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.35.06"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.35.06"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.35.06"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.35.06"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.35.06"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.35.06"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.35.06"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.35.06"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.35.06"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.35.06"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.35.06"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.35.06"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.35.06"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.35.06"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.35.07"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.35.07"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.35.07"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.35.07"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.35.07"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.35.07"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.35.07"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.35.07"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.35.07"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.35.07"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.35.07"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.35.07"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.35.07"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.35.07"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.35.07"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.35.07"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.35.06"></script>
-  <script src="js/services/ApiService.js?v=10.0.35.06"></script>
-  <script src="js/services/AuthService.js?v=10.0.35.06"></script>
-  <script src="js/services/NotificationService.js?v=10.0.35.06"></script>
-  <script src="js/services/MasterService.js?v=10.0.35.06"></script>
-  <script src="js/services/OperationsService.js?v=10.0.35.06"></script>
-  <script src="js/services/ReportService.js?v=10.0.35.06"></script>
-  <script src="js/services/ReconService.js?v=10.0.35.06"></script>
-  <script src="js/services/AccountingService.js?v=10.0.35.06"></script>
-  <script src="js/services/ImportService.js?v=10.0.35.06"></script>
+  <script src="js/services/BrandingService.js?v=10.0.35.07"></script>
+  <script src="js/services/ApiService.js?v=10.0.35.07"></script>
+  <script src="js/services/AuthService.js?v=10.0.35.07"></script>
+  <script src="js/services/NotificationService.js?v=10.0.35.07"></script>
+  <script src="js/services/MasterService.js?v=10.0.35.07"></script>
+  <script src="js/services/OperationsService.js?v=10.0.35.07"></script>
+  <script src="js/services/ReportService.js?v=10.0.35.07"></script>
+  <script src="js/services/ReconService.js?v=10.0.35.07"></script>
+  <script src="js/services/AccountingService.js?v=10.0.35.07"></script>
+  <script src="js/services/ImportService.js?v=10.0.35.07"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/GstController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.35.06"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.35.06"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/GstController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.35.07"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.35.06"></script>
-  <script src="js/app.js?v=10.0.35.06"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.35.07"></script>
+  <script src="js/app.js?v=10.0.35.07"></script>
 </body>
 
 </html>
