@@ -3,13 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
+  version: "10.0.35.02",
   desktopVersion: "10.0.35",
-  webBuild: 1,
-  webVersion: "10.0.35.01",
-  tag: "web-v10.0.35.01",
-  releaseDate: "2026-10-19T04:15:00+05:30",
+  webBuild: 2,
+  webVersion: "10.0.35.02",
+  tag: "web-v10.0.35.02",
+  releaseDate: "2026-10-19T12:40:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.35.01 Enterprise Release - Full Parity Fixes for Data Import Loaders DTO Contracts, Reporting KPI Cards & Saved Views 2-Way Persistence, Settings 5 Lifetime Database Business Assets, Master Lookup Edit, Permission Matrix Optimistic Locking, and Address Interlocking"
+  summary: "10.0.35.02 Enterprise Release - Master Lookup Edit button handler fix, login screen desktop baseline version badge, and full import loaders parity contracts & permissive format matching"
 };
 
 // Automatic UI Version Injection

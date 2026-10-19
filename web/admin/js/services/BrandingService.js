@@ -148,7 +148,7 @@ window.BrandingService = (function() {
     // Version Badge
     const versionBadgeEl = document.getElementById('auth-app-version-badge');
     if (versionBadgeEl) {
-      const ver = (window.DSE_VERSION && window.DSE_VERSION.version) || '10.0.34';
+      const ver = (window.DSE_VERSION && (window.DSE_VERSION.webVersion || window.DSE_VERSION.version)) || '10.0.35.02';
       versionBadgeEl.textContent = `Version ${ver}`;
     }
   }

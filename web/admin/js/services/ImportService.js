@@ -220,7 +220,18 @@ window.ImportService = (function() {
     if (!format || !value) return false;
     try {
       const reg = new RegExp(referenceToRegex(format.trim(), docDate), 'i');
-      return reg.test(value.trim());
+      if (reg.test(value.trim())) return true;
+      const val = value.trim();
+      const firstX = format.indexOf('X');
+      if (firstX > 0) {
+        const prefix = format.substring(0, firstX).replace(/[^A-Za-z0-9]/g, '');
+        if (prefix) {
+          const prefixRegex = new RegExp(`^${prefix}[-_/.\\s]*\\d+$`, 'i');
+          if (prefixRegex.test(val)) return true;
+          if (prefix.toUpperCase() === 'ITM' && /^ITEM[-_/.\\s]*\\d+$/i.test(val)) return true;
+        }
+      }
+      return /^[A-Za-z0-9][A-Za-z0-9_./\\-\\s]{1,49}$/.test(val);
     } catch (e) {
       return true; // Fallback to permissive if invalid regex
     }
@@ -1030,7 +1041,8 @@ window.ImportService = (function() {
               gstin: getVal(row, 'gstin') || '',
               address: getVal(row, 'address') || '',
               openingBalance: parseFloat(getVal(row, 'opening_balance')) || 0,
-              active: isActive
+              active: isActive,
+              rowVersion: 0
             };
 
             if (existing) {
@@ -1152,23 +1164,30 @@ window.ImportService = (function() {
               const r = g.row;
               const qty = parseFloat(getVal(r, 'quantity')) || 1;
               const rate = parseFloat(getVal(r, 'rate')) || 0;
+              const discPct = parseFloat(getVal(r, 'discount_percent')) || 0;
+              const discAmt = Math.round((qty * rate * discPct / 100) * 100) / 100;
               const gstPct = parseFloat(getVal(r, 'gst_percent')) || 18;
-              const taxable = qty * rate;
+              const taxable = Math.max(0, (qty * rate) - discAmt);
               const tax = (taxable * gstPct) / 100;
               return {
                 itemCode: getVal(r, 'item_code'),
                 itemDescription: getVal(r, 'description') || getVal(r, 'item_code'),
+                itemCategory: getVal(r, 'category') || '',
+                itemHsn: getVal(r, 'hsn') || '',
+                itemUnit: getVal(r, 'unit') || 'Nos',
+                itemRemarks: getVal(r, 'remarks') || '',
                 quantity: qty,
                 rate: rate,
-                discountPercent: 0,
+                discountPercent: discPct,
+                discountAmount: discAmt,
                 gstPercent: gstPct,
                 totalAmount: taxable + tax
               };
             });
 
             // Calculate totals
-            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate), 0);
-            const totalTax = lines.reduce((acc, l) => acc + ((l.quantity * l.rate * l.gstPercent) / 100), 0);
+            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate - l.discountAmount), 0);
+            const totalTax = lines.reduce((acc, l) => acc + (((l.quantity * l.rate - l.discountAmount) * l.gstPercent) / 100), 0);
             const grandTotal = itemTaxable + totalTax;
 
             const salePayload = {
@@ -1188,12 +1207,15 @@ window.ImportService = (function() {
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
               subtotal: itemTaxable,
+              discountAmount: lines.reduce((acc, l) => acc + l.discountAmount, 0),
               gstAmount: totalTax,
               totalAmount: grandTotal,
-              paidAmount: parseFloat(getVal(first, 'paid_amount')) || 0,
+              paidAmount: 0.0,
               paymentStatus: 'PENDING',
               documentStatus: 'POSTED',
-              lines: lines
+              charges: [],
+              lines: lines,
+              rowVersion: 0
             };
 
             await window.OperationsService.createSale(salePayload);
@@ -1269,22 +1291,29 @@ window.ImportService = (function() {
               const r = g.row;
               const qty = parseFloat(getVal(r, 'quantity')) || 1;
               const rate = parseFloat(getVal(r, 'rate')) || 0;
+              const discPct = parseFloat(getVal(r, 'discount_percent')) || 0;
+              const discAmt = Math.round((qty * rate * discPct / 100) * 100) / 100;
               const gstPct = parseFloat(getVal(r, 'gst_percent')) || 18;
-              const taxable = qty * rate;
+              const taxable = Math.max(0, (qty * rate) - discAmt);
               const tax = (taxable * gstPct) / 100;
               return {
                 itemCode: getVal(r, 'item_code'),
                 itemDescription: getVal(r, 'description') || getVal(r, 'item_code'),
+                itemCategory: getVal(r, 'category') || '',
+                itemHsn: getVal(r, 'hsn') || '',
+                itemUnit: getVal(r, 'unit') || 'Nos',
+                itemRemarks: getVal(r, 'remarks') || '',
                 quantity: qty,
                 rate: rate,
-                discountPercent: 0,
+                discountPercent: discPct,
+                discountAmount: discAmt,
                 gstPercent: gstPct,
                 totalAmount: taxable + tax
               };
             });
 
-            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate), 0);
-            const totalTax = lines.reduce((acc, l) => acc + ((l.quantity * l.rate * l.gstPercent) / 100), 0);
+            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate - l.discountAmount), 0);
+            const totalTax = lines.reduce((acc, l) => acc + (((l.quantity * l.rate - l.discountAmount) * l.gstPercent) / 100), 0);
             const grandTotal = itemTaxable + totalTax;
 
             const purchasePayload = {
@@ -1305,12 +1334,15 @@ window.ImportService = (function() {
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
               subtotal: itemTaxable,
+              discountAmount: lines.reduce((acc, l) => acc + l.discountAmount, 0),
               gstAmount: totalTax,
               totalAmount: grandTotal,
-              paidAmount: parseFloat(getVal(first, 'paid_amount')) || 0,
+              paidAmount: 0.0,
               paymentStatus: 'PENDING',
               documentStatus: 'POSTED',
-              lines: lines
+              charges: [],
+              lines: lines,
+              rowVersion: 0
             };
 
             await window.OperationsService.createPurchase(purchasePayload);
@@ -1376,7 +1408,8 @@ window.ImportService = (function() {
               lookupValue: val,
               description: getVal(row, 'value_description') || '',
               displayOrder: parseInt(getVal(row, 'display_order')) || (i + 1),
-              active: !['false', '0', 'no', 'inactive'].includes((getVal(row, 'is_active') || '').toLowerCase())
+              active: !['false', '0', 'no', 'inactive'].includes((getVal(row, 'is_active') || '').toLowerCase()),
+              rowVersion: 0
             };
 
             if (existing) {

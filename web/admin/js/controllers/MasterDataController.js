@@ -490,8 +490,22 @@ window.MasterDataController = (function() {
         }
         return;
       }
-      selectedLookupId = item.id != null ? Number(item.id) : targetId;
+
+      const item = currentLookups.find(l => String(l.id) === String(targetId)) || selectedMasterItem;
+      if (!item) {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning('Please select a master record row first.');
+        } else if (window.AppDialogService && window.AppDialogService.showToast) {
+          window.AppDialogService.showToast('Please select a master record row first.', 'warning');
+        } else {
+          alert('Please select a master record row first.');
+        }
+        return;
+      }
+
+      selectedLookupId = item.id != null ? Number(item.id) : Number(targetId);
       selectedMasterId = selectedLookupId;
+      selectedMasterItem = item;
       const menu = document.getElementById('masters-row-actions-menu');
       if (menu) menu.classList.remove('show');
 
