@@ -245,25 +245,30 @@ window.FinanceController = {
     const toDate = document.getElementById(isBank ? 'bank-filter-to' : 'exp-filter-to')?.value || '';
 
     this.filteredVouchers = this.vouchersCache.filter(v => {
+      const rawType = (v.voucherType || v.type || '').toUpperCase();
       const isBankType = isBank
-        ? (v.voucherType === 'RECEIPT' || v.voucherType === 'PAYMENT' || v.voucherType?.includes('CONTRA'))
-        : (v.voucherType === 'PAYMENT' || v.voucherType?.includes('EXPENSE'));
+        ? (rawType.includes('BANK') || rawType.includes('DEPOSIT') || rawType.includes('WITHDRAW') || rawType === 'RECEIPT' || rawType === 'PAYMENT' || rawType.includes('CONTRA'))
+        : (rawType.includes('EXPENSE') || rawType === 'PAYMENT');
 
       if (!isBankType) return false;
 
       const vNo = (v.voucherNo || '').toLowerCase();
-      const party = (v.partyName || '').toLowerCase();
-      const narr = (v.narration || '').toLowerCase();
+      const party = (v.partyName || v.accountName || '').toLowerCase();
+      const narr = (v.narration || v.notes || '').toLowerCase();
       const matchesQ = !q || vNo.includes(q) || party.includes(q) || narr.includes(q);
 
       let matchesType = true;
       if (isBank && typeFilter !== 'ALL') {
-        if (typeFilter === 'RECEIPT') matchesType = v.voucherType === 'RECEIPT' || (v.voucherType || '').includes('DEPOSIT') || v.voucherType === 'CONTRA_IN';
-        else if (typeFilter === 'PAYMENT') matchesType = v.voucherType === 'PAYMENT' || (v.voucherType || '').includes('WITHDRAWAL') || v.voucherType === 'CONTRA_OUT';
-        else if (typeFilter === 'CONTRA') matchesType = (v.voucherType || '').includes('CONTRA');
+        if (typeFilter === 'DEPOSIT' || typeFilter === 'RECEIPT') {
+          matchesType = rawType.includes('DEPOSIT') || rawType === 'RECEIPT' || rawType === 'CONTRA_IN';
+        } else if (typeFilter === 'WITHDRAWAL' || typeFilter === 'PAYMENT') {
+          matchesType = rawType.includes('WITHDRAW') || rawType === 'PAYMENT' || rawType === 'CONTRA_OUT';
+        } else if (typeFilter === 'CONTRA') {
+          matchesType = rawType.includes('CONTRA');
+        }
       } else if (!isBank && catFilter !== 'ALL') {
         const cat = v.category || (v.narration || '').split('|')[0]?.trim();
-        matchesType = cat === catFilter;
+        matchesType = (cat || '').toUpperCase() === catFilter.toUpperCase();
       }
 
       let matchesDate = true;
@@ -650,9 +655,17 @@ window.FinanceController = {
     try {
       if (!window.MasterService) return;
       const [modes, accounts, categories] = await Promise.all([
-        window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => []),
-        window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []),
-        window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => [])
+        window.MasterService.getLookupValuesByCategoryCode('PAYMENT_MODE').catch(async () => {
+          return await window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => ['NEFT/RTGS', 'IMPS', 'CHEQUE', 'UPI', 'CASH']);
+        }),
+        window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(async () => {
+          return await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
+        }),
+        window.MasterService.getLookupValuesByCategoryCode('EXPENSE_HEAD').catch(async () => {
+          return await window.MasterService.getLookupValuesByCategoryCode('EXPENSE_CATEGORY').catch(async () => {
+            return await window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => ['OFFICE EXPENSES', 'TRAVEL & CONVEYANCE', 'PRINTING & STATIONERY', 'ELECTRICITY & UTILITY', 'RENT', 'SALARIES']);
+          });
+        })
       ]);
 
       const modeEl = document.getElementById('f-entry-mode');
@@ -668,13 +681,15 @@ window.FinanceController = {
         const cur = accEl.value;
         const acctList = Array.isArray(accounts) ? accounts.filter(a => a.active !== false) : [];
         if (acctList.length > 0) {
-          accEl.innerHTML = acctList.map(a => `<option value="${a.lookupValue}" ${a.lookupValue === cur ? 'selected' : ''}>${a.lookupValue}${a.description ? ' (' + a.description + ')' : ''}</option>`).join('') + '<option value="Cash / General">Cash / General Petty Cash</option>';
+          accEl.innerHTML = acctList.map(a => `<option value="${a.lookupValue || a.name || a.value}" ${(a.lookupValue || a.name || a.value) === cur ? 'selected' : ''}>${a.lookupValue || a.name || a.value}${a.description ? ' (' + a.description + ')' : ''}</option>`).join('') + '<option value="Cash / General">Cash / General Petty Cash</option>';
+        } else {
+          accEl.innerHTML = '<option value="Cash / General">Cash / General Petty Cash</option>';
         }
       }
 
       const catEl = document.getElementById('f-entry-category');
       if (catEl && Array.isArray(categories) && categories.length > 0) {
-        const cur = catEl.value || 'OFFICE EXPENSES';
+        const cur = catEl.value || (categories[0] || 'OFFICE EXPENSES');
         catEl.innerHTML = categories.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
       }
 

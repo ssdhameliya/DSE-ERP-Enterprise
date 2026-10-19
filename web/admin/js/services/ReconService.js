@@ -57,6 +57,10 @@ window.ReconService = {
     return window.ApiService.get(`/api/bank-statements/imports/${id}/metrics`);
   },
 
+  async getMetrics(id) {
+    return this.getBatchMetrics(id);
+  },
+
   async importStatement(payload) {
     return window.ApiService.post('/api/bank-statements/imports', payload);
   },

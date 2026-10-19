@@ -1420,26 +1420,135 @@ window.ReportsController = (function() {
     },
 
     async loadSavedReports() {
+      const DEFAULT_SAVED_PRESETS = [
+        {
+          name: 'Sales Register - This Month',
+          baseReport: 'Sales Register',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Date ↓',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'SALES_REGISTER',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'date',
+            sortDirection: 'DESC'
+          }
+        },
+        {
+          name: 'Purchase Register - This Month',
+          baseReport: 'Purchase Register',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Date ↓',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'PURCHASE_REGISTER',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'date',
+            sortDirection: 'DESC'
+          }
+        },
+        {
+          name: 'Stock Summary',
+          baseReport: 'Stock Summary',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Item ↑',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'STOCK_SUMMARY',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'item',
+            sortDirection: 'ASC'
+          }
+        },
+        {
+          name: 'Receivables Aging',
+          baseReport: 'Receivable Ageing',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Party ↑',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'RECEIVABLE_AGEING',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'party',
+            sortDirection: 'ASC'
+          }
+        },
+        {
+          name: 'GST Tax Summary',
+          baseReport: 'GST Tax Summary',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Date ↓',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'GST_TAX',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'date',
+            sortDirection: 'DESC'
+          }
+        },
+        {
+          name: 'Profitability Analysis',
+          baseReport: 'Profitability Analysis',
+          datePreset: 'This Month',
+          grouping: 'None',
+          sorting: 'Date ↓',
+          columns: 'Standard',
+          status: 'Default Preset',
+          request: {
+            reportId: 'PROFITABILITY',
+            datePreset: 'This Month',
+            groupBy: 'None',
+            sortKey: 'date',
+            sortDirection: 'DESC'
+          }
+        }
+      ];
+
       try {
+        allSavedReports = [];
         if (window.ApiService) {
           const views = await window.ApiService.get('/api/support/saved-views?screen=REPORT_CENTER').catch(() => null);
           if (Array.isArray(views)) {
-            allSavedReports = [];
             for (const v of views) {
               if (!v || !v.name) continue;
               let config = null;
               let req = null;
               let preset = 'Custom';
-              if (v.data && v.data.startsWith('REPORT_V2:')) {
+              const rawData = typeof v.data === 'string' ? v.data.trim() : '';
+
+              if (rawData.startsWith('REPORT_V2:')) {
                 try {
-                  config = JSON.parse(v.data.slice('REPORT_V2:'.length));
+                  config = JSON.parse(rawData.slice('REPORT_V2:'.length));
                   req = config?.request;
                   preset = config?.datePreset || 'Custom';
                 } catch (e) {
                   console.warn('[ReportsController] Failed to parse REPORT_V2 JSON for view:', v.name, e);
                 }
-              } else if (v.data && v.data.includes('|')) {
-                const parts = v.data.split('|');
+              } else if (rawData.startsWith('{')) {
+                try {
+                  config = JSON.parse(rawData);
+                  req = config?.request || config;
+                  preset = config?.datePreset || 'Custom';
+                } catch (e) {
+                  console.warn('[ReportsController] Failed to parse raw JSON view:', v.name, e);
+                }
+              } else if (rawData.includes('|')) {
+                const parts = rawData.split('|');
                 if (parts.length >= 6) {
                   const repId = parts[0].trim().toUpperCase() === 'PURCHASE' ? 'PURCHASE_REGISTER' :
                     parts[0].trim().toUpperCase() === 'INVENTORY' ? 'STOCK_SUMMARY' :
@@ -1505,6 +1614,13 @@ window.ReportsController = (function() {
         }
       } catch (err) {
         console.warn('[ReportsController] loadSavedReports failed:', err);
+      }
+
+      if (allSavedReports.length === 0) {
+        allSavedReports = DEFAULT_SAVED_PRESETS.map(p => ({
+          ...p,
+          raw: null
+        }));
       }
 
       this.renderSavedReportsTable();
@@ -1591,6 +1707,14 @@ window.ReportsController = (function() {
 
       this.switchMainTab('viewer');
       this.switchViewerSubView('viewer');
+
+      const dropdownEl = document.getElementById('viewer-saved-reports-dropdown');
+      if (dropdownEl && saved.name) dropdownEl.value = saved.name;
+
+      const headerTitle = document.getElementById('viewer-report-title');
+      const headerIcon = document.getElementById('viewer-header-icon');
+      if (headerTitle) headerTitle.innerText = this.currentDefinition?.title || currentReportId;
+      if (headerIcon) headerIcon.innerText = this.currentDefinition?.icon || '📄';
 
       const periodEl = document.getElementById('v-filter-period');
       const preset = saved.datePreset || 'Custom';

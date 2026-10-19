@@ -246,6 +246,17 @@ window.SettingsController = (function() {
 
     async clearSignatureImage() {
       try {
+        try {
+          const token = getAuthToken();
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          await fetch(`/api/authority/resources/BUSINESS_ASSET/company.signaturePath`, {
+            method: 'DELETE',
+            headers
+          });
+        } catch (e) {
+          console.warn('Could not delete signature resource:', e);
+        }
+
         await window.ApiService.put('/api/support/settings', {
           values: {
             'company.signaturePath': '',
@@ -367,21 +378,26 @@ window.SettingsController = (function() {
           aliasKey = 'payment.upi.qr';
         }
 
+        // 1. Delete binary asset from backend resource repository
+        try {
+          const token = getAuthToken();
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(canonicalKey)}`, {
+            method: 'DELETE',
+            headers
+          });
+        } catch (e) {
+          console.warn('Could not delete server resource:', e);
+        }
+
+        // 2. Clear setting pointers
         const values = {};
         values[canonicalKey] = '';
         values[aliasKey] = '';
         await window.ApiService.put('/api/support/settings', { values });
 
-        const defaultImgs = {
-          'invoice.header.logo': 'assets/brand-banner.png',
-          'company.logoPath': 'assets/brand-banner.png',
-          'application.banner': 'assets/brand-banner.png',
-          'application.brandImagePath': 'assets/brand-banner.png',
-          'application.mark': 'assets/brand-mark.png',
-          'application.markImagePath': 'assets/brand-mark.png'
-        };
-        const defImg = defaultImgs[canonicalKey] || defaultImgs[assetKey] || '';
-        setAssetPreview(previewImgId, placeholderId, '', defImg, statusId, canonicalKey);
+        // 3. Clear preview cleanly without dummy fallback images
+        setAssetPreview(previewImgId, placeholderId, '', null, statusId, canonicalKey);
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" removed.`, 'info');
@@ -584,10 +600,10 @@ window.SettingsController = (function() {
         setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
 
         const bannerVal = serverSettings['application.brandImagePath'] || serverSettings['application.banner'];
-        setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, 'assets/brand-banner.png', 'status-app-banner', 'application.brandImagePath');
+        setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, null, 'status-app-banner', 'application.brandImagePath');
 
         const markVal = serverSettings['application.markImagePath'] || serverSettings['application.mark'];
-        setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, 'assets/brand-mark.png', 'status-app-mark', 'application.markImagePath');
+        setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, null, 'status-app-mark', 'application.markImagePath');
       } catch (err) {
         console.error('[SettingsController] Failed to load company settings:', err);
       }
@@ -764,7 +780,7 @@ window.SettingsController = (function() {
         } catch (e) {}
 
         const logoVal = invoiceSettings['company.logoPath'] || invoiceSettings['invoice.header.logo'];
-        setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', logoVal, 'assets/brand-banner.png', 'status-invoice-logo', 'company.logoPath');
+        setAssetPreview('preview-invoice-logo', 'placeholder-invoice-logo', logoVal, null, 'status-invoice-logo', 'company.logoPath');
 
         const sealVal = invoiceSettings['company.signaturePath'] || invoiceSettings['invoice.digital.seal'];
         setAssetPreview('preview-invoice-seal', 'placeholder-invoice-seal', sealVal, null, 'status-invoice-seal', 'company.signaturePath');

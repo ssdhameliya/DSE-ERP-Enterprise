@@ -115,7 +115,7 @@ window.ImportController = (function() {
           throw new Error('ImportService is not loaded.');
         }
 
-        parsedData = await window.ImportService.parseFile(file);
+        parsedData = await window.ImportService.parseFile(file, selectedModule);
 
         if (countEl) {
           const sheetInfo = parsedData.selectedSheet ? ` [Sheet: ${parsedData.selectedSheet}]` : '';

@@ -113,6 +113,23 @@ window.MasterDataController = (function() {
       updateLookupToolbarState(null);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
+      // Update Category Action buttons state (Desktop MasterDataController:837-853 Parity)
+      const catMeta = categories.find(c => (c.categoryName || c.name) === catName);
+      const isRoleCat = (catName || '').toUpperCase() === 'ROLE';
+      const isCatActive = catMeta ? (catMeta.active !== false) : true;
+      const deactBtn = document.querySelector('button[onclick*="deactivateCurrentCategory"]');
+      const renameBtn = document.querySelector('button[onclick*="openRenameCategoryModal"]');
+      if (deactBtn) {
+        deactBtn.innerText = isCatActive ? 'Deactivate' : 'Reactivate';
+        deactBtn.style.color = isCatActive ? '#f87171' : '#34d399';
+        deactBtn.disabled = isRoleCat;
+        deactBtn.title = isRoleCat ? 'Role Master is a protected system category.' : '';
+      }
+      if (renameBtn) {
+        renameBtn.disabled = isRoleCat;
+        renameBtn.title = isRoleCat ? 'Role Master keeps the fixed category code ROLE.' : '';
+      }
+
       // Update active style in categories list
       document.querySelectorAll('.master-category-item').forEach(el => {
         el.classList.toggle('active', el.textContent.includes(catName));
@@ -344,87 +361,174 @@ window.MasterDataController = (function() {
     // ==========================================
     openAddCategoryModal() {
       const modal = document.getElementById('modal-add-category');
-      const input = document.getElementById('input-new-category-name');
-      if (input) input.value = '';
+      const codeInput = document.getElementById('m-category-code') || document.getElementById('input-new-category-name');
+      const nameInput = document.getElementById('m-category-name');
+      if (codeInput) codeInput.value = '';
+      if (nameInput) nameInput.value = '';
       if (modal) modal.style.display = 'flex';
-      if (input) input.focus();
+      if (codeInput) codeInput.focus();
     },
 
-    closeAddCategoryModal() {
+    closeCategoryModal() {
       const modal = document.getElementById('modal-add-category');
       if (modal) modal.style.display = 'none';
     },
 
-    async submitAddCategory(e) {
+    closeAddCategoryModal() {
+      this.closeCategoryModal();
+    },
+
+    async submitCategorySave(e) {
       if (e) e.preventDefault();
-      const input = document.getElementById('input-new-category-name');
-      const name = (input ? input.value : '').trim().toUpperCase();
+      const codeInput = document.getElementById('m-category-code') || document.getElementById('input-new-category-name');
+      const nameInput = document.getElementById('m-category-name');
+      const rawCode = (codeInput ? codeInput.value : '').trim();
+      const rawName = (nameInput ? nameInput.value : '').trim();
+      const name = (rawCode || rawName).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+
       if (!name) {
-        window.AppDialogService.showToast('Category name cannot be empty', 'error');
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError('Category code cannot be empty.');
+        } else {
+          alert('Category code cannot be empty.');
+        }
         return;
       }
 
       try {
         await window.MasterService.addCategory(name);
-        this.closeAddCategoryModal();
+        this.closeCategoryModal();
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Category "${name}" created successfully!`, 'success');
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Category "${name}" created successfully!`);
         currentCategory = name;
         await this.loadMastersData();
       } catch (err) {
-        window.AppDialogService.showToast(`Failed to add category: ${err.message}`, 'error');
+        console.error('Failed to add category:', err);
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError(`Failed to add category: ${err.message}`);
+        } else {
+          alert(`Failed to add category: ${err.message}`);
+        }
       }
     },
 
+    submitAddCategory(e) {
+      return this.submitCategorySave(e);
+    },
+
     openRenameCategoryModal() {
-      if (!currentCategory) return;
+      if (!currentCategory) {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning('Please select a category to rename.');
+        } else {
+          alert('Please select a category to rename.');
+        }
+        return;
+      }
+      if (currentCategory.toUpperCase() === 'ROLE') {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning('Role Master keeps the fixed category code ROLE so every security screen uses one source.');
+        } else {
+          alert('ROLE is a protected system category and cannot be renamed.');
+        }
+        return;
+      }
+
       const modal = document.getElementById('modal-rename-category');
-      const inputOld = document.getElementById('input-rename-old-category');
-      const inputNew = document.getElementById('input-rename-new-category');
-      if (inputOld) inputOld.value = currentCategory;
-      if (inputNew) { inputNew.value = currentCategory; inputNew.focus(); }
+      const input = document.getElementById('m-category-rename-name') || document.getElementById('input-rename-new-category');
+      if (input) {
+        input.value = currentCategory;
+        input.focus();
+      }
       if (modal) modal.style.display = 'flex';
     },
 
-    closeRenameCategoryModal() {
+    closeRenameModal() {
       const modal = document.getElementById('modal-rename-category');
       if (modal) modal.style.display = 'none';
     },
 
-    async submitRenameCategory(e) {
+    closeRenameCategoryModal() {
+      this.closeRenameModal();
+    },
+
+    async submitCategoryRename(e) {
       if (e) e.preventDefault();
-      const inputNew = document.getElementById('input-rename-new-category');
-      const newName = (inputNew ? inputNew.value : '').trim().toUpperCase();
+      const input = document.getElementById('m-category-rename-name') || document.getElementById('input-rename-new-category');
+      const newName = (input ? input.value : '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
       if (!newName || newName === currentCategory) {
-        this.closeRenameCategoryModal();
+        this.closeRenameModal();
         return;
       }
 
+      const meta = categories.find(c => (c.categoryName || c.name) === currentCategory);
+      const rowVersion = meta?.rowVersion != null ? meta.rowVersion : 0;
+
       try {
-        await window.MasterService.renameCategory(currentCategory, newName);
-        this.closeRenameCategoryModal();
+        await window.MasterService.renameCategory(currentCategory, newName, rowVersion);
+        this.closeRenameModal();
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Category renamed to "${newName}"!`, 'success');
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Category renamed to "${newName}"!`);
         currentCategory = newName;
         await this.loadMastersData();
       } catch (err) {
-        window.AppDialogService.showToast(`Rename failed: ${err.message}`, 'error');
+        console.error('Rename failed:', err);
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError(`Rename failed: ${err.message}`);
+        } else {
+          alert(`Rename failed: ${err.message}`);
+        }
       }
+    },
+
+    submitRenameCategory(e) {
+      return this.submitCategoryRename(e);
     },
 
     async deactivateCurrentCategory() {
       if (!currentCategory) return;
-      if (!confirm(`Are you sure you want to deactivate lookup category "${currentCategory}"?\nThis category will be archived.`)) return;
-
-      try {
-        await window.MasterService.setCategoryActive(currentCategory, false);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast(`Category "${currentCategory}" deactivated.`, 'success');
-        currentCategory = null;
-        await this.loadMastersData();
-      } catch (err) {
-        window.AppDialogService.showToast(`Deactivation failed: ${err.message}`, 'error');
+      if (currentCategory.toUpperCase() === 'ROLE') {
+        if (window.AppDialogService && window.AppDialogService.toastWarning) {
+          window.AppDialogService.toastWarning('Role Master is a protected system category and cannot be deactivated.');
+        } else {
+          alert('ROLE is a protected system category and cannot be deactivated.');
+        }
+        return;
       }
+
+      const meta = categories.find(c => (c.categoryName || c.name) === currentCategory);
+      const isActive = meta ? (meta.active !== false) : true;
+      const rowVersion = meta?.rowVersion != null ? meta.rowVersion : 0;
+
+      if (isActive) {
+        if (!confirm(`Deactivate category "${currentCategory}" and all of its values?\nExisting records will remain unchanged.`)) return;
+        try {
+          await window.MasterService.setCategoryActive(currentCategory, false, rowVersion);
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Category "${currentCategory}" and its values are now inactive.`);
+          await this.loadMastersData();
+        } catch (err) {
+          console.error('Deactivation failed:', err);
+          if (window.AppDialogService && window.AppDialogService.toastError) window.AppDialogService.toastError(`Deactivation failed: ${err.message}`);
+          else alert(`Deactivation failed: ${err.message}`);
+        }
+      } else {
+        if (!confirm(`Reactivate category "${currentCategory}"?\nExisting lookup values stay in their current Active/Inactive state.`)) return;
+        try {
+          await window.MasterService.setCategoryActive(currentCategory, true, rowVersion);
+          if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Category "${currentCategory}" reactivated successfully.`);
+          await this.loadMastersData();
+        } catch (err) {
+          console.error('Reactivation failed:', err);
+          if (window.AppDialogService && window.AppDialogService.toastError) window.AppDialogService.toastError(`Reactivation failed: ${err.message}`);
+          else alert(`Reactivation failed: ${err.message}`);
+        }
+      }
+    },
+
+    toggleCategoryActive() {
+      return this.deactivateCurrentCategory();
     },
 
     // ==========================================

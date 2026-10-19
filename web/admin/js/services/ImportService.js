@@ -89,7 +89,7 @@ window.ImportService = (function() {
       case 'Purchase Recon':
         return new Set(['supplier_name', 'supplier_invoice_no', 'invoice_date', 'invoice_value']);
       case 'Bank Statement':
-        return new Set(['transaction_date', 'value_date', 'description', 'reference', 'amount', 'direction', 'balance']);
+        return new Set(['transaction_date', 'amount']);
       default:
         return new Set(['item_code', 'description', 'unit', 'hsn', 'remarks']);
     }
@@ -252,7 +252,7 @@ window.ImportService = (function() {
       case 'partycode':
         return normHeader === 'customercode' || normHeader === 'suppliercode' || normHeader === 'partyid' || normHeader === 'vendorcode';
       case 'description':
-        return normHeader === 'itemname' || normHeader === 'name' || normHeader === 'itemdescription' || normHeader === 'productname';
+        return normHeader === 'itemname' || normHeader === 'name' || normHeader === 'itemdescription' || normHeader === 'productname' || normHeader === 'narration' || normHeader === 'particulars' || normHeader === 'description' || normHeader === 'transactiondetails' || normHeader === 'remarks' || normHeader === 'txndetails';
       case 'invoiceno':
         return normHeader === 'billno' || normHeader === 'documentno' || normHeader === 'invoicenumber' || normHeader === 'supplierbillno';
       case 'invoicedate':
@@ -276,17 +276,22 @@ window.ImportService = (function() {
       case 'isactive':
         return normHeader === 'active' || normHeader === 'status';
       case 'transactiondate':
-        return normHeader === 'txndate' || normHeader === 'transactiondate';
+      case 'date':
+        return normHeader === 'txndate' || normHeader === 'transactiondate' || normHeader === 'date' || normHeader === 'txndatetime' || normHeader === 'postingdate' || normHeader === 'valuedate';
       case 'valuedate':
-        return normHeader === 'valuedate';
+        return normHeader === 'valuedate' || normHeader === 'valuedt' || normHeader === 'valdate' || normHeader === 'date';
       case 'reference':
-        return normHeader === 'chqrefno' || normHeader === 'referenceno' || normHeader === 'refchequeno' || normHeader === 'utrno';
+        return normHeader === 'chqrefno' || normHeader === 'referenceno' || normHeader === 'refchequeno' || normHeader === 'utrno' || normHeader === 'chequeno' || normHeader === 'chqno' || normHeader === 'refno' || normHeader === 'referencenumber' || normHeader === 'utr' || normHeader === 'chequereferenceno' || normHeader === 'txnrefno';
       case 'amount':
-        return normHeader === 'amount' || normHeader === 'txnamount';
+        return normHeader === 'amount' || normHeader === 'txnamount' || normHeader === 'transactionamount' || normHeader === 'netamount';
       case 'direction':
-        return normHeader === 'drcr' || normHeader === 'debitcredit' || normHeader === 'type';
+        return normHeader === 'drcr' || normHeader === 'debitcredit' || normHeader === 'type' || normHeader === 'crdr' || normHeader === 'dr' || normHeader === 'cr';
+      case 'debit':
+        return normHeader === 'debit' || normHeader === 'debitamount' || normHeader === 'withdrawal' || normHeader === 'withdrawalamount' || normHeader === 'dr';
+      case 'credit':
+        return normHeader === 'credit' || normHeader === 'creditamount' || normHeader === 'deposit' || normHeader === 'depositamount' || normHeader === 'cr';
       case 'balance':
-        return normHeader === 'balance' || normHeader === 'closingbalance';
+        return normHeader === 'balance' || normHeader === 'closingbalance' || normHeader === 'runningbalance' || normHeader === 'availablebalance';
       case 'purchaseprice':
         return normHeader === 'costprice' || normHeader === 'purprice';
       case 'sellingprice':
@@ -406,8 +411,8 @@ window.ImportService = (function() {
         const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
         if (!rawJson || rawJson.length === 0) continue;
 
-        // Check first 10 rows for headers
-        for (let r = 0; r < Math.min(10, rawJson.length); r++) {
+        // Check first 15 rows for headers
+        for (let r = 0; r < Math.min(15, rawJson.length); r++) {
           const row = rawJson[r].map(c => String(c).trim());
           const matchCount = row.filter(cell => {
             const norm = normalizeKey(cell);
@@ -441,13 +446,13 @@ window.ImportService = (function() {
     } else {
       // Plain text CSV parser fallback
       const text = await file.text();
-      return parseCsvText(text);
+      return parseCsvText(text, domainFields);
     }
   }
 
-  function parseCsvText(csvText) {
-    const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
-    if (lines.length === 0) return { headers: [], rows: [] };
+  function parseCsvText(csvText, domainFields = []) {
+    const rawLines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (rawLines.length === 0) return { headers: [], rows: [] };
 
     function parseRow(line) {
       const row = [];
@@ -473,14 +478,26 @@ window.ImportService = (function() {
       return row;
     }
 
-    const headers = parseRow(lines[0]);
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const parsed = parseRow(lines[i]);
-      if (parsed.some(x => x.length > 0)) {
-        rows.push(parsed);
+    const parsedLines = rawLines.map(parseRow);
+    let bestHeaderIdx = 0;
+    let bestMatchCount = -1;
+
+    if (domainFields && domainFields.length > 0) {
+      for (let r = 0; r < Math.min(15, parsedLines.length); r++) {
+        const row = parsedLines[r];
+        const matchCount = row.filter(cell => {
+          const norm = normalizeKey(cell);
+          return domainFields.some(df => normalizeKey(df) === norm || areKnownAliases(normalizeKey(df), norm));
+        }).length;
+        if (matchCount > bestMatchCount) {
+          bestMatchCount = matchCount;
+          bestHeaderIdx = r;
+        }
       }
     }
+
+    const headers = parsedLines[bestHeaderIdx] || [];
+    const rows = parsedLines.slice(bestHeaderIdx + 1).filter(r => r.some(x => x.length > 0));
     return { headers, rows, sheetNames: ['CSV'], selectedSheet: 'CSV' };
   }
 
@@ -1498,9 +1515,26 @@ window.ImportService = (function() {
 
       case 'Bank Statement': {
         const branding = window.BrandingService ? window.BrandingService.getProfile() : {};
-        const bankName = branding.bankName || 'Kotak Mahindra Bank';
-        const accountNumber = branding.bankAccount || '50200012847192';
-        const accountHolder = branding.name || 'Jashvi Engineers';
+        let bankName = branding.bankName || '';
+        let accountNumber = branding.bankAccount || '';
+        let accountHolder = branding.name || '';
+
+        try {
+          const bankLookups = await window.ApiService.get('/api/master/lookups/by-category-code?code=BANK_ACCOUNT');
+          const activeBanks = (bankLookups || []).filter(b => b.active !== false);
+          if (activeBanks.length > 0) {
+            accountNumber = activeBanks[0].lookupCode || accountNumber;
+            bankName = activeBanks[0].lookupValue || bankName;
+            accountHolder = activeBanks[0].description || branding.name || 'Company Account';
+          }
+        } catch (e) {
+          console.warn('Could not load bank lookups in ImportService:', e);
+        }
+        if (!accountNumber) {
+          accountNumber = branding.bankAccount || 'MAIN_ACCOUNT';
+          bankName = branding.bankName || 'Primary Bank';
+          accountHolder = branding.name || 'Company Account';
+        }
 
         const bankRows = rows.map((r, idx) => {
           let dVal = parseFloat(getVal(r, 'debit')) || 0;

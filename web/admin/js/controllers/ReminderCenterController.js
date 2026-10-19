@@ -1,173 +1,196 @@
 /**
  * Jasvi Industries ERP - ReminderCenterController
  * Exact Desktop Parity with org.example.controller.ReminderCenterController & ReminderCenter.fxml
- * Automated payment follow-ups, overdue debtor collections, and customer communication triggers
+ * Real database-backed reminder inbox with CRUD, completion and snooze workflows via /api/insights/reminders
  */
 window.ReminderCenterController = (function() {
   'use strict';
 
-  let overdueList = [];
-  let remindersSentToday = 0;
-  let selectedReminderIndex = null;
-  let selectedReminderRow = null;
+  let sourceReminders = [];
+  let filteredReminders = [];
+  let selectedReminder = null;
+
+  function formatDate(d) {
+    if (!d) return '-';
+    try {
+      const parts = d.toString().split('T')[0].split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return d;
+    } catch {
+      return d;
+    }
+  }
+
+  function getTodayStr() {
+    return new Date().toISOString().substring(0, 10);
+  }
+
+  function getPriorityBadge(priority) {
+    const p = (priority || 'NORMAL').toUpperCase();
+    if (p === 'URGENT') return '<span class="pill-badge pill-danger" style="font-weight:700;">URGENT</span>';
+    if (p === 'HIGH') return '<span class="pill-badge pill-warning" style="font-weight:700;">HIGH</span>';
+    if (p === 'LOW') return '<span class="pill-badge pill-neutral">LOW</span>';
+    return '<span class="pill-badge pill-blue">NORMAL</span>';
+  }
+
+  function getStatusBadge(status) {
+    const s = (status || 'OPEN').toUpperCase();
+    if (s === 'COMPLETED') return '<span class="pill-badge pill-success" style="font-weight:700;">COMPLETED</span>';
+    if (s === 'SNOOZED') return '<span class="pill-badge pill-warning" style="font-weight:700;">SNOOZED</span>';
+    return '<span class="pill-badge pill-blue" style="font-weight:700;">OPEN</span>';
+  }
 
   return {
     async init() {
+      await this.refresh();
+    },
+
+    async refresh() {
       await this.loadReminders();
     },
 
     async loadReminders() {
       const tbody = document.getElementById('reminders-table-tbody');
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Scanning accounts receivables for overdue debtor invoices...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading reminders from server...</td></tr>`;
       }
 
       try {
-        const todayStr = new Date().toISOString().substring(0, 10);
-        let remindersData = null;
-        try {
-          if (window.ApiService) {
-            remindersData = await window.ApiService.get('/api/insights/reminders');
-          }
-        } catch {
-          remindersData = null;
+        let data = [];
+        if (window.ApiService) {
+          data = await window.ApiService.get('/api/insights/reminders').catch(() => []);
         }
+        sourceReminders = Array.isArray(data) ? data : [];
 
-        if (Array.isArray(remindersData) && remindersData.length > 0) {
-          overdueList = remindersData.map(r => {
-            const due = r.dueDate ? r.dueDate.substring(0, 10) : todayStr;
-            const diffDays = Math.floor((new Date() - new Date(due)) / (1000 * 60 * 60 * 24));
-            return {
-              id: r.id,
-              party: r.title || r.referenceNo || 'Customer Reminder',
-              gstin: r.referenceNo || '-',
-              amount: parseFloat(r.amount || 0),
-              days: Math.max(0, diffDays),
-              dueDate: due,
-              status: r.status || 'OPEN',
-              priority: r.priority || 'NORMAL',
-              notes: r.notes || '',
-              invoices: 1
-            };
-          });
-        } else {
-          // Dynamic calculation from sales
-          let aging = null;
-          if (window.AccountingService) {
-            aging = await window.AccountingService.getReceivablesAging().catch(() => null);
-          }
-          let agingRows = [];
-          if (aging) {
-            if (Array.isArray(aging)) agingRows = aging;
-            else if (Array.isArray(aging.rows)) agingRows = aging.rows;
-            else if (Array.isArray(aging.parties)) agingRows = aging.parties;
-            else if (Array.isArray(aging.content)) agingRows = aging.content;
-          }
-
-          if (agingRows.length === 0) {
-            const salesRes = await window.OperationsService.getSales(0, 500);
-            const salesList = Array.isArray(salesRes) ? salesRes : (salesRes?.content || salesRes?.rows || salesRes?.data || []);
-            const debtorsMap = {};
-            salesList.forEach(s => {
-              if (s.paymentStatus !== 'PAID') {
-                const party = (s.customer && s.customer.name) || s.customerName || 'Client';
-                const amt = parseFloat(s.totalAmount || s.total || s.amount || 0);
-                const paid = parseFloat(s.paidAmount || 0);
-                const bal = Math.max(0, amt - paid);
-                const id = (s.customer && s.customer.id) || s.partyId || 1;
-                const due = s.dueDate || s.paymentDueDate || s.invoiceDate || todayStr;
-                const diffDays = Math.floor((new Date() - new Date(due)) / (1000 * 60 * 60 * 24));
-                if (!debtorsMap[party]) {
-                  debtorsMap[party] = { id, party, amount: 0, days: Math.max(0, diffDays), dueDate: due, status: 'OPEN', gstin: s.billingGstin || '24AAACR1234F1Z1', invoices: 0 };
-                }
-                debtorsMap[party].amount += bal;
-                debtorsMap[party].invoices++;
-                if (diffDays > debtorsMap[party].days) {
-                  debtorsMap[party].days = diffDays;
-                  debtorsMap[party].dueDate = due;
-                }
-              }
-            });
-            overdueList = Object.values(debtorsMap);
-          } else {
-            overdueList = agingRows.map(r => ({
-              id: r.partyId || r.id,
-              party: r.partyName || r.name,
-              amount: parseFloat(r.totalOutstanding || r.total || 0),
-              days: parseInt(r.maxOverdueDays || 30),
-              dueDate: todayStr,
-              status: 'OPEN',
-              gstin: r.gstin || '-',
-              invoices: r.invoiceCount || 1
-            }));
-          }
-        }
-
-        this.updateKpis(overdueList);
-        this.renderTable(overdueList);
+        this.updateKpis(sourceReminders);
+        this.applyFilters();
       } catch (err) {
+        console.error('Failed to load reminders:', err);
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--accent-red);">Failed to load overdue reminders: ${err.message}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--accent-red);">Failed to load reminders: ${err.message || 'Server error'}</td></tr>`;
         }
       }
     },
 
     updateKpis(list) {
-      const today = new Date();
+      const todayStr = getTodayStr();
+      const today = new Date(todayStr);
       today.setHours(0, 0, 0, 0);
-      const sevenDays = new Date();
+
+      const sevenDays = new Date(today);
       sevenDays.setDate(today.getDate() + 7);
-      sevenDays.setHours(23, 59, 59, 999);
 
       let openCount = 0;
       let overdueCount = 0;
       let dueTodayCount = 0;
       let upcomingCount = 0;
-      let totalOverdue = 0;
-      let highRisk = 0;
 
       list.forEach(item => {
-        const isCompleted = (item.status || '').toUpperCase() === 'COMPLETED';
-        if (!isCompleted) {
+        const status = (item.status || 'OPEN').toUpperCase();
+        if (status !== 'COMPLETED') {
           openCount++;
-          totalOverdue += item.amount || 0;
-          if (item.days > 60) highRisk++;
 
           if (item.dueDate) {
-            const d = new Date(item.dueDate);
+            const dueStr = item.dueDate.substring(0, 10);
+            const d = new Date(dueStr);
             d.setHours(0, 0, 0, 0);
-            if (d < today) overdueCount++;
-            else if (d.getTime() === today.getTime()) dueTodayCount++;
-            else if (d > today && d <= sevenDays) upcomingCount++;
-          } else if (item.days > 0) {
-            overdueCount++;
-          } else {
-            dueTodayCount++;
+
+            if (dueStr < todayStr) {
+              overdueCount++;
+            } else if (dueStr === todayStr) {
+              dueTodayCount++;
+            } else if (d > today && d <= sevenDays) {
+              upcomingCount++;
+            }
           }
         }
       });
 
-      // 4 Desktop KPIs (ReminderCenter.fxml)
       const elOpen = document.getElementById('rc-kpi-open');
-      const elOverdue = document.getElementById('rc-kpi-overdue');
-      const elDueToday = document.getElementById('rc-kpi-due-today');
-      const elUpcoming = document.getElementById('rc-kpi-upcoming');
-
       if (elOpen) elOpen.innerText = openCount;
+
+      const elOverdue = document.getElementById('rc-kpi-overdue');
       if (elOverdue) elOverdue.innerText = overdueCount;
+
+      const elDueToday = document.getElementById('rc-kpi-due-today');
       if (elDueToday) elDueToday.innerText = dueTodayCount;
+
+      const elUpcoming = document.getElementById('rc-kpi-upcoming');
       if (elUpcoming) elUpcoming.innerText = upcomingCount;
+    },
 
-      // Legacy fallback IDs
-      const elAmt = document.getElementById('rc-kpi-overdue-amt');
-      const elAcc = document.getElementById('rc-kpi-overdue-accounts');
-      const elRisk = document.getElementById('rc-kpi-high-risk');
-      const elSent = document.getElementById('rc-kpi-sent-today');
+    applyFilters() {
+      const q = (document.getElementById('rc-filter-search')?.value || '').toLowerCase().trim();
+      const statusFilter = (document.getElementById('rc-filter-status')?.value || '').toUpperCase();
+      const priorityFilter = (document.getElementById('rc-filter-priority')?.value || '').toUpperCase();
+      const periodFilter = (document.getElementById('rc-filter-period')?.value || '').toUpperCase();
 
-      if (elAmt) elAmt.innerText = window.FormatUtil ? window.FormatUtil.formatRupees(totalOverdue) : '₹ ' + totalOverdue.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-      if (elAcc) elAcc.innerText = list.length;
-      if (elRisk) elRisk.innerText = highRisk;
-      if (elSent) elSent.innerText = remindersSentToday;
+      const todayStr = getTodayStr();
+      const today = new Date(todayStr);
+      today.setHours(0, 0, 0, 0);
+
+      const sevenDays = new Date(today);
+      sevenDays.setDate(today.getDate() + 7);
+
+      const thirtyDays = new Date(today);
+      thirtyDays.setDate(today.getDate() + 30);
+
+      filteredReminders = sourceReminders.filter(item => {
+        // Text Search
+        if (q) {
+          const title = (item.title || '').toLowerCase();
+          const ref = (item.referenceNo || '').toLowerCase();
+          const notes = (item.notes || '').toLowerCase();
+          const createdBy = (item.createdBy || '').toLowerCase();
+          if (!title.includes(q) && !ref.includes(q) && !notes.includes(q) && !createdBy.includes(q)) {
+            return false;
+          }
+        }
+
+        // Status Filter
+        if (statusFilter && (item.status || 'OPEN').toUpperCase() !== statusFilter) {
+          return false;
+        }
+
+        // Priority Filter
+        if (priorityFilter && (item.priority || 'NORMAL').toUpperCase() !== priorityFilter) {
+          return false;
+        }
+
+        // Period Filter
+        if (periodFilter && item.dueDate) {
+          const dueStr = item.dueDate.substring(0, 10);
+          const d = new Date(dueStr);
+          d.setHours(0, 0, 0, 0);
+
+          if (periodFilter === 'OVERDUE') {
+            if (dueStr >= todayStr || (item.status || '').toUpperCase() === 'COMPLETED') return false;
+          } else if (periodFilter === 'TODAY') {
+            if (dueStr !== todayStr) return false;
+          } else if (periodFilter === '7DAYS') {
+            if (d < today || d > sevenDays) return false;
+          } else if (periodFilter === '30DAYS') {
+            if (d < today || d > thirtyDays) return false;
+          }
+        }
+
+        return true;
+      });
+
+      const countEl = document.getElementById('rc-result-count');
+      if (countEl) {
+        countEl.innerText = `Showing ${filteredReminders.length} Record${filteredReminders.length === 1 ? '' : 's'}`;
+      }
+
+      this.renderTable(filteredReminders);
+    },
+
+    clearFilters() {
+      if (document.getElementById('rc-filter-search')) document.getElementById('rc-filter-search').value = '';
+      if (document.getElementById('rc-filter-status')) document.getElementById('rc-filter-status').value = '';
+      if (document.getElementById('rc-filter-priority')) document.getElementById('rc-filter-priority').value = '';
+      if (document.getElementById('rc-filter-period')) document.getElementById('rc-filter-period').value = '';
+      this.applyFilters();
     },
 
     renderTable(list) {
@@ -175,327 +198,326 @@ window.ReminderCenterController = (function() {
       if (!tbody) return;
 
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--accent-green);">🎉 Excellent! No overdue accounts requiring collection follow-ups.</td></tr>`;
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:40px 20px;">
+              <div style="font-size:2rem; margin-bottom:8px;">📋</div>
+              <div style="font-weight:700; color:var(--text-main); font-size:1rem; margin-bottom:4px;">No reminders found</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">Create a reminder or change the filters to see matching records.</div>
+              <button class="btn btn-primary btn-sm" onclick="window.ReminderCenterController.openAddModal()">+ Create Reminder</button>
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      tbody.innerHTML = list.map((item, idx) => {
-        let badge = '<span class="pill-badge pill-neutral">1-30 DAYS</span>';
-        if (item.days > 90) badge = '<span class="pill-badge pill-danger">90+ DAYS (HIGH RISK)</span>';
-        else if (item.days > 60) badge = '<span class="pill-badge pill-warning">61-90 DAYS</span>';
-        else if (item.days > 30) badge = '<span class="pill-badge pill-warning">31-60 DAYS</span>';
+      const todayStr = getTodayStr();
 
-        const amtStr = window.FormatUtil ? window.FormatUtil.formatRupees(item.amount) : '₹ ' + item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      tbody.innerHTML = list.map((item, idx) => {
+        const isSelected = selectedReminder && selectedReminder.id === item.id;
+        const isCompleted = (item.status || '').toUpperCase() === 'COMPLETED';
+        const isOverdue = !isCompleted && item.dueDate && item.dueDate.substring(0, 10) < todayStr;
+        const dueFormatted = formatDate(item.dueDate);
 
         return `
-          <tr onclick="window.ReminderCenterController.onReminderRowClick(${idx}, event)" data-reminder-idx="${idx}" style="cursor:pointer;">
-            <td style="font-weight:700; color:var(--text-bright);">${item.party}</td>
-            <td style="font-family:monospace; color:var(--purple);">${item.gstin}</td>
-            <td style="text-align:center;">${item.invoices} Bill(s)</td>
-            <td style="text-align:right; font-weight:700; color:var(--accent-red); font-family:monospace;">
-              ${amtStr}
-            </td>
-            <td style="text-align:center; font-weight:600;">${item.days} days</td>
-            <td style="text-align:center;">${badge}</td>
-            <td style="text-align:center;" onclick="event.stopPropagation();">
-              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-                <button class="btn-purple" onclick="window.ReminderCenterController.toggleActionMenu(${idx}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Follow-up Actions">
-                  ::: Actions
-                </button>
-                <div id="rc-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:220px; white-space:nowrap; padding:6px 0; text-align:left;">
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.openReminderDrawer(${idx})"><span style="margin-right:8px;">👁️</span> View Details</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.editReminder(${idx})"><span style="margin-right:8px;">✏️</span> Edit Reminder</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.markComplete(${idx})"><span style="margin-right:8px;">✅</span> Mark Complete</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.snooze(${idx})"><span style="margin-right:8px;">⏰</span> Snooze Reminder</div>
-                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.logCall(${item.id}, '${item.party.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">📞</span> Log Call</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'WHATSAPP')"><span style="margin-right:8px;">📱</span> Send WhatsApp</div>
-                  <div class="action-menu-item" onclick="window.ReminderCenterController.sendReminder(${item.id}, '${item.party.replace(/'/g, "\\'")}', 'EMAIL')"><span style="margin-right:8px;">✉️</span> Send Email</div>
-                  <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
-                  <div class="action-menu-item" onclick="window.NavigationRouter?.selectNav('view-sales-register')"><span style="margin-right:8px;">🛒</span> Open in Sales Register</div>
-                  <div class="action-menu-item" style="color:var(--accent-red);" onclick="window.ReminderCenterController.deleteReminder(${idx})"><span style="margin-right:8px;">🗑️</span> Delete Reminder</div>
-                </div>
+          <tr onclick="window.ReminderCenterController.onRowClick(${item.id}, event)" class="${isSelected ? 'selected-row' : ''}" style="cursor:pointer;">
+            <td style="font-weight:600; color:#fff;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="color:var(--text-muted); font-size:0.8rem;">⏰</span>
+                <span style="${isCompleted ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">${escapeHtml(item.title || 'Untitled Reminder')}</span>
               </div>
+            </td>
+            <td style="font-family:monospace; font-size:0.8rem; color:var(--cyan); font-weight:700;">
+              ${escapeHtml(item.referenceNo || '-')}
+            </td>
+            <td style="font-size:0.82rem; ${isOverdue ? 'color:#f87171; font-weight:700;' : 'color:var(--text-main);'}">
+              ${dueFormatted} ${isOverdue ? '<span class="pill-badge pill-danger" style="font-size:0.6rem; padding:1px 4px; margin-left:4px;">OVERDUE</span>' : ''}
+            </td>
+            <td style="text-align:center;">
+              ${getPriorityBadge(item.priority)}
+            </td>
+            <td style="text-align:center;">
+              ${getStatusBadge(item.status)}
+            </td>
+            <td style="font-size:0.8rem; color:var(--text-muted);">
+              ${escapeHtml(item.createdBy || 'System')}
+            </td>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation()">
+              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.editReminder(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem;" title="Edit Reminder">✏️</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.toggleComplete(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="${isCompleted ? 'Reopen' : 'Mark Complete'}">${isCompleted ? '↩' : '✅'}</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.openSnoozeModal(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="Snooze Reminder">⏰</button>
+              <button class="btn btn-danger btn-sm" onclick="window.ReminderCenterController.deleteReminder(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="Delete Reminder">🗑️</button>
             </td>
           </tr>
         `;
       }).join('');
     },
 
-    toggleActionMenu(idx, event) {
-      if (event) event.stopPropagation();
-      const menuId = 'rc-action-menu-' + idx;
-      const targetMenu = document.getElementById(menuId);
-      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
-        if (m !== targetMenu) m.style.display = 'none';
-      });
-      if (targetMenu) {
-        const isShowing = targetMenu.style.display === 'block';
-        if (isShowing) {
-          targetMenu.style.display = 'none';
-        } else {
-          targetMenu.style.display = 'block';
-          targetMenu.style.position = 'fixed';
-          targetMenu.style.zIndex = '100005';
-          const btn = event.currentTarget || event.target;
-          const rect = btn.getBoundingClientRect();
-          const menuWidth = 230;
-          let left = rect.right - menuWidth;
-          if (left < 10) left = 10;
-
-          const menuHeight = targetMenu.offsetHeight || 190;
-          const spaceBelow = window.innerHeight - rect.bottom;
-          let top;
-          if (spaceBelow < menuHeight && rect.top > menuHeight) {
-            top = Math.max(10, rect.top - menuHeight - 4);
-          } else {
-            top = rect.bottom + 4;
-          }
-
-          targetMenu.style.top = `${top}px`;
-          targetMenu.style.left = `${left}px`;
-
-          const closeHandler = (e) => {
-            if (!targetMenu.contains(e.target) && e.target !== btn) {
-              targetMenu.style.display = 'none';
-              document.removeEventListener('click', closeHandler);
-            }
-          };
-          document.addEventListener('click', closeHandler);
-        }
-      }
-    },
-
-    onReminderRowClick(idx, event) {
-      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-      const drawer = document.getElementById('reminder-detail-drawer');
-      const isOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block');
-      if (isOpen && selectedReminderIndex === idx) {
+    onRowClick(id, event) {
+      if (selectedReminder && selectedReminder.id === id) {
         this.closeReminderDrawer();
-        return;
+      } else {
+        const item = sourceReminders.find(r => r.id === id);
+        if (item) this.showDetails(item);
       }
-      this.openReminderDrawer(idx);
     },
 
-    openReminderDrawer(idx) {
-      const item = overdueList[idx];
-      if (!item) return;
-      selectedReminderIndex = idx;
-      selectedReminderRow = item;
+    showDetails(item) {
+      selectedReminder = item;
+
+      const titleEl = document.getElementById('lblDetailTitle');
+      if (titleEl) titleEl.innerText = item.title || 'Reminder Details';
+
+      const refEl = document.getElementById('lblDetailReference');
+      if (refEl) refEl.innerText = item.referenceNo || 'No reference';
+
+      const dueEl = document.getElementById('lblDetailDue');
+      if (dueEl) dueEl.innerText = formatDate(item.dueDate);
+
+      const priEl = document.getElementById('lblDetailPriority');
+      if (priEl) priEl.innerHTML = getPriorityBadge(item.priority);
+
+      const stEl = document.getElementById('lblDetailStatus');
+      if (stEl) stEl.innerHTML = getStatusBadge(item.status);
+
+      const notesEl = document.getElementById('lblDetailNotes');
+      if (notesEl) notesEl.innerText = item.notes ? item.notes.trim() : 'No notes provided.';
+
+      const btnComplete = document.getElementById('btn-complete-selected');
+      if (btnComplete) {
+        const isCompleted = (item.status || '').toUpperCase() === 'COMPLETED';
+        btnComplete.innerText = isCompleted ? '↩ Reopen' : '✅ Mark Complete';
+      }
 
       const drawer = document.getElementById('reminder-detail-drawer');
-      if (!drawer) return;
+      if (drawer) drawer.style.display = 'flex';
 
-      const amtStr = window.FormatUtil ? window.FormatUtil.formatRupees(item.amount) : '₹ ' + item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-
-      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-      setEl('rd-rem-party', item.party);
-      setEl('rd-rem-gstin', item.gstin || '-');
-      setEl('rd-rem-amount', amtStr);
-      setEl('rd-rem-days', `${item.days} Days`);
-      setEl('rd-rem-invoices', `${item.invoices} Pending Bills`);
-      setEl('rd-rem-last-contact', remindersSentToday > 0 ? 'Today' : '3 Days Ago');
-
-      const elRisk = document.getElementById('rd-rem-risk');
-      if (elRisk) {
-        if (item.days > 90) {
-          elRisk.innerText = 'HIGH RISK (90+ DAYS)';
-          elRisk.className = 'pill-badge pill-danger';
-        } else if (item.days > 60) {
-          elRisk.innerText = 'ELEVATED RISK (60-90 DAYS)';
-          elRisk.className = 'pill-badge pill-warning';
-        } else {
-          elRisk.innerText = 'STANDARD OVERDUE';
-          elRisk.className = 'pill-badge pill-neutral';
-        }
-      }
-
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.showDrawer('reminder-detail-drawer');
-        const rowEl = document.querySelector(`#reminders-table-tbody tr[data-reminder-idx="${idx}"]`);
-        if (rowEl) window.RegisterUiSupport.highlightRow('#reminders-table-tbody', rowEl);
-      } else {
-        drawer.style.display = 'flex';
-      }
+      this.renderTable(filteredReminders);
     },
 
     closeReminderDrawer() {
-      selectedReminderIndex = null;
-      selectedReminderRow = null;
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.hideDrawer('reminder-detail-drawer', '#reminders-table-tbody');
-      } else {
-        const drawer = document.getElementById('reminder-detail-drawer');
-        if (drawer) drawer.style.display = 'none';
-        document.querySelectorAll('#reminders-table-tbody tr').forEach(r => r.classList.remove('active-selected-row'));
+      selectedReminder = null;
+      const drawer = document.getElementById('reminder-detail-drawer');
+      if (drawer) drawer.style.display = 'none';
+      this.renderTable(filteredReminders);
+    },
+
+    editSelected() {
+      if (!selectedReminder) return;
+      this.editReminder(selectedReminder.id);
+    },
+
+    async completeSelected() {
+      if (!selectedReminder) return;
+      await this.toggleComplete(selectedReminder.id);
+    },
+
+    snoozeSelected() {
+      if (!selectedReminder) return;
+      this.openSnoozeModal(selectedReminder.id);
+    },
+
+    async deleteSelected() {
+      if (!selectedReminder) return;
+      await this.deleteReminder(selectedReminder.id);
+    },
+
+    // ==========================================
+    // MODALS & CRUD OPERATIONS
+    // ==========================================
+
+    openAddModal() {
+      document.getElementById('mre-modal-title').innerText = 'Add Reminder';
+      document.getElementById('mre-id').value = '';
+      document.getElementById('mre-title').value = '';
+      document.getElementById('mre-ref').value = '';
+      document.getElementById('mre-due').value = getTodayStr();
+      document.getElementById('mre-priority').value = 'NORMAL';
+      document.getElementById('mre-status').value = 'OPEN';
+      document.getElementById('mre-notes').value = '';
+
+      const modal = document.getElementById('modal-reminder-editor');
+      if (modal) modal.style.display = 'flex';
+    },
+
+    editReminder(id, event) {
+      if (event) event.stopPropagation();
+      const item = sourceReminders.find(r => r.id === id);
+      if (!item) return;
+
+      document.getElementById('mre-modal-title').innerText = 'Edit Reminder';
+      document.getElementById('mre-id').value = item.id;
+      document.getElementById('mre-title').value = item.title || '';
+      document.getElementById('mre-ref').value = item.referenceNo || '';
+      document.getElementById('mre-due').value = item.dueDate ? item.dueDate.substring(0, 10) : getTodayStr();
+      document.getElementById('mre-priority').value = (item.priority || 'NORMAL').toUpperCase();
+      document.getElementById('mre-status').value = (item.status || 'OPEN').toUpperCase();
+      document.getElementById('mre-notes').value = item.notes || '';
+
+      const modal = document.getElementById('modal-reminder-editor');
+      if (modal) modal.style.display = 'flex';
+    },
+
+    closeEditorModal() {
+      const modal = document.getElementById('modal-reminder-editor');
+      if (modal) modal.style.display = 'none';
+    },
+
+    async saveReminderFromModal() {
+      const title = document.getElementById('mre-title')?.value.trim();
+      const dueDate = document.getElementById('mre-due')?.value;
+      if (!title) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('Please enter a reminder title.');
+        else alert('Please enter a reminder title.');
+        return;
       }
-    },
-
-    drawerSendWhatsapp() {
-      if (!selectedReminderRow) return;
-      this.sendReminder(selectedReminderRow.id, selectedReminderRow.party, 'WHATSAPP');
-    },
-
-    drawerSendEmail() {
-      if (!selectedReminderRow) return;
-      this.sendReminder(selectedReminderRow.id, selectedReminderRow.party, 'EMAIL');
-    },
-
-    drawerLogCall() {
-      if (!selectedReminderRow) return;
-      this.logCall(selectedReminderRow.id, selectedReminderRow.party);
-    },
-
-    drawerOpenCustomer() {
-      if (!selectedReminderRow) return;
-      if (window.NavigationRouter) {
-        window.NavigationRouter.selectNav('view-customers');
-        setTimeout(() => {
-          const search = document.getElementById('customer-search-input');
-          if (search) {
-            search.value = selectedReminderRow.party;
-            if (window.PartyController && window.PartyController.filterCustomers) {
-              window.PartyController.filterCustomers();
-            }
-          }
-        }, 200);
+      if (!dueDate) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a due date.');
+        else alert('Please select a due date.');
+        return;
       }
-    },
 
-    drawerOpenSales() {
-      if (!selectedReminderRow) return;
-      if (window.NavigationRouter) {
-        window.NavigationRouter.selectNav('view-sales-register');
-        setTimeout(() => {
-          const search = document.getElementById('sales-search-input');
-          if (search) {
-            search.value = selectedReminderRow.party;
-            if (window.SalesController && window.SalesController.filterSales) {
-              window.SalesController.filterSales();
-            }
-          }
-        }, 200);
-      }
-    },
+      const id = document.getElementById('mre-id')?.value;
+      const payload = {
+        title: title,
+        referenceNo: document.getElementById('mre-ref')?.value.trim() || null,
+        dueDate: dueDate,
+        priority: document.getElementById('mre-priority')?.value || 'NORMAL',
+        status: document.getElementById('mre-status')?.value || 'OPEN',
+        notes: document.getElementById('mre-notes')?.value.trim() || ''
+      };
 
-    drawerAgingAnalysis() {
-      if (window.NavigationRouter) {
-        window.NavigationRouter.selectNav('view-accounts-aging');
-      }
-    },
-
-    async sendReminder(partyId, partyName, channel) {
       try {
-        if (window.AccountingService) {
-          await window.AccountingService.sendAgingReminder(partyId);
+        if (id) {
+          payload.id = parseInt(id);
+          await window.ApiService.put(`/api/insights/reminders/${id}`, payload);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Reminder updated successfully.');
+        } else {
+          await window.ApiService.post('/api/insights/reminders', payload);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Reminder created successfully.');
         }
-        remindersSentToday++;
-        this.updateKpis(overdueList);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+
+        this.closeEditorModal();
+        await this.loadReminders();
+
+        if (selectedReminder && selectedReminder.id == id) {
+          const fresh = sourceReminders.find(r => r.id == id);
+          if (fresh) this.showDetails(fresh);
+        }
+      } catch (err) {
+        console.error('Failed to save reminder:', err);
+        alert('Failed to save reminder: ' + (err.message || 'Server error'));
+      }
+    },
+
+    async toggleComplete(id, event) {
+      if (event) event.stopPropagation();
+      const item = sourceReminders.find(r => r.id === id);
+      if (!item) return;
+
+      const isCompleted = (item.status || '').toUpperCase() === 'COMPLETED';
+      const targetStatus = isCompleted ? 'OPEN' : 'COMPLETED';
+
+      try {
+        await window.ApiService.post(`/api/insights/reminders/${id}/status?status=${targetStatus}`, {});
         if (window.AppDialogService) {
-          window.AppDialogService.toastSuccess(`Dispatched ${channel} payment reminder to ${partyName}!`);
+          window.AppDialogService.toastSuccess(targetStatus === 'COMPLETED' ? 'Reminder marked complete.' : 'Reminder reopened.');
+        }
+        await this.loadReminders();
+
+        if (selectedReminder && selectedReminder.id === id) {
+          const fresh = sourceReminders.find(r => r.id === id);
+          if (fresh) this.showDetails(fresh);
         }
       } catch (err) {
-        alert('Reminder Dispatch Failed: ' + err.message);
+        console.error('Failed to change reminder status:', err);
+        alert('Failed to update status: ' + (err.message || 'Server error'));
       }
     },
 
-    logCall(partyId, partyName) {
-      const notes = prompt(`Log follow-up phone call for ${partyName}:\nEnter client commitment date or notes:`);
-      if (notes) {
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Logged telephonic note for ${partyName}: "${notes}"`);
-      }
-    },
-
-    editReminder(idx) {
-      const item = overdueList[idx];
+    openSnoozeModal(id, event) {
+      if (event) event.stopPropagation();
+      const item = sourceReminders.find(r => r.id === id);
       if (!item) return;
-      const newNotes = prompt(`Edit collection notes for ${item.party}:`, item.notes || '');
-      if (newNotes !== null) {
-        item.notes = newNotes;
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Updated notes for ${item.party}`);
-      }
+
+      document.getElementById('mrs-id').value = item.id;
+      document.getElementById('mrs-reminder-title').innerText = item.title || 'Reminder';
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('mrs-date').value = tomorrow.toISOString().substring(0, 10);
+
+      const modal = document.getElementById('modal-reminder-snooze');
+      if (modal) modal.style.display = 'flex';
     },
 
-    async markComplete(idx) {
-      const item = overdueList[idx];
-      if (!item) return;
-      if (!confirm(`Mark payment reminder for "${item.party}" as complete?`)) return;
+    closeSnoozeModal() {
+      const modal = document.getElementById('modal-reminder-snooze');
+      if (modal) modal.style.display = 'none';
+    },
+
+    async confirmSnooze() {
+      const id = document.getElementById('mrs-id')?.value;
+      const snoozeDate = document.getElementById('mrs-date')?.value;
+      if (!id || !snoozeDate) {
+        alert('Please select a valid date to snooze.');
+        return;
+      }
+
+      if (snoozeDate < getTodayStr()) {
+        alert('Snooze date must be today or a future date.');
+        return;
+      }
+
       try {
-        if (window.ApiService && item.id) {
-          await window.ApiService.post(`/api/insights/reminders/${item.id}/resolve`, {}).catch(() => null);
+        await window.ApiService.post(`/api/insights/reminders/${id}/status?status=SNOOZED&snoozedUntil=${encodeURIComponent(snoozeDate)}`, {});
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Reminder snoozed until ${formatDate(snoozeDate)}.`);
+
+        this.closeSnoozeModal();
+        await this.loadReminders();
+
+        if (selectedReminder && selectedReminder.id == id) {
+          const fresh = sourceReminders.find(r => r.id == id);
+          if (fresh) this.showDetails(fresh);
         }
-        item.status = 'COMPLETED';
-        this.updateKpis(overdueList);
-        this.renderTable(overdueList);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Reminder for ${item.party} marked as Complete.`);
       } catch (err) {
-        alert('Action Failed: ' + err.message);
+        console.error('Failed to snooze reminder:', err);
+        alert('Failed to snooze reminder: ' + (err.message || 'Server error'));
       }
     },
 
-    async snooze(idx) {
-      const item = overdueList[idx];
-      if (!item) return;
-      const daysStr = prompt(`Snooze reminder for ${item.party} by how many days?`, '7');
-      if (!daysStr) return;
-      const days = parseInt(daysStr, 10);
-      if (isNaN(days) || days <= 0) return;
+    async deleteReminder(id, event) {
+      if (event) event.stopPropagation();
+      const item = sourceReminders.find(r => r.id === id);
+      const title = item ? item.title : `Reminder #${id}`;
+
+      if (!confirm(`Permanently delete reminder '${title}'? This action cannot be undone.`)) {
+        return;
+      }
+
       try {
-        if (window.ApiService && item.id) {
-          await window.ApiService.post(`/api/insights/reminders/${item.id}/snooze?days=${days}`, {}).catch(() => null);
-        }
-        const curDate = new Date(item.dueDate || new Date());
-        curDate.setDate(curDate.getDate() + days);
-        item.dueDate = curDate.toISOString().slice(0, 10);
-        item.days = Math.max(0, item.days - days);
-        this.updateKpis(overdueList);
-        this.renderTable(overdueList);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Snoozed reminder for ${item.party} by ${days} days.`);
-      } catch (err) {
-        alert('Snooze Failed: ' + err.message);
-      }
-    },
+        await window.ApiService.delete(`/api/insights/reminders/${id}`);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Reminder deleted successfully.');
 
-    async deleteReminder(idx) {
-      const item = overdueList[idx];
-      if (!item) return;
-      if (!confirm(`Are you sure you want to delete the reminder for "${item.party}"?`)) return;
-      try {
-        if (window.ApiService && item.id) {
-          await window.ApiService.delete(`/api/insights/reminders/${item.id}`).catch(() => null);
+        if (selectedReminder && selectedReminder.id === id) {
+          this.closeReminderDrawer();
         }
-        overdueList.splice(idx, 1);
-        this.updateKpis(overdueList);
-        this.renderTable(overdueList);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Deleted reminder for ${item.party}.`);
-      } catch (err) {
-        alert('Delete Failed: ' + err.message);
-      }
-    },
 
-    sendBatchReminders() {
-      if (!overdueList || overdueList.length === 0) return;
-      if (confirm(`Send automated payment reminders to all ${overdueList.length} overdue debtors?`)) {
-        remindersSentToday += overdueList.length;
-        this.updateKpis(overdueList);
-        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Batch automated collection dispatches sent to ${overdueList.length} clients!`);
+        await this.loadReminders();
+      } catch (err) {
+        console.error('Failed to delete reminder:', err);
+        alert('Failed to delete reminder: ' + (err.message || 'Server error'));
       }
     }
   };
-})();
 
-// Install escape listener for Reminder Detail Drawer
-if (typeof window !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.installEscapeClose('reminder-detail-drawer', () => {
-        if (window.ReminderCenterController && window.ReminderCenterController.closeReminderDrawer) {
-          window.ReminderCenterController.closeReminderDrawer();
-        }
-      });
-    }
-  });
-}
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+})();

@@ -106,6 +106,15 @@ window.NavigationRouter = (function() {
       return this.selectNav(viewId);
     },
 
+    navigateTo(destination, triggerAddTab = true) {
+      if (!destination) return;
+      let viewId = destination;
+      if (!viewId.startsWith('view-')) {
+        viewId = 'view-' + viewId;
+      }
+      return this.selectNav(viewId, triggerAddTab);
+    },
+
     selectNav(viewId, triggerAddTab = true) {
       if (isNavigating) return;
       if (currentViewId === viewId && document.getElementById(viewId)?.classList.contains('active')) {

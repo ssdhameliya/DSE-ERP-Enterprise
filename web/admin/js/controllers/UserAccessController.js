@@ -1513,8 +1513,28 @@ window.UserAccessController = (function() {
           return;
         }
 
+        function getAuditActionBadge(action) {
+          const u = (action || '').toUpperCase();
+          if (u.includes('DELETE') || u.includes('REJECT') || u.includes('CANCEL') || u.includes('FAIL')) {
+            return `<span class="pill-badge pill-danger" style="font-weight:700;">${action || 'DELETE'}</span>`;
+          }
+          if (u.includes('PAYMENT') || u.includes('FINANCIAL') || u.includes('GL_POST')) {
+            return `<span class="pill-badge pill-info" style="font-weight:700; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3);">${action || 'PAYMENT'}</span>`;
+          }
+          if (u.includes('DOCUMENT') || u.includes('PDF') || u.includes('EXCEL') || u.includes('INVOICE')) {
+            return `<span class="pill-badge pill-purple" style="font-weight:700; background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3);">${action || 'DOCUMENT'}</span>`;
+          }
+          if (u.includes('EMAIL') || u.includes('COMM') || u.includes('WHATSAPP')) {
+            return `<span class="pill-badge pill-teal" style="font-weight:700; background:rgba(20,184,166,0.15); color:#2dd4bf; border:1px solid rgba(20,184,166,0.3);">${action || 'COMM'}</span>`;
+          }
+          if (u.includes('CREATE') || u.includes('APPROVE') || u.includes('POST')) {
+            return `<span class="pill-badge pill-success" style="font-weight:700;">${action || 'CREATE'}</span>`;
+          }
+          return `<span class="pill-badge pill-blue" style="font-weight:700;">${action || 'MUTATION'}</span>`;
+        }
+
         tbody.innerHTML = rows.map((evt, idx) => {
-          const actionBadge = `<span class="badge badge-paid" style="font-weight:700;">${evt.action || 'MUTATION'}</span>`;
+          const actionBadge = getAuditActionBadge(evt.action);
           const changesCount = evt.changes && evt.changes.length ? `${evt.changes.length} fields` : '-';
           const firstChange = evt.changes && evt.changes.length > 0 ? evt.changes[0] : null;
 
@@ -1531,7 +1551,9 @@ window.UserAccessController = (function() {
               <td style="font-size: 0.75rem; color: #34d399; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${firstChange ? (firstChange.newValue || '-') : '-'}</td>
               <td style="font-weight: 600; color: #fff;">${evt.createdBy || 'system'}</td>
               <td style="text-align: right;">
-                <button class="btn btn-secondary" style="padding: 2px 10px; font-size: 0.74rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;" onclick="window.UserAccessController.openAuditDiff(${idx})" title="View Audit Details">&#128065; View</button>
+                <button class="btn btn-secondary btn-sm" style="padding: 3px 10px; font-size: 0.74rem; font-weight:700; display:inline-flex; align-items:center; gap:5px; color:var(--cyan); border-color:rgba(56,189,248,0.3);" onclick="window.UserAccessController.openAuditDiff(${idx})" title="View Audit Details">
+                  <span style="font-size:0.85rem;">👁️</span> View
+                </button>
               </td>
             </tr>
           `;

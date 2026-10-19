@@ -756,11 +756,11 @@ window.PartyController = (function() {
   }
 
   function backToCustomers() {
-    if (window.NavigationRouter) window.NavigationRouter.navigateTo('view-customers');
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-customers');
   }
 
   function backToSuppliers() {
-    if (window.NavigationRouter) window.NavigationRouter.navigateTo('view-suppliers');
+    if (window.NavigationRouter) window.NavigationRouter.selectNav('view-suppliers');
   }
 
   function editCurrentCustomer360() {
@@ -776,8 +776,10 @@ window.PartyController = (function() {
     const cust = customers.find(c => c.id === selectedCustomerId) || (customer360SummaryData && customer360SummaryData.customer);
     if (window.SalesInvoiceController && typeof window.SalesInvoiceController.createForCustomer === 'function') {
       window.SalesInvoiceController.createForCustomer(cust || { id: selectedCustomerId });
+    } else if (window.SalesController && typeof window.SalesController.openSaleWorkspace === 'function') {
+      window.SalesController.openSaleWorkspace(null, cust?.name || '');
     } else if (window.NavigationRouter) {
-      window.NavigationRouter.navigateTo('view-invoices');
+      window.NavigationRouter.selectNav('view-sale-create');
     }
   }
 
@@ -786,8 +788,10 @@ window.PartyController = (function() {
     const sup = suppliers.find(s => s.id === selectedSupplierId) || (supplier360SummaryData && supplier360SummaryData.supplier);
     if (window.PurchaseInvoiceController && typeof window.PurchaseInvoiceController.createForSupplier === 'function') {
       window.PurchaseInvoiceController.createForSupplier(sup || { id: selectedSupplierId });
+    } else if (window.PurchaseController && typeof window.PurchaseController.openPurchaseEditor === 'function') {
+      window.PurchaseController.openPurchaseEditor(null, sup?.name || '');
     } else if (window.NavigationRouter) {
-      window.NavigationRouter.navigateTo('view-purchases');
+      window.NavigationRouter.selectNav('view-purchase-creation');
     }
   }
 
@@ -795,7 +799,7 @@ window.PartyController = (function() {
     selectedCustomerId = Number(id);
     active360PartyId = selectedCustomerId;
     if (window.NavigationRouter) {
-      window.NavigationRouter.navigateTo('view-customer-360');
+      window.NavigationRouter.selectNav('view-customer-360');
     }
     await renderActiveCustomer360();
   }
@@ -804,7 +808,7 @@ window.PartyController = (function() {
     selectedSupplierId = Number(id);
     active360PartyId = selectedSupplierId;
     if (window.NavigationRouter) {
-      window.NavigationRouter.navigateTo('view-supplier-360');
+      window.NavigationRouter.selectNav('view-supplier-360');
     }
     await renderActiveSupplier360();
   }

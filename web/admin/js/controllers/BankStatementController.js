@@ -949,7 +949,10 @@ window.BankStatementController = (function() {
   async function configureBankAccountMaster() {
     try {
       if (window.MasterService) {
-        const accounts = await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
+        let accounts = await window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(() => []);
+        if (!Array.isArray(accounts) || accounts.length === 0) {
+          accounts = await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
+        }
         bankAccountOptionsCache = Array.isArray(accounts) 
           ? accounts.filter(l => l.active !== false && (l.lookupValue || l.value)).map(l => ({
               accountNumber: (l.lookupValue || l.value || '').trim(),
@@ -1647,7 +1650,11 @@ window.BankStatementController = (function() {
 
   async function deleteStatement(id = null) {
     const targetId = id || currentBatchId;
-    if (!targetId) return;
+    if (!targetId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No bank statement is currently selected to delete.');
+      else alert('No bank statement is currently selected to delete.');
+      return;
+    }
 
     pendingDeleteBatch = batches.find(b => b.id === targetId) || { id: targetId };
 
@@ -1835,9 +1842,9 @@ window.BankStatementController = (function() {
     try {
       if (window.MasterService) {
         const [categories, accounts, modes] = await Promise.all([
-          window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => []),
-          window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []),
-          window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => [])
+          window.MasterService.getLookupValuesByCategoryCode('EXPENSE_CATEGORY').catch(() => window.MasterService.getLookupValues('EXPENSE_CATEGORY').catch(() => [])),
+          window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(() => window.MasterService.getLookups('BANK_ACCOUNT').catch(() => [])),
+          window.MasterService.getLookupValuesByCategoryCode('PAYMENT_MODE').catch(() => window.MasterService.getLookupValues('PAYMENT_MODE').catch(() => []))
         ]);
 
         const catSelect = document.getElementById('msbm-category');

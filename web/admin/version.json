@@ -1,19 +1,24 @@
 {
   "desktopVersion": "10.0.35",
-  "webBuild": 4,
-  "webVersion": "10.0.35.04",
-  "tag": "web-v10.0.35.04",
-  "releaseDate": "2026-10-19T14:45:00+05:30",
+  "webBuild": 6,
+  "webVersion": "10.0.35.06",
+  "tag": "web-v10.0.35.06",
+  "releaseDate": "2026-10-19T17:35:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.35.04 Enterprise Release - Executive Reporting Parity (Favorites sync, active refresh feedback, authentic SheetJS Excel/PDF/CSV exports, Dynamic Viewer & Saved Reports recovery, Company Date/Time formatting), Supplier 360° & Customer 360° Full Desktop Parity, and Master Data Lookup fixes.",
+  "summary": "10.0.35.06 Comprehensive Desktop Parity Release - Full 13-Defect Resolution: Saved Reports recovery, Item Master import/export & concurrency, Master Data category workflows, Bank & Expense filters, Bank Statement history drawer & delete flow, Data Import Studio bank auto-map, Reminder Center 100% desktop parity, Global Audit Trail badges, Settings branding images authoritative sync, Stock Register refresh/export, Customer & Supplier 360 navigation routing, Purchase Register SheetJS Excel/PDF exports.",
   "highlights": [
-    "1. Report Center Server-Driven Favorites Parity (Tab 2): Aligned report ID constants to canonical server IDs (PROFITABILITY, GST_TAX, RETURNS_ANALYSIS, STOCK_SUMMARY, RECEIVABLE_AGEING, PAYABLE_AGEING, BANK_RECONCILIATION). Synchronized favorites unconditionally with /api/support/saved-views (screen: REPORT_FAVORITES) ensuring 1:1 parity between Desktop and Web.",
-    "2. Active Refresh Action Feedback: Added visual spinner animation, temporary button disabling during network query, audio synthesizer chime upon completion, and toast notification across all 4 reporting tabs.",
-    "3. Authentic Multi-Format Exports (Excel .xlsx, PDF, CSV): Replaced dummy CSV export with real Microsoft Excel (.xlsx) workbooks generated via SheetJS (xlsx.full.min.js), RFC 4180 compliant CSV with UTF-8 BOM, and formatted executive PDF reports with company letterhead, metadata, zebra styling, and totals.",
-    "4. Saved Reports Catalog & Dropdown Recovery (Tab 3): Resolved fatal TypeError bug (string.length() -> string.length) when parsing REPORT_V2 JSON, restoring populated saved report dropdown and catalog table.",
-    "5. Dynamic Viewer & Filter Parity: Aligned dynamic query payload with backend /api/reporting/run contract (from, to, documentStatus, sortKey, numeric minAmount/maxAmount). Restored semantic header icons, column formatting, and TableUiEnhancer styling on refresh.",
-    "6. Enterprise Date & Timestamp Formatting: Integrated FormatUtil company date/time configuration (company.dateFormat / company.timeFormat) across all reporting tables and Tab 4 Scheduled Reports KPI cards and delivery schedules.",
-    "7. Supplier 360° & Customer 360° Full Desktop Parity: Implemented view-supplier-360 workspace matching Supplier360.fxml and customer 360 matching Customer360.fxml with Overview (recent bills/quotes), Contacts Modal with CRUD, Purchases/Invoices, Payments, Notes Modal with CRUD, and Document Attachments.",
-    "8. Master Data Lookup Engine: Resolved onLookupValueInput exception, enabled automatic server-side code generation for new lookup values and manual editing for ROLE definitions."
+    "1. Saved Reports Tab 3: Robust JSON and REPORT_V2 parsing with default presets fallback and synchronized dropdown loading.",
+    "2. Item Master: Fixed importItemsExcel() routing, implemented client-side SheetJS 13-column Excel export, fixed concurrency rowVersion error on save, locked openingStock on edit.",
+    "3. Master Data: Resolved modal ID and function mismatches, added ROLE category protection, enabled Rename and Deactivate/Reactivate toggles.",
+    "4. Bank & Expense Entry: Added BANK DEPOSIT, BANK WITHDRAWAL, CONTRA_IN, CONTRA_OUT, and EXPENSE to filter so data is visible; bound dropdowns to master lookups.",
+    "5. Bank Statement: Resolved active BANK_ACCOUNT lookup by code, implemented Desktop-parity 2-step batch deletion dialog with impact metrics.",
+    "6. Browse Statements Drawer: Added statement history drawer with search, status filters, date range, table, open and delete actions.",
+    "7. Data Import Studio: Scanned candidate header rows 0-15 for banking sheets, expanded aliases for all banking columns, relaxed preflight required fields with smart fallbacks.",
+    "8. Reminder Center: 100% Desktop ReminderCenter.fxml parity with 4 KPI cards, full filter bar, 7 columns, detail drawer, Add/Edit/Snooze modals, and backend /api/insights/reminders CRUD.",
+    "9. Global Audit Trail: Semantic colored action badges (DELETE/REJECT/CANCEL red, PAYMENT/FINANCIAL blue, DOCUMENT purple, EMAIL/COMM teal, CREATE/APPROVE green) and cyan View action.",
+    "10. Settings Branding: Removed all dummy fallback images, implemented authoritative sync for all 5 canonical keys, added server-side DELETE on removal.",
+    "11. Stock Register: Wired Refresh button to forceRefresh = true; added client-side SheetJS 11-column Excel export.",
+    "12. CRM/HRM 360 Navigation: Fixed navigateTo routing method in NavigationRouter.js and PartyController.js, restoring instant access to Customer 360° and Supplier 360°.",
+    "13. Purchase Register Export: Implemented client-side SheetJS Excel export (13 standard columns + summary row) and PDF export, added Export toolbar buttons."
   ]
 }

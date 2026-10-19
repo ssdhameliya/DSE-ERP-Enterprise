@@ -923,13 +923,58 @@ window.PurchaseController = (function() {
       }
       throw new Error(`Server XLSX render returned HTTP ${res.status}`);
     } catch (err) {
-      console.warn('Server XLSX render failed, exporting client-side CSV:', err);
+      // Client-side SheetJS / CSV Generation Fallback without showing error
       try {
         let p = purchases.find(x => x.invoiceNo === invoiceNo);
         if (!p) p = await window.OperationsService.getPurchaseByInvoice(invoiceNo);
-        if (!p) return;
+        if (!p) {
+          if (window.AppDialogService) window.AppDialogService.toastError('Purchase bill details not found');
+          return;
+        }
         const suppName = (p.supplier && p.supplier.name) || p.supplierName || 'Supplier';
         const lines = p.lines || [];
+        const cleanInv = invoiceNo.replace(/[\/\\:]/g, '_');
+
+        if (window.XLSX) {
+          const rows = [
+            ['JASVI INDUSTRIES - PURCHASE INVOICE STATEMENT'],
+            ['Invoice No:', invoiceNo, 'Date:', p.invoiceDate || p.date || ''],
+            ['Supplier:', suppName, 'GSTIN:', p.billingGstin || (p.supplier && p.supplier.gstin) || '-'],
+            ['Total Amount:', p.totalAmount || 0, 'Paid:', p.paidAmount || 0, 'Balance:', Math.max(0, (p.totalAmount || 0) - (p.paidAmount || 0))],
+            [],
+            ['#', 'Item Code', 'Description', 'Category', 'HSN', 'Qty', 'Unit', 'Rate (₹)', 'Discount %', 'GST %', 'Total (₹)']
+          ];
+
+          if (lines.length > 0) {
+            lines.forEach((l, idx) => {
+              const lineTot = (parseFloat(l.quantity) || 1) * (parseFloat(l.rate) || 0);
+              rows.push([
+                idx + 1,
+                l.itemCode || '',
+                l.itemDescription || '',
+                l.itemCategory || '',
+                l.itemHsn || '',
+                parseFloat(l.quantity) || 1,
+                l.itemUnit || 'PCS',
+                parseFloat(l.rate) || 0,
+                parseFloat(l.discountPercent) || 0,
+                parseFloat(l.gstPercent) || 18,
+                parseFloat(lineTot.toFixed(2))
+              ]);
+            });
+          } else {
+            rows.push([1, '-', 'Purchase Bill Total', '-', '-', 1, 'LOT', parseFloat(p.totalAmount || 0), 0, 18, parseFloat(p.totalAmount || 0)]);
+          }
+
+          const ws = window.XLSX.utils.aoa_to_sheet(rows);
+          const wb = window.XLSX.utils.book_new();
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Purchase Bill');
+          window.XLSX.writeFile(wb, `${cleanInv}_Purchase_Bill.xlsx`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded spreadsheet for ${invoiceNo}`);
+          return;
+        }
+
+        // CSV Fallback
         let csv = `JASVI INDUSTRIES - PURCHASE INVOICE STATEMENT\n`;
         csv += `Invoice No:,${invoiceNo},Date:,${p.invoiceDate || p.date || ''}\n`;
         csv += `Supplier:,${suppName},GSTIN:,${p.billingGstin || (p.supplier && p.supplier.gstin) || '-'}\n`;
@@ -946,7 +991,7 @@ window.PurchaseController = (function() {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `${invoiceNo.replace(/[^A-Za-z0-9]/g, '_')}_Purchase_Bill.csv`);
+        link.setAttribute('download', `${cleanInv}_Purchase_Bill.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -956,6 +1001,95 @@ window.PurchaseController = (function() {
       }
     }
   }
+
+  // Desktop Parity writePurchaseExcel (13 Columns + Footer - PurchaseListController.java line 353)
+  function exportPurchaseRegisterExcel() {
+    const list = purchases || [];
+    if (list.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No purchase records to export');
+      return;
+    }
+
+    const headers = [
+      "Invoice No", "Date", "Supplier", "Mobile", "GSTIN",
+      "Amount (₹)", "Paid (₹)", "Pending (₹)", "Payment Due",
+      "Document Status", "Payment Status", "Return Status", "Email"
+    ];
+
+    let totalAmt = 0, totalPaid = 0, totalPending = 0;
+    const dataRows = list.map(p => {
+      const supp = p.supplier || {};
+      const amount = parseFloat(p.totalAmount != null ? p.totalAmount : (p.total || 0));
+      const paid = parseFloat(p.paidAmount != null ? p.paidAmount : (p.paid || 0));
+      const pending = parseFloat(p.balanceAmount != null ? p.balanceAmount : Math.max(0, amount - paid));
+      totalAmt += amount;
+      totalPaid += paid;
+      totalPending += pending;
+
+      return [
+        p.invoiceNo || p.billNo || '',
+        p.invoiceDate || p.date || '',
+        supp.name || p.supplierName || '',
+        supp.phone || p.supplierPhone || '',
+        supp.gstin || p.billingGstin || '',
+        amount,
+        paid,
+        pending,
+        p.dueDate || '-',
+        p.documentStatus || 'APPROVED',
+        p.paymentStatus || (pending <= 0.005 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'UNPAID'),
+        p.returnStatus || 'N/A',
+        p.emailSent ? 'Sent' : 'Not Sent'
+      ];
+    });
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    // Summary Totals Footer Row
+    dataRows.push([
+      `TOTALS (${list.length} BILLS)`, '', '', '', '',
+      parseFloat(totalAmt.toFixed(2)),
+      parseFloat(totalPaid.toFixed(2)),
+      parseFloat(totalPending.toFixed(2)),
+      '', '', '', '', ''
+    ]);
+
+    if (window.XLSX) {
+      const ws = window.XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Purchases');
+      window.XLSX.writeFile(wb, `Purchase_Register_${dateStr}.xlsx`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${list.length} purchase register records matching desktop format.`);
+    } else {
+      // CSV Fallback
+      let csv = headers.map(h => `"${h}"`).join(',') + '\n';
+      dataRows.forEach(r => {
+        csv += r.map(v => typeof v === 'number' ? v : `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `Purchase_Register_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${list.length} purchase register records.`);
+    }
+  }
+
+  function exportPurchaseRegisterPdf() {
+    printPurchaseRegister();
+  }
+
+  function printPurchaseRegister() {
+    const list = purchases || [];
+    if (list.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No purchase records to print');
+      return;
+    }
+    window.print();
+  }
+
 
   async function openPayments(invoiceNo) {
     let p = purchases.find(x => x.invoiceNo === invoiceNo);
@@ -1936,6 +2070,9 @@ window.PurchaseController = (function() {
     deletePurchase,
     downloadPdf,
     downloadExcel,
+    exportPurchaseRegisterExcel,
+    exportPurchaseRegisterPdf,
+    printPurchaseRegister,
     printInwardBarcode,
     sendEmailPrompt,
     openReturnPrompt,

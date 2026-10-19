@@ -23,7 +23,7 @@ window.ItemMasterController = (function() {
   // 1. ITEM MASTER REGISTER (ItemMaster.fxml)
   // ==========================================
 
-  async function loadItems() {
+  async function loadItems(forceRefresh = false) {
     const tbody = document.getElementById('items-table-tbody');
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="15" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading item catalog...</td></tr>`;
@@ -33,7 +33,10 @@ window.ItemMasterController = (function() {
     updateSelectionFooter();
 
     try {
-      const data = await window.MasterService.getItems();
+      if (forceRefresh && window.MasterService && window.MasterService.invalidate) {
+        window.MasterService.invalidate('master_items');
+      }
+      const data = await window.MasterService.getItems(forceRefresh);
       items = data || [];
       filteredItems = [...items];
 
@@ -464,7 +467,14 @@ window.ItemMasterController = (function() {
     document.getElementById('m-item-purchase-price').value = '0.00';
     document.getElementById('m-item-selling-price').value = '0.00';
     document.getElementById('m-item-remarks').value = 'Standard stock item';
-    document.getElementById('m-item-opening-stock').value = '0.00';
+    const openingStockEl = document.getElementById('m-item-opening-stock');
+    if (openingStockEl) {
+      openingStockEl.value = '0.00';
+      openingStockEl.readOnly = false;
+      openingStockEl.style.background = '';
+      openingStockEl.style.cursor = '';
+      openingStockEl.title = 'Initial stock on hand';
+    }
     document.getElementById('m-item-min-stock').value = '10.00';
     document.getElementById('m-item-location').value = '';
 
@@ -473,10 +483,25 @@ window.ItemMasterController = (function() {
 
   async function openEditItemModal(code) {
     editingItemCode = code;
-    const item = items.find(i => i.itemCode === code);
+    let item = null;
+    try {
+      if (window.MasterService && window.MasterService.getItemsByCodes) {
+        const freshList = await window.MasterService.getItemsByCodes([code]);
+        if (freshList && freshList.length > 0) {
+          item = freshList[0];
+          const idx = items.findIndex(i => i.itemCode === code);
+          if (idx !== -1) items[idx] = item;
+        }
+      }
+    } catch (err) {
+      console.warn('[ItemMasterController] Could not fetch fresh item by code:', err);
+    }
+    if (!item) {
+      item = items.find(i => i.itemCode === code);
+    }
     if (!item) return;
 
-    editingRowVersion = item.rowVersion || 0;
+    editingRowVersion = item.rowVersion != null ? item.rowVersion : 0;
 
     const modal = document.getElementById('modal-item-dialog');
     if (!modal) return;
@@ -497,7 +522,16 @@ window.ItemMasterController = (function() {
     document.getElementById('m-item-purchase-price').value = (parseFloat(item.purchasePrice) || 0).toFixed(2);
     document.getElementById('m-item-selling-price').value = (parseFloat(item.sellingPrice) || 0).toFixed(2);
     document.getElementById('m-item-remarks').value = item.remarks || '';
-    document.getElementById('m-item-opening-stock').value = (parseFloat(item.openingStock) || 0).toFixed(2);
+
+    const editOpeningStockEl = document.getElementById('m-item-opening-stock');
+    if (editOpeningStockEl) {
+      editOpeningStockEl.value = (parseFloat(item.openingStock) || 0).toFixed(2);
+      editOpeningStockEl.readOnly = true;
+      editOpeningStockEl.style.background = 'rgba(255,255,255,0.06)';
+      editOpeningStockEl.style.cursor = 'not-allowed';
+      editOpeningStockEl.title = 'Opening Stock is fixed after creation. Use Stock Adjustment to change inventory quantity.';
+    }
+
     document.getElementById('m-item-min-stock').value = (parseFloat(item.minimumStock) || 0).toFixed(2);
     document.getElementById('m-item-location').value = item.location || '';
 
@@ -528,6 +562,11 @@ window.ItemMasterController = (function() {
     if (!cat) { alert('Category is required.'); return; }
     if (!hsn) { alert('HSN Code is required.'); return; }
 
+    const matchedItem = editingItemCode ? items.find(i => i.itemCode === editingItemCode) : null;
+    const finalOpeningStock = editingItemCode && matchedItem && matchedItem.openingStock != null
+      ? matchedItem.openingStock
+      : openingStock;
+
     const payload = {
       id: null,
       itemCode: code,
@@ -542,7 +581,7 @@ window.ItemMasterController = (function() {
       discountPercent: disc,
       purchasePrice: purPrice,
       sellingPrice: sellPrice,
-      openingStock: openingStock,
+      openingStock: finalOpeningStock,
       minimumStock: minStock,
       reservedStock: 0,
       location: location,
@@ -563,8 +602,12 @@ window.ItemMasterController = (function() {
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Item ${code} added to catalog!`);
       }
 
+      if (window.MasterService && window.MasterService.invalidate) {
+        window.MasterService.invalidate('master_items');
+      }
+
       closeModal('modal-item-dialog');
-      loadItems();
+      loadItems(true);
 
     } catch (err) {
       console.error('Save item failed:', err);
@@ -617,18 +660,24 @@ window.ItemMasterController = (function() {
   // --- WAREHOUSE INVENTORY LEDGER (Inventory.fxml Parity) ---
   let inventoryItems = [];
 
-  async function loadInventory() {
+  async function loadInventory(forceRefresh = false) {
     const tbody = document.getElementById('inventory-tbody');
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading stock records from master database...</td></tr>`;
     }
 
     try {
-      const items = await window.MasterService.getItems();
+      if (forceRefresh && window.MasterService && window.MasterService.invalidate) {
+        window.MasterService.invalidate('master_items');
+      }
+      const items = await window.MasterService.getItems(forceRefresh);
       inventoryItems = items || [];
       updateInventoryKpis(inventoryItems);
       populateInventoryCategories(inventoryItems);
-      renderInventoryTable(inventoryItems);
+      filterInventory();
+      if (forceRefresh && window.AppDialogService && window.AppDialogService.toastSuccess) {
+        window.AppDialogService.toastSuccess('Stock Register refreshed with latest server balances.');
+      }
     } catch (err) {
       if (tbody) {
         tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--accent-red);">Failed to load inventory: ${err.message}</td></tr>`;
@@ -1142,14 +1191,76 @@ window.ItemMasterController = (function() {
   }
 
   function refreshItems() {
-    loadItems();
+    loadItems(true);
   }
 
   async function exportInventoryExcel() {
     try {
-      await window.ApiService.downloadFile('/api/inventory/export/excel', `Stock_Register_${new Date().toISOString().slice(0, 10)}.xlsx`).catch(async () => {
-        await window.ApiService.downloadFile('/api/master/items/export/excel', `Stock_Register_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      if (!inventoryItems || inventoryItems.length === 0) {
+        await loadInventory(true);
+      }
+      const exportList = (inventoryItems && inventoryItems.length > 0) ? inventoryItems : [];
+      if (exportList.length === 0) {
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError('No stock records to export.');
+        } else {
+          alert('No stock records to export.');
+        }
+        return;
+      }
+
+      const rows = exportList.map(item => {
+        const code = item.itemCode || item.code || '';
+        const desc = item.description || item.name || '';
+        const cat = item.category || 'General';
+        const hsn = item.hsn || '-';
+        const unit = item.unit || 'PCS';
+        const gst = parseFloat(item.gst || 18);
+        const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
+        const available = parseFloat(item.availableStock != null ? item.availableStock : stock);
+        const min = parseFloat(item.minimumStock || 10);
+        const cost = parseFloat(item.purchasePrice || item.costPrice || 0);
+        const valuation = stock * cost;
+        const status = stock <= 0 ? 'Out of Stock' : (stock <= min ? 'Low Stock' : 'In Stock');
+
+        return {
+          'Item Code': code,
+          'Description': desc,
+          'Category': cat,
+          'HSN': hsn,
+          'Unit': unit,
+          'GST (%)': gst,
+          'Current Stock': stock,
+          'Available Stock': available,
+          'Min Stock': min,
+          'Unit Cost (₹)': cost,
+          'Stock Valuation (₹)': valuation,
+          'Stock Status': status
+        };
       });
+
+      if (window.XLSX) {
+        const ws = window.XLSX.utils.json_to_sheet(rows);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Stock Register');
+        const fileName = `Stock_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        window.XLSX.writeFile(wb, fileName);
+        if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+          window.AppDialogService.toastSuccess(`Exported ${rows.length} stock items to ${fileName}`);
+        }
+      } else {
+        let csv = Object.keys(rows[0]).join(',') + '\n';
+        rows.forEach(r => {
+          csv += Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `Stock_Register_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (err) {
       console.error('Failed to export inventory:', err);
       if (window.AppDialogService && window.AppDialogService.toastError) {
@@ -1219,14 +1330,78 @@ window.ItemMasterController = (function() {
 
     async exportItems() {
       try {
-        await window.ApiService.downloadFile('/api/master/items/export/excel', `Item_Master_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        if (!items || items.length === 0) {
+          await loadItems(true);
+        }
+        const dataToExport = (filteredItems && filteredItems.length > 0) ? filteredItems : items;
+        if (!dataToExport || dataToExport.length === 0) {
+          if (window.AppDialogService && window.AppDialogService.toastError) {
+            window.AppDialogService.toastError('No items available to export.');
+          } else {
+            alert('No items available to export.');
+          }
+          return;
+        }
+
+        const exportRows = dataToExport.map(i => ({
+          'Item Code': i.itemCode || '',
+          'Description': i.description || i.name || '',
+          'Category': i.category || 'General',
+          'Brand': i.brand || '',
+          'Unit': i.unit || 'PCS',
+          'HSN / SAC': i.hsn || '',
+          'Tax Rate (%)': parseFloat(i.taxRate || i.gst) || 0,
+          'Purchase Price (₹)': parseFloat(i.purchasePrice) || 0,
+          'Selling Price (₹)': parseFloat(i.sellingPrice) || 0,
+          'MRP (₹)': parseFloat(i.mrp) || 0,
+          'Min Stock': parseFloat(i.minimumStock) || 0,
+          'Opening Stock': parseFloat(i.openingStock) || 0,
+          'Status': i.active ? 'ACTIVE' : 'INACTIVE'
+        }));
+
+        if (window.XLSX) {
+          const ws = window.XLSX.utils.json_to_sheet(exportRows);
+          const wb = window.XLSX.utils.book_new();
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Item Master');
+          const fileName = `Item_Master_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          window.XLSX.writeFile(wb, fileName);
+          if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+            window.AppDialogService.toastSuccess(`Exported ${exportRows.length} items to ${fileName}`);
+          }
+        } else {
+          let csv = Object.keys(exportRows[0]).join(',') + '\n';
+          exportRows.forEach(r => {
+            csv += Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
+          });
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.setAttribute('download', `Item_Master_${new Date().toISOString().slice(0, 10)}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } catch (err) {
         console.error('Failed to export items:', err);
-        if (window.Toast && window.Toast.error) window.Toast.error('Export Failed', err.message || 'Could not export items');
-        else if (window.AppDialogService && window.AppDialogService.toastError) window.AppDialogService.toastError('Export Failed: ' + (err.message || 'Could not export items'));
-        else alert('Export Failed: ' + (err.message || 'Could not export items'));
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError('Export Failed: ' + (err.message || 'Could not export items'));
+        } else {
+          alert('Export Failed: ' + (err.message || 'Could not export items'));
+        }
       }
     },
-    importItems() { if (window.NavigationRouter) window.NavigationRouter.selectNav('view-import'); }
+    importItemsExcel() {
+      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+        window.NavigationRouter.selectNav('view-import');
+      } else if (typeof selectNav === 'function') {
+        selectNav('view-import');
+      }
+      if (window.ImportController && typeof window.ImportController.selectModule === 'function') {
+        window.ImportController.selectModule('Item Master');
+      }
+    },
+    importItems() {
+      this.importItemsExcel();
+    }
   };
 })();
