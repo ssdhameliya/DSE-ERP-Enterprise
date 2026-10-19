@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.35.03",
+  version: "10.0.35.04",
   desktopVersion: "10.0.35",
-  webBuild: 3,
-  webVersion: "10.0.35.03",
-  tag: "web-v10.0.35.03",
-  releaseDate: "2026-10-19T13:40:00+05:30",
+  webBuild: 4,
+  webVersion: "10.0.35.04",
+  tag: "web-v10.0.35.04",
+  releaseDate: "2026-10-19T14:15:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.35.03 Enterprise Release - Item Master & Stock Register UI/action desktop parity, RFC 4180 Bank Statement CSV import parser with Kotak metadata & SHA-256 fingerprinting, and Master Lookup system-generated code immutability"
+  summary: "10.0.35.04 Enterprise Release - Executive Reporting Parity: 100% server-driven favorites sync with Desktop, active refresh feedback, authentic SheetJS Excel (.xlsx) / RFC 4180 CSV / Executive PDF exports, Dynamic Viewer & Saved Reports catalog recovery, and company date & timestamp formatting."
 };
 
 // Automatic UI Version Injection

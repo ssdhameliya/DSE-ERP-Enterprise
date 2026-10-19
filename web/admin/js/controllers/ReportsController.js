@@ -15,7 +15,7 @@ window.ReportsController = (function() {
   let currentResult = null;
   let allSchedules = [];
   let filterOptions = { parties: [], items: [], salespeople: [] };
-  let favoriteReportIds = new Set(['SALES_REGISTER', 'PURCHASE_REGISTER', 'PROFITABILITY_ITEM', 'GST_SUMMARY']);
+  let favoriteReportIds = new Set(['SALES_REGISTER', 'PURCHASE_REGISTER', 'PROFITABILITY', 'GST_TAX']);
   let activeCenterCategory = 'ALL';
   let centerSearchQuery = '';
 
@@ -41,16 +41,14 @@ window.ReportsController = (function() {
     { id: 'SALES_BY_ITEM', title: 'Sales by Item', category: 'SALES', description: 'Product sales turnover, quantity sold, and average realizable price.', icon: '🏷️', supportedFilters: ['item', 'party', 'amount'] },
     { id: 'PURCHASE_BY_SUPPLIER', title: 'Purchase by Supplier', category: 'PURCHASE', description: 'Vendor procurement volumes, bill amounts, and pending balances.', icon: '🏭', supportedFilters: ['party', 'amount'] },
     { id: 'PURCHASE_BY_ITEM', title: 'Purchase by Item', category: 'PURCHASE', description: 'Inward item purchases, unit costs, and quantity received.', icon: '📥', supportedFilters: ['item', 'party', 'amount'] },
-    { id: 'CUSTOMER_RETURNS', title: 'Customer Credit Notes / Returns', category: 'RETURNS', description: 'Sales returns, rejection notes, credit notes, and tax adjustments.', icon: '↩️', supportedFilters: ['party', 'status', 'amount'] },
-    { id: 'SUPPLIER_DEBIT_NOTES', title: 'Supplier Debit Notes', category: 'RETURNS', description: 'Purchase returns, vendor debit notes, and debit voucher registers.', icon: '🔁', supportedFilters: ['party', 'status', 'amount'] },
-    { id: 'GST_SUMMARY', title: 'GST / Tax Report (GSTR-3B)', category: 'GST / TAX', description: 'Forward tax liability vs Inward ITC claim for GSTR-3B monthly filing.', icon: '🏛️', supportedFilters: ['gstrate'] },
-    { id: 'GSTR1_SUMMARY', title: 'GSTR-1 Outward Supplies', category: 'GST / TAX', description: 'B2B, B2CL, B2CS, and export invoices ready for GST portal upload.', icon: '📑', supportedFilters: ['party', 'gstrate'] },
-    { id: 'RECEIVABLES_AGING', title: 'Receivables Overdue & Ageing', category: 'RECEIVABLE', description: 'Customer overdue invoices partitioned into 0-30, 31-60, 61-90, 90+ buckets.', icon: '⏳', supportedFilters: ['party', 'salesperson', 'amount'] },
-    { id: 'PAYABLES_AGING', title: 'Payables Overdue & Ageing', category: 'PAYABLE', description: 'Supplier outstanding balances grouped by payment due dates and terms.', icon: '⌛', supportedFilters: ['party', 'amount'] },
-    { id: 'STOCK_VALUATION', title: 'Inventory Stock Valuation', category: 'INVENTORY', description: 'Current warehouse stock levels, moving average cost, and physical valuation.', icon: '📊', supportedFilters: ['item'] },
+    { id: 'RETURNS_ANALYSIS', title: 'Returns Analysis', category: 'RETURNS', description: 'Approved sales and purchase returns, rejection notes, and refund settlement.', icon: '↩️', supportedFilters: ['party', 'item', 'status', 'amount'] },
+    { id: 'GST_TAX', title: 'GST / Tax Report (GSTR-3B)', category: 'GST / TAX', description: 'Forward tax liability vs Inward ITC claim for GSTR-3B monthly filing.', icon: '🏛️', supportedFilters: ['party', 'item', 'gstrate'] },
+    { id: 'RECEIVABLE_AGEING', title: 'Receivable Ageing', category: 'RECEIVABLE', description: 'Customer overdue invoices partitioned into 0-30, 31-60, 61-90, 90+ buckets.', icon: '⏳', supportedFilters: ['party', 'salesperson', 'payment', 'amount'] },
+    { id: 'PAYABLE_AGEING', title: 'Payable Ageing', category: 'PAYABLE', description: 'Supplier outstanding balances grouped by payment due dates and terms.', icon: '⌛', supportedFilters: ['party', 'payment', 'amount'] },
+    { id: 'STOCK_SUMMARY', title: 'Inventory / Stock Summary', category: 'INVENTORY', description: 'Current warehouse stock levels, moving average cost, and physical valuation.', icon: '📊', supportedFilters: ['item', 'amount'] },
     { id: 'ITEM_LEDGER', title: 'Item Movement Ledger', category: 'INVENTORY', description: 'Inward, outward, opening, and closing stock balance movement trail.', icon: '📋', supportedFilters: ['item', 'party'] },
-    { id: 'BANK_RECON_SUMMARY', title: 'Bank Reconciliation Digest', category: 'BANKING', description: 'Matched, unmatched, suggested, and manual journal reconciliation report.', icon: '🏦', supportedFilters: ['party', 'status', 'amount'] },
-    { id: 'PROFITABILITY_ITEM', title: 'Product Profitability Report', category: 'PROFITABILITY', description: 'Gross profit margins, COGS, selling revenues, and margin percentage.', icon: '💰', supportedFilters: ['item', 'party', 'salesperson'] }
+    { id: 'BANK_RECONCILIATION', title: 'Banking / Reconciliation', category: 'BANKING', description: 'Matched, unmatched, suggested, and manual journal reconciliation report.', icon: '🏦', supportedFilters: ['status', 'amount'] },
+    { id: 'PROFITABILITY', title: 'Profitability Analysis', category: 'PROFITABILITY', description: 'Gross profit margins, COGS, selling revenues, and margin percentage.', icon: '💰', supportedFilters: ['item', 'party', 'salesperson', 'amount'] }
   ];
 
   function formatMoney(val) {
@@ -60,12 +58,52 @@ window.ReportsController = (function() {
 
   function formatDate(dStr) {
     if (!dStr) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDate) {
+      return window.FormatUtil.formatDate(dStr);
+    }
     try {
       const d = new Date(dStr);
       if (isNaN(d.getTime())) return dStr;
       return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch {
       return dStr;
+    }
+  }
+
+  function formatTimestamp(tStr) {
+    if (!tStr) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDateTime) {
+      return window.FormatUtil.formatDateTime(tStr);
+    }
+    return formatDate(tStr);
+  }
+
+  function semanticForColumn(key) {
+    const k = (key || '').toLowerCase();
+    if (k.includes('date') || k.includes('month') || k.includes('period')) return 'calendar';
+    if (k.includes('customer') || k.includes('party')) return 'customer';
+    if (k.includes('supplier')) return 'supplier';
+    if (k.includes('item') || k.includes('quantity') || k.includes('qty')) return 'item';
+    if (k.includes('gst') || k.includes('tax')) return 'tax';
+    if (k.includes('status')) return 'status';
+    if (k.includes('amount') || k.includes('total') || k.includes('paid') || k.includes('outstanding') || k.includes('profit') || k.includes('cost') || k.includes('value') || k.includes('price')) return 'currency';
+    if (k.includes('invoice') || k.includes('reference') || k.includes('document') || k.includes('bill') || k.includes('number')) return 'document';
+    if (k.includes('bank')) return 'bank';
+    return 'report';
+  }
+
+  function iconForSemantic(sem) {
+    switch (sem) {
+      case 'calendar': return '📅';
+      case 'customer': return '👥';
+      case 'supplier': return '🏭';
+      case 'item': return '🏷️';
+      case 'tax': return '🏛️';
+      case 'status': return '⚡';
+      case 'currency': return '💰';
+      case 'document': return '📄';
+      case 'bank': return '🏦';
+      default: return '📊';
     }
   }
 
@@ -186,25 +224,31 @@ window.ReportsController = (function() {
                 });
               }
             }
-            if (serverFavs.size > 0) {
-              favoriteReportIds = serverFavs;
-              this.renderCategoryPills();
-              if (activeCenterCategory === 'FAVORITES') {
-                this.renderReportCards();
-              }
-              return;
+            // Canonical Server Sync: unconditionally reflect server favorites
+            favoriteReportIds = serverFavs;
+            try {
+              localStorage.setItem('dse_fav_reports', JSON.stringify(Array.from(favoriteReportIds)));
+            } catch (_) {}
+            this.renderCategoryPills();
+            if (activeCenterCategory === 'FAVORITES') {
+              this.renderReportCards();
             }
+            return;
           }
         }
       } catch (_) {}
 
-      // Fallback: localStorage
+      // Fallback: localStorage if server unavailable
       try {
         const saved = localStorage.getItem('dse_fav_reports');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length > 0) {
+          if (Array.isArray(arr)) {
             favoriteReportIds = new Set(arr);
+            this.renderCategoryPills();
+            if (activeCenterCategory === 'FAVORITES') {
+              this.renderReportCards();
+            }
           }
         }
       } catch (_) {}
@@ -366,7 +410,7 @@ window.ReportsController = (function() {
         if (titleEl) titleEl.innerText = 'Report Center';
         if (descEl) descEl.innerText = 'Financial and operational intelligence across all business dimensions';
         if (pageIcon) pageIcon.innerText = '📋';
-        this.renderReportCards();
+        this.loadSavedFavorites().then(() => this.renderReportCards());
       } else if (tabName === 'viewer') {
         if (titleEl) titleEl.innerText = this.currentDefinition?.title || 'Report Viewer';
         if (descEl) descEl.innerText = this.currentDefinition?.description || 'Dynamic tabular report viewer with multi-level filtering and export capabilities';
@@ -382,16 +426,44 @@ window.ReportsController = (function() {
       }
     },
 
-    handleRefreshAction() {
-      if (activeMainTab === 'dashboard') {
-        this.applyDashboardFilters();
-      } else if (activeMainTab === 'center') {
-        this.loadDefinitions().then(() => this.renderReportCards());
-      } else if (activeMainTab === 'viewer') {
-        this.loadSavedReports();
-        this.applyViewerFilters();
-      } else if (activeMainTab === 'scheduler') {
-        this.loadSchedules();
+    async handleRefreshAction(event) {
+      const btn = (event && event.currentTarget) || document.querySelector('button[onclick*="handleRefreshAction"]');
+      let origHtml = '↻ Refresh';
+      if (btn) {
+        origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner" style="display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:6px; vertical-align:middle;"></span> Refreshing...';
+      }
+
+      try {
+        if (activeMainTab === 'dashboard') {
+          await this.applyDashboardFilters();
+        } else if (activeMainTab === 'center') {
+          await Promise.all([this.loadDefinitions(), this.loadSavedFavorites()]);
+          this.renderReportCards();
+        } else if (activeMainTab === 'viewer') {
+          await this.loadSavedReports();
+          await this.applyViewerFilters();
+        } else if (activeMainTab === 'scheduler') {
+          await this.loadSchedules();
+        }
+
+        if (window.AudioSynthesizer && window.AudioSynthesizer.playSuccess) {
+          window.AudioSynthesizer.playSuccess();
+        }
+        if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+          window.AppDialogService.toastSuccess('Report data refreshed.');
+        }
+      } catch (err) {
+        console.error('[ReportsController] handleRefreshAction failed:', err);
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError('Failed to refresh report data: ' + (err.message || err));
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
       }
     },
 
@@ -917,25 +989,32 @@ window.ReportsController = (function() {
         summaryEl.innerText = `Active filters: ${from || 'Start'} to ${to || 'End'}${party ? ' • ' + party : ''}`;
       }
 
+      const numMin = (minAmount && !isNaN(parseFloat(minAmount))) ? parseFloat(minAmount) : null;
+      const numMax = (maxAmount && !isNaN(parseFloat(maxAmount))) ? parseFloat(maxAmount) : null;
+
+      // 100% Server ReportingDtos.ReportRequest contract matching
       const req = {
         reportId: def?.id || currentReportId,
-        fromDate: from,
-        toDate: to,
-        party: party,
-        item: item,
-        salesperson: salesperson,
-        status: status,
-        paymentStatus: paymentStatus,
-        returnStatus: returnStatus,
-        gstRate: gstRate,
-        minAmount: minAmount,
-        maxAmount: maxAmount,
-        groupBy: groupBy,
-        sortBy: sortBy,
-        sortDirection: sortDirection,
-        search: viewerSearchQuery,
-        page: viewerPage,
-        size: viewerPageSize
+        from: from || null,
+        to: to || null,
+        party: (party && !party.startsWith('All')) ? party : null,
+        item: (item && !item.startsWith('All')) ? item : null,
+        salesperson: (salesperson && !salesperson.startsWith('All')) ? salesperson : null,
+        documentStatus: (status && !status.startsWith('All')) ? status.toUpperCase() : null,
+        paymentStatus: (paymentStatus && !paymentStatus.startsWith('All')) ? paymentStatus.toUpperCase() : null,
+        returnStatus: (returnStatus && !returnStatus.startsWith('All')) ? returnStatus.toUpperCase() : null,
+        gstRate: (gstRate && !gstRate.startsWith('All')) ? gstRate : null,
+        warehouse: null,
+        bankStatus: null,
+        search: viewerSearchQuery ? viewerSearchQuery.trim() : null,
+        groupBy: (groupBy && groupBy !== 'None') ? groupBy : null,
+        sortKey: (sortBy || 'date').toLowerCase(),
+        sortDirection: sortDirection === 'Ascending' ? 'ASC' : 'DESC',
+        minAmount: numMin,
+        maxAmount: numMax,
+        page: viewerPage || 0,
+        size: viewerPageSize || 25,
+        visibleColumns: []
       };
 
       const thead = document.getElementById('viewer-thead');
@@ -985,33 +1064,75 @@ window.ReportsController = (function() {
         pageEl.innerText = `Page ${viewerPage + 1} / ${totalPages}`;
       }
 
-      // Render Header
+      // Render Header with semantic icons
       if (thead) {
         thead.innerHTML = `
           <tr>
-            <th style="width:36px; text-align:center;">#</th>
-            ${cols.map(c => `<th style="${c.align === 'RIGHT' ? 'text-align:right;' : ''}">${c.label}</th>`).join('')}
+            <th style="width:40px; text-align:center;">#</th>
+            ${cols.map(c => {
+              const sem = semanticForColumn(c.key || c.label);
+              const icon = iconForSemantic(sem);
+              const isRight = c.align === 'RIGHT' || c.numeric;
+              return `
+                <th style="${isRight ? 'text-align:right;' : ''}">
+                  <span style="display:inline-flex; align-items:center; gap:6px; ${isRight ? 'justify-content:flex-end;' : ''}">
+                    <span style="font-size:0.85rem; opacity:0.85;">${icon}</span>
+                    <span>${c.label}</span>
+                  </span>
+                </th>
+              `;
+            }).join('')}
           </tr>
         `;
       }
 
-      // Render Rows
+      // Render Rows with rich formatting
       if (tbody) {
         if (rows.length === 0) {
           tbody.innerHTML = `<tr><td colspan="${cols.length + 1}" style="text-align:center; padding:32px; color:var(--text-dim);">No transactions found matching criteria.</td></tr>`;
         } else {
           tbody.innerHTML = rows.map((r, rIdx) => {
-            const rowRef = r.reference || r.number || (r.values && r.values[0]) || '';
+            const rowRef = r.referenceNo || r.reference || r.number || (r.values && r.values[0]) || '';
             return `
               <tr data-row-idx="${rIdx}" data-ref="${rowRef}" onclick="window.ReportsController.onViewerRowClick(${rIdx}, this)" style="cursor:pointer;">
                 <td style="text-align:center; color:var(--text-muted); font-size:0.72rem;">${viewerPage * viewerPageSize + rIdx + 1}</td>
                 ${(r.values || []).map((val, cIdx) => {
                   const col = cols[cIdx];
-                  const isRight = col && col.align === 'RIGHT';
+                  const isRight = col && (col.align === 'RIGHT' || col.numeric);
                   const isMono = col && (col.type === 'CODE' || col.type === 'NUMBER' || (val && /^[A-Z0-9\/-]+$/.test(val)));
+
+                  let displayVal = val != null ? val : '-';
+                  let cellColor = isMono ? 'color:var(--cyan);' : '';
+
+                  if (val != null && val !== '') {
+                    const colKey = (col?.key || '').toLowerCase();
+                    const colType = (col?.type || '').toUpperCase();
+
+                    if (colType === 'DATE' || colKey.includes('date')) {
+                      displayVal = formatDate(val);
+                    } else if (colType === 'DATETIME' || colKey.includes('time') || colKey.includes('timestamp')) {
+                      displayVal = formatTimestamp(val);
+                    } else if (colType === 'MONEY' || colKey.includes('amount') || colKey.includes('total') || colKey.includes('taxable') || colKey.includes('price') || colKey.includes('profit') || colKey.includes('cost')) {
+                      displayVal = isNaN(parseFloat(val)) ? val : formatMoney(val);
+                      if (colKey.includes('profit') || colKey.includes('margin')) cellColor = 'color:var(--accent-green, #22c55e);';
+                      else if (colKey.includes('purchase') || colKey.includes('cost') || colKey.includes('expense')) cellColor = 'color:var(--accent-orange, #f97316);';
+                      else cellColor = 'color:var(--cyan, #38bdf8);';
+                    } else if (colType === 'PERCENT' || colKey.includes('margin_percent') || colKey.includes('margin_rate')) {
+                      displayVal = !isNaN(parseFloat(val)) ? (parseFloat(val).toFixed(2) + '%') : val;
+                      cellColor = 'color:var(--accent-green, #22c55e);';
+                    } else if (colType === 'STATUS' || colKey.includes('status')) {
+                      let badgeClass = 'pill-neutral';
+                      const uVal = String(val).toUpperCase();
+                      if (uVal.includes('PAID') || uVal.includes('APPROVED') || uVal.includes('ACTIVE') || uVal.includes('CONFIRMED')) badgeClass = 'pill-success';
+                      else if (uVal.includes('PENDING') || uVal.includes('PARTIAL') || uVal.includes('PAUSED')) badgeClass = 'pill-warning';
+                      else if (uVal.includes('OVERDUE') || uVal.includes('CANCELLED') || uVal.includes('REJECTED') || uVal.includes('FAILED')) badgeClass = 'pill-danger';
+                      displayVal = `<span class="pill-badge ${badgeClass}" style="font-size:0.7rem;">${val}</span>`;
+                    }
+                  }
+
                   return `
-                    <td style="${isRight ? 'text-align:right; font-weight:700;' : ''} ${isMono ? 'font-family:monospace; color:var(--cyan);' : ''}">
-                      ${val != null ? val : '-'}
+                    <td style="${isRight ? 'text-align:right; font-weight:600;' : ''} ${isMono ? 'font-family:monospace;' : ''} ${cellColor}">
+                      ${displayVal}
                     </td>
                   `;
                 }).join('')}
@@ -1023,20 +1144,30 @@ window.ReportsController = (function() {
 
       // Render Totals Foot
       if (tfoot) {
-        if (res.totals && res.totals.length > 0) {
+        if (res.totals && (Array.isArray(res.totals) ? res.totals.length > 0 : Object.keys(res.totals).length > 0)) {
+          const totalsMap = Array.isArray(res.totals) ? null : res.totals;
           tfoot.innerHTML = `
-            <tr style="font-weight:700; background:rgba(255,255,255,0.04); border-top:2px solid var(--border-subtle);">
-              <td style="text-align:center;">TOTAL</td>
-              ${res.totals.map((t, idx) => {
-                const col = cols[idx];
-                const isRight = col && col.align === 'RIGHT';
-                return `<td style="${isRight ? 'text-align:right;' : ''}">${t != null ? t : ''}</td>`;
+            <tr style="font-weight:700; background:rgba(255,255,255,0.06); border-top:2px solid var(--border-subtle); color:var(--text-main);">
+              <td style="text-align:center; font-weight:800;">TOTAL</td>
+              ${cols.map((col, idx) => {
+                const isRight = col && (col.align === 'RIGHT' || col.numeric);
+                let totVal = '';
+                if (totalsMap) {
+                  totVal = totalsMap[col.key] || totalsMap[col.label] || '';
+                } else if (Array.isArray(res.totals)) {
+                  totVal = res.totals[idx] || '';
+                }
+                return `<td style="${isRight ? 'text-align:right; font-weight:700;' : ''}">${totVal != null ? totVal : ''}</td>`;
               }).join('')}
             </tr>
           `;
         } else {
           tfoot.innerHTML = '';
         }
+      }
+
+      if (window.TableUiEnhancer && window.TableUiEnhancer.enhance) {
+        window.TableUiEnhancer.enhance(document.getElementById('viewer-table'));
       }
     },
 
@@ -1194,22 +1325,39 @@ window.ReportsController = (function() {
       const name = prompt('Enter a name for this Saved Report configuration:', defaultName);
       if (!name || !name.trim()) return;
 
+      const fVal = document.getElementById('v-filter-from')?.value || '';
+      const tVal = document.getElementById('v-filter-to')?.value || '';
+      const pVal = document.getElementById('v-filter-party')?.value || '';
+      const iVal = document.getElementById('v-filter-item')?.value || '';
+      const sVal = document.getElementById('v-filter-salesperson')?.value || '';
+      const docVal = document.getElementById('v-filter-docstatus')?.value || '';
+      const payVal = document.getElementById('v-filter-payment')?.value || '';
+      const retVal = document.getElementById('v-filter-returns')?.value || '';
+      const gstVal = document.getElementById('v-filter-gstrate')?.value || '';
+      const minVal = document.getElementById('v-filter-minamt')?.value || '';
+      const maxVal = document.getElementById('v-filter-maxamt')?.value || '';
+      const grpVal = document.getElementById('viewer-groupby')?.value || 'None';
+      const sortVal = document.getElementById('viewer-sortby')?.value || 'Date';
+      const dirVal = document.getElementById('viewer-direction')?.value || 'Descending';
+
       const req = {
         reportId: def?.id || currentReportId,
-        fromDate: document.getElementById('v-filter-from')?.value || '',
-        toDate: document.getElementById('v-filter-to')?.value || '',
-        party: document.getElementById('v-filter-party')?.value || '',
-        item: document.getElementById('v-filter-item')?.value || '',
-        salesperson: document.getElementById('v-filter-salesperson')?.value || '',
-        status: document.getElementById('v-filter-docstatus')?.value || '',
-        paymentStatus: document.getElementById('v-filter-payment')?.value || '',
-        returnStatus: document.getElementById('v-filter-returns')?.value || '',
-        gstRate: document.getElementById('v-filter-gstrate')?.value || '',
-        minAmount: document.getElementById('v-filter-minamt')?.value || '',
-        maxAmount: document.getElementById('v-filter-maxamt')?.value || '',
-        groupBy: document.getElementById('viewer-groupby')?.value || 'None',
-        sortBy: document.getElementById('viewer-sortby')?.value || 'Date',
-        sortDirection: document.getElementById('viewer-direction')?.value || 'Descending',
+        from: fVal,
+        to: tVal,
+        party: pVal,
+        item: iVal,
+        salesperson: sVal,
+        documentStatus: docVal,
+        paymentStatus: payVal,
+        returnStatus: retVal,
+        gstRate: gstVal,
+        warehouse: null,
+        bankStatus: null,
+        minAmount: minVal ? parseFloat(minVal) : null,
+        maxAmount: maxVal ? parseFloat(maxVal) : null,
+        groupBy: grpVal,
+        sortKey: sortVal.toLowerCase(),
+        sortDirection: dirVal === 'Ascending' ? 'ASC' : 'DESC',
         search: viewerSearchQuery || '',
         page: 0,
         size: viewerPageSize || 25,
@@ -1231,7 +1379,10 @@ window.ReportsController = (function() {
             data: payload
           });
         }
-        if (window.AppDialogService) {
+        if (window.AudioSynthesizer && window.AudioSynthesizer.playSuccess) {
+          window.AudioSynthesizer.playSuccess();
+        }
+        if (window.AppDialogService && window.AppDialogService.toastSuccess) {
           window.AppDialogService.toastSuccess(`Saved Report '${name.trim()}' persisted to server! Dynamic date preset '${preset}' will advance automatically.`);
         } else {
           alert(`Saved Report '${name.trim()}' persisted to server!`);
@@ -1239,7 +1390,11 @@ window.ReportsController = (function() {
         await this.loadSavedReports();
       } catch (err) {
         console.error('[ReportsController] saveCurrentReportConfig failed:', err);
-        alert('Failed to save report to server: ' + (err.message || err));
+        if (window.AppDialogService && window.AppDialogService.toastError) {
+          window.AppDialogService.toastError('Failed to save report: ' + (err.message || err));
+        } else {
+          alert('Failed to save report to server: ' + (err.message || err));
+        }
       }
     },
 
@@ -1256,10 +1411,12 @@ window.ReportsController = (function() {
               let preset = 'Custom';
               if (v.data && v.data.startsWith('REPORT_V2:')) {
                 try {
-                  config = JSON.parse(v.data.substring('REPORT_V2:'.length()));
+                  config = JSON.parse(v.data.slice('REPORT_V2:'.length));
                   req = config?.request;
                   preset = config?.datePreset || 'Custom';
-                } catch (_) {}
+                } catch (e) {
+                  console.warn('[ReportsController] Failed to parse REPORT_V2 JSON for view:', v.name, e);
+                }
               } else if (v.data && v.data.includes('|')) {
                 const parts = v.data.split('|');
                 if (parts.length >= 6) {
@@ -1268,25 +1425,47 @@ window.ReportsController = (function() {
                     parts[0].trim().toUpperCase() === 'PAYMENTS' ? 'RECEIVABLE_AGEING' : 'SALES_REGISTER';
                   req = {
                     reportId: repId,
-                    fromDate: parts[4] || '',
-                    toDate: parts[5] || '',
+                    from: parts[4] || '',
+                    to: parts[5] || '',
                     party: parts[1] === 'ALL' ? '' : parts[1] || '',
                     item: parts[2] === 'ALL' ? '' : parts[2] || '',
                     salesperson: parts[3] === 'ALL' ? '' : parts[3] || '',
                     groupBy: 'None',
-                    sortBy: 'Date',
-                    sortDirection: 'Descending'
+                    sortKey: 'date',
+                    sortDirection: 'DESC'
                   };
                   preset = 'Custom';
                 }
               }
 
               if (req) {
-                const def = definitions.find(d => d.id === req.reportId);
-                const baseTitle = def?.title || req.reportId;
-                const group = req.groupBy && req.groupBy !== 'None' ? req.groupBy : 'None';
-                const sortStr = (req.sortBy || 'Date') + ' ' + (req.sortDirection === 'ASC' ? '↑' : '↓');
-                const cols = req.visibleColumns && req.visibleColumns.length > 0 ? `${req.visibleColumns.length} selected` : 'Standard';
+                const normReq = {
+                  reportId: req.reportId || 'SALES_REGISTER',
+                  from: req.from || req.fromDate || '',
+                  to: req.to || req.toDate || '',
+                  party: req.party || '',
+                  item: req.item || '',
+                  salesperson: req.salesperson || '',
+                  documentStatus: req.documentStatus || req.status || '',
+                  paymentStatus: req.paymentStatus || '',
+                  returnStatus: req.returnStatus || '',
+                  gstRate: req.gstRate || '',
+                  minAmount: req.minAmount != null ? req.minAmount : null,
+                  maxAmount: req.maxAmount != null ? req.maxAmount : null,
+                  groupBy: req.groupBy || 'None',
+                  sortKey: req.sortKey || req.sortBy || 'date',
+                  sortDirection: req.sortDirection || 'DESC',
+                  search: req.search || '',
+                  page: req.page || 0,
+                  size: req.size || 25,
+                  visibleColumns: req.visibleColumns || []
+                };
+
+                const def = definitions.find(d => d.id === normReq.reportId);
+                const baseTitle = def?.title || normReq.reportId;
+                const group = normReq.groupBy && normReq.groupBy !== 'None' ? normReq.groupBy : 'None';
+                const sortStr = (normReq.sortKey || 'Date') + ' ' + (normReq.sortDirection === 'ASC' ? '↑' : '↓');
+                const cols = normReq.visibleColumns && normReq.visibleColumns.length > 0 ? `${normReq.visibleColumns.length} selected` : 'Standard';
 
                 allSavedReports.push({
                   name: v.name,
@@ -1296,7 +1475,7 @@ window.ReportsController = (function() {
                   sorting: sortStr,
                   columns: cols,
                   status: 'Saved',
-                  request: req,
+                  request: normReq,
                   raw: v
                 });
               }
@@ -1404,8 +1583,10 @@ window.ReportsController = (function() {
       } else {
         const f = document.getElementById('v-filter-from');
         const t = document.getElementById('v-filter-to');
-        if (f && req.fromDate) f.value = req.fromDate;
-        if (t && req.toDate) t.value = req.toDate;
+        const fromDate = req.from || req.fromDate;
+        const toDate = req.to || req.toDate;
+        if (f && fromDate) f.value = fromDate;
+        if (t && toDate) t.value = toDate;
       }
 
       const setVal = (id, val) => {
@@ -1415,7 +1596,7 @@ window.ReportsController = (function() {
       setVal('v-filter-party', req.party);
       setVal('v-filter-item', req.item);
       setVal('v-filter-salesperson', req.salesperson);
-      setVal('v-filter-docstatus', req.status);
+      setVal('v-filter-docstatus', req.documentStatus || req.status);
       setVal('v-filter-payment', req.paymentStatus);
       setVal('v-filter-returns', req.returnStatus);
       setVal('v-filter-gstrate', req.gstRate);
@@ -1423,8 +1604,8 @@ window.ReportsController = (function() {
       setVal('v-filter-maxamt', req.maxAmount);
 
       setVal('viewer-groupby', req.groupBy || 'None');
-      setVal('viewer-sortby', req.sortBy || 'Date');
-      setVal('viewer-direction', req.sortDirection || 'Descending');
+      setVal('viewer-sortby', req.sortKey || req.sortBy || 'Date');
+      setVal('viewer-direction', req.sortDirection === 'ASC' ? 'Ascending' : (req.sortDirection || 'Descending'));
 
       const searchEl = document.getElementById('viewer-search');
       if (searchEl) searchEl.value = req.search || '';
@@ -1519,7 +1700,7 @@ window.ReportsController = (function() {
       const failEl = document.getElementById('rep-sch-kpi-failures');
 
       if (actEl && sum.activeSchedules !== undefined) actEl.innerText = sum.activeSchedules.toString();
-      if (nextEl) nextEl.innerText = sum.nextRun ? formatDate(sum.nextRun) : 'None Scheduled';
+      if (nextEl) nextEl.innerText = sum.nextRun ? formatTimestamp(sum.nextRun) : 'None Scheduled';
       if (nextNameEl) nextNameEl.innerText = sum.nextSchedule || '-';
       if (monthEl && sum.reportsThisMonth !== undefined) monthEl.innerText = sum.reportsThisMonth.toString();
       if (failEl && sum.failuresLast30Days !== undefined) failEl.innerText = sum.failuresLast30Days.toString();
@@ -1543,7 +1724,7 @@ window.ReportsController = (function() {
       const activeScheds = allSchedules.filter(s => (s.status || '').toUpperCase() === 'ACTIVE' && s.nextRun);
       if (activeScheds.length > 0) {
         const earliest = activeScheds[0];
-        if (nextEl) nextEl.innerText = formatDate(earliest.nextRun);
+        if (nextEl) nextEl.innerText = formatTimestamp(earliest.nextRun);
         if (nextNameEl) nextNameEl.innerText = earliest.name || earliest.savedReport || '-';
       } else {
         if (nextEl) nextEl.innerText = 'None Scheduled';
@@ -1589,7 +1770,7 @@ window.ReportsController = (function() {
             <td>${s.time || '08:00'}</td>
             <td><span class="pill-badge pill-purple">${s.format || 'PDF'}</span></td>
             <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${s.recipients || ''}">${s.delivery || 'EMAIL'} (${s.recipients || 'team'})</td>
-            <td style="color:var(--text-muted); font-size:0.75rem;">${formatDate(s.nextRun) || 'Pending'}</td>
+            <td style="color:var(--text-muted); font-size:0.75rem;">${formatTimestamp(s.nextRun) || 'Pending'}</td>
             <td><span class="pill-badge ${isAct ? 'pill-success' : 'pill-warning'}">${s.status || 'ACTIVE'}</span></td>
             <td style="text-align:right; white-space:nowrap;" onclick="event.stopPropagation();">
               <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
@@ -1908,44 +2089,314 @@ window.ReportsController = (function() {
       const menu = document.getElementById('rep-export-menu');
       if (menu) menu.style.display = 'none';
 
-      if (activeMainTab === 'viewer' && currentResult && currentResult.rows && currentResult.rows.length > 0) {
-        if (format === 'PDF') {
-          window.print();
-          return;
-        }
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      const repTitle = (this.currentDefinition?.title || currentReportId || 'Executive_Report');
+      const safeTitle = repTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
 
-        const headers = (currentResult.columns || []).map(c => c.label).join(',');
-        const rows = (currentResult.rows || []).map(r => (r.values || []).map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(','));
-        const csvContent = [headers, ...rows].join('\r\n');
-
-        const blob = new Blob([csvContent], { type: format === 'EXCEL' ? 'application/vnd.ms-excel;charset=utf-8;' : 'text/csv;charset=utf-8;' });
+      // Helper to trigger file download
+      const triggerDownload = (blob, filename) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `${currentResult.reportId || 'Report'}_${new Date().toISOString().slice(0, 10)}.${format === 'EXCEL' ? 'xls' : 'csv'}`);
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported report as ${format}!`);
-      } else {
-        // Export Dashboard Overview
-        if (format === 'PDF') {
-          window.print();
-        } else {
-          if (window.AppDialogService) window.AppDialogService.toastInfo('Exporting summary dashboard metrics...');
-          const csv = `Metric,Value\r\nActive Sales,${document.getElementById('rep-kpi-sales')?.innerText || '0'}\r\nActive Purchases,${document.getElementById('rep-kpi-purchases')?.innerText || '0'}\r\nGross Profit,${document.getElementById('rep-kpi-profit')?.innerText || '0'}\r\nReceivables,${document.getElementById('rep-kpi-receivables')?.innerText || '0'}\r\n`;
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.setAttribute('href', url);
-          link.setAttribute('download', `Dashboard_Summary_${new Date().toISOString().slice(0,10)}.csv`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+      };
+
+      // Helper for RFC 4180 CSV escaping
+      const escapeCsvCell = (val) => {
+        if (val == null) return '""';
+        const s = String(val);
+        if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return `"${s}"`;
+      };
+
+      // 1. DYNAMIC VIEWER TAB EXPORT
+      if (activeMainTab === 'viewer' && currentResult && currentResult.columns && currentResult.columns.length > 0) {
+        const cols = currentResult.columns || [];
+        const rows = currentResult.rows || [];
+        const colLabels = cols.map(c => c.label || c.key || 'Column');
+
+        if (format === 'EXCEL') {
+          if (window.XLSX && window.XLSX.utils) {
+            const aoa = [colLabels];
+            rows.forEach(r => {
+              aoa.push((r.values || []).map(v => v != null ? v : ''));
+            });
+
+            // Add Totals row if present
+            if (currentResult.totals) {
+              const totalsRow = ['TOTAL'];
+              for (let i = 1; i < cols.length; i++) {
+                const c = cols[i];
+                let tot = '';
+                if (Array.isArray(currentResult.totals)) {
+                  tot = currentResult.totals[i] || '';
+                } else if (typeof currentResult.totals === 'object') {
+                  tot = currentResult.totals[c.key] || currentResult.totals[c.label] || '';
+                }
+                totalsRow.push(tot);
+              }
+              aoa.push(totalsRow);
+            }
+
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.aoa_to_sheet(aoa);
+
+            // Compute optimal column widths
+            const colWidths = colLabels.map((lbl, cIdx) => {
+              let maxLen = (lbl || '').length;
+              rows.slice(0, 100).forEach(r => {
+                const valStr = String(r.values?.[cIdx] || '');
+                if (valStr.length > maxLen) maxLen = valStr.length;
+              });
+              return { wch: Math.min(Math.max(maxLen + 4, 12), 40) };
+            });
+            ws['!cols'] = colWidths;
+
+            window.XLSX.utils.book_append_sheet(wb, ws, repTitle.slice(0, 31));
+            window.XLSX.writeFile(wb, `${safeTitle}_${dateStamp}.xlsx`);
+            if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${repTitle} to Excel (.xlsx)!`);
+            return;
+          }
+        } else if (format === 'CSV') {
+          const headerLine = colLabels.map(escapeCsvCell).join(',');
+          const rowLines = rows.map(r => (r.values || []).map(escapeCsvCell).join(','));
+          let csvText = '\uFEFF' + [headerLine, ...rowLines].join('\r\n');
+
+          if (currentResult.totals) {
+            const totCells = ['TOTAL'];
+            for (let i = 1; i < cols.length; i++) {
+              const c = cols[i];
+              let tot = '';
+              if (Array.isArray(currentResult.totals)) tot = currentResult.totals[i] || '';
+              else if (typeof currentResult.totals === 'object') tot = currentResult.totals[c.key] || currentResult.totals[c.label] || '';
+              totCells.push(tot);
+            }
+            csvText += '\r\n' + totCells.map(escapeCsvCell).join(',');
+          }
+
+          const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+          triggerDownload(blob, `${safeTitle}_${dateStamp}.csv`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${repTitle} to CSV!`);
+          return;
+        } else if (format === 'PDF') {
+          this.printFormattedReport(repTitle, cols, rows, currentResult.totals);
+          return;
         }
       }
+
+      // 2. DASHBOARD TAB EXPORT
+      if (activeMainTab === 'dashboard') {
+        const kpiData = [
+          ['Metric', 'Value'],
+          ['Sales Revenue', document.getElementById('rep-kpi-sales')?.innerText || '₹ 0.00'],
+          ['Purchases Volume', document.getElementById('rep-kpi-purchases')?.innerText || '₹ 0.00'],
+          ['Gross Profit', document.getElementById('rep-kpi-profit')?.innerText || '₹ 0.00'],
+          ['Total Receivables', document.getElementById('rep-kpi-receivables')?.innerText || '₹ 0.00'],
+          ['Inventory Valuation', document.getElementById('rep-kpi-stock')?.innerText || '₹ 0.00'],
+          ['Low Stock Count', document.getElementById('rep-kpi-low-stock')?.innerText || '0'],
+          ['Active Customers', document.getElementById('rep-kpi-customers')?.innerText || '0']
+        ];
+
+        if (format === 'EXCEL' && window.XLSX && window.XLSX.utils) {
+          const wb = window.XLSX.utils.book_new();
+          const wsKpi = window.XLSX.utils.aoa_to_sheet(kpiData);
+          wsKpi['!cols'] = [{ wch: 25 }, { wch: 20 }];
+          window.XLSX.utils.book_append_sheet(wb, wsKpi, 'KPI Overview');
+          window.XLSX.writeFile(wb, `Reports_Dashboard_${dateStamp}.xlsx`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Dashboard to Excel (.xlsx)!');
+          return;
+        } else if (format === 'CSV') {
+          const csvText = '\uFEFF' + kpiData.map(r => r.map(escapeCsvCell).join(',')).join('\r\n');
+          const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+          triggerDownload(blob, `Reports_Dashboard_${dateStamp}.csv`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Dashboard summary to CSV!');
+          return;
+        } else if (format === 'PDF') {
+          window.print();
+          return;
+        }
+      }
+
+      // 3. SCHEDULER TAB EXPORT
+      if (activeMainTab === 'scheduler' && allSchedules.length > 0) {
+        const schHeaders = ['Schedule Name', 'Saved Report', 'Frequency', 'Time', 'Format', 'Delivery', 'Recipients', 'Next Run', 'Status'];
+        const schRows = allSchedules.map(s => [
+          s.name || '',
+          s.savedReport || s.reportTitle || '',
+          s.frequency || 'DAILY',
+          s.time || '08:00',
+          s.format || 'PDF',
+          s.delivery || 'EMAIL',
+          s.recipients || '',
+          formatTimestamp(s.nextRun) || 'Pending',
+          s.status || 'ACTIVE'
+        ]);
+
+        if (format === 'EXCEL' && window.XLSX && window.XLSX.utils) {
+          const wb = window.XLSX.utils.book_new();
+          const ws = window.XLSX.utils.aoa_to_sheet([schHeaders, ...schRows]);
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Scheduled Reports');
+          window.XLSX.writeFile(wb, `Scheduled_Reports_${dateStamp}.xlsx`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Schedules to Excel (.xlsx)!');
+          return;
+        } else if (format === 'CSV') {
+          const csvText = '\uFEFF' + [schHeaders.map(escapeCsvCell).join(','), ...schRows.map(r => r.map(escapeCsvCell).join(','))].join('\r\n');
+          const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+          triggerDownload(blob, `Scheduled_Reports_${dateStamp}.csv`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Schedules to CSV!');
+          return;
+        } else if (format === 'PDF') {
+          const cols = schHeaders.map(h => ({ label: h, align: 'LEFT' }));
+          const rows = schRows.map(r => ({ values: r }));
+          this.printFormattedReport('Scheduled Reports Catalog', cols, rows, null);
+          return;
+        }
+      }
+
+      // 4. REPORT CENTER TAB EXPORT
+      if (activeMainTab === 'center') {
+        const catHeaders = ['Report ID', 'Title', 'Category', 'Description', 'Favorite'];
+        const catRows = definitions.map(d => [
+          d.id,
+          d.title,
+          d.category,
+          d.description,
+          favoriteReportIds.has(d.id) ? 'YES' : 'NO'
+        ]);
+
+        if (format === 'EXCEL' && window.XLSX && window.XLSX.utils) {
+          const wb = window.XLSX.utils.book_new();
+          const ws = window.XLSX.utils.aoa_to_sheet([catHeaders, ...catRows]);
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Report Catalog');
+          window.XLSX.writeFile(wb, `Report_Catalog_${dateStamp}.xlsx`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Report Catalog to Excel (.xlsx)!');
+          return;
+        } else if (format === 'CSV') {
+          const csvText = '\uFEFF' + [catHeaders.map(escapeCsvCell).join(','), ...catRows.map(r => r.map(escapeCsvCell).join(','))].join('\r\n');
+          const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+          triggerDownload(blob, `Report_Catalog_${dateStamp}.csv`);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported Report Catalog to CSV!');
+          return;
+        } else if (format === 'PDF') {
+          const cols = catHeaders.map(h => ({ label: h, align: 'LEFT' }));
+          const rows = catRows.map(r => ({ values: r }));
+          this.printFormattedReport('Executive Report Catalog', cols, rows, null);
+          return;
+        }
+      }
+
+      // Default Fallback
+      if (format === 'PDF') {
+        window.print();
+      } else {
+        if (window.AppDialogService) window.AppDialogService.toastInfo('No active tabular data to export in current view.');
+      }
+    },
+
+    printFormattedReport(title, cols, rows, totals) {
+      const fromVal = document.getElementById('v-filter-from')?.value || '';
+      const toVal = document.getElementById('v-filter-to')?.value || '';
+      const partyVal = document.getElementById('v-filter-party')?.value || '';
+      const genTime = window.FormatUtil ? window.FormatUtil.formatDateTime(new Date()) : new Date().toLocaleString();
+
+      let totalsHtml = '';
+      if (totals) {
+        totalsHtml = `
+          <tfoot>
+            <tr style="background:#e2e8f0; font-weight:700;">
+              <td style="text-align:center;">TOTAL</td>
+              ${cols.map((col, idx) => {
+                const isRight = col && (col.align === 'RIGHT' || col.numeric);
+                let totVal = '';
+                if (Array.isArray(totals)) {
+                  totVal = totals[idx] || '';
+                } else if (typeof totals === 'object') {
+                  totVal = totals[col.key] || totals[col.label] || '';
+                }
+                return `<td style="${isRight ? 'text-align:right;' : ''}">${totVal != null ? totVal : ''}</td>`;
+              }).join('')}
+            </tr>
+          </tfoot>
+        `;
+      }
+
+      const win = window.open('', '_blank');
+      if (!win) {
+        window.print();
+        return;
+      }
+
+      win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${title} - Jasvi Industries</title>
+          <style>
+            @page { size: landscape; margin: 12mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 16px; color: #111827; font-size: 11px; }
+            .header-bar { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 12px; }
+            .company { font-size: 16px; font-weight: 800; color: #1e3a8a; }
+            .subtitle { font-size: 10px; color: #4b5563; margin-top: 2px; }
+            .report-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+            .meta { text-align: right; font-size: 10px; color: #4b5563; line-height: 1.4; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; font-size: 10px; font-weight: 700; color: #1e293b; text-align: left; }
+            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            tr:nth-child(even) td { background: #f8fafc; }
+            .text-right { text-align: right; }
+            .footer-note { margin-top: 16px; font-size: 9px; color: #94a3b8; text-align: right; border-top: 1px dashed #cbd5e1; padding-top: 6px; }
+          </style>
+        </head>
+        <body>
+          <div class="header-bar">
+            <div>
+              <div class="company">JASVI INDUSTRIES</div>
+              <div class="subtitle">Precision Fasteners &amp; Piping • Enterprise ERP</div>
+              <div class="report-title">${title}</div>
+            </div>
+            <div class="meta">
+              <div><strong>Generated:</strong> ${genTime}</div>
+              <div><strong>Period:</strong> ${fromVal ? (window.FormatUtil ? window.FormatUtil.formatDate(fromVal) : fromVal) : 'All'} to ${toVal ? (window.FormatUtil ? window.FormatUtil.formatDate(toVal) : toVal) : 'All'}</div>
+              ${partyVal ? `<div><strong>Party:</strong> ${partyVal}</div>` : ''}
+              <div><strong>Total Records:</strong> ${rows.length}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:30px; text-align:center;">#</th>
+                ${cols.map(c => `<th style="${c.align === 'RIGHT' || c.numeric ? 'text-align:right;' : ''}">${c.label}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, i) => `
+                <tr>
+                  <td style="text-align:center; color:#64748b;">${i + 1}</td>
+                  ${(r.values || []).map((v, ci) => {
+                    const isRight = cols[ci] && (cols[ci].align === 'RIGHT' || cols[ci].numeric);
+                    return `<td style="${isRight ? 'text-align:right; font-weight:600;' : ''}">${v != null ? v : '-'}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+            ${totalsHtml}
+          </table>
+          <div class="footer-note">Confidential • Jasvi Industries Management Report • Generated by Jasvi ERP 10.0.35</div>
+        </body>
+        </html>
+      `);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+      }, 350);
     }
   };
 })();

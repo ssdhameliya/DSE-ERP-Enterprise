@@ -1,16 +1,17 @@
 {
   "desktopVersion": "10.0.35",
-  "webBuild": 3,
-  "webVersion": "10.0.35.03",
-  "tag": "web-v10.0.35.03",
-  "releaseDate": "2026-10-19T13:40:00+05:30",
+  "webBuild": 4,
+  "webVersion": "10.0.35.04",
+  "tag": "web-v10.0.35.04",
+  "releaseDate": "2026-10-19T14:15:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.35.03 Enterprise Release - Item Master & Stock Register UI/action desktop parity, RFC 4180 Bank Statement CSV import parser with Kotak metadata & SHA-256 fingerprinting, and Master Lookup system-generated code immutability",
+  "summary": "10.0.35.04 Enterprise Release - Executive Reporting Parity: 100% server-driven favorites sync with Desktop, active refresh feedback, authentic SheetJS Excel (.xlsx) / RFC 4180 CSV / Executive PDF exports, Dynamic Viewer & Saved Reports catalog recovery, and company date & timestamp formatting.",
   "highlights": [
-    "1. Item Master UI & Functional Parity: Restored Desktop typography, title 'Items Master', subtitle, '+ New Item' primary button, entity toolbar (Search, Edit, Delete Item, Refresh, Import Excel, Export Excel) with complete selection-aware handlers, and full row context menu (+ Create Item, View Item, Edit Item, Audit Trail, Create Sale, Create Purchase, Delete Item).",
-    "2. Stock Register UI & Functional Parity: Restored 5 KPI cards matching Desktop Inventory.fxml, entity toolbar with live dynamic category loading, status indicators with colored dots ('In Stock' [green], 'Low Stock' [amber], 'Out of Stock' [red]), and aligned row actions (View Item, Edit Item, Adjust Stock, View History).",
-    "3. Item Master Modal ComboBoxes: Added dropdown selection for Default Discount % (0%, 2%, 5%, 10%, 15%, 20%) alongside GST %, Category, and Unit LOVs dynamically populated from master lookup service.",
-    "4. Bank Statement CSV Import (Kotak Parity): Fixed 'parseCsvLine is not defined' error by implementing an RFC 4180 character-by-character CSV parser. Ported KotakBankStatementCsvParser end-to-end including pre-header metadata extraction (Account No., Currency, Branch, Period), numeric row filtering, running opening/closing balance computation, and SHA-256 row & file fingerprints submitted to /api/bank-statements/imports.",
-    "5. Master Lookup Code Auto-Generation & Immutability: Locked 'Lookup Code' as read-only and immutable for non-role lookup categories. Populated next code directly from reference sequence (REF_LOOKUP). Removed slug overwriting from display value input so system-generated codes remain permanent."
+    "1. Report Center Server-Driven Favorites Parity (Tab 2): Aligned report ID constants to canonical server IDs (PROFITABILITY, GST_TAX, RETURNS_ANALYSIS, STOCK_SUMMARY, RECEIVABLE_AGEING, PAYABLE_AGEING, BANK_RECONCILIATION). Synchronized favorites unconditionally with /api/support/saved-views (screen: REPORT_FAVORITES) ensuring 1:1 parity between Desktop and Web.",
+    "2. Active Refresh Action Feedback: Added visual spinner animation, temporary button disabling during network query, audio synthesizer chime upon completion, and toast notification across all 4 reporting tabs.",
+    "3. Authentic Multi-Format Exports (Excel .xlsx, PDF, CSV): Replaced dummy CSV export with real Microsoft Excel (.xlsx) workbooks generated via SheetJS (xlsx.full.min.js), RFC 4180 compliant CSV with UTF-8 BOM, and formatted executive PDF reports with company letterhead, metadata, zebra styling, and totals.",
+    "4. Saved Reports Catalog & Dropdown Recovery (Tab 3): Resolved fatal TypeError bug (string.length() -> string.length) when parsing REPORT_V2 JSON, restoring populated saved report dropdown and catalog table.",
+    "5. Dynamic Viewer & Filter Parity: Aligned dynamic query payload with backend /api/reporting/run contract (from, to, documentStatus, sortKey, numeric minAmount/maxAmount). Restored semantic header icons, column formatting, and TableUiEnhancer styling on refresh.",
+    "6. Enterprise Date & Timestamp Formatting: Integrated FormatUtil company date/time configuration (company.dateFormat / company.timeFormat) across all reporting tables and Tab 4 Scheduled Reports KPI cards and delivery schedules."
   ]
 }
