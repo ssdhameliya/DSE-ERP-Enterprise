@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.36.04",
+  version: "10.0.36.05",
   desktopVersion: "10.0.36",
-  webBuild: 4,
-  webVersion: "10.0.36.04",
-  tag: "web-v10.0.36.04",
-  releaseDate: "2026-10-20T15:30:00+05:30",
+  webBuild: 5,
+  webVersion: "10.0.36.05",
+  tag: "web-v10.0.36.05",
+  releaseDate: "2026-10-20T16:00:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.36.04 Defect Fixes & Parity: Date Policy Centralization, Quotation Load Fix, Reminder Center Modernization, Top Shell Polling, and Reports/E-Way/GST Parity"
+  summary: "10.0.36.05 Desktop Parity & User-Friendly Errors: Sales & Purchase Register Import Studio Parity with Charges & Calculations, Database Constraints & Error Propagation in ApiExceptionHandler, and UI Badge Sync"
 };
 
 // Automatic UI Version Injection

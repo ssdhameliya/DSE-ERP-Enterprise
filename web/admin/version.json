@@ -1,19 +1,17 @@
 {
   "desktopVersion": "10.0.36",
-  "webBuild": 4,
-  "webVersion": "10.0.36.04",
-  "tag": "web-v10.0.36.04",
-  "releaseDate": "2026-10-20T15:30:00+05:30",
+  "webBuild": 5,
+  "webVersion": "10.0.36.05",
+  "tag": "web-v10.0.36.05",
+  "releaseDate": "2026-10-20T16:00:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.36.04 Defect Fixes & Parity: Date Policy Centralization, Quotation Load Fix, Reminder Center Modernization, Top Shell Polling, and Reports/E-Way/GST Parity",
+  "summary": "10.0.36.05 Desktop Parity & User-Friendly Errors: Sales & Purchase Register Import Studio Parity with Charges & Calculations, Database Constraints & Error Propagation in ApiExceptionHandler, and UI Badge Sync",
   "highlights": [
-    "1. Centralized Date & Timezone: All 8 controllers, report viewers, and header/footer clocks strictly adhere to company format settings (DD-MM-YYYY) and user timezone.",
-    "2. Startup Logo & Mark Parity: Auth card branding automatically toggles mark card visibility when configured or cleared, matching desktop LoginController.java.",
-    "3. Reports & BI Initial Load & Saved Views: Dashboard automatically calculates 'This Month' dates on boot, loads cleanly via Promise.allSettled(), populates saved views dropdown on tab activation, and upgrades saved report actions to canonical purple dropdown.",
-    "4. Top Shell Notification Counters: Polled immediately upon successful post-login and maintained on a continuous 30-second background polling cycle.",
-    "5. E-Way Bill & E-Invoice (IRN): Resolved numeric saleId parameter for E-Way generation and added client-side JSON Blob export for official NIC E-Invoice upload.",
-    "6. GST Compliance GSTR-2B Reconciliation: Modernized period selection to dynamic 24-month dropdown and added live purchases reconciliation fallback when 2B cache is empty.",
-    "7. Quotation Register Load Fix: Resolved missing refreshAttachmentUi ReferenceError, restoring full quotation listing and pipeline KPIs.",
-    "8. Reminder Center Modernization: Upgraded KPI cards to standard .kpi-card with color borders and icon badges, and converted inline gray buttons to canonical purple ::: Actions dropdown menu."
+    "1. Sales & Purchase Register Import Studio Parity: Added document charge parsing (charge_1_..., charge_2_..., additional_charges), matching Desktop DocumentCalculationEngine and ImportDocumentPolicy.",
+    "2. Canonical Document Calculation Engine: Calculates item taxable, line tax, charge amounts, taxable charges, and charge GST matching Desktop down to the exact penny.",
+    "3. Mandatory Database Constraint & Snapshot Parity: Populated sameAsBilling: true, dueDate from payment terms, master billing/delivery addresses and GSTIN snapshots, total quantity, and canonical APPROVED documentStatus.",
+    "4. User-Friendly Backend Server Error Propagation: Added specific exception handlers in ApiExceptionHandler for DataIntegrityViolationException, HttpMessageNotReadableException, and MethodArgumentNotValidException, returning root cause details instead of masked generic error.",
+    "5. ApiService Error Enhancement: Surfaces backend error details and field validation lists directly in modal dialogs.",
+    "6. Version & Cache-Buster Synchronization: Updated static HTML version tags (lines 202, 204, 544, 654) and script cache-buster query parameters to 10.0.36.05 across index.html."
   ]
 }

@@ -534,6 +534,188 @@ window.ImportService = (function() {
   }
 
   // -------------------------------------------------------------
+  // 5.1 DOCUMENT CHARGES & CANONICAL TOTALS ENGINE (Desktop Parity)
+  // -------------------------------------------------------------
+  function parseFlexibleBoolean(val, field) {
+    if (val === true || val === false) return val;
+    const clean = String(val || '').trim().toLowerCase();
+    if (['true', 'yes', 'y', '1', 'taxable'].includes(clean)) return true;
+    if (['false', 'no', 'n', '0', 'non-taxable', 'nontaxable'].includes(clean)) return false;
+    if (!clean) return false;
+    throw new Error(`${field} must be true/false, yes/no, or 1/0`);
+  }
+
+  function parseTermDays(term) {
+    if (!term) return 0;
+    const match = String(term).match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  function computeDueDate(invDate, terms) {
+    if (!invDate) return null;
+    const days = parseTermDays(terms);
+    const d = new Date(invDate);
+    if (isNaN(d.getTime())) return invDate;
+    d.setDate(d.getDate() + days);
+    return d.toISOString().substring(0, 10);
+  }
+
+  function parseDocumentCharge(rows, index, getVal) {
+    const prefix = `charge_${index}`;
+    let type = null;
+    let amount = null;
+    let taxable = null;
+    let gst = null;
+
+    for (const r of rows) {
+      const t = getVal(r, `${prefix}_type`);
+      const a = getVal(r, `${prefix}_amount`);
+      const tx = getVal(r, `${prefix}_taxable`);
+      const g = getVal(r, `${prefix}_gst_percent`);
+
+      if (t && !type) type = t.trim();
+      if (a !== '' && a !== undefined && a !== null && amount === null) {
+        const num = parseFloat(String(a).replace(/,/g, ''));
+        if (isNaN(num)) throw new Error(`${prefix}_amount must be a valid number`);
+        amount = num;
+      }
+      if (tx !== '' && tx !== undefined && tx !== null && taxable === null) {
+        taxable = parseFlexibleBoolean(tx, `${prefix}_taxable`);
+      }
+      if (g !== '' && g !== undefined && g !== null && gst === null) {
+        const num = parseFloat(String(g).replace(/,/g, ''));
+        if (isNaN(num)) throw new Error(`${prefix}_gst_percent must be a valid number`);
+        gst = num;
+      }
+    }
+
+    const supplied = (type && type.length > 0) || (amount !== null) || (taxable !== null) || (gst !== null);
+    if (!supplied) return null;
+
+    const amountValue = amount === null ? 0 : amount;
+    if (amountValue <= 0) {
+      throw new Error(`${prefix}_amount must be greater than zero when a charge is supplied`);
+    }
+    if (!type || !type.trim()) {
+      throw new Error(`${prefix}_type is required when a charge amount is supplied`);
+    }
+    const taxableValue = taxable === true;
+    const gstValue = gst === null ? 0 : gst;
+    if (gstValue < 0 || gstValue > 100) {
+      throw new Error(`${prefix}_gst_percent must be between 0 and 100`);
+    }
+    if (!taxableValue && gstValue > 0.0001) {
+      throw new Error(`${prefix}_gst_percent requires ${prefix}_taxable=true`);
+    }
+
+    return {
+      chargeType: type.trim(),
+      amount: amountValue,
+      taxable: taxableValue,
+      gstPercent: taxableValue ? gstValue : 0
+    };
+  }
+
+  function parseDocumentCharges(rows, getVal) {
+    const charges = [];
+    const c1 = parseDocumentCharge(rows, 1, getVal);
+    if (c1) charges.push(c1);
+    const c2 = parseDocumentCharge(rows, 2, getVal);
+    if (c2) charges.push(c2);
+    return charges;
+  }
+
+  function parseAdditionalPurchaseCharges(text) {
+    if (!text || typeof text !== 'string') return [];
+    const out = [];
+    for (const raw of text.split(';')) {
+      const entry = raw ? raw.trim() : '';
+      if (!entry) continue;
+      const parts = entry.split('|');
+      if (parts.length < 2 || parts.length > 4) {
+        throw new Error(`additional_charges entry must be Type|Amount|Taxable|GSTPercent: ${entry}`);
+      }
+      const type = parts[0].trim();
+      if (!type) throw new Error('additional_charges charge type is required');
+      const amount = parseFloat(parts[1].trim().replace(/,/g, ''));
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error(`additional_charges amount must be greater than zero for ${type}`);
+      }
+      const taxable = parts.length >= 3 && parts[2].trim() ? parseFlexibleBoolean(parts[2], `additional_charges taxable for ${type}`) : false;
+      let gst = 0;
+      if (parts.length >= 4 && parts[3].trim()) {
+        gst = parseFloat(parts[3].trim());
+        if (isNaN(gst) || gst < 0 || gst > 100) throw new Error(`additional_charges GST percent must be between 0 and 100 for ${type}`);
+      }
+      if (!taxable && gst > 0.0001) throw new Error(`additional_charges GST percent requires taxable=true for ${type}`);
+      out.push({
+        chargeType: type,
+        amount: amount,
+        taxable: taxable,
+        gstPercent: taxable ? gst : 0
+      });
+    }
+    return out;
+  }
+
+  function calculateDocumentTotals(lines, charges) {
+    let gross = 0;
+    let discount = 0;
+    let itemTaxable = 0;
+    let lineTax = 0;
+
+    for (const l of (lines || [])) {
+      const qty = l.quantity || 0;
+      const rate = l.rate || 0;
+      const discAmt = l.discountAmount !== undefined ? l.discountAmount : Math.round(((qty * rate * (l.discountPercent || 0)) / 100) * 100) / 100;
+      const taxable = Math.max(0, Math.round(((qty * rate) - discAmt) * 100) / 100);
+      const tax = Math.round(((taxable * (l.gstPercent || 0)) / 100) * 100) / 100;
+
+      gross += (qty * rate);
+      discount += discAmt;
+      itemTaxable += taxable;
+      lineTax += tax;
+    }
+
+    let chargeAmount = 0;
+    let taxableCharges = 0;
+    let chargeTax = 0;
+
+    for (const c of (charges || [])) {
+      const amt = Math.round((c.amount || 0) * 100) / 100;
+      chargeAmount += amt;
+      if (c.taxable) {
+        taxableCharges += amt;
+        const cTax = Math.round(((amt * (c.gstPercent || 0)) / 100) * 100) / 100;
+        chargeTax += cTax;
+      }
+    }
+
+    gross = Math.round(gross * 100) / 100;
+    discount = Math.round(discount * 100) / 100;
+    itemTaxable = Math.round(itemTaxable * 100) / 100;
+    lineTax = Math.round(lineTax * 100) / 100;
+    chargeAmount = Math.round(chargeAmount * 100) / 100;
+    taxableCharges = Math.round(taxableCharges * 100) / 100;
+    chargeTax = Math.round(chargeTax * 100) / 100;
+
+    const totalTax = Math.round((lineTax + chargeTax) * 100) / 100;
+    const grandTotal = Math.round((itemTaxable + lineTax + chargeAmount + chargeTax) * 100) / 100;
+
+    return {
+      gross,
+      discount,
+      itemTaxable,
+      lineTax,
+      chargeAmount,
+      taxableCharges,
+      chargeTax,
+      totalTax,
+      grandTotal
+    };
+  }
+
+  // -------------------------------------------------------------
   // 6. PRE-FLIGHT VALIDATION ENGINE (Desktop ImportService Parity)
   // -------------------------------------------------------------
   async function validatePreflight(module, mapping, rows, headers, mode) {
@@ -725,6 +907,19 @@ window.ImportService = (function() {
                 rowError = `Insufficient stock for item ${iCode} (required ${needQty}, available ${avail})`;
               }
             });
+          }
+        }
+
+        // Validate document charges (Desktop parity)
+        if (!rowError) {
+          try {
+            parseDocumentCharges(groupRows.map(g => g.row), getVal);
+            if (!isSales) {
+              const flex = getVal(firstRow, 'additional_charges');
+              if (flex) parseAdditionalPurchaseCharges(flex);
+            }
+          } catch (chargeErr) {
+            rowError = chargeErr.message;
           }
         }
 
@@ -1256,10 +1451,12 @@ window.ImportService = (function() {
               };
             });
 
-            // Calculate totals
-            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate - l.discountAmount), 0);
-            const totalTax = lines.reduce((acc, l) => acc + (((l.quantity * l.rate - l.discountAmount) * l.gstPercent) / 100), 0);
-            const grandTotal = itemTaxable + totalTax;
+            // Extract charges and calculate totals with charges (Desktop parity)
+            const charges = parseDocumentCharges(gRows.map(g => g.row), getVal);
+            const totals = calculateDocumentTotals(lines, charges);
+            const totalQty = lines.reduce((acc, l) => acc + (l.quantity || 0), 0);
+            const paymentTerms = getVal(first, 'payment_terms') || '15 Days';
+            const dueDate = computeDueDate(invDate, paymentTerms);
 
             const salePayload = {
               invoiceNo: invNo,
@@ -1274,17 +1471,25 @@ window.ImportService = (function() {
                 address: customerEntity.address
               },
               source: 'IMPORT', // Server requires source='IMPORT' to preserve invoiceNo
-              paymentTerms: getVal(first, 'payment_terms') || '15 Days',
+              paymentTerms: paymentTerms,
+              dueDate: dueDate,
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
-              subtotal: itemTaxable,
-              discountAmount: lines.reduce((acc, l) => acc + l.discountAmount, 0),
-              gstAmount: totalTax,
-              totalAmount: grandTotal,
+              subtotal: totals.itemTaxable,
+              discountAmount: totals.discount,
+              gstAmount: totals.totalTax,
+              totalAmount: totals.grandTotal,
+              quantity: totalQty,
               paidAmount: 0.0,
               paymentStatus: 'PENDING',
-              documentStatus: 'POSTED',
-              charges: [],
+              documentStatus: 'APPROVED',
+              billingAddress: customerEntity.address || '',
+              deliveryAddress: customerEntity.address || '',
+              billingGstin: customerEntity.gstin || '',
+              deliveryGstin: customerEntity.gstin || '',
+              gstin: customerEntity.gstin || '',
+              sameAsBilling: true,
+              charges: charges,
               lines: lines,
               rowVersion: 0
             };
@@ -1292,7 +1497,7 @@ window.ImportService = (function() {
             await window.OperationsService.createSale(salePayload);
             imported++;
             existingSales.add(invNo);
-            details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Sale invoice created (${lines.length} lines)` });
+            details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Sale invoice created (${lines.length} lines, ${charges.length} charges)` });
           } catch (err) {
             failed++;
             errors.push(`${invNo}: ${err.message}`);
@@ -1383,9 +1588,16 @@ window.ImportService = (function() {
               };
             });
 
-            const itemTaxable = lines.reduce((acc, l) => acc + (l.quantity * l.rate - l.discountAmount), 0);
-            const totalTax = lines.reduce((acc, l) => acc + (((l.quantity * l.rate - l.discountAmount) * l.gstPercent) / 100), 0);
-            const grandTotal = itemTaxable + totalTax;
+            // Extract charges and calculate totals with charges (Desktop parity)
+            const charges = parseDocumentCharges(gRows.map(g => g.row), getVal);
+            const additionalText = getVal(first, 'additional_charges');
+            if (additionalText) {
+              charges.push(...parseAdditionalPurchaseCharges(additionalText));
+            }
+            const totals = calculateDocumentTotals(lines, charges);
+            const totalQty = lines.reduce((acc, l) => acc + (l.quantity || 0), 0);
+            const paymentTerms = getVal(first, 'payment_terms') || '15 Days';
+            const dueDate = computeDueDate(invDate, paymentTerms);
 
             const purchasePayload = {
               invoiceNo: null,
@@ -1401,17 +1613,26 @@ window.ImportService = (function() {
                 address: supplierEntity.address
               },
               source: 'IMPORT',
-              paymentTerms: getVal(first, 'payment_terms') || '15 Days',
+              paymentTerms: paymentTerms,
+              dueDate: dueDate,
               gstType: gstType,
               remarks: getVal(first, 'remarks') || 'Imported via Data Import Studio',
-              subtotal: itemTaxable,
-              discountAmount: lines.reduce((acc, l) => acc + l.discountAmount, 0),
-              gstAmount: totalTax,
-              totalAmount: grandTotal,
+              subtotal: totals.itemTaxable,
+              discountAmount: totals.discount,
+              gstAmount: totals.totalTax,
+              totalAmount: totals.grandTotal,
+              quantity: totalQty,
               paidAmount: 0.0,
               paymentStatus: 'PENDING',
-              documentStatus: 'POSTED',
-              charges: [],
+              documentStatus: 'APPROVED',
+              warehouse: 'Default Warehouse',
+              currency: 'INR',
+              billingAddress: supplierEntity.address || '',
+              deliveryAddress: supplierEntity.address || '',
+              billingGstin: supplierEntity.gstin || '',
+              deliveryGstin: supplierEntity.gstin || '',
+              sameAsBilling: true,
+              charges: charges,
               lines: lines,
               rowVersion: 0
             };
@@ -1419,7 +1640,7 @@ window.ImportService = (function() {
             await window.OperationsService.createPurchase(purchasePayload);
             imported++;
             existingPurchases.add(invNo);
-            details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Purchase bill created (${lines.length} lines)` });
+            details.push({ sourceRows, reference: invNo, status: 'PASSED', action: 'CREATED', message: `Purchase bill created (${lines.length} lines, ${charges.length} charges)` });
           } catch (err) {
             failed++;
             errors.push(`${invNo}: ${err.message}`);

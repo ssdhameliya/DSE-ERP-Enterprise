@@ -61,9 +61,10 @@ window.ApiService = (function() {
           const errData = await res.json().catch(() => ({}));
           console.warn(`[ApiService] HTTP ${res.status} on ${endpoint}:`, errData);
           let errorMsg = errData.message || errData.error || errData.details || `Server error (${res.status})`;
-          if (errData.details && errData.details !== errorMsg) {
-            errorMsg = `${errorMsg}: ${errData.details}`;
-          } else if (Array.isArray(errData.errors) && errData.errors.length > 0) {
+          if (errData.details && errData.details !== errorMsg && !errorMsg.includes(errData.details)) {
+            errorMsg = `${errorMsg} • ${errData.details}`;
+          }
+          if (Array.isArray(errData.errors) && errData.errors.length > 0) {
             errorMsg = `${errorMsg} (${errData.errors.join(', ')})`;
           }
           const error = new Error(errorMsg);
