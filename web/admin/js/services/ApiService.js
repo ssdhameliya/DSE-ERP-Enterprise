@@ -193,8 +193,9 @@ window.ApiService = (function() {
         resolvedFilename = resolvedFilename.split('/').pop().split('\\').pop();
 
         let blob = await res.blob();
-        // Sniff magic bytes if filename lacks extension or is token 'FILE'
-        if (!resolvedFilename.includes('.') || resolvedFilename.toUpperCase() === 'FILE') {
+        // Sniff magic bytes if filename lacks a known extension or is token 'FILE'
+        const hasValidExt = /\.(pdf|xlsx|xls|csv|png|jpg|jpeg|docx|doc|txt)$/i.test(resolvedFilename);
+        if (!hasValidExt || resolvedFilename.toUpperCase() === 'FILE') {
           const buffer = await blob.slice(0, 8).arrayBuffer();
           const bytes = new Uint8Array(buffer);
           let ext = '';
@@ -209,9 +210,15 @@ window.ApiService = (function() {
             ext = '.xlsx'; mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           }
           if (ext) {
-            const base = (resolvedFilename.toUpperCase() === 'FILE' || !resolvedFilename) ? 'attachment' : resolvedFilename;
+            const base = (resolvedFilename.toUpperCase() === 'FILE' || !resolvedFilename) ? 'document' : resolvedFilename;
             resolvedFilename = base.endsWith(ext) ? base : (base + ext);
             if (mime) blob = new Blob([blob], { type: mime });
+          } else if (!resolvedFilename.includes('.')) {
+            // Default fallback based on response Content-Type
+            const cType = res.headers ? (res.headers.get('content-type') || '') : '';
+            if (cType.includes('pdf')) resolvedFilename += '.pdf';
+            else if (cType.includes('excel') || cType.includes('spreadsheet')) resolvedFilename += '.xlsx';
+            else if (cType.includes('csv')) resolvedFilename += '.csv';
           }
         }
 
@@ -258,12 +265,25 @@ window.ApiService = (function() {
         // Determine real MIME type by inspecting magic bytes
         const buffer = await blob.slice(0, 8).arrayBuffer();
         const bytes = new Uint8Array(buffer);
+        let ext = '';
         if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
           mime = 'application/pdf';
+          ext = '.pdf';
         } else if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
           mime = 'image/png';
+          ext = '.png';
         } else if (bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
           mime = 'image/jpeg';
+          ext = '.jpg';
+        } else if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
+          mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          ext = '.xlsx';
+        }
+
+        let titleWithExt = previewTitle || 'Document';
+        if (ext && !titleWithExt.toLowerCase().endsWith(ext)) {
+          // If title has a trailing space or token like 'PDF' or 'Excel', strip it cleanly
+          titleWithExt = titleWithExt.replace(/\s+(PDF|EXCEL|XLSX|CSV)$/i, '') + ext;
         }
 
         const typedBlob = mime ? new Blob([blob], { type: mime }) : blob;
@@ -271,7 +291,7 @@ window.ApiService = (function() {
 
         // If in-app lightbox modal is available, show modal; otherwise open in new tab
         if (typeof window.showUniversalPreviewModal === 'function') {
-          window.showUniversalPreviewModal(blobUrl, mime, previewTitle || 'Document Preview');
+          window.showUniversalPreviewModal(blobUrl, mime, titleWithExt);
         } else {
           window.open(blobUrl, '_blank');
         }
@@ -299,7 +319,7 @@ window.ApiService = (function() {
      */
     async viewDocumentPdf(type, number) {
       const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
-      return this.viewFile(endpoint, `${type} ${number} PDF`);
+      return this.viewFile(endpoint, `${type}_${number}.pdf`);
     },
 
     /**
@@ -327,18 +347,35 @@ window.ApiService = (function() {
       return;
     }
 
-    if (titleEl) titleEl.innerText = title || 'Document Preview';
+    let defaultExt = '.pdf';
+    if (mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.ms-excel') {
+      defaultExt = '.xlsx';
+    } else if (mime === 'text/csv') {
+      defaultExt = '.csv';
+    } else if (mime === 'image/png') {
+      defaultExt = '.png';
+    } else if (mime === 'image/jpeg') {
+      defaultExt = '.jpg';
+    }
+
+    let cleanTitle = (title || 'document').trim();
+    if (!cleanTitle.includes('.')) {
+      cleanTitle = cleanTitle.replace(/\s+(PDF|EXCEL|XLSX|CSV)$/i, '') + defaultExt;
+    }
+
+    if (titleEl) titleEl.innerText = cleanTitle;
+    const downloadName = cleanTitle.replace(/[^a-zA-Z0-9._-]/g, '_');
+
     if (dlBtn) {
       dlBtn.href = blobUrl;
-      const downloadName = (title || 'preview_document').replace(/[^a-zA-Z0-9._-]/g, '_');
       dlBtn.setAttribute('download', downloadName);
     }
 
-    const isPdf = (mime === 'application/pdf' || (title && title.toLowerCase().endsWith('.pdf')));
-    const isImage = (mime && mime.startsWith('image/')) || (title && (title.toLowerCase().endsWith('.png') || title.toLowerCase().endsWith('.jpg') || title.toLowerCase().endsWith('.jpeg')));
+    const isPdf = (mime === 'application/pdf' || cleanTitle.toLowerCase().endsWith('.pdf'));
+    const isImage = (mime && mime.startsWith('image/')) || (cleanTitle.toLowerCase().endsWith('.png') || cleanTitle.toLowerCase().endsWith('.jpg') || cleanTitle.toLowerCase().endsWith('.jpeg'));
 
     if (iconEl) {
-      iconEl.innerText = isPdf ? '📄' : (isImage ? '🖼️' : '📁');
+      iconEl.innerText = isPdf ? '📄' : (isImage ? '🖼️' : '📊');
     }
 
     if (isPdf) {
@@ -348,10 +385,10 @@ window.ApiService = (function() {
     } else {
       bodyEl.innerHTML = `
         <div style="text-align:center; padding:40px; color:#94a3b8;">
-          <div style="font-size:3rem; margin-bottom:12px;">📁</div>
-          <div style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:8px;">${title || 'Document File'}</div>
-          <div style="font-size:0.8rem; margin-bottom:16px;">This file type cannot be previewed inline. Click below to download.</div>
-          <a href="${blobUrl}" download="document" class="btn btn-primary" style="text-decoration:none;">Download File</a>
+          <div style="font-size:3rem; margin-bottom:12px;">📊</div>
+          <div style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:8px;">${cleanTitle}</div>
+          <div style="font-size:0.8rem; margin-bottom:16px;">This file type cannot be previewed inline. Click below to download in standard format.</div>
+          <a href="${blobUrl}" download="${downloadName}" class="btn btn-primary" style="text-decoration:none;">Download ${cleanTitle}</a>
         </div>
       `;
     }

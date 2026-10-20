@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.01",
+  version: "10.0.38.02",
   desktopVersion: "10.0.38",
-  webBuild: 1,
-  webVersion: "10.0.38.01",
-  tag: "web-v10.0.38.01",
+  webBuild: 2,
+  webVersion: "10.0.38.02",
+  tag: "web-v10.0.38.02",
   releaseDate: "2026-10-20T18:50:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.01 Comprehensive Modern Enterprise Web Overhaul: Fixed Viewport Architecture, 58px Compact KPI Ribbons, 3D Consequence Dialogs, Universal Form Dirty Guard, High-Contrast Light Mode, and Cross-Module Deep-Linking"
+  summary: "10.0.38.02 Full Desktop v10.0.38 Parity: DatePickerFormatter Company Date Format, Universal Print Table Spooler, Document Studio & SheetJS Quotation/Returns Export, jsPDF Fallback Generation, Remember-Me Persistence, Dynamic Table Auto-Fit & Unlocked Table Scrolling"
 };
 
 // Automatic UI Version Injection

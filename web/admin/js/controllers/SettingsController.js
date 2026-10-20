@@ -101,12 +101,8 @@ window.SettingsController = (function() {
   }
 
   async function resolveAssetUrl(val, assetKey) {
-    if (!val || typeof val !== 'string') {
-      if (assetKey) {
-        val = 'server-resource:' + assetKey;
-      } else {
-        return '';
-      }
+    if (!val || typeof val !== 'string' || val.trim() === '' || val === 'null' || val === 'undefined') {
+      return '';
     }
     if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
       return val;
@@ -139,7 +135,7 @@ window.SettingsController = (function() {
         console.warn('Failed to resolve server-resource ' + key, err);
       }
     }
-    return val;
+    return '';
   }
 
   async function setAssetPreview(imgId, phId, base64OrUrl, defaultImg, statusId, assetKey) {

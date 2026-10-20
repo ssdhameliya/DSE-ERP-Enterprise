@@ -471,56 +471,230 @@ window.ReturnsController = (function () {
     }
   }
 
-  function downloadPdf(no) {
+  function openReturnPrintModal(ret, lines, isSales) {
+    const printContainer = document.getElementById('printable-invoice-content') || document.getElementById('printable-invoice-modal');
+    const modal = document.getElementById('printable-invoice-modal');
+    if (!printContainer || !modal) {
+      window.print();
+      return;
+    }
+
+    const title = isSales ? 'CREDIT NOTE / SALES RETURN' : 'DEBIT NOTE / PURCHASE RETURN';
+    const partyLabel = isSales ? 'CUSTOMER DETAILS' : 'SUPPLIER DETAILS';
+    const rowsHtml = (lines || []).map((l, idx) => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 6px 8px; text-align: left;">${idx + 1}</td>
+        <td style="padding: 6px 8px; font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+        <td style="padding: 6px 8px; text-align: right;">${l.quantity || 1} ${l.unit || ''}</td>
+        <td style="padding: 6px 8px; text-align: right;">₹ ${(Number(l.rate) || 0).toFixed(2)}</td>
+        <td style="padding: 6px 8px; text-align: left;">${l.reason || ret.reason || '-'}</td>
+        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">₹ ${(Number(l.totalAmount || (l.quantity * l.rate)) || 0).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    printContainer.innerHTML = `
+      <div class="tax-invoice-sheet" style="font-family: 'Inter', sans-serif; padding: 24px; color: #111827; background: #fff;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid ${isSales ? '#ef4444' : '#f59e0b'}; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 800; color: #111827; letter-spacing: 0.5px;">JASVI INDUSTRIES</div>
+            <div style="font-size: 11px; color: #4b5563; margin-top: 2px;">Precision Fasteners, High-Tensile Bolts &amp; Industrial Stainless Steel Piping</div>
+            <div style="font-size: 11px; color: #4b5563;">H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat</div>
+            <div style="font-size: 11px; font-weight: 700; margin-top: 2px;">GSTIN: <span style="font-family: monospace;">24AAACJ1234F1Z1</span> | State: Gujarat (24)</div>
+          </div>
+          <div style="text-align: right;">
+            <span style="background: ${isSales ? '#ef4444' : '#f59e0b'}; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">${title}</span>
+            <div style="font-size: 14px; font-weight: 800; margin-top: 6px; color: #111827;">RETURN NOTE</div>
+            <div style="font-size: 12px; font-weight: 700;">Return #: ${ret.no || ''}</div>
+            <div style="font-size: 11px; color: #4b5563;">Date: ${window.FormatUtil ? window.FormatUtil.formatDate(ret.date) : ret.date}</div>
+            <div style="font-size: 11px; color: #4b5563;">Original Bill #: ${ret.originalDocNo || '-'}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: #374151; text-transform: uppercase; margin-bottom: 4px;">${partyLabel}</div>
+            <div style="font-size: 12px; font-weight: 700; color: #111827;">${ret.partyName || ret.customer || ret.supplier || '-'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Return Type:</strong> ${isSales ? 'Sales Return' : 'Purchase Return'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Status:</strong> ${ret.status || 'DRAFT'}</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: #374151; text-transform: uppercase; margin-bottom: 4px;">REASON &amp; SETTLEMENT</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Primary Reason:</strong> ${ret.reason || 'Material return'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Original Doc:</strong> ${ret.originalDocNo || 'Not Linked'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Settlement:</strong> ${ret.settled ? 'Settled' : 'Pending'}</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;">
+          <thead>
+            <tr style="background: #f3f4f6; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">
+              <th style="padding: 6px 8px; text-align: left; width: 30px;">#</th>
+              <th style="padding: 6px 8px; text-align: left;">Item Description</th>
+              <th style="padding: 6px 8px; text-align: right; width: 80px;">Return Qty</th>
+              <th style="padding: 6px 8px; text-align: right; width: 90px;">Rate (₹)</th>
+              <th style="padding: 6px 8px; text-align: left; width: 140px;">Line Reason</th>
+              <th style="padding: 6px 8px; text-align: right; width: 100px;">Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="6" style="text-align:center; padding:12px; color:#6b7280;">No line items recorded.</td></tr>'}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+          <div style="min-width: 250px; border-top: 2px solid #374151; padding-top: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; color: #111827;">
+              <span>Total Return Value:</span>
+              <span>₹ ${(Number(ret.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 28px; padding-top: 14px; border-top: 1px dashed #d1d5db;">
+          <div style="font-size: 9px; color: #6b7280;">This is an authorized return voucher for inventory &amp; accounts reversal.</div>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; font-weight: 700;">For, JASVI INDUSTRIES</div>
+            <div style="margin-top: 36px; font-size: 9px; color: #374151;">Authorized Signatory</div>
+          </div>
+        </div>
+
+        <div class="no-print" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('printable-invoice-modal').classList.remove('open')">Close Preview</button>
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Print Return Voucher</button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+  }
+
+  async function downloadPdf(no) {
     const isSales = currentType === 'SALES RETURN';
-    const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
-    if (window.ApiService && window.ApiService.downloadDocumentPdf) {
-      window.ApiService.downloadDocumentPdf(typeCode, no);
-    } else {
-      const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(no)}&format=PDF`;
-      window.ApiService.downloadFile(url, `${typeCode}-${no}.pdf`);
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing Return voucher for ${no}...`);
+    try {
+      let ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
+      let lines = [];
+      try {
+        const res = await window.OperationsService.getReturnDetails(no, isSales);
+        const details = res?.data || res || {};
+        if (details && details.no) ret = details;
+        lines = details.lines || [];
+      } catch (_) {}
+      
+      if (ret) {
+        openReturnPrintModal(ret, lines, isSales);
+      } else {
+        window.print();
+      }
+    } catch (err) {
+      console.warn('Could not prepare return print view:', err);
+      window.print();
     }
   }
 
-  function downloadExcel(no) {
+  async function downloadExcel(no) {
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Generating Excel export for ${no}...`);
     const isSales = currentType === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
-    const url = `/api/documents/render?type=${typeCode}&number=${encodeURIComponent(no)}&format=EXCEL`;
-    window.ApiService.downloadFile(url, `${typeCode}-${no}.xlsx`);
+    try {
+      let ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
+      let lines = [];
+      try {
+        const res = await window.OperationsService.getReturnDetails(no, isSales);
+        const details = res?.data || res || {};
+        if (details && details.no) ret = details;
+        lines = details.lines || [];
+      } catch (_) {}
+
+      if (window.XLSX && ret) {
+        const wsData = [
+          [`JASVI INDUSTRIES ERP - ${isSales ? 'SALES RETURN (CREDIT NOTE)' : 'PURCHASE RETURN (DEBIT NOTE)'}`],
+          ['Return #:', ret.no || no, 'Date:', ret.date || '', 'Status:', ret.status || ''],
+          [isSales ? 'Customer:' : 'Supplier:', ret.partyName || ret.customer || ret.supplier || '', 'Original Bill #:', ret.originalDocNo || '-'],
+          ['Reason:', ret.reason || '', 'Total Amount:', ret.amount || 0],
+          [],
+          ['#', 'Item Description', 'Return Qty', 'Unit', 'Rate (₹)', 'Line Reason', 'Total Amount (₹)']
+        ];
+
+        if (lines && lines.length > 0) {
+          lines.forEach((l, idx) => {
+            wsData.push([
+              idx + 1,
+              l.itemDescription || l.description || l.itemCode || '',
+              l.quantity || 1,
+              l.unit || '',
+              l.rate || 0,
+              l.reason || ret.reason || '',
+              l.totalAmount || (l.quantity * l.rate) || 0
+            ]);
+          });
+        }
+        wsData.push([]);
+        wsData.push(['', '', '', '', '', 'Total Return Value:', ret.amount || 0]);
+
+        const wb = window.XLSX.utils.book_new();
+        const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Return Note');
+        window.XLSX.writeFile(wb, `${typeCode}_${no}.xlsx`);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} exported to Excel.`);
+      } else {
+        throw new Error('Excel generator unavailable');
+      }
+    } catch (e) {
+      console.error('downloadExcel error:', e);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export Excel: ' + (e.message || 'Error'));
+    }
   }
 
   function exportExcel(type) {
     const isSales = (type || currentType) === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
-    if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting ${isSales ? 'Sales' : 'Purchase'} Returns register to Excel...`);
-    const q = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search')?.value?.trim() || '';
-    const party = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier')?.value || '';
-    const status = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status')?.value || '';
-    const from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
-    const to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
-    const url = `/api/documents/export?type=${typeCode}&q=${encodeURIComponent(q)}&party=${encodeURIComponent(party)}&status=${encodeURIComponent(status)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&format=EXCEL`;
-    window.ApiService.downloadFile(url, `${typeCode}_Register.xlsx`);
+    if (!returnsList || returnsList.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No return records found to export.');
+      return;
+    }
+    if (window.XLSX) {
+      const headers = ['Return #', 'Date', isSales ? 'Customer' : 'Supplier', 'Original Doc #', 'Amount (₹)', 'Reason', 'Status', 'Settled'];
+      const rows = returnsList.map(r => [
+        r.no,
+        window.FormatUtil ? window.FormatUtil.formatDate(r.date) : r.date,
+        r.partyName || r.customer || r.supplier || '',
+        r.originalDocNo || '-',
+        r.amount || 0,
+        r.reason || '',
+        r.status || '',
+        r.settled ? 'YES' : 'NO'
+      ]);
+      const ws = window.XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, `${typeCode} Register`);
+      window.XLSX.writeFile(wb, `${typeCode}_Register_${new Date().toISOString().substring(0, 10)}.xlsx`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${returnsList.length} returns to Excel.`);
+    }
   }
 
-  function sendEmailPrompt(no) {
-    if (window.SalesController && window.SalesController.openEmailModal) {
-      window.SalesController.openEmailModal(no, currentType === 'SALES RETURN' ? 'SALES_RETURN' : 'PURCHASE_RETURN');
-    } else {
-      const email = prompt(`Send Return ${no} to email address:`);
-      if (!email) return;
-      window.OperationsService.sendAuthorityEmail({
-        recipientEmail: email,
-        subject: `${currentType} ${no}`,
-        body: `Please find attached ${currentType} note ${no}.`,
-        documentType: currentType,
-        documentNumber: no
-      }).then(() => {
-        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Email sent to ${email}`);
-      }).catch(err => {
-        if (window.AppDialogService) window.AppDialogService.toastError('Email failed: ' + err.message);
-      });
-    }
+  async function sendEmailPrompt(no) {
+    const isSales = currentType === 'SALES RETURN';
+    const email = prompt(`Send Return ${no} to email address:`);
+    if (!email) return;
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending ${currentType} ${no} to ${email}...`);
+    window.OperationsService.sendAuthorityEmail({
+      recipientEmail: email,
+      subject: `${currentType} ${no} - Jasvi Industries`,
+      body: `Dear Partner,\n\nPlease find details for ${currentType} note ${no}.\n\nBest regards,\nJasvi Industries ERP Studio`,
+      documentType: isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN',
+      documentNumber: no
+    }).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Email sent to ${email}`);
+    }).catch(err => {
+      console.error('Email error:', err);
+      let errMsg = err.message || 'Server error';
+      if (errMsg.includes('temporarily unavailable') || errMsg.includes('SMTP')) {
+        errMsg = 'Email delivery unavailable: SMTP Mail Gateway is not configured. Please configure SMTP in Settings Studio.';
+      }
+      if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
+      else alert(errMsg);
+    });
   }
 
   function viewOriginalDoc(docNo) {

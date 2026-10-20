@@ -502,13 +502,229 @@ window.QuotationController = (function () {
     }
   }
 
+  function buildQuotationJsPdf(quote, lines) {
+    if (!window.jspdf) return null;
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      
+      // Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(14, 165, 233);
+      doc.text('JASVI INDUSTRIES', 14, 18);
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Precision Fasteners & Industrial Hardware Solutions', 14, 23);
+      doc.text('H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat', 14, 27);
+      doc.text('GSTIN: 24AAACJ1234F1Z1 | State: Gujarat (24)', 14, 31);
+      
+      // Right Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(30, 41, 59);
+      doc.text('QUOTATION ESTIMATE', 196, 18, { align: 'right' });
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Quote #: ${quote.no || ''}`, 196, 24, { align: 'right' });
+      doc.text(`Date: ${formatDate(quote.date)}`, 196, 29, { align: 'right' });
+      if (quote.valid) doc.text(`Valid Upto: ${formatDate(quote.valid)}`, 196, 34, { align: 'right' });
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, 38, 196, 38);
+      
+      // Customer Box
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text('QUOTATION TO:', 14, 44);
+      doc.setFont('helvetica', 'normal');
+      doc.text(quote.customer || 'Customer', 14, 49);
+      if (quote.phone) doc.text(`Phone: ${quote.phone}`, 14, 54);
+      if (quote.email) doc.text(`Email: ${quote.email}`, 14, 59);
+      
+      // Table Header
+      let y = 66;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(14, y, 182, 8, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+      doc.text('#', 16, y + 5.5);
+      doc.text('Item Description', 24, y + 5.5);
+      doc.text('HSN', 90, y + 5.5);
+      doc.text('Qty', 115, y + 5.5, { align: 'right' });
+      doc.text('Rate', 140, y + 5.5, { align: 'right' });
+      doc.text('GST%', 160, y + 5.5, { align: 'right' });
+      doc.text('Total', 192, y + 5.5, { align: 'right' });
+      
+      y += 12;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(15, 23, 42);
+      
+      (lines || []).forEach((l, idx) => {
+        if (y > 260) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(String(idx + 1), 16, y);
+        doc.text(String(l.description || l.code || '-').substring(0, 36), 24, y);
+        doc.text(String(l.hsn || '-'), 90, y);
+        doc.text(`${l.quantity || 1} ${l.unit || 'PCS'}`, 115, y, { align: 'right' });
+        doc.text(Number(l.rate || 0).toFixed(2), 140, y, { align: 'right' });
+        doc.text(`${l.gst || 0}%`, 160, y, { align: 'right' });
+        doc.text(Number(l.total || 0).toFixed(2), 192, y, { align: 'right' });
+        y += 6;
+      });
+      
+      // Totals
+      y += 4;
+      doc.line(14, y, 196, y);
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Total Quotation Amount:', 140, y, { align: 'right' });
+      doc.text(formatMoney(quote.amount || 0), 192, y, { align: 'right' });
+      
+      // Footer Signatory
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('Thank you for giving us the opportunity to quote. Quotation subject to standard commercial terms.', 14, 280);
+      doc.setFont('helvetica', 'bold');
+      doc.text('For, JASVI INDUSTRIES', 196, 275, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('Authorized Signatory', 196, 282, { align: 'right' });
+      
+      return doc;
+    } catch (e) {
+      console.warn('buildQuotationJsPdf error:', e);
+      return null;
+    }
+  }
+
+  function openQuotationPrintModal(quote, lines) {
+    const printContainer = document.getElementById('printable-invoice-content') || document.getElementById('printable-invoice-modal');
+    const modal = document.getElementById('printable-invoice-modal');
+    if (!printContainer || !modal) {
+      window.print();
+      return;
+    }
+
+    const rowsHtml = (lines || []).map((l, idx) => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 6px 8px; text-align: left;">${idx + 1}</td>
+        <td style="padding: 6px 8px; font-weight: 600;">${l.description || l.code || '-'}</td>
+        <td style="padding: 6px 8px; text-align: left;">${l.hsn || '-'}</td>
+        <td style="padding: 6px 8px; text-align: right;">${l.quantity || 1} ${l.unit || 'PCS'}</td>
+        <td style="padding: 6px 8px; text-align: right;">₹ ${(Number(l.rate) || 0).toFixed(2)}</td>
+        <td style="padding: 6px 8px; text-align: right;">${l.discount ? l.discount + '%' : '-'}</td>
+        <td style="padding: 6px 8px; text-align: right;">${l.gst ? l.gst + '%' : '-'}</td>
+        <td style="padding: 6px 8px; text-align: right; font-weight: 700;">₹ ${(Number(l.total) || 0).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    printContainer.innerHTML = `
+      <div class="tax-invoice-sheet" style="font-family: 'Inter', sans-serif; padding: 24px; color: #111827; background: #fff;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 800; color: #0284c7; letter-spacing: 0.5px;">JASVI INDUSTRIES</div>
+            <div style="font-size: 11px; color: #4b5563; margin-top: 2px;">Precision Fasteners, High-Tensile Bolts &amp; Industrial Stainless Steel Piping</div>
+            <div style="font-size: 11px; color: #4b5563;">H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat</div>
+            <div style="font-size: 11px; font-weight: 700; margin-top: 2px;">GSTIN: <span style="font-family: monospace;">24AAACJ1234F1Z1</span> | State: Gujarat (24)</div>
+          </div>
+          <div style="text-align: right;">
+            <span style="background: #0284c7; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">QUOTATION ESTIMATE</span>
+            <div style="font-size: 14px; font-weight: 800; margin-top: 6px; color: #0369a1;">QUOTATION</div>
+            <div style="font-size: 12px; font-weight: 700;">Quote #: ${quote.no || ''}</div>
+            <div style="font-size: 11px; color: #4b5563;">Date: ${formatDate(quote.date)}</div>
+            <div style="font-size: 11px; color: #4b5563;">Valid Upto: ${formatDate(quote.valid)}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: #0284c7; text-transform: uppercase; margin-bottom: 4px;">QUOTED TO CUSTOMER</div>
+            <div style="font-size: 12px; font-weight: 700; color: #111827;">${quote.customer || 'Customer'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Phone:</strong> ${quote.phone || '-'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Email:</strong> ${quote.email || '-'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Salesperson:</strong> ${quote.salesperson || '-'}</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: #0284c7; text-transform: uppercase; margin-bottom: 4px;">ESTIMATE STATUS &amp; TERMS</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Status:</strong> ${quote.status || 'DRAFT'}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Follow-up Date:</strong> ${formatDate(quote.followUp)}</div>
+            <div style="font-size: 11px; color: #4b5563;"><strong>Remarks:</strong> ${quote.remarks || 'Standard warranty and delivery terms apply.'}</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;">
+          <thead>
+            <tr style="background: #f3f4f6; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">
+              <th style="padding: 6px 8px; text-align: left; width: 30px;">#</th>
+              <th style="padding: 6px 8px; text-align: left;">Item Description / Specification</th>
+              <th style="padding: 6px 8px; text-align: left; width: 70px;">HSN</th>
+              <th style="padding: 6px 8px; text-align: right; width: 60px;">Qty</th>
+              <th style="padding: 6px 8px; text-align: right; width: 75px;">Rate (₹)</th>
+              <th style="padding: 6px 8px; text-align: right; width: 55px;">Disc%</th>
+              <th style="padding: 6px 8px; text-align: right; width: 55px;">GST%</th>
+              <th style="padding: 6px 8px; text-align: right; width: 90px;">Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="8" style="text-align:center; padding:12px; color:#6b7280;">No line items recorded.</td></tr>'}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+          <div style="min-width: 250px; border-top: 2px solid #0284c7; padding-top: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; color: #0284c7;">
+              <span>Total Estimate:</span>
+              <span>${formatMoney(quote.amount || 0)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 28px; padding-top: 14px; border-top: 1px dashed #d1d5db;">
+          <div style="font-size: 9px; color: #6b7280;">This is a computer generated quotation estimate. Valid for 30 days.</div>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; font-weight: 700;">For, JASVI INDUSTRIES</div>
+            <div style="margin-top: 36px; font-size: 9px; color: #374151;">Authorized Signatory</div>
+          </div>
+        </div>
+
+        <div class="no-print" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('printable-invoice-modal').classList.remove('open')">Close Preview</button>
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Print Quotation Now</button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+  }
+
   async function printPdf(no) {
     if (!no) return;
     try {
-      if (window.AppDialogService) window.AppDialogService.toastInfo(`Opening Quotation PDF for ${no}...`);
-      await window.ApiService.openPdfPreview('QUOTATION', no);
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing Quotation view for ${no}...`);
+      const quote = quotationsList.find(q => q.no === no) || (selectedQuote && selectedQuote.no === no ? selectedQuote : null);
+      let lines = [];
+      if (quote && quote.id) {
+        try {
+          lines = await window.OperationsService.getQuotationLines(quote.id);
+        } catch (_) {}
+      }
+      if (quote) {
+        openQuotationPrintModal(quote, lines);
+      } else {
+        window.print();
+      }
     } catch (err) {
-      console.warn('Server PDF render unavailable, opening browser print view:', err);
+      console.warn('Could not prepare quotation print view:', err);
       window.print();
     }
   }
@@ -517,15 +733,7 @@ window.QuotationController = (function () {
     if (!no) return;
     try {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting quotation ${no} to Excel...`);
-      // Attempt server canonical render
-      try {
-        await window.ApiService.downloadFile(`/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=EXCEL`, `Quotation_${no}.xlsx`);
-        return;
-      } catch (renderErr) {
-        console.warn('Server render failed, generating authoritative client Excel via SheetJS:', renderErr);
-      }
-
-      // Authoritative client SheetJS export with full line items
+      // Authoritative client SheetJS export with full line items (bypasses server canonical limitation)
       const quote = quotationsList.find(q => q.no === no) || (selectedQuote && selectedQuote.no === no ? selectedQuote : null);
       let lines = [];
       if (quote && quote.id) {
@@ -536,9 +744,9 @@ window.QuotationController = (function () {
       if (window.XLSX && quote) {
         const wsData = [
           ['JASVI INDUSTRIES ERP - QUOTATION ESTIMATE'],
-          ['Quotation #:', quote.no || no, 'Date:', quote.date || '', 'Status:', quote.status || 'DRAFT'],
+          ['Quotation #:', quote.no || no, 'Date:', formatDate(quote.date) || '', 'Status:', quote.status || 'DRAFT'],
           ['Customer:', quote.customer || '', 'Phone:', quote.phone || '', 'Email:', quote.email || ''],
-          ['Salesperson:', quote.salesperson || '', 'Valid Until:', quote.valid || '', 'Follow-Up:', quote.followUp || ''],
+          ['Salesperson:', quote.salesperson || '', 'Valid Until:', formatDate(quote.valid) || '', 'Follow-Up:', formatDate(quote.followUp) || ''],
           [],
           ['#', 'Item Code', 'Description', 'HSN', 'Qty', 'Unit', 'Rate (₹)', 'Disc %', 'GST %', 'Line Total (₹)']
         ];
@@ -584,7 +792,7 @@ window.QuotationController = (function () {
     if (window.XLSX) {
       const headers = ['Quotation #', 'Date', 'Customer', 'Valid Upto', 'Status', 'Follow Up', 'Converted To', 'Salesperson', 'Amount (₹)'];
       const rows = quotationsList.map(q => [
-        q.no, q.date, q.customer, q.valid, q.status, q.followUp, q.converted || '—', q.salesperson || '', q.amount || 0
+        q.no, formatDate(q.date), q.customer, formatDate(q.valid), q.status, formatDate(q.followUp), q.converted || '—', q.salesperson || '', q.amount || 0
       ]);
       const ws = window.XLSX.utils.aoa_to_sheet([headers, ...rows]);
       const wb = window.XLSX.utils.book_new();
@@ -598,22 +806,51 @@ window.QuotationController = (function () {
     window.print();
   }
 
-  function sendEmailPrompt(id, no, recipientEmail) {
+  async function sendEmailPrompt(id, no, recipientEmail) {
     const email = prompt(`Send Quotation ${no} to email address:`, recipientEmail || '');
     if (!email) return;
-    if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending quotation email to ${email}...`);
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending quotation email to ${email}...`);
+
+    let attachmentBase64 = null;
+    const quote = quotationsList.find(q => q.no === no || q.id === id) || (selectedQuote && (selectedQuote.no === no || selectedQuote.id === id) ? selectedQuote : null);
+    let lines = [];
+    if (quote && quote.id) {
+      try {
+        lines = await window.OperationsService.getQuotationLines(quote.id);
+      } catch (_) {}
+    }
+    if (quote && window.jspdf) {
+      try {
+        const doc = buildQuotationJsPdf(quote, lines);
+        if (doc) {
+          const dataUri = doc.output('datauristring');
+          attachmentBase64 = dataUri.split(',')[1];
+        }
+      } catch (e) {
+        console.warn('Could not generate quotation attachment PDF:', e);
+      }
+    }
+
     window.OperationsService.sendAuthorityEmail({
       recipientEmail: email,
       subject: `Quotation ${no} - Jasvi Industries`,
-      body: `Please find attached quotation ${no} from Jasvi Industries.`,
+      body: `Dear Customer,\n\nPlease find attached Quotation ${no} from Jasvi Industries.\n\nThank you for giving us the opportunity to quote.\n\nBest regards,\nJasvi Industries ERP Studio`,
       documentType: 'QUOTATION',
-      documentNumber: no
+      documentNumber: no,
+      attachmentName: `Quotation_${no.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
+      attachmentBase64: attachmentBase64
     }).then(() => {
       window.OperationsService.markQuotationSent(id, 'EMAIL', 0);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation emailed to ${email}`);
       loadQuotations(currentPage);
     }).catch(err => {
-      if (window.AppDialogService) window.AppDialogService.toastError('Email failed: ' + (err.message || 'Server error'));
+      console.error('Email error:', err);
+      let errMsg = err.message || 'Server error';
+      if (errMsg.includes('temporarily unavailable') || errMsg.includes('SMTP')) {
+        errMsg = 'Email delivery unavailable: SMTP Mail Gateway is not configured. Please configure SMTP in Settings Studio.';
+      }
+      if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
+      else alert(errMsg);
     });
   }
 

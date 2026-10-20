@@ -1,11 +1,11 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 1,
-  "webVersion": "10.0.38.01",
-  "tag": "web-v10.0.38.01",
+  "webBuild": 2,
+  "webVersion": "10.0.38.02",
+  "tag": "web-v10.0.38.02",
   "releaseDate": "2026-10-20T18:50:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.01 Comprehensive Modern Enterprise Web Overhaul: Fixed Viewport Architecture (Zero Double Scrollbars), 58px Compact KPI Ribbons, 3D Consequence Dialogs, Universal Form Dirty Guard, High-Contrast Light Mode, and Cross-Module Deep-Linking",
+  "summary": "10.0.38.02 Full Desktop v10.0.38 Parity: DatePickerFormatter System-Wide Company Date Format, Universal Print High-Contrast Table Spooler, Document Studio & SheetJS Quotation/Returns Export, jsPDF Fallback Generation, Remember-Me Persistence, Dynamic Table Auto-Fit & Unlocked Independent Table Scrolling",
   "highlights": [
     "1. Fixed Viewport Architecture: Pinned 100% height layouts across 25 registers eliminating page-level scrollbars; sticky table headers and permanently docked pagination.",
     "2. 58px Modern Compact KPI Ribbon: Replaced bulky 160px cards with 58px high-density ribbons saving 102px vertical space while preserving live controller IDs and telemetry.",

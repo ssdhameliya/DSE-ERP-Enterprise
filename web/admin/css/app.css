@@ -489,11 +489,6 @@
     /* BARCODE PRINT */
     .barcode-sticker { width: 240px; height: 140px; background: #fff; color: #000; border: 1px dashed #999; border-radius: 4px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-family: monospace; font-size: 10px; text-align: center; }
     .barcode-canvas { max-width: 220px; height: 50px; }
-    @media print {
-      body * { visibility: hidden; }
-      #printable-barcode-area, #printable-barcode-area * { visibility: visible; }
-      #printable-barcode-area { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
-    }
 
     /* LIGHT THEME DESKTOP OVERRIDES - FULL HIGH-CONTRAST READABILITY */
     body.light-theme {
@@ -805,12 +800,23 @@
     }
     .btn-purple:active, .header-btn-new-sale:active { transform: translateY(0); }
 
-    /* DASHBOARD LAYOUT MATCHING DESKTOP (IMAGE 1) */
-    .dash-kpi-row-6 {
-      display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 14px;
+    /* DASHBOARD LAYOUT MATCHING DESKTOP (IMAGE 1) - SINGLE PANEL NEVER WRAPS */
+    .dash-kpi-row-6,
+    .erp-kpi-ribbon-dynamic {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      gap: 10px !important;
+      margin-bottom: 14px !important;
+      width: 100% !important;
+      overflow-x: auto !important;
+      align-items: stretch !important;
     }
-    @media (max-width: 1400px) { .dash-kpi-row-6 { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 768px) { .dash-kpi-row-6 { grid-template-columns: 1fr; } }
+    .dash-kpi-row-6 .dash-kpi-card,
+    .erp-kpi-ribbon-dynamic .kpi-card,
+    .erp-kpi-ribbon-dynamic .dash-kpi-card {
+      flex: 1 1 0 !important;
+      min-width: 130px !important;
+    }
 
     .dash-kpi-card {
       background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle);
@@ -928,8 +934,10 @@
     .table-scroll,
     .table-panel-viewport {
       overflow-x: auto !important;
-      max-height: calc(100vh - 420px);
-      min-height: 380px;
+      overflow-y: auto !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      max-height: calc(100vh - 380px);
       width: 100%;
     }
     .sales-desktop-table,
@@ -1361,13 +1369,36 @@
         height: auto !important;
         overflow: visible !important;
       }
-      body * {
-        visibility: hidden !important;
+
+      /* Hide application chrome & navigation during printing */
+      header.app-header,
+      aside.app-sidebar,
+      .workspace-tabs,
+      .view-actions,
+      .filter-bar,
+      .sales-filter-box,
+      .pagination-container,
+      .slide-detail-drawer,
+      .register-inline-drawer,
+      .sales-inline-drawer,
+      #auth-overlay,
+      .modal:not(#printable-invoice-modal),
+      .no-print {
+        display: none !important;
       }
-      #printable-invoice-modal,
-      #printable-invoice-modal * {
-        visibility: visible !important;
+
+      /* When printable invoice modal is open, ensure only the modal content prints */
+      body:has(#printable-invoice-modal.open) .module-view,
+      body:has(#printable-barcode-area.open) .module-view {
+        display: none !important;
       }
+
+      #printable-barcode-area {
+        position: static !important;
+        width: 100% !important;
+        background: #fff !important;
+      }
+
       #printable-invoice-modal {
         position: static !important;
         display: block !important;
@@ -1399,8 +1430,7 @@
       }
       #printable-invoice-modal .modal-header,
       #printable-invoice-modal .modal-footer,
-      #printable-invoice-modal .btn-close,
-      .no-print {
+      #printable-invoice-modal .btn-close {
         display: none !important;
       }
       .tax-invoice-sheet {
@@ -1413,6 +1443,46 @@
         max-width: 100% !important;
         color: #000000 !important;
         background: #ffffff !important;
+      }
+
+      /* Registers and tables print with clear contrast */
+      .module-view.active,
+      main.app-stage,
+      #app-container {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .register-workspace,
+      .sales-register-workspace {
+        display: block !important;
+        width: 100% !important;
+      }
+      .register-table-panel,
+      .sales-table-panel {
+        width: 100% !important;
+        display: block !important;
+      }
+      table.data-table,
+      table.sales-desktop-table {
+        color: #000000 !important;
+        background: #ffffff !important;
+        border-collapse: collapse !important;
+        width: 100% !important;
+      }
+      table.data-table th,
+      table.sales-desktop-table th {
+        background: #f1f5f9 !important;
+        color: #000000 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      table.data-table td,
+      table.sales-desktop-table td {
+        color: #000000 !important;
+        border: 1px solid #e2e8f0 !important;
       }
     }
 
@@ -1533,14 +1603,26 @@
       gap: 14px;
       width: 100%;
       align-items: stretch;
+      min-height: 0 !important;
+      flex: 1 !important;
     }
     .register-table-panel,
     .sales-table-panel {
       flex: 1;
       min-width: 0;
+      min-height: 0 !important;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
+    }
+
+    /* Dynamic Table Auto-Fit when Side Drawer Opens (Desktop DynamicTableLayoutManager Parity) */
+    .register-workspace.has-open-drawer table.data-table,
+    .sales-register-workspace.has-open-drawer table.sales-desktop-table,
+    .register-workspace:has(.slide-detail-drawer.open) table.data-table,
+    .sales-register-workspace:has(.sales-inline-drawer.open) table.sales-desktop-table {
+      table-layout: auto !important;
+      width: 100% !important;
     }
     .slide-detail-drawer,
     .register-inline-drawer,

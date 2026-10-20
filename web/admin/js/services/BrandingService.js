@@ -169,18 +169,32 @@ window.BrandingService = (function() {
     }
   }
 
-  // Fetch settings from server when authenticated
+  // Fetch settings from server (supports both unauthenticated public branding & authenticated settings)
   async function refreshRemote() {
-    if (!window.ApiService || !localStorage.getItem('dse_access_token')) {
-      return;
-    }
     try {
-      const [compSettings, appSettings] = await Promise.all([
-        window.ApiService.get('/api/support/settings?prefix=company.').catch(() => null),
-        window.ApiService.get('/api/support/settings?prefix=application.').catch(() => null)
-      ]);
+      const hasToken = !!localStorage.getItem('dse_access_token');
+      let compSettings = null;
+      let appSettings = null;
+
+      if (hasToken && window.ApiService) {
+        [compSettings, appSettings] = await Promise.all([
+          window.ApiService.get('/api/support/settings?prefix=company.').catch(() => null),
+          window.ApiService.get('/api/support/settings?prefix=application.').catch(() => null)
+        ]);
+      } else {
+        // Attempt public settings fetch for login screen
+        try {
+          const res = await fetch('/api/support/settings/public');
+          if (res.ok) {
+            const data = await res.json();
+            compSettings = data.company || data;
+            appSettings = data.application || data;
+          }
+        } catch (_) {}
+      }
+
       const settings = Object.assign({}, compSettings, appSettings);
-      if (settings && typeof settings === 'object') {
+      if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
         const updated = Object.assign({}, currentProfile);
         if (settings['company.name']) updated.name = settings['company.name'];
         if (settings['company.tagline']) updated.tagline = settings['company.tagline'];
@@ -190,7 +204,7 @@ window.BrandingService = (function() {
         if (settings['company.bankName']) updated.bankName = settings['company.bankName'];
         if (settings['company.bankAccount']) updated.bankAccount = settings['company.bankAccount'];
 
-        // Synchronize startup mark & banner assets matching desktop LoginController
+        // Synchronize startup mark asset matching desktop LoginController
         const markVal = settings['application.markImagePath'] !== undefined ? settings['application.markImagePath'] : settings['application.mark'];
         if (markVal !== undefined) {
           if (!markVal || markVal === 'null' || markVal === '') {
@@ -202,6 +216,16 @@ window.BrandingService = (function() {
             localStorage.setItem('dse_brand_mark_active', 'true');
             const markBox = document.getElementById('auth-brand-mark-box');
             if (markBox) markBox.style.display = 'block';
+          }
+        }
+
+        // Synchronize startup banner asset
+        const bannerVal = settings['application.brandImagePath'] !== undefined ? settings['application.brandImagePath'] : settings['application.brand'];
+        if (bannerVal !== undefined) {
+          if (!bannerVal || bannerVal === 'null' || bannerVal === '') {
+            localStorage.removeItem('dse_brand_banner_url');
+            const bannerBox = document.getElementById('auth-brand-banner-box');
+            if (bannerBox) bannerBox.style.display = 'none';
           }
         }
 

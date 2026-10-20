@@ -2836,6 +2836,130 @@ window.SalesController = {
     }
   },
 
+  buildSalesInvoiceJsPdf(saleObj) {
+    if (!saleObj || !window.jspdf) return null;
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const invNo = saleObj.invoiceNo || saleObj.number || 'INV';
+      const invDate = window.FormatUtil ? window.FormatUtil.formatDate(saleObj.invoiceDate || saleObj.date) : (saleObj.invoiceDate || saleObj.date || '-');
+      const dueDate = window.FormatUtil ? window.FormatUtil.formatDate(saleObj.dueDate || saleObj.invoiceDate) : (saleObj.dueDate || '-');
+      const party = (typeof saleObj.customer === 'object' ? saleObj.customer?.name : saleObj.customer) || saleObj.customerName || 'Customer';
+      const gstin = (typeof saleObj.customer === 'object' ? saleObj.customer?.gstin : '') || saleObj.billingGstin || saleObj.gstin || '-';
+      const address = (typeof saleObj.customer === 'object' ? saleObj.customer?.address : '') || saleObj.billingAddress || '-';
+      const lines = saleObj.items || saleObj.lines || [];
+
+      // Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(2, 132, 199);
+      doc.text('JASVI INDUSTRIES', 14, 18);
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Precision Fasteners, High-Tensile Bolts & Industrial Stainless Steel Piping', 14, 23);
+      doc.text('H-52 Darshan Villa Society, New Naroda, Ahmedabad - 382346, Gujarat', 14, 27);
+      doc.text('GSTIN: 24AAACJ1234F1Z1 | State: Gujarat (24)', 14, 31);
+
+      // Right Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(15, 23, 42);
+      doc.text('TAX INVOICE', 196, 18, { align: 'right' });
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Invoice #: ${invNo}`, 196, 24, { align: 'right' });
+      doc.text(`Date: ${invDate}`, 196, 29, { align: 'right' });
+      doc.text(`Due Date: ${dueDate}`, 196, 34, { align: 'right' });
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, 38, 196, 38);
+
+      // Customer Box
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text('BILLED TO:', 14, 44);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(party).substring(0, 45), 14, 49);
+      doc.text(`GSTIN: ${gstin}`, 14, 54);
+      doc.text(`Address: ${String(address).substring(0, 50)}`, 14, 59);
+
+      // Table Header
+      let y = 66;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(14, y, 182, 8, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+      doc.text('#', 16, y + 5.5);
+      doc.text('Item Description', 24, y + 5.5);
+      doc.text('HSN/SAC', 90, y + 5.5);
+      doc.text('Qty', 115, y + 5.5, { align: 'right' });
+      doc.text('Rate', 140, y + 5.5, { align: 'right' });
+      doc.text('GST%', 160, y + 5.5, { align: 'right' });
+      doc.text('Total', 192, y + 5.5, { align: 'right' });
+
+      y += 12;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(15, 23, 42);
+
+      if (lines.length > 0) {
+        lines.forEach((l, idx) => {
+          if (y > 260) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(String(idx + 1), 16, y);
+          doc.text(String(l.description || l.itemName || l.code || '-').substring(0, 36), 24, y);
+          doc.text(String(l.hsn || l.hsnCode || '-'), 90, y);
+          doc.text(`${l.quantity || 1} ${l.unit || 'PCS'}`, 115, y, { align: 'right' });
+          doc.text(Number(l.rate || l.price || 0).toFixed(2), 140, y, { align: 'right' });
+          doc.text(`${l.gstRate || l.gst || 0}%`, 160, y, { align: 'right' });
+          doc.text(Number(l.totalAmount || l.total || 0).toFixed(2), 192, y, { align: 'right' });
+          y += 6;
+        });
+      } else {
+        doc.text('1', 16, y);
+        doc.text('Industrial Goods / Services', 24, y);
+        doc.text('7318', 90, y);
+        doc.text('1 LOT', 115, y, { align: 'right' });
+        doc.text(Number(saleObj.taxableAmount || saleObj.totalAmount || 0).toFixed(2), 140, y, { align: 'right' });
+        doc.text('18%', 160, y, { align: 'right' });
+        doc.text(Number(saleObj.totalAmount || 0).toFixed(2), 192, y, { align: 'right' });
+        y += 6;
+      }
+
+      // Totals
+      y += 4;
+      doc.line(14, y, 196, y);
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Total Invoice Amount:', 140, y, { align: 'right' });
+      const grandTotal = Number(saleObj.totalAmount || saleObj.grandTotal || 0).toFixed(2);
+      doc.text(`INR ${grandTotal}`, 192, y, { align: 'right' });
+
+      // Footer Signatory
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('This is a computer generated tax invoice. Standard warranty and terms apply.', 14, 280);
+      doc.setFont('helvetica', 'bold');
+      doc.text('For, JASVI INDUSTRIES', 196, 275, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('Authorized Signatory', 196, 282, { align: 'right' });
+
+      return doc;
+    } catch (e) {
+      console.warn('buildSalesInvoiceJsPdf error:', e);
+      return null;
+    }
+  },
+
   // =========================================================================
   // 14. WHATSAPP NOTIFICATION (REAL DESKTOP TEMPLATE OUTPUT)
   // =========================================================================

@@ -99,13 +99,27 @@ window.App = (function() {
         console.warn('Could not load login roles:', e);
       }
 
+      const savedRemember = localStorage.getItem('dse_remember_me') === 'true';
       const savedIdentity = localStorage.getItem('dse_saved_identity');
       const identityInput = document.getElementById('login-identity');
       const rememberCheck = document.getElementById('login-remember');
-      const savedRemember = localStorage.getItem('dse_remember_me') === 'true';
-      if (rememberCheck) rememberCheck.checked = savedRemember || !!savedIdentity;
-      if (savedIdentity && identityInput) {
+      if (rememberCheck) {
+        rememberCheck.checked = savedRemember;
+        if (!rememberCheck._listenerAttached) {
+          rememberCheck._listenerAttached = true;
+          rememberCheck.addEventListener('change', () => {
+            if (!rememberCheck.checked) {
+              localStorage.removeItem('dse_remember_me');
+              localStorage.removeItem('dse_saved_identity');
+              localStorage.removeItem('dse_saved_role');
+            }
+          });
+        }
+      }
+      if (savedRemember && savedIdentity && identityInput) {
         identityInput.value = savedIdentity;
+      } else if (!savedRemember && identityInput) {
+        identityInput.value = '';
       }
       if (window.updateLoginMode) window.updateLoginMode();
     }
@@ -197,6 +211,40 @@ window.App = (function() {
     }
   };
 
+  function applyShellCountsToDom(counts) {
+    if (!counts) return;
+    const remEl = document.getElementById('badge-reminders');
+    const notifEl = document.getElementById('badge-notifications');
+    const mailEl = document.getElementById('badge-email');
+    const waEl = document.getElementById('badge-whatsapp');
+
+    if (remEl) {
+      remEl.innerText = counts.reminders || 0;
+      remEl.classList.toggle('zero', (counts.reminders || 0) === 0);
+    }
+    if (notifEl) {
+      notifEl.innerText = counts.notifications || 0;
+      notifEl.classList.toggle('zero', (counts.notifications || 0) === 0);
+    }
+    if (mailEl) {
+      mailEl.innerText = counts.email || 0;
+      mailEl.classList.toggle('zero', (counts.email || 0) === 0);
+    }
+    if (waEl) {
+      waEl.innerText = counts.whatsapp || 0;
+      waEl.classList.toggle('zero', (counts.whatsapp || 0) === 0);
+    }
+  }
+
+  function restoreCachedShellCounts() {
+    try {
+      const cached = localStorage.getItem('dse_shell_counts');
+      if (cached) {
+        applyShellCountsToDom(JSON.parse(cached));
+      }
+    } catch (_) {}
+  }
+
   async function pollShellCounts() {
     if (!window.AuthService || !window.AuthService.isAuthenticated()) {
       return; // Never poll backend counts when session is unauthenticated
@@ -204,27 +252,8 @@ window.App = (function() {
     try {
       const counts = await window.ApiService.get('/api/insights/shell-counts');
       if (counts) {
-        const remEl = document.getElementById('badge-reminders');
-        const notifEl = document.getElementById('badge-notifications');
-        const mailEl = document.getElementById('badge-email');
-        const waEl = document.getElementById('badge-whatsapp');
-
-        if (remEl) {
-          remEl.innerText = counts.reminders || 0;
-          remEl.classList.toggle('zero', (counts.reminders || 0) === 0);
-        }
-        if (notifEl) {
-          notifEl.innerText = counts.notifications || 0;
-          notifEl.classList.toggle('zero', (counts.notifications || 0) === 0);
-        }
-        if (mailEl) {
-          mailEl.innerText = counts.email || 0;
-          mailEl.classList.toggle('zero', (counts.email || 0) === 0);
-        }
-        if (waEl) {
-          waEl.innerText = counts.whatsapp || 0;
-          waEl.classList.toggle('zero', (counts.whatsapp || 0) === 0);
-        }
+        localStorage.setItem('dse_shell_counts', JSON.stringify(counts));
+        applyShellCountsToDom(counts);
       }
     } catch (e) {
       console.warn('[App] Shell counts poll error:', e.message);
@@ -243,6 +272,7 @@ window.App = (function() {
       setupEnvironment();
       setupAuthForms();
       syncFooterCompanyProfile();
+      restoreCachedShellCounts();
 
       if (window.ShortcutManager) window.ShortcutManager.init();
       if (window.NavigationRouter) window.NavigationRouter.init();
@@ -557,22 +587,36 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
   window.AppDialogService.closeAllModals();
   window.AppDialogService.showToast(`Welcome back, ${user.fullName || user.username}!`, 'success');
 
-  // Role-based landing navigation
+  // Trigger top shell counters polling and activate 30-second interval immediately post-login
+  try {
+    if (window.App && typeof window.App.pollShellCounts === 'function') {
+      window.App.pollShellCounts();
+    }
+    if (window.App && typeof window.App.startShellPolling === 'function') {
+      window.App.startShellPolling();
+    }
+  } catch (e) {
+    console.warn('[App] Post-login shell counts polling error:', e.message);
+  }
+
+  // Role-based landing navigation (with forceLifecycle = true so landing view always mounts)
   const normalizedRole = String(userRole || '').toUpperCase();
   if (window.NavigationRouter) {
+    let landingView = 'view-dashboard';
     if (normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER') {
-      window.NavigationRouter.selectNav('view-dashboard');
+      landingView = 'view-dashboard';
     } else if (normalizedRole === 'SALES') {
-      window.NavigationRouter.selectNav('view-sales-register');
+      landingView = 'view-sales-register';
     } else if (normalizedRole === 'PURCHASE') {
-      window.NavigationRouter.selectNav('view-purchase-register');
+      landingView = 'view-purchase-register';
     } else if (normalizedRole === 'STORE' || normalizedRole === 'STOREKEEPER' || normalizedRole === 'WAREHOUSE') {
-      window.NavigationRouter.selectNav('view-item-master');
+      landingView = 'view-item-master';
     } else if (normalizedRole === 'ACCOUNTANT' || normalizedRole === 'FINANCE') {
-      window.NavigationRouter.selectNav('view-general-ledger');
+      landingView = 'view-general-ledger';
     } else {
-      window.NavigationRouter.selectNav('view-profile');
+      landingView = 'view-profile';
     }
+    window.NavigationRouter.selectNav(landingView, true, true);
   }
 
   // Synchronize company date/time policy into FormatUtil
@@ -601,29 +645,17 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
   }
   try {
     if (window.ItemMasterController && window.ItemMasterController.loadItems) {
-      await window.ItemMasterController.loadItems();
+      window.ItemMasterController.loadItems();
     }
   } catch (e) {
     console.warn('Item master pre-load skipped:', e.message);
   }
   try {
     if (window.PartyController && window.PartyController.loadCustomers) {
-      await window.PartyController.loadCustomers();
+      window.PartyController.loadCustomers();
     }
   } catch (e) {
     console.warn('Party pre-load skipped:', e.message);
-  }
-
-  // Trigger top shell counters polling and activate 30-second interval immediately post-login
-  try {
-    if (window.App && typeof window.App.pollShellCounts === 'function') {
-      await window.App.pollShellCounts();
-    }
-    if (window.App && typeof window.App.startShellPolling === 'function') {
-      window.App.startShellPolling();
-    }
-  } catch (e) {
-    console.warn('[App] Post-login shell counts polling error:', e.message);
   }
 };
 

@@ -115,9 +115,9 @@ window.NavigationRouter = (function() {
       return this.selectNav(viewId, triggerAddTab);
     },
 
-    selectNav(viewId, triggerAddTab = true) {
+    selectNav(viewId, triggerAddTab = true, forceLifecycle = false) {
       if (isNavigating) return;
-      if (currentViewId === viewId && document.getElementById(viewId)?.classList.contains('active')) {
+      if (!forceLifecycle && currentViewId === viewId && document.getElementById(viewId)?.classList.contains('active')) {
         return;
       }
       isNavigating = true;
