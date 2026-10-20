@@ -552,6 +552,23 @@ window.PurchaseController = (function() {
     const pdNotes = document.getElementById('pd-notes');
     if (pdNotes) pdNotes.innerText = p.notes || p.remarks || '-';
 
+    // Populate Attached Document in purchase drawer
+    const pdAttSec = document.getElementById('pd-attachment-section');
+    const pdAttName = document.getElementById('pd-attachment-name');
+    const attPath = p.attachmentPath || p.attachment;
+    if (pdAttSec) {
+      if (attPath) {
+        pdAttSec.style.display = 'block';
+        if (pdAttName) {
+          const fname = attPath.split('/').pop().split('\\').pop();
+          pdAttName.innerText = fname;
+          pdAttName.title = fname;
+        }
+      } else {
+        pdAttSec.style.display = 'none';
+      }
+    }
+
     const linesTbody = document.getElementById('pd-lines-body');
     if (linesTbody) {
       const lines = p.lines || [];
@@ -1479,12 +1496,27 @@ window.PurchaseController = (function() {
           refreshAttachmentUi(p.attachmentPath || p.attachment || null);
         }
 
+        const isSame = p.sameAsBilling !== undefined ? !!p.sameAsBilling : 
+          ((p.billingAddress || '') === (p.deliveryAddress || '') && 
+           (!p.deliveryGstin || p.billingGstin === p.deliveryGstin));
+        const chkSame = document.getElementById('pe-same-as-billing');
+        if (chkSame) {
+          chkSame.checked = isSame;
+          onSameAsBillingToggle(isSame);
+        }
+
       } catch (e) {
         alert('Failed to load purchase for editing: ' + e.message);
       }
     } else {
       editingPurchase = null;
       refreshAttachmentUi(null);
+
+      const chkSame = document.getElementById('pe-same-as-billing');
+      if (chkSame) {
+        chkSame.checked = true;
+        onSameAsBillingToggle(true);
+      }
 
       // Preview Next Purchase Bill No
       try {
@@ -1546,7 +1578,11 @@ window.PurchaseController = (function() {
       window.open(url, '_blank');
       return;
     }
-    if (editingPurchase && (editingPurchase.attachmentPath || editingPurchase.attachment)) {
+    if (editingPurchase && editingPurchase.id && (editingPurchase.attachmentPath || editingPurchase.attachment)) {
+      if (window.ApiService && window.ApiService.viewFile) {
+        window.ApiService.viewFile(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`);
+        return;
+      }
       window.open(editingPurchase.attachmentPath || editingPurchase.attachment, '_blank');
       return;
     }
@@ -1667,14 +1703,30 @@ window.PurchaseController = (function() {
       if (delAddr) {
         delAddr.value = document.getElementById('pe-billing-address')?.value || '';
         delAddr.setAttribute('readonly', 'readonly');
+        delAddr.style.background = 'rgba(255, 255, 255, 0.03)';
+        delAddr.style.cursor = 'not-allowed';
+        delAddr.style.opacity = '0.85';
       }
       if (delGstin) {
         delGstin.value = document.getElementById('pe-billing-gstin')?.value || '';
         delGstin.setAttribute('readonly', 'readonly');
+        delGstin.style.background = 'rgba(255, 255, 255, 0.03)';
+        delGstin.style.cursor = 'not-allowed';
+        delGstin.style.opacity = '0.85';
       }
     } else {
-      if (delAddr) delAddr.removeAttribute('readonly');
-      if (delGstin) delGstin.removeAttribute('readonly');
+      if (delAddr) {
+        delAddr.removeAttribute('readonly');
+        delAddr.style.background = '';
+        delAddr.style.cursor = '';
+        delAddr.style.opacity = '';
+      }
+      if (delGstin) {
+        delGstin.removeAttribute('readonly');
+        delGstin.style.background = '';
+        delGstin.style.cursor = '';
+        delGstin.style.opacity = '';
+      }
     }
   }
 
@@ -2020,9 +2072,9 @@ window.PurchaseController = (function() {
       createdBy: 'Admin',
       deliveryDate: invoiceDate,
       billingAddress: document.getElementById('pe-billing-address')?.value || '',
-      deliveryAddress: document.getElementById('pe-delivery-address')?.value || '',
+      deliveryAddress: document.getElementById('pe-same-as-billing')?.checked ? (document.getElementById('pe-billing-address')?.value || '') : (document.getElementById('pe-delivery-address')?.value || ''),
       billingGstin: document.getElementById('pe-billing-gstin')?.value || '',
-      deliveryGstin: document.getElementById('pe-delivery-gstin')?.value || '',
+      deliveryGstin: document.getElementById('pe-same-as-billing')?.checked ? (document.getElementById('pe-billing-gstin')?.value || '') : (document.getElementById('pe-delivery-gstin')?.value || ''),
       gstType: ((document.getElementById('pe-gst-type')?.value || 'GST').toUpperCase().includes('INTER') || (document.getElementById('pe-gst-type')?.value || 'GST').toUpperCase().includes('IGST')) ? 'IGST' : 'GST',
       transporterGstin: document.getElementById('pe-transporter-gstin')?.value || '',
       vehicleNumber: document.getElementById('pe-vehicle-number')?.value || '',
@@ -2042,17 +2094,42 @@ window.PurchaseController = (function() {
     if (btnSave) { btnSave.disabled = true; btnSave.innerText = 'Saving Purchase...'; }
 
     try {
+      let savedPurchase = null;
       if (editingInvoiceNo) {
         payload.id = editingPurchase?.id || null;
-        await window.OperationsService.updatePurchase(payload);
+        savedPurchase = await window.OperationsService.updatePurchase(payload);
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase invoice ${invoiceNo} updated successfully!`);
       } else {
-        await window.OperationsService.createPurchase(payload);
+        savedPurchase = await window.OperationsService.createPurchase(payload);
         if (window.NotificationService) {
           window.NotificationService.notifyPurchase(invoiceNo, payload.supplierName || 'Supplier', payload.grandTotal || 0);
         }
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase invoice ${invoiceNo} created successfully!`);
       }
+
+      // Binary attachment upload/delete via SupportController backend
+      if (pendingAttachmentFile && savedPurchase && savedPurchase.id) {
+        try {
+          const buffer = await pendingAttachmentFile.arrayBuffer();
+          const targetRowVersion = savedPurchase.rowVersion != null ? savedPurchase.rowVersion : (editingPurchase ? (editingPurchase.rowVersion || 0) : 0);
+          await window.ApiService.uploadBinary(
+            `/api/support/documents/PURCHASE/${savedPurchase.id}/attachment-file?rowVersion=${targetRowVersion}`,
+            pendingAttachmentFile.name,
+            buffer
+          );
+        } catch (attErr) {
+          console.warn('Purchase attachment upload warning:', attErr);
+        }
+      } else if (attachmentRemovalPending && editingPurchase && editingPurchase.id && !pendingAttachmentFile) {
+        try {
+          const targetRowVersion = savedPurchase?.rowVersion != null ? savedPurchase.rowVersion : (editingPurchase.rowVersion || 0);
+          await window.ApiService.delete(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file?rowVersion=${targetRowVersion}`);
+        } catch (delErr) {
+          console.warn('Purchase attachment delete warning:', delErr);
+        }
+      }
+      pendingAttachmentFile = null;
+      attachmentRemovalPending = false;
 
       window.NavigationRouter.selectNav('view-purchase-register');
       loadPurchases(0);
@@ -2070,6 +2147,44 @@ window.PurchaseController = (function() {
     window.NavigationRouter.selectNav('view-purchase-register');
   }
 
+  function previewCurrentDrawerAttachment() {
+    const p = currentDrawerPurchase;
+    const attPath = p?.attachmentPath || p?.attachment;
+    if (!p || !attPath) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment available to preview');
+      else alert('No attachment available to preview');
+      return;
+    }
+    const purchaseId = p.id;
+    if (purchaseId && window.ApiService && window.ApiService.viewFile) {
+      window.ApiService.viewFile(`/api/support/documents/PURCHASE/${purchaseId}/attachment-file`);
+    } else {
+      window.open(attPath, '_blank');
+    }
+  }
+
+  function downloadCurrentDrawerAttachment() {
+    const p = currentDrawerPurchase;
+    const attPath = p?.attachmentPath || p?.attachment;
+    if (!p || !attPath) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment available to download');
+      else alert('No attachment available to download');
+      return;
+    }
+    const purchaseId = p.id;
+    const filename = attPath.split('/').pop().split('\\').pop() || 'attachment';
+    if (purchaseId && window.ApiService && window.ApiService.downloadFile) {
+      window.ApiService.downloadFile(`/api/support/documents/PURCHASE/${purchaseId}/attachment-file`, filename);
+    } else {
+      const a = document.createElement('a');
+      a.href = attPath;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+
   return {
     loadPurchases,
     showDetails,
@@ -2077,6 +2192,8 @@ window.PurchaseController = (function() {
     closePurchaseDrawer,
     get currentDrawerPurchase() { return currentDrawerPurchase; },
     closeDrawer,
+    previewCurrentDrawerAttachment,
+    downloadCurrentDrawerAttachment,
     duplicatePurchase,
     onRowClick,
     toggleActionMenu,

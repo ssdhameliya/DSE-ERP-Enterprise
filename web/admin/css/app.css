@@ -2803,3 +2803,26 @@
       box-shadow: 0 2px 8px rgba(56, 189, 248, 0.1);
     }
 
+    /* ==========================================================================
+       SETTINGS NOTIFICATIONS & MODULE ACTIVATION (DESKTOP image18-image20 PARITY)
+       ========================================================================== */
+    .notification-pill-card {
+      transition: all 0.15s ease-in-out;
+      user-select: none;
+    }
+    .notification-pill-card:hover:not([style*="not-allowed"]) {
+      border-color: rgba(56, 189, 248, 0.45) !important;
+      background: rgba(30, 41, 59, 0.75) !important;
+      transform: translateY(-1px);
+    }
+    .notification-pill-card:has(input:checked) {
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .module-card-panel {
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .module-card-panel:hover {
+      border-color: rgba(255, 255, 255, 0.14) !important;
+      background: rgba(15, 23, 42, 0.6) !important;
+    }
+

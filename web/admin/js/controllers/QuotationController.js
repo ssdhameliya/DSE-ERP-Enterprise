@@ -18,6 +18,9 @@ window.QuotationController = (function() {
   let cachedCustomers = [];
   let cachedSources = [];
   let cachedItems = [];
+  let pendingAttachmentFile = null;
+  let existingAttachmentPath = null;
+  let attachmentRemovalPending = false;
 
   function formatMoney(val) {
     const num = parseFloat(val) || 0;
@@ -328,6 +331,19 @@ window.QuotationController = (function() {
         btnConvert.style.display = canConvert ? 'inline-flex' : 'none';
       }
 
+      const secAttachment = document.getElementById('qd-attachment-section');
+      const lblAttachment = document.getElementById('qd-attachment-name');
+      const attPath = q.attachmentPath || q.attachment;
+      if (secAttachment && lblAttachment) {
+        if (attPath) {
+          secAttachment.style.display = 'block';
+          lblAttachment.innerText = attPath.split('/').pop().split('\\').pop();
+          lblAttachment.title = attPath;
+        } else {
+          secAttachment.style.display = 'none';
+        }
+      }
+
       drawer.classList.add('open');
       drawer.style.display = 'flex';
     } catch (e) {
@@ -355,6 +371,25 @@ window.QuotationController = (function() {
     }
     document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedQuote = null;
+  }
+
+  function previewCurrentDrawerAttachment() {
+    if (!selectedQuote || !selectedQuote.id) return;
+    if (window.ApiService && window.ApiService.viewFile) {
+      window.ApiService.viewFile(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`);
+    } else {
+      window.open(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`, '_blank');
+    }
+  }
+
+  function downloadCurrentDrawerAttachment() {
+    if (!selectedQuote || !selectedQuote.id) return;
+    const fileName = (selectedQuote.attachmentPath || selectedQuote.attachment || 'quotation-attachment').split('/').pop().split('\\').pop();
+    if (window.ApiService && window.ApiService.downloadFile) {
+      window.ApiService.downloadFile(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`, fileName);
+    } else {
+      window.open(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`, '_blank');
+    }
   }
 
   // Install escape listener once loaded
@@ -542,6 +577,13 @@ window.QuotationController = (function() {
     document.getElementById('qe-followup').value = new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10);
     document.getElementById('qe-remarks').value = '';
 
+    pendingAttachmentFile = null;
+    existingAttachmentPath = null;
+    attachmentRemovalPending = false;
+    const fileInp = document.getElementById('qe-attachment-file-input');
+    if (fileInp) fileInp.value = '';
+    refreshAttachmentUi(null);
+
     // Load bootstrap data (customers & sources)
     await loadEditorBootstrap(quoteId);
   }
@@ -575,6 +617,11 @@ window.QuotationController = (function() {
         if (q.valid) document.getElementById('qe-valid').value = q.valid.substring(0, 10);
         if (q.followUp) document.getElementById('qe-followup').value = q.followUp.substring(0, 10);
         if (q.remarks) document.getElementById('qe-remarks').value = q.remarks;
+
+        existingAttachmentPath = q.attachmentPath || q.attachment || null;
+        if (existingAttachmentPath) {
+          refreshAttachmentUi(existingAttachmentPath);
+        }
 
         editorLines = (data.lines || []).map(l => ({
           code: l.code,
@@ -846,6 +893,34 @@ window.QuotationController = (function() {
       } else {
         saved = await window.OperationsService.createQuotation(payload);
       }
+
+      // Handle binary attachment upload/delete
+      const targetId = (saved && saved.id) || editingQuotationId;
+      const targetRowVersion = (saved && typeof saved.rowVersion === 'number') ? saved.rowVersion : editingRowVersion;
+
+      if (targetId) {
+        if (pendingAttachmentFile) {
+          try {
+            const arrayBuf = await pendingAttachmentFile.arrayBuffer();
+            await window.ApiService.uploadBinary(
+              `/api/support/documents/QUOTATION/${targetId}/attachment-file?rowVersion=${targetRowVersion}`,
+              pendingAttachmentFile.name,
+              arrayBuf
+            );
+          } catch (attErr) {
+            console.warn('Failed to upload quotation attachment binary:', attErr);
+          }
+        } else if (attachmentRemovalPending) {
+          try {
+            await window.ApiService.delete(
+              `/api/support/documents/QUOTATION/${targetId}/attachment-file?rowVersion=${targetRowVersion}`
+            );
+          } catch (delErr) {
+            console.warn('Failed to remove quotation attachment:', delErr);
+          }
+        }
+      }
+
       const quoteNo = saved?.no || 'Quotation';
       if (window.NotificationService) {
         window.NotificationService.notifyQuotation(quoteNo, payload.customerName || 'Customer', payload.grandTotal || 0);
@@ -899,6 +974,41 @@ window.QuotationController = (function() {
     saveQuotation,
     cancelEditor,
     closeModal,
+    handleAttachmentFileSelected(inputEl) {
+      if (inputEl.files && inputEl.files[0]) {
+        pendingAttachmentFile = inputEl.files[0];
+        attachmentRemovalPending = false;
+        refreshAttachmentUi(pendingAttachmentFile.name, pendingAttachmentFile.size);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${pendingAttachmentFile.name}`);
+      }
+    },
+    previewEditorAttachment() {
+      if (pendingAttachmentFile) {
+        const url = URL.createObjectURL(pendingAttachmentFile);
+        window.open(url, '_blank');
+        return;
+      }
+      if (existingAttachmentPath && editingQuotationId) {
+        if (window.ApiService && window.ApiService.viewFile) {
+          window.ApiService.viewFile(`/api/support/documents/QUOTATION/${editingQuotationId}/attachment-file`);
+        } else {
+          window.open(`/api/support/documents/QUOTATION/${editingQuotationId}/attachment-file`, '_blank');
+        }
+        return;
+      }
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
+    },
+    removeEditorAttachment() {
+      pendingAttachmentFile = null;
+      attachmentRemovalPending = true;
+      const fileInput = document.getElementById('qe-attachment-file-input');
+      if (fileInput) fileInput.value = '';
+      refreshAttachmentUi(null);
+      if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
+    },
+    refreshAttachmentUi,
+    previewCurrentDrawerAttachment,
+    downloadCurrentDrawerAttachment,
     prevPage() { if (currentPage > 0) loadQuotations(currentPage - 1); },
     nextPage() { if (currentPage < totalPages - 1) loadQuotations(currentPage + 1); },
     resetFilters() {

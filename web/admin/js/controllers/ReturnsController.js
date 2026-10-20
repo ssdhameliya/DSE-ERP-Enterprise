@@ -3,7 +3,7 @@
  * 100% Desktop Parity with SalesReturnsController.java & ReturnRefundController.java
  * Manages Sales Returns & Purchase Returns, 12-action row menu, Slide Drawer, Approval Workflow, and Refund Ledger
  */
-window.ReturnsController = (function() {
+window.ReturnsController = (function () {
   let currentType = 'SALES RETURN'; // 'SALES RETURN' or 'PURCHASE RETURN'
   let currentPage = 0;
   const pageSize = 25;
@@ -546,15 +546,57 @@ window.ReturnsController = (function() {
     document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
     document.getElementById('cr-type').value = currentType;
     document.getElementById('cr-return-date').value = new Date().toISOString().substring(0, 10);
-    document.getElementById('cr-invoice-input').value = prefillInvoice || '';
-    document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Enter an invoice number to load returnable line items.</td></tr>`;
+    const textInput = document.getElementById('cr-invoice-input');
+    if (textInput) textInput.value = prefillInvoice || '';
+    document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
     document.getElementById('cr-estimated-total').innerText = '₹ 0.00';
     document.getElementById('cr-selected-count').innerText = '0 items selected';
+
+    // Populate searchable select dropdown with valid paid orders
+    const select = document.getElementById('cr-invoice-select');
+    if (select) {
+      select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option>`;
+      try {
+        let orders = [];
+        if (isSales && window.OperationsService && window.OperationsService.getSalesPage) {
+          const res = await window.OperationsService.getSalesPage(0, 100);
+          orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
+        } else if (!isSales && window.OperationsService && window.OperationsService.getPurchasesPage) {
+          const res = await window.OperationsService.getPurchasesPage(0, 100);
+          orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
+        }
+        orders.forEach(o => {
+          const invNo = o.invoiceNo || o.billNo || (isSales ? `INV-${o.id}` : `BILL-${o.id}`);
+          const party = (o.customer && o.customer.name) || (o.supplier && o.supplier.name) || o.partyName || o.customerName || o.supplierName || 'Party';
+          const amt = formatMoney(o.totalAmount || o.total || 0);
+          const opt = document.createElement('option');
+          opt.value = invNo;
+          opt.textContent = `${invNo} — ${party} (${amt})`;
+          if (prefillInvoice && invNo === prefillInvoice) opt.selected = true;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.warn('Failed to load return orders:', err);
+      }
+    }
 
     modal.style.display = 'flex';
 
     if (prefillInvoice) {
       await loadReturnableLines(prefillInvoice);
+    }
+  }
+
+  async function onInvoiceSelectChanged(invNo) {
+    const textInput = document.getElementById('cr-invoice-input');
+    if (textInput) textInput.value = invNo || '';
+    if (invNo) {
+      await loadReturnableLines(invNo);
+    } else {
+      const tbody = document.getElementById('cr-lines-body');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
+      document.getElementById('cr-estimated-total').innerText = '₹ 0.00';
+      document.getElementById('cr-selected-count').innerText = '0 items selected';
     }
   }
 
@@ -576,7 +618,7 @@ window.ReturnsController = (function() {
       currentInvoicePartyId = 0;
       if (isSales) {
         let sale = null;
-        try { sale = await window.OperationsService.getSaleByInvoice(inv); } catch (_) {}
+        try { sale = await window.OperationsService.getSaleByInvoice(inv); } catch (_) { }
         if (!sale && window.SalesController && window.SalesController.sales) {
           sale = window.SalesController.sales.find(s => (s.invoiceNo || s.number) === inv);
         }
@@ -585,7 +627,7 @@ window.ReturnsController = (function() {
         }
       } else {
         let pur = null;
-        try { pur = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) {}
+        try { pur = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) { }
         if (!pur && window.PurchaseController && window.PurchaseController.purchases) {
           pur = window.PurchaseController.purchases.find(p => p.invoiceNo === inv);
         }
@@ -1184,6 +1226,7 @@ window.ReturnsController = (function() {
     sendEmailPrompt,
     viewOriginalDoc,
     openCreateReturnModal,
+    onInvoiceSelectChanged,
     loadReturnableLines,
     toggleLineSelect,
     toggleSelectAllLines,

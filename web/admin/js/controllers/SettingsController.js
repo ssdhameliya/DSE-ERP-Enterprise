@@ -130,7 +130,9 @@ window.SettingsController = (function() {
         if (resp.ok) {
           const blob = await resp.blob();
           if (blob && blob.size > 0) {
-            return URL.createObjectURL(blob);
+            const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/png';
+            const imgBlob = (blob.type === mime) ? blob : new Blob([blob], { type: mime });
+            return URL.createObjectURL(imgBlob);
           }
         }
       } catch (err) {
@@ -330,7 +332,16 @@ window.SettingsController = (function() {
         await window.ApiService.put('/api/support/settings', { values });
 
         // 3. Set preview directly using ObjectURL
-        setAssetPreview(previewImgId, placeholderId, URL.createObjectURL(file), null, statusId, canonicalKey);
+        const objectUrl = URL.createObjectURL(file);
+        setAssetPreview(previewImgId, placeholderId, objectUrl, null, statusId, canonicalKey);
+
+        if (canonicalKey === 'application.brandImagePath') {
+          const authBanner = document.getElementById('auth-brand-banner-img');
+          if (authBanner) authBanner.src = objectUrl;
+        } else if (canonicalKey === 'application.markImagePath') {
+          const authMark = document.getElementById('auth-brand-mark-img');
+          if (authMark) authMark.src = objectUrl;
+        }
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" saved to server!`, 'success');
@@ -604,6 +615,19 @@ window.SettingsController = (function() {
 
         const markVal = serverSettings['application.markImagePath'] || serverSettings['application.mark'];
         setAssetPreview('preview-app-mark', 'placeholder-app-mark', markVal, null, 'status-app-mark', 'application.markImagePath');
+
+        resolveAssetUrl(bannerVal, 'application.brandImagePath').then(url => {
+          if (url) {
+            const authBanner = document.getElementById('auth-brand-banner-img');
+            if (authBanner) authBanner.src = url;
+          }
+        });
+        resolveAssetUrl(markVal, 'application.markImagePath').then(url => {
+          if (url) {
+            const authMark = document.getElementById('auth-brand-mark-img');
+            if (authMark) authMark.src = url;
+          }
+        });
       } catch (err) {
         console.error('[SettingsController] Failed to load company settings:', err);
       }
@@ -1317,11 +1341,15 @@ window.SettingsController = (function() {
         setChk('mod-gst-posgating', modSettings['module.gst.posGating'] !== 'false');
         setChk('mod-tds-enabled', modSettings['module.tds.enabled'] !== 'false');
 
+        setChk('mod-automations-enabled', modSettings['module.automation.enabled'] !== 'false');
         setChk('mod-threeway-enabled', modSettings['module.automation.threeWayMatch'] !== 'false');
         setChk('mod-threeway-autodebit', modSettings['module.automation.autoDraftDebitNote'] !== 'false');
         setChk('mod-reorder-enabled', modSettings['module.automation.stockAutoReorder'] !== 'false');
         setChk('mod-credit-hardstop', modSettings['module.automation.creditHardStop'] !== 'false');
+        
         setChk('mod-batch-serial', modSettings['module.inventory.batchSerialTracking'] !== 'false');
+        setChk('mod-batch-fefo', modSettings['module.inventory.fefoPicking'] !== 'false');
+        setChk('mod-serial-mandatory', modSettings['module.inventory.serialMandatory'] !== 'false');
 
         setChk('mod-briefing-enabled', modSettings['module.briefing.daily'] !== 'false');
         setChk('mod-briefing-wa', modSettings['module.briefing.whatsapp'] !== 'false');
@@ -1346,6 +1374,7 @@ window.SettingsController = (function() {
         'module.gst.posGating': String(chk('mod-gst-posgating')),
         'module.tds.enabled': String(chk('mod-tds-enabled')),
 
+        'module.automation.enabled': String(chk('mod-automations-enabled')),
         'module.automation.threeWayMatch': String(chk('mod-threeway-enabled')),
         'automation.threeway.enabled': String(chk('mod-threeway-enabled')),
         'module.automation.autoDraftDebitNote': String(chk('mod-threeway-autodebit')),
@@ -1353,7 +1382,10 @@ window.SettingsController = (function() {
         'automation.reorder.enabled': String(chk('mod-reorder-enabled')),
         'module.automation.creditHardStop': String(chk('mod-credit-hardstop')),
         'credit_control.hard_stop': String(chk('mod-credit-hardstop')),
+        
         'module.inventory.batchSerialTracking': String(chk('mod-batch-serial')),
+        'module.inventory.fefoPicking': String(chk('mod-batch-fefo')),
+        'module.inventory.serialMandatory': String(chk('mod-serial-mandatory')),
 
         'module.briefing.daily': String(chk('mod-briefing-enabled')),
         'automation.briefing.enabled': String(chk('mod-briefing-enabled')),
@@ -1369,6 +1401,14 @@ window.SettingsController = (function() {
       } catch (err) {
         window.AppDialogService.showToast('Failed to save module settings: ' + err.message, 'error');
       }
+    },
+
+    saveNotifications(e) {
+      return this.saveNotificationsSettings(e);
+    },
+
+    saveModules(e) {
+      return this.saveModulesSettings(e);
     }
   };
 })();

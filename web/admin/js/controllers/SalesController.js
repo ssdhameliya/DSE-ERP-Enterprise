@@ -996,6 +996,15 @@ window.SalesController = {
 
         // Auto-detect GST regime
         this.suggestGstTypeFromGstin(existingSale.billingGstin || (existingSale.customer && existingSale.customer.gstin));
+
+        const isSame = existingSale.sameAsBilling !== undefined ? !!existingSale.sameAsBilling : 
+          ((existingSale.billingAddress || '') === (existingSale.deliveryAddress || '') && 
+           (!existingSale.deliveryGstin || existingSale.billingGstin === existingSale.deliveryGstin));
+        const chkSame = document.getElementById('ws-same-address');
+        if (chkSame) {
+          chkSame.checked = isSame;
+          this.toggleSameAddress(isSame);
+        }
       } else {
         // Reset form inputs for fresh entry
         ['ws-billing-address', 'ws-delivery-address', 'ws-billing-gstin', 'ws-delivery-gstin', 'ws-po-no', 'ws-invoice-notes', 'ws-vehicle-no', 'ws-contact-person', 'ws-contact-mobile'].forEach(id => {
@@ -1003,7 +1012,10 @@ window.SalesController = {
           if (el) el.value = '';
         });
         const chkSame = document.getElementById('ws-same-address');
-        if (chkSame) chkSame.checked = true;
+        if (chkSame) {
+          chkSame.checked = true;
+          this.toggleSameAddress(true);
+        }
       }
 
       // 5. Attachment state initialization
@@ -1160,11 +1172,31 @@ window.SalesController = {
     if (isSame) {
       if (bAddr && dAddr) dAddr.value = bAddr.value;
       if (bGst && dGst) dGst.value = bGst.value;
-      if (dAddr) dAddr.setAttribute('readonly', 'readonly');
-      if (dGst) dGst.setAttribute('readonly', 'readonly');
+      if (dAddr) {
+        dAddr.setAttribute('readonly', 'readonly');
+        dAddr.style.background = 'rgba(255, 255, 255, 0.03)';
+        dAddr.style.cursor = 'not-allowed';
+        dAddr.style.opacity = '0.85';
+      }
+      if (dGst) {
+        dGst.setAttribute('readonly', 'readonly');
+        dGst.style.background = 'rgba(255, 255, 255, 0.03)';
+        dGst.style.cursor = 'not-allowed';
+        dGst.style.opacity = '0.85';
+      }
     } else {
-      if (dAddr) dAddr.removeAttribute('readonly');
-      if (dGst) dGst.removeAttribute('readonly');
+      if (dAddr) {
+        dAddr.removeAttribute('readonly');
+        dAddr.style.background = '';
+        dAddr.style.cursor = '';
+        dAddr.style.opacity = '';
+      }
+      if (dGst) {
+        dGst.removeAttribute('readonly');
+        dGst.style.background = '';
+        dGst.style.cursor = '';
+        dGst.style.opacity = '';
+      }
     }
   },
 
@@ -1795,7 +1827,11 @@ window.SalesController = {
       window.open(url, '_blank');
       return;
     }
-    if (this.editingSale && this.editingSale.attachmentPath) {
+    if (this.editingSale && this.editingSale.id && this.editingSale.attachmentPath) {
+      if (window.ApiService && window.ApiService.viewFile) {
+        window.ApiService.viewFile(`/api/support/documents/SALE/${this.editingSale.id}/attachment-file`);
+        return;
+      }
       window.open(this.editingSale.attachmentPath, '_blank');
       return;
     }
@@ -1846,9 +1882,9 @@ window.SalesController = {
     const invoiceNo = (document.getElementById('ws-inv-no') || {}).value || 'JI/INV';
     const invoiceDate = (document.getElementById('ws-inv-date') || {}).value || new Date().toISOString().split('T')[0];
     const billingAddress = (document.getElementById('ws-billing-address') || {}).value || '';
-    const deliveryAddress = (document.getElementById('ws-delivery-address') || {}).value || '';
+    let deliveryAddress = (document.getElementById('ws-delivery-address') || {}).value || '';
     const billingGstin = (document.getElementById('ws-billing-gstin') || {}).value || '';
-    const deliveryGstin = (document.getElementById('ws-delivery-gstin') || {}).value || '';
+    let deliveryGstin = (document.getElementById('ws-delivery-gstin') || {}).value || '';
     const paymentTerms = (document.getElementById('ws-payment-terms') || {}).value || '15 Days';
     const rawGstType = (document.getElementById('ws-gst-type') || {}).value || 'GST';
     const gstType = (rawGstType === 'INTER_STATE_IGST' || rawGstType === 'IGST') ? 'IGST' : 'GST';
@@ -1861,6 +1897,11 @@ window.SalesController = {
     const poNo = (document.getElementById('ws-po-no') || {}).value || '';
     const notes = (document.getElementById('ws-invoice-notes') || {}).value || '';
     const chkSame = document.getElementById('ws-same-address');
+
+    if (chkSame && chkSame.checked) {
+      deliveryAddress = billingAddress;
+      deliveryGstin = billingGstin;
+    }
 
     // Strict Address Mismatch Validation (Desktop SalesController.java lines 1395-1402)
     if (chkSame && !chkSame.checked) {
@@ -2014,6 +2055,32 @@ window.SalesController = {
         }
         window.AppDialogService.showToast(`Invoice ${actualInvoiceNo} generated & saved successfully!`, 'success');
       }
+
+      // Binary attachment upload/delete via SupportController backend
+      if (this.pendingAttachmentFile && savedSale && savedSale.id) {
+        try {
+          const buffer = await this.pendingAttachmentFile.arrayBuffer();
+          const targetRowVersion = savedSale.rowVersion != null ? savedSale.rowVersion : (this.editingSale ? (this.editingSale.rowVersion || 0) : 0);
+          await window.ApiService.uploadBinary(
+            `/api/support/documents/SALE/${savedSale.id}/attachment-file?rowVersion=${targetRowVersion}`,
+            this.pendingAttachmentFile.name,
+            buffer
+          );
+          savedSale.attachmentPath = this.pendingAttachmentFile.name;
+        } catch (attErr) {
+          console.warn('Sales attachment upload warning:', attErr);
+        }
+      } else if (this.attachmentRemovalPending && this.editingSale && this.editingSale.id && !this.pendingAttachmentFile) {
+        try {
+          const targetRowVersion = savedSale?.rowVersion != null ? savedSale.rowVersion : (this.editingSale.rowVersion || 0);
+          await window.ApiService.delete(`/api/support/documents/SALE/${this.editingSale.id}/attachment-file?rowVersion=${targetRowVersion}`);
+          savedSale.attachmentPath = null;
+        } catch (delErr) {
+          console.warn('Sales attachment delete warning:', delErr);
+        }
+      }
+      this.pendingAttachmentFile = null;
+      this.attachmentRemovalPending = false;
 
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
 
@@ -3345,6 +3412,22 @@ window.SalesController = {
           }
         }
 
+        // Populate Attached Document in inline drawer
+        const sideAttSec = document.getElementById('side-attachment-section');
+        const sideAttName = document.getElementById('side-attachment-name');
+        if (sideAttSec) {
+          if (s.attachmentPath) {
+            sideAttSec.style.display = 'block';
+            if (sideAttName) {
+              const fname = s.attachmentPath.split('/').pop().split('\\').pop();
+              sideAttName.innerText = fname;
+              sideAttName.title = fname;
+            }
+          } else {
+            sideAttSec.style.display = 'none';
+          }
+        }
+
         // Display the inline drawer docked beside table (Screenshots 3 & 4)
         inlineDrawer.style.display = 'flex';
       }
@@ -3672,6 +3755,40 @@ window.SalesController = {
     document.querySelectorAll('#sales-main-table tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     this.currentDrawerSale = null;
     this.selectedDrawerInvoiceNo = null;
+  },
+
+  previewCurrentDrawerAttachment() {
+    const s = this.currentDrawerSale;
+    if (!s || !s.attachmentPath) {
+      window.AppDialogService.showToast('No attachment available to preview', 'warning');
+      return;
+    }
+    const saleId = s.id;
+    if (saleId && window.ApiService && window.ApiService.viewFile) {
+      window.ApiService.viewFile(`/api/support/documents/SALE/${saleId}/attachment-file`);
+    } else if (s.attachmentPath) {
+      window.open(s.attachmentPath, '_blank');
+    }
+  },
+
+  downloadCurrentDrawerAttachment() {
+    const s = this.currentDrawerSale;
+    if (!s || !s.attachmentPath) {
+      window.AppDialogService.showToast('No attachment available to download', 'warning');
+      return;
+    }
+    const saleId = s.id;
+    const filename = s.attachmentPath.split('/').pop().split('\\').pop() || 'attachment';
+    if (saleId && window.ApiService && window.ApiService.downloadFile) {
+      window.ApiService.downloadFile(`/api/support/documents/SALE/${saleId}/attachment-file`, filename);
+    } else if (s.attachmentPath) {
+      const a = document.createElement('a');
+      a.href = s.attachmentPath;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   },
 
   openEmailForCurrentDrawer() {

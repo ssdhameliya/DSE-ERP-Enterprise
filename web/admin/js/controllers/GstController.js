@@ -30,6 +30,9 @@ window.GstController = {
 
   formatDate(d) {
     if (!d) return '-';
+    if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
+      return window.FormatUtil.formatDate(d);
+    }
     try {
       const parts = d.toString().split('T')[0].split('-');
       if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;

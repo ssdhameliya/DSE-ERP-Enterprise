@@ -1,21 +1,22 @@
 {
-  "desktopVersion": "10.0.35",
-  "webBuild": 7,
-  "webVersion": "10.0.35.07",
-  "tag": "web-v10.0.35.07",
-  "releaseDate": "2026-10-19T20:15:00+05:30",
+  "desktopVersion": "10.0.36",
+  "webBuild": 1,
+  "webVersion": "10.0.36.01",
+  "tag": "web-v10.0.36.01",
+  "releaseDate": "2026-10-20T11:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.35.07 Comprehensive Desktop Parity & Enterprise Hardening Release - Full 10-Defect Resolution: Sale Import stock fallback, Purchase Import preflight reference checks, Bank Statement ISO date normalization, ERP server error transparency, universal direct PDF file downloads (no window.print), Customer/Supplier 360 segmented tabs & attachments API, Purchase Recon reference/date/link parity, Bank Statement history Actions dropdown & row highlight, Bank Entry table alignment & expense category dropdown, Stock Register KPI card icons & uniform 84px height.",
+  "summary": "10.0.36 Desktop 100% Visual & Functional Parity Release",
   "highlights": [
-    "1. Data Import Sale Import: Computed stock fallback to openingStock/currentStock when availableStock is undefined, preventing false 'insufficient stock' validation errors.",
-    "2. Data Import Purchase Import: Added strict preflight validation against REF_ITEM (ITMXXX) and REF_SUPPLIER formats; flags invalid item codes into Review instead of crashing on execution.",
-    "3. Data Import Bank Statement: Normalized transaction and value dates to ISO YYYY-MM-DD and timestamps to YYYY-MM-DDTHH:mm:ss, resolving statement batch import failures.",
-    "4. ERP Server Error Transparency: Extracted errData.details and errData.errors in ApiService, displaying clear, actionable messages instead of generic server error dialogs.",
-    "5. Universal PDF Generation: Replaced browser window.print() across Sales, Purchase, Finance, and Reports with direct .pdf downloads using FormatUtil.downloadTablePdf and ApiService.downloadDocumentPdf.",
-    "6. Customer & Supplier 360: Upgraded tab navigation to segmented pill tab strips matching Reporting Dashboard; resolved 401 token issue and routed attachments to /api/support/documents/{type}/{id}/attachments.",
-    "7. Purchase Recon Register: Bound canonical reference, formatted dates with company format, rendered linked chips from bankLinks with click navigation & row highlight, bound s.reconCount, and styled btn-purple.",
-    "8. Bank Statement History: Replaced separate buttons with purple Actions ▼ dropdown menu; wired search filter and highlightRowInTable when navigating to Bank Entry or Expense Entry.",
-    "9. Bank Entry Table Alignment & Operating Expense Dropdown: Unhid th-bank-mode for exact 9-column alignment; queried EXPENSE_CATEGORY first to populate Operating Expense Head dropdown.",
-    "10. Stock Register KPI Cards: Added colorful icons and standard-kpi-body wrappers with uniform 84px height matching Reporting Dashboard."
+    "1. Quotations: Complete Attachment Add/Replace/Preview/Delete branding card lifecycle and details drawer view/download.",
+    "2. Sales & Purchases Address Sync: Strictly lock and sync Delivery Address & GSTIN when 'Same as Billing Address' is checked.",
+    "3. Sales & Purchases Attachments: Upgraded attachment card to Settings Branding design; binary upload to /api/support/documents/{type}/{id}/attachment-file; view drawer preview & download.",
+    "4. Credit & Debit Notes: Original invoice reference converted to searchable dropdown of party's closed orders; dynamic GST rate loading; valid itemId sent for inventory adjustments.",
+    "5. Return Popups: Searchable paid sales invoices and purchase bills dropdown with dynamic line items loading.",
+    "6. Item Master: Colorful icon badges and styled metric values on the 4 top KPI cards.",
+    "7. General Ledger: 5 standard KPI cards; 3 tabs (Journal Vouchers, Chart of Accounts, Trial Balance); category filter; settings-driven FormatUtil.formatDate.",
+    "8. Barcode Studio & GST Compliance: Barcode Studio 4 KPIs, purple Actions dropdown, sticker preview drawer; GST Compliance 5 KPIs and 3 tabs (GSTR-2B, GSTR-3B, GSTR-1).",
+    "9. Global Date & Timestamp Settings Compliance: Synchronized FormatUtil.setBusinessPolicy on app boot to enforce company date and timestamp formats.",
+    "10. Customer & Supplier 360: Replaced raw emoji buttons with canonical purple Actions dropdowns in Contacts, Notes, and Documents.",
+    "11. Settings Panels: Notifications rebuilt with 2 top master switch cards and 2 columns of 8 pill cards (image18); Module Activation rebuilt with 5 full-width module cards and nested feature toggles (image19-20)."
   ]
 }

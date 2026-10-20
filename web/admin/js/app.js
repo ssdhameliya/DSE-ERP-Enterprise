@@ -279,13 +279,17 @@ window.App = (function() {
       if (window.AuthService.isAuthenticated()) {
         try {
           if (window.ApiService && window.FormatUtil) {
-            const companySettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+            let companySettings = null;
+            try {
+              companySettings = await window.ApiService.get('/api/settings/company');
+            } catch (_) {
+              companySettings = await window.ApiService.get('/api/support/settings?prefix=company.');
+            }
             if (companySettings) {
-              window.FormatUtil.setBusinessPolicy(
-                companySettings['company.dateFormat'],
-                companySettings['company.timeFormat'],
-                companySettings['company.timeZone']
-              );
+              const dFmt = companySettings.dateFormat || companySettings['company.dateFormat'];
+              const tFmt = companySettings.timeFormat || companySettings['company.timeFormat'];
+              const tz = companySettings.timeZone || companySettings['company.timeZone'];
+              window.FormatUtil.setBusinessPolicy(dFmt, tFmt, tz);
             }
           }
         } catch (e) {

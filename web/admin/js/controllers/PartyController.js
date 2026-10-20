@@ -1100,9 +1100,16 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted);">${c.email || '-'}</td>
           <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditContactModal("CUSTOMER", ${JSON.stringify(c).replace(/'/g, "&apos;")})' title="Edit Contact" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteContact("CUSTOMER", ${c.id}, ${c.rowVersion || 0})' title="Delete Contact" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('ccontact', ${c.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="ccontact-action-menu-${c.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:170px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.openEditContactModal("CUSTOMER", ${JSON.stringify(c).replace(/'/g, "&apos;")})'><span style="margin-right:8px;">✏️</span> Edit Contact</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deleteContact("CUSTOMER", ${c.id}, ${c.rowVersion || 0})'><span style="margin-right:8px;">🗑️</span> Delete Contact</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1127,9 +1134,16 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">${fmtTimestamp(n.updatedAt || n.createdAt)}</td>
           <td style="color:var(--cyan); font-weight:600;">${n.updatedBy || n.createdBy || 'Admin'}</td>
           <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditNoteModal("CUSTOMER", ${JSON.stringify(n).replace(/'/g, "&apos;")})' title="Edit Note" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteNote("CUSTOMER", ${n.id}, ${n.rowVersion || 0})' title="Delete Note" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('cnote', ${n.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="cnote-action-menu-${n.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:170px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.openEditNoteModal("CUSTOMER", ${JSON.stringify(n).replace(/'/g, "&apos;")})'><span style="margin-right:8px;">✏️</span> Edit Note</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deleteNote("CUSTOMER", ${n.id}, ${n.rowVersion || 0})'><span style="margin-right:8px;">🗑️</span> Delete Note</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1154,9 +1168,16 @@ window.PartyController = (function() {
           <td style="font-weight:600; color:var(--cyan);">📄 ${d.fileName || d.name || 'Document'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${fmtTimestamp(d.createdAt)}</td>
           <td style="color:var(--text-main);">${d.createdBy || 'Admin'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.previewPartyDocument("CUSTOMER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")' title="Download / Preview" style="padding:2px 8px; font-size:0.75rem;">📥</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deletePartyDocument("CUSTOMER", ${id}, ${d.id})' title="Delete Document" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('cdoc', ${d.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="cdoc-action-menu-${d.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.previewPartyDocument("CUSTOMER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")'><span style="margin-right:8px;">📥</span> Download / Preview</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deletePartyDocument("CUSTOMER", ${id}, ${d.id})'><span style="margin-right:8px;">🗑️</span> Delete Document</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1380,9 +1401,16 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted);">${c.email || '-'}</td>
           <td style="text-align:center;">${c.primary ? '<span class="pill-badge pill-success">PRIMARY</span>' : '<span class="pill-badge pill-neutral">SECONDARY</span>'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${c.notes || '-'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditContactModal("SUPPLIER", ${JSON.stringify(c).replace(/'/g, "&apos;")})' title="Edit Contact" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteContact("SUPPLIER", ${c.id}, ${c.rowVersion || 0})' title="Delete Contact" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('scontact', ${c.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="scontact-action-menu-${c.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:170px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.openEditContactModal("SUPPLIER", ${JSON.stringify(c).replace(/'/g, "&apos;")})'><span style="margin-right:8px;">✏️</span> Edit Contact</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deleteContact("SUPPLIER", ${c.id}, ${c.rowVersion || 0})'><span style="margin-right:8px;">🗑️</span> Delete Contact</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1407,9 +1435,16 @@ window.PartyController = (function() {
           <td style="color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">${fmtTimestamp(n.updatedAt || n.createdAt)}</td>
           <td style="color:var(--cyan); font-weight:600;">${n.updatedBy || n.createdBy || 'Admin'}</td>
           <td style="color:var(--text-main); font-weight:500;">${n.note || '-'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.openEditNoteModal("SUPPLIER", ${JSON.stringify(n).replace(/'/g, "&apos;")})' title="Edit Note" style="padding:2px 8px; font-size:0.75rem;">✏️</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deleteNote("SUPPLIER", ${n.id}, ${n.rowVersion || 0})' title="Delete Note" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('snote', ${n.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="snote-action-menu-${n.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:170px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.openEditNoteModal("SUPPLIER", ${JSON.stringify(n).replace(/'/g, "&apos;")})'><span style="margin-right:8px;">✏️</span> Edit Note</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deleteNote("SUPPLIER", ${n.id}, ${n.rowVersion || 0})'><span style="margin-right:8px;">🗑️</span> Delete Note</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1434,9 +1469,16 @@ window.PartyController = (function() {
           <td style="font-weight:600; color:var(--cyan);">📄 ${d.fileName || d.name || 'Document'}</td>
           <td style="color:var(--text-muted); font-size:0.75rem;">${fmtTimestamp(d.createdAt)}</td>
           <td style="color:var(--text-main);">${d.createdBy || 'Admin'}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.previewPartyDocument("SUPPLIER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")' title="Download / Preview" style="padding:2px 8px; font-size:0.75rem;">📥</button>
-            <button class="btn btn-secondary btn-sm" onclick='window.PartyController.deletePartyDocument("SUPPLIER", ${id}, ${d.id})' title="Delete Document" style="padding:2px 8px; font-size:0.75rem; color:var(--red);">🗑️</button>
+          <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.PartyController.togglePartyActionMenu('sdoc', ${d.id}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                ::: Actions
+              </button>
+              <div id="sdoc-action-menu-${d.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick='window.PartyController.previewPartyDocument("SUPPLIER", ${id}, ${d.id}, "${encodeURIComponent(d.fileName || "")}")'><span style="margin-right:8px;">📥</span> Download / Preview</div>
+                <div class="action-menu-item" style="color:var(--red);" onclick='window.PartyController.deletePartyDocument("SUPPLIER", ${id}, ${d.id})'><span style="margin-right:8px;">🗑️</span> Delete Document</div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');

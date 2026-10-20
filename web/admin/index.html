@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.35.06">
+  <link rel="stylesheet" href="css/app.css?v=10.0.36.01">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -1543,6 +1543,23 @@
                         id="side-trans-person">Not Applicable</span>
                     </div>
                   </div>
+                <!-- Attached Document Section -->
+                <div id="side-attachment-section" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; display: none;">
+                  <div style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span>📎</span> Attached Document
+                    </div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                      <span style="font-size: 1.1rem; color: #a855f7;">📄</span>
+                      <span id="side-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.previewCurrentDrawerAttachment()">👁 Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Section 4: Quick Actions (Screenshot 4) -->
@@ -2167,30 +2184,34 @@
                 </div>
               </div>
 
-              <!-- Card 3: Notes & Attachment -->
+              <!-- Card 3: Notes & Attachment matching Settings Branding style -->
               <div class="editor-card">
                 <div class="editor-card-header">
                   <span>&#128203; Notes &amp; Attachment</span>
                 </div>
                 <textarea id="ws-invoice-notes" class="form-input" placeholder="Optional invoice note..."
                   style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
-                <div
-                  style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-dim); padding-top: 4px;">
-                  <span id="ws-attachment-name"
-                    style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;"
-                    title="No attachment selected">No attachment</span>
-                  <div style="display: flex; gap: 4px;">
-                    <input type="file" id="ws-attachment-file-input" style="display: none;"
-                      onchange="window.SalesController.handleAttachmentFileSelected(this)">
-                    <button type="button" id="ws-btn-attach-add" class="btn btn-secondary"
-                      style="padding: 2px 7px; font-size: 0.7rem;"
-                      onclick="document.getElementById('ws-attachment-file-input').click()">+ Add</button>
-                    <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary"
-                      style="padding: 2px 7px; font-size: 0.7rem;" disabled
-                      onclick="window.SalesController.previewWorkspaceAttachment()">&#128065;</button>
-                    <button type="button" id="ws-btn-attach-remove" class="btn btn-danger"
-                      style="padding: 2px 7px; font-size: 0.7rem;" disabled
-                      onclick="window.SalesController.removeWorkspaceAttachment()">&#128465;</button>
+
+                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">📎</span>
+                      <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
+                    </div>
+                    <span id="ws-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
+                  </div>
+                  <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Signed invoice copy, delivery challan, or PO scan &bull; Max 10MB</div>
+
+                  <div id="ws-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
+                    <div id="ws-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
+                    <div id="ws-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
+                    <div id="ws-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
+                  </div>
+                  <input type="file" id="ws-attachment-file-input" style="display:none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" id="ws-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('ws-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
+                    <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewWorkspaceAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
+                    <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeWorkspaceAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>
               </div>
@@ -2744,6 +2765,22 @@
                     class="drawer-field-value" id="qd-source">-</span></div>
                 <div class="drawer-field-row"><span class="drawer-field-label">Remarks:</span><span
                     class="drawer-field-value" id="qd-remarks">-</span></div>
+                <!-- Attached Document Section -->
+                <div id="qd-attachment-section" style="display:none; border:1px solid rgba(168,85,247,0.25); background:rgba(168,85,247,0.05); border-radius:6px; padding:10px; margin-top:4px;">
+                  <div style="font-size:0.74rem; font-weight:700; color:#c084fc; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:flex; align-items:center; gap:6px;"><span>📎</span> Attached Document</span>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                      <span style="font-size:1.1rem; color:#a855f7;">📄</span>
+                      <span id="qd-attachment-name" style="font-size:0.75rem; color:var(--text-main); font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="">-</span>
+                    </div>
+                    <div style="display:flex; gap:4px; flex-shrink:0;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">👁 Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="drawer-footer"
                 style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
@@ -2818,6 +2855,30 @@
               <label class="form-label">Quotation Remarks / Terms</label>
               <textarea id="qe-remarks" class="form-input" rows="2"
                 placeholder="Enter terms of delivery, payment, or warranty notes..."></textarea>
+            </div>
+
+            <!-- Settings Branding Style Quotation Attachment Card -->
+            <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-top:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="color:#c084fc;">📎</span>
+                  <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Attachment Document</div>
+                </div>
+                <span id="qe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
+              </div>
+              <div style="font-size:0.7rem; color:#64748b; margin-bottom:8px;">Proposal specification, technical drawing, or customer RFQ scan &bull; Max 10MB</div>
+
+              <div id="qe-attachment-dropzone" style="min-height:75px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
+                <div id="qe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
+                <div id="qe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
+                <div id="qe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, DOC, XLS, PNG, JPG</div>
+              </div>
+              <input type="file" id="qe-attachment-file-input" style="display:none;" onchange="window.QuotationController.handleAttachmentFileSelected(this)">
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="qe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('qe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+ Add / Replace</button>
+                <button type="button" id="qe-btn-attach-preview" class="btn btn-secondary" onclick="window.QuotationController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>👁 Preview</button>
+                <button type="button" id="qe-btn-attach-remove" class="btn btn-secondary" onclick="window.QuotationController.removeEditorAttachment()" style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
+              </div>
             </div>
           </div>
 
@@ -3254,6 +3315,25 @@
                 <div class="drawer-field-row"><span class="drawer-field-label">Notes:</span><span
                     class="drawer-field-value" id="pd-notes">-</span></div>
 
+                <!-- Attached Document Section -->
+                <div id="pd-attachment-section" style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 4px; display: none;">
+                  <div style="font-weight: 700; font-size: 0.82rem; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span>📎</span> Attached Document
+                    </div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                      <span style="font-size: 1.1rem; color: #a855f7;">📄</span>
+                      <span id="pd-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">👁 Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                    </div>
+                  </div>
+                </div>
+
                 <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
                 <div style="font-weight:700; font-size:0.82rem; color:var(--cyan); margin-bottom:6px;">Line Items</div>
                 <div
@@ -3580,30 +3660,34 @@
                 </div>
               </div>
 
-              <!-- Card 3: Notes & Attachment matching desktop Purchase.fxml -->
+              <!-- Card 3: Notes & Attachment matching Settings Branding style -->
               <div class="editor-card">
                 <div class="editor-card-header">
                   <span>&#128203; Notes &amp; Attachment</span>
                 </div>
                 <textarea id="pe-notes" class="form-input" placeholder="Inward inspection notes..."
                   style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
-                <div
-                  style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-dim); padding-top: 4px;">
-                  <span id="pe-attachment-name"
-                    style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;"
-                    title="No attachment selected">No attachment</span>
-                  <div style="display: flex; gap: 4px;">
-                    <input type="file" id="pe-attachment-file-input" style="display: none;"
-                      onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
-                    <button type="button" id="pe-btn-attach-add" class="btn btn-secondary"
-                      style="padding: 2px 7px; font-size: 0.7rem;"
-                      onclick="document.getElementById('pe-attachment-file-input').click()">+ Add / Replace</button>
-                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary"
-                      style="padding: 2px 7px; font-size: 0.7rem;" disabled
-                      onclick="window.PurchaseController.previewAttachment()">&#128065;</button>
-                    <button type="button" id="pe-btn-attach-remove" class="btn btn-danger"
-                      style="padding: 2px 7px; font-size: 0.7rem;" disabled
-                      onclick="window.PurchaseController.removeAttachment()">&#128465;</button>
+
+                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">📎</span>
+                      <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
+                    </div>
+                    <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
+                  </div>
+                  <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Vendor bill copy, physical receipt scan, or GRN &bull; Max 10MB</div>
+
+                  <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
+                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
+                    <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
+                    <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
+                  </div>
+                  <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
+                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
+                    <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>
               </div>
@@ -3952,37 +4036,49 @@
           <!-- KPI Cards Desktop Parity -->
           <div class="kpi-grid"
             style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;">
-            <div class="standard-kpi-card kpi-blue">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">TOTAL ITEMS</span>
-                <span class="metric-trend-pill trend-neutral">All</span>
+            <div class="standard-kpi-card kpi-blue" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">📦</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL ITEMS</span>
+                  <span class="metric-trend-pill trend-neutral">Active</span>
+                </div>
+                <div class="metric-value" id="item-kpi-total">0</div>
+                <div class="metric-note">Total items active</div>
               </div>
-              <div class="metric-value" id="item-kpi-total">0</div>
-              <div class="metric-note">Catalog records</div>
             </div>
-            <div class="standard-kpi-card kpi-purple">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">CATEGORIES</span>
-                <span class="metric-trend-pill trend-info">Groups</span>
+            <div class="standard-kpi-card kpi-purple" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">🏷️</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">CATEGORIES</span>
+                  <span class="metric-trend-pill trend-info">Tracked</span>
+                </div>
+                <div class="metric-value" id="item-kpi-categories">0</div>
+                <div class="metric-note">Categories tracked</div>
               </div>
-              <div class="metric-value" id="item-kpi-categories">0</div>
-              <div class="metric-note">Active item groups</div>
             </div>
-            <div class="standard-kpi-card kpi-orange">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">LOW STOCK</span>
-                <span class="metric-trend-pill trend-warning">Alert</span>
+            <div class="standard-kpi-card kpi-orange" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">⚠️</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">LOW STOCK</span>
+                  <span class="metric-trend-pill trend-warning">Alert</span>
+                </div>
+                <div class="metric-value" id="item-kpi-low-stock" style="color:var(--orange);">0</div>
+                <div class="metric-note">Low stock alerts</div>
               </div>
-              <div class="metric-value" id="item-kpi-low-stock" style="color:var(--orange);">0</div>
-              <div class="metric-note">At or below minimum</div>
             </div>
-            <div class="standard-kpi-card kpi-green">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="metric-label">CATALOG VALUE</span>
-                <span class="metric-trend-pill trend-positive">Value</span>
+            <div class="standard-kpi-card kpi-green" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">💰</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL VALUATION</span>
+                  <span class="metric-trend-pill trend-positive">Rupees</span>
+                </div>
+                <div class="metric-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
+                <div class="metric-note">Stock assets valuation</div>
               </div>
-              <div class="metric-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
-              <div class="metric-note">Opening stock valuation</div>
             </div>
           </div>
 
@@ -5531,159 +5627,328 @@
               <p>Audited ledger accounts, journal entries, balanced debit/credit transactions, and running balances</p>
             </div>
             <div class="view-header-actions" style="display:flex; gap:10px;">
+              <button class="btn btn-primary" onclick="window.FinanceController.openNewJournalDialog()">
+                <span>&#10133;</span> New Journal Voucher
+              </button>
               <button class="btn btn-secondary" onclick="window.FinanceController.exportLedgerStatement()">
                 <span>&#128196;</span> Export Statement
               </button>
-              <button class="btn btn-primary" onclick="window.FinanceController.loadGeneralLedger()">
-                <span>&#128260;</span> Refresh Ledger
+              <button class="btn btn-secondary" onclick="window.FinanceController.loadGeneralLedger()">
+                <span>&#128260;</span> Refresh
               </button>
             </div>
           </div>
 
-          <!-- 4 KPI Summary Cards matching desktop -->
-          <div class="kpi-grid"
-            style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--yellow);">TOTAL
-                  DEBITS</span></div>
-              <div class="kpi-value" id="gl-kpi-debits" style="font-size: 1.25rem; color: var(--yellow);">&#8377; 0.00
+          <!-- 5 KPI Summary Cards matching Desktop GeneralLedger.fxml -->
+          <div class="standard-kpi-row"
+            style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div class="standard-kpi-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);">
+                <span style="font-size:1.1rem;">&#128188;</span>
               </div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Total money inward / debited</div>
-            </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--accent); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--accent);">TOTAL
-                  CREDITS</span></div>
-              <div class="kpi-value" id="gl-kpi-credits" style="font-size: 1.25rem; color: var(--accent);">&#8377; 0.00
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL ASSETS</span>
+                  <span class="metric-trend-pill trend-positive">Assets</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-assets" style="color:var(--cyan);">&#8377; 0.00</div>
+                <div class="metric-note">Bank + Debtors + Stock</div>
               </div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Total money outward / credited</div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem; color: var(--cyan);">NET LEDGER
-                  BALANCE</span></div>
-              <div class="kpi-value" id="gl-kpi-net" style="font-size: 1.25rem; color: var(--cyan);">&#8377; 0.00 Dr
+            <div class="standard-kpi-card kpi-orange">
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:#fb923c; border:1px solid rgba(249,115,22,0.3);">
+                <span style="font-size:1.1rem;">&#9888;&#65039;</span>
               </div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Closing net position</div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL LIABILITIES</span>
+                  <span class="metric-trend-pill trend-warning">Due</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-liabilities" style="color:var(--orange);">&#8377; 0.00</div>
+                <div class="metric-note">Payables + GST Due</div>
+              </div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label"
-                  style="font-size: 0.68rem; color: var(--purple-accent);">JOURNAL POSTINGS</span></div>
-              <div class="kpi-value" id="gl-kpi-count" style="font-size: 1.25rem; color: var(--purple-accent);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Active ledger records</div>
+            <div class="standard-kpi-card kpi-green">
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+                <span style="font-size:1.1rem;">&#128200;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">OPERATING REVENUE</span>
+                  <span class="metric-trend-pill trend-positive">Sales</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-revenue" style="color:var(--green);">&#8377; 0.00</div>
+                <div class="metric-note">Net Sales Turnover</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-red">
+              <div class="standard-kpi-icon" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                <span style="font-size:1.1rem;">&#128722;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL EXPENSES</span>
+                  <span class="metric-trend-pill trend-negative">Cost</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-expenses" style="color:var(--red);">&#8377; 0.00</div>
+                <div class="metric-note">Purchases + Overhead</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-teal">
+              <div class="standard-kpi-icon" style="background:rgba(20,184,166,0.15); color:#2dd4bf; border:1px solid rgba(20,184,166,0.3);">
+                <span style="font-size:1.1rem;">&#128176;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">NET PROFIT / LOSS</span>
+                  <span class="metric-trend-pill trend-info">Net</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-net" style="color:var(--cyan);">&#8377; 0.00</div>
+                <div class="metric-note">Net Operating Margin</div>
+              </div>
+            </div>
+          </div>
+          <!-- Compatibility hidden elements for legacy hooks -->
+          <div style="display:none;">
+            <span id="gl-kpi-debits">&#8377; 0.00</span>
+            <span id="gl-kpi-credits">&#8377; 0.00</span>
+            <span id="gl-kpi-count">0</span>
+          </div>
+
+          <!-- 3-Tab Navigation Bar matching Desktop GeneralLedger.fxml -->
+          <div class="tabs-nav" style="display:flex; gap:6px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px;">
+            <button class="tab-btn active" id="tab-btn-gl-journals" onclick="window.FinanceController.switchGlTab('journals')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-main); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:8px;">
+              <span>&#128211;</span> Journal Vouchers
+            </button>
+            <button class="tab-btn" id="tab-btn-gl-accounts" onclick="window.FinanceController.switchGlTab('accounts')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#128195;</span> Chart of Accounts
+            </button>
+            <button class="tab-btn" id="tab-btn-gl-trial" onclick="window.FinanceController.switchGlTab('trial')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#9878;&#65039;</span> Trial Balance
+            </button>
+          </div>
+
+          <!-- TAB 1: JOURNAL VOUCHERS -->
+          <div id="gl-panel-journals" class="gl-tab-panel">
+            <!-- Filter Toolbar matching GeneralLedger.fxml -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:220px; position:relative;">
+                <input type="text" id="gl-search-input" class="form-input"
+                  placeholder="&#128269; Search voucher no, narration, reference..."
+                  oninput="window.FinanceController.filterJournals()">
+              </div>
+              <div style="width:160px;">
+                <select id="gl-type-filter" class="form-select" onchange="window.FinanceController.filterJournals()">
+                  <option value="All Types">All Types</option>
+                  <option value="SALES">SALES</option>
+                  <option value="PURCHASE">PURCHASE</option>
+                  <option value="RECEIPT">RECEIPT</option>
+                  <option value="PAYMENT">PAYMENT</option>
+                </select>
+              </div>
+              <div style="width:170px;">
+                <select id="gl-account-select" class="form-select" onchange="window.FinanceController.filterJournals()">
+                  <option value="">All Categories</option>
+                  <option value="ASSET">ASSET</option>
+                  <option value="LIABILITY">LIABILITY</option>
+                  <option value="REVENUE">REVENUE</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                </select>
+              </div>
+              <div style="width:140px;">
+                <input type="date" id="gl-from-date" class="form-input"
+                  onchange="window.FinanceController.filterJournals()">
+              </div>
+              <div style="width:140px;">
+                <input type="date" id="gl-to-date" class="form-input"
+                  onchange="window.FinanceController.filterJournals()">
+              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.resetGlFilters()">Reset Filters</button>
+            </div>
+
+            <!-- General Ledger Register Workspace (GeneralLedger.fxml Parity) -->
+            <div class="register-workspace" id="gl-workspace">
+              <div class="register-table-panel data-panel" style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:130px;">VOUCHER NO.</th>
+                      <th style="width:110px;">DATE</th>
+                      <th style="width:90px;">TYPE</th>
+                      <th style="width:120px;">REF DOCUMENT</th>
+                      <th>NARRATION</th>
+                      <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
+                      <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
+                      <th style="width:90px; text-align:center;">STATUS</th>
+                      <th style="width:100px; text-align:center;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ledger-table-tbody">
+                    <tr>
+                      <td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                          class="loading-spinner"></span> Loading General Ledger journals...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Inline Docked GL Entry Detail Drawer -->
+              <div id="gl-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+                <div class="drawer-header">
+                  <div>
+                    <h3 style="margin:0; font-size:1rem;" id="gld-voucher">Posting Details</h3>
+                    <span id="gld-date" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()"
+                    style="padding:2px 8px;">&times;</button>
+                </div>
+                <div class="drawer-body">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ENTRY TYPE</span>
+                    <span id="gld-type" class="pill-badge pill-neutral">JOURNAL</span>
+                  </div>
+                  <div class="drawer-field-grid"
+                    style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Debit:</div>
+                      <div id="gld-debit"
+                        style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">&#8377; 0.00
+                      </div>
+                    </div>
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Credit:</div>
+                      <div id="gld-credit"
+                        style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">&#8377; 0.00</div>
+                    </div>
+                  </div>
+                  <div
+                    style="padding:10px 12px; background:rgba(56,189,248,0.06); border-radius:6px; border:1px solid rgba(56,189,248,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; color:var(--cyan); font-weight:700;">AUDIT CHECK:</span>
+                    <span id="gld-running-bal" style="font-weight:800; color:var(--green); font-size:0.85rem;">BALANCED (Dr = Cr)</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
+                    <div style="display:flex; justify-content:space-between;"><span
+                        style="color:var(--text-muted);">Dr. Account:</span><span id="gld-account"
+                        style="font-weight:600;">-</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span
+                        style="color:var(--text-muted);">Cr. Account:</span><span id="gld-cr-account"
+                        style="font-weight:600; color:var(--text-muted);">-</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Ref
+                        Document:</span><span id="gld-ref"
+                        style="font-family:monospace; font-weight:600; color:var(--cyan);">-</span></div>
+                    <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+                      <span style="color:var(--text-muted);">Narration / Particulars:</span>
+                      <span id="gld-narration"
+                        style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                  <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerGlOpenSource()">&#128269;
+                    Open Source</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.FinanceController.drawerGlExportLine()">&#128196; Line Audit</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()">&#10006;
+                    Close</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Filter Toolbar matching GeneralLedger.fxml -->
-          <div class="filter-toolbar"
-            style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
-            <div style="flex:1; min-width:260px;">
-              <select id="gl-account-select" class="form-select"
-                onchange="window.FinanceController.loadGeneralLedger()">
-                <option value="">All Accounts (Consolidated General Ledger)</option>
-              </select>
+          <!-- TAB 2: CHART OF ACCOUNTS -->
+          <div id="gl-panel-accounts" class="gl-tab-panel" style="display:none;">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px; position:relative;">
+                <input type="text" id="coa-search-input" class="form-input"
+                  placeholder="&#128269; Search account code, name, category..."
+                  oninput="window.FinanceController.filterAccounts()">
+              </div>
+              <div style="width:200px;">
+                <select id="coa-category-filter" class="form-select" onchange="window.FinanceController.filterAccounts()">
+                  <option value="All Categories">All Categories</option>
+                  <option value="ASSET">ASSET</option>
+                  <option value="LIABILITY">LIABILITY</option>
+                  <option value="REVENUE">REVENUE</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.resetCoaFilters()">Reset Filters</button>
             </div>
-            <div style="width:140px;">
-              <input type="date" id="gl-from-date" class="form-input"
-                onchange="window.FinanceController.loadGeneralLedger()">
-            </div>
-            <div style="width:140px;">
-              <input type="date" id="gl-to-date" class="form-input"
-                onchange="window.FinanceController.loadGeneralLedger()">
-            </div>
-            <div style="flex:1; min-width:180px; position:relative;">
-              <input type="text" id="gl-search-input" class="form-input"
-                placeholder="&#128269; Search narration, ref, voucher..."
-                oninput="window.FinanceController.loadGeneralLedger()">
-            </div>
-            <button class="btn btn-secondary" onclick="window.FinanceController.loadGeneralLedger()">Reset
-              Filters</button>
-          </div>
 
-          <!-- General Ledger Register Workspace (GeneralLedger.fxml Parity) -->
-          <div class="register-workspace" id="gl-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+            <div class="data-panel" style="overflow-x:auto;">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th style="width:130px;">VOUCHER NO.</th>
-                    <th style="width:110px;">DATE</th>
-                    <th style="width:90px;">TYPE</th>
-                    <th style="width:120px;">REF DOCUMENT</th>
-                    <th>ACCOUNT / PARTY</th>
-                    <th>NARRATION / REMARKS</th>
-                    <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
-                    <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
-                    <th style="width:130px; text-align:right;">RUNNING BAL (&#8377;)</th>
-                    <th style="width:100px; text-align:center;">ACTIONS</th>
+                    <th style="width:110px;">A/C CODE</th>
+                    <th>ACCOUNT NAME</th>
+                    <th style="width:130px;">CATEGORY</th>
+                    <th style="width:160px;">SUBTYPE</th>
+                    <th style="width:140px; text-align:right;">OPENING (&#8377;)</th>
+                    <th style="width:140px; text-align:right;">BALANCE (&#8377;)</th>
+                    <th style="width:100px; text-align:center;">ACTIVE</th>
                   </tr>
                 </thead>
-                <tbody id="ledger-table-tbody">
+                <tbody id="coa-table-tbody">
                   <tr>
-                    <td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);"><span
-                        class="loading-spinner"></span> Loading General Ledger...</td>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading Chart of Accounts...</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+          </div>
 
-            <!-- Inline Docked GL Entry Detail Drawer -->
-            <div id="gl-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
-              <div class="drawer-header">
-                <div>
-                  <h3 style="margin:0; font-size:1rem;" id="gld-voucher">Posting Details</h3>
-                  <span id="gld-date" style="font-size:0.75rem; color:var(--text-muted);">-</span>
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()"
-                  style="padding:2px 8px;">&times;</button>
+          <!-- TAB 3: TRIAL BALANCE -->
+          <div id="gl-panel-trial" class="gl-tab-panel" style="display:none;">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px; position:relative;">
+                <input type="text" id="tb-search-input" class="form-input"
+                  placeholder="&#128269; Search account head, code, type..."
+                  oninput="window.FinanceController.filterTrialBalance()">
               </div>
-              <div class="drawer-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ENTRY TYPE</span>
-                  <span id="gld-type" class="pill-badge pill-neutral">JOURNAL</span>
-                </div>
-                <div class="drawer-field-grid"
-                  style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                  <div
-                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Debit:</div>
-                    <div id="gld-debit"
-                      style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">&#8377; 0.00
-                    </div>
-                  </div>
-                  <div
-                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
-                    <div style="color:var(--text-muted); font-size:0.68rem;">Credit:</div>
-                    <div id="gld-credit"
-                      style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">&#8377; 0.00</div>
-                  </div>
-                </div>
-                <div
-                  style="padding:10px 12px; background:rgba(56,189,248,0.06); border-radius:6px; border:1px solid rgba(56,189,248,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.75rem; color:var(--cyan); font-weight:700;">RUNNING BALANCE:</span>
-                  <span id="gld-running-bal" style="font-weight:800; color:var(--cyan); font-size:1.05rem;">&#8377; 0.00
-                    Dr</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
-                  <div style="display:flex; justify-content:space-between;"><span
-                      style="color:var(--text-muted);">Account / Party:</span><span id="gld-account"
-                      style="font-weight:600;">-</span></div>
-                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Ref
-                      Document:</span><span id="gld-ref"
-                      style="font-family:monospace; font-weight:600; color:var(--cyan);">-</span></div>
-                  <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
-                    <span style="color:var(--text-muted);">Narration / Particulars:</span>
-                    <span id="gld-narration"
-                      style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
-                  </div>
-                </div>
-              </div>
-              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerGlOpenSource()">&#128269;
-                  Open Source</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.FinanceController.drawerGlExportLine()">&#128196; Line Audit</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()">&#10006;
-                  Close</button>
-              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.exportTrialBalance()">
+                <span>&#128196;</span> Export Statement
+              </button>
+            </div>
+
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:100px;">CODE</th>
+                    <th>ACCOUNT HEAD</th>
+                    <th style="width:130px;">TYPE</th>
+                    <th style="width:130px; text-align:right;">OPENING (&#8377;)</th>
+                    <th style="width:130px; text-align:right;">DEBIT (&#8377;)</th>
+                    <th style="width:130px; text-align:right;">CREDIT (&#8377;)</th>
+                    <th style="width:140px; text-align:right;">CLOSING (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="trial-balance-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading Trial Balance...</td>
+                  </tr>
+                </tbody>
+                <tfoot id="trial-balance-tfoot" style="background:rgba(255,255,255,0.03); font-weight:700; border-top:2px solid var(--border-subtle);">
+                  <tr>
+                    <td colspan="4" style="text-align:right; color:var(--text-muted); font-size:0.85rem;">TOTALS &amp; AUDIT CHECK:</td>
+                    <td id="tb-total-debit" style="text-align:right; color:var(--yellow); font-size:0.9rem;">&#8377; 0.00</td>
+                    <td id="tb-total-credit" style="text-align:right; color:var(--green); font-size:0.9rem;">&#8377; 0.00</td>
+                    <td id="tb-status-check" style="text-align:right;"><span class="pill-badge pill-success" style="font-size:0.75rem;">BALANCED</span></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
@@ -7386,142 +7651,188 @@
                 <span style="font-size:1.6rem;">&#128207;</span>
                 <div>
                   <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Barcode &amp; QR Label Studio</h1>
-                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Generate Code-128 barcodes,
-                    thermal adhesive stickers, and A4 multi-column sheets</p>
+                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Generate Code-128 barcodes, thermal adhesive stickers, and A4 multi-column sheets</p>
                 </div>
               </div>
             </div>
-            <div class="view-actions" style="display:flex; gap:8px;">
+            <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
               <input type="text" id="txtScannerTest" class="form-input" placeholder="Scan USB Barcode Here to Test..."
-                style="width:240px; font-family:monospace;">
-              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printOrderDispatchLabel()">Order
-                Dispatch Label</button>
-              <button class="btn btn-primary" onclick="window.BarcodeStudioController.printThermal()">Print Thermal
-                Labels</button>
-              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printA4Sheet()">Print A4
-                Sheet</button>
+                style="width:250px; font-family:monospace;">
+              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printOrderDispatchLabel()">Order Dispatch Label</button>
+              <button class="btn btn-primary" onclick="window.BarcodeStudioController.printThermal()">Print Thermal Labels</button>
+              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printA4Sheet()">Print A4 Sheet</button>
             </div>
           </div>
 
-          <!-- 4 KPIS -->
-          <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
+          <!-- 4 KPIS matching BarcodeStudio.fxml -->
+          <div class="standard-kpi-row" style="display:grid; grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
             <div class="standard-kpi-card kpi-blue">
-              <div class="metric-label">CATALOG ITEMS</div>
-              <div id="bc-kpi-total-items" class="metric-value">0</div>
-              <div class="metric-note">Item master catalog</div>
+              <div class="standard-kpi-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);">
+                <span style="font-size:1.1rem;">&#128230;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">CATALOG ITEMS</span>
+                  <span class="metric-trend-pill trend-neutral">Catalog</span>
+                </div>
+                <div id="bc-kpi-total-items" class="metric-value" style="color:var(--cyan);">0</div>
+                <div class="metric-note">Item master catalog</div>
+              </div>
             </div>
             <div class="standard-kpi-card kpi-green">
-              <div class="metric-label">BARCODE ENABLED</div>
-              <div id="bc-kpi-mapped-items" class="metric-value">0</div>
-              <div class="metric-note">Ready for scan billing</div>
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+                <span style="font-size:1.1rem;">&#10004;&#65039;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">BARCODE ENABLED</span>
+                  <span class="metric-trend-pill trend-positive">Active</span>
+                </div>
+                <div id="bc-kpi-mapped-items" class="metric-value" style="color:var(--green);">0</div>
+                <div class="metric-note">Ready for scan billing</div>
+              </div>
             </div>
             <div class="standard-kpi-card kpi-orange">
-              <div class="metric-label">LABEL FORMAT</div>
-              <div id="bc-kpi-format" class="metric-value">50 &times; 25 mm</div>
-              <div class="metric-note">Standard 2-inch thermal</div>
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:#fb923c; border:1px solid rgba(249,115,22,0.3);">
+                <span style="font-size:1.1rem;">&#128196;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">LABEL FORMAT</span>
+                  <span class="metric-trend-pill trend-warning">Format</span>
+                </div>
+                <div id="bc-kpi-format" class="metric-value" style="color:var(--orange);">50 &times; 25 mm</div>
+                <div class="metric-note">Standard 2-inch thermal</div>
+              </div>
             </div>
             <div class="standard-kpi-card kpi-purple">
-              <div class="metric-label">BARCODE ENGINE</div>
-              <div id="bc-kpi-engine" class="metric-value">Code-128 / ESC-POS</div>
-              <div class="metric-note">Vector SVG / High Density</div>
+              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3);">
+                <span style="font-size:1.1rem;">&#128424;&#65039;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">SELECTED COPIES</span>
+                  <span class="metric-trend-pill trend-info">Queue</span>
+                </div>
+                <div id="bc-kpi-selected-copies" class="metric-value" style="color:var(--purple-accent);">1</div>
+                <div class="metric-note">Labels in print queue</div>
+              </div>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:360px 1fr; gap:20px;">
-            <!-- LEFT: LABEL CUSTOMIZER -->
-            <div class="data-panel" style="padding:18px;">
-              <h3 style="margin:0 0 14px 0; font-size:1rem; font-weight:700;">Label Customizer</h3>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Select Item from Catalog</label>
-                <select id="bc-item-select" class="form-select"
-                  onchange="window.BarcodeStudioController.onItemSelect(this.value)">
-                  <option value="">-- Choose Item from Database --</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Barcode / SKU String</label>
-                <input type="text" id="bc-code-input" class="form-input" value="ITEM-001"
-                  oninput="window.BarcodeStudioController.renderBarcodePreview()">
-              </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Product Title</label>
-                <input type="text" id="bc-title-input" class="form-input" value="INDUSTRIAL FASTENER 12MM"
-                  oninput="window.BarcodeStudioController.renderBarcodePreview()">
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-                <div class="form-group">
-                  <label class="form-label">HSN Code</label>
-                  <input type="text" id="bc-hsn-input" class="form-input" value="7318"
-                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
+          <!-- Register Workspace with Items Table & Inline Label Preview Drawer -->
+          <div class="register-workspace" id="bc-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+              <!-- Search Toolbar -->
+              <div class="filter-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="flex:1; position:relative;">
+                  <input type="text" id="bc-search-input" class="form-input"
+                    placeholder="&#128269; Search items by code, name, category, or barcode..."
+                    oninput="window.BarcodeStudioController.filterItems(this.value)">
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Price (&#8377;)</label>
-                  <input type="text" id="bc-price-input" class="form-input" value="450.00"
-                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
-                </div>
+                <button class="btn btn-secondary" onclick="window.BarcodeStudioController.loadItems()">
+                  <span>&#128260;</span> Refresh
+                </button>
               </div>
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">Thermal Sticker Dimensions</label>
-                <select id="bc-size-select" class="form-select"
-                  onchange="window.BarcodeStudioController.renderBarcodePreview()">
-                  <option value="50x25" selected>50mm &times; 25mm (Standard 2-Inch)</option>
-                  <option value="38x25">38mm &times; 25mm (Compact Roll)</option>
-                  <option value="100x50">100mm &times; 50mm (Shipping Dispatch Box)</option>
-                </select>
-              </div>
-              <div style="margin-bottom:14px; display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.78rem; display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" id="bc-chk-company" checked
-                    onchange="window.BarcodeStudioController.renderBarcodePreview()"> Show Company Brand Name
-                </label>
-                <label style="font-size:0.78rem; display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" id="bc-chk-title" checked
-                    onchange="window.BarcodeStudioController.renderBarcodePreview()"> Show Product Title
-                </label>
-                <label style="font-size:0.78rem; display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" id="bc-chk-price" checked
-                    onchange="window.BarcodeStudioController.renderBarcodePreview()"> Show Selling Price
-                </label>
-                <label style="font-size:0.78rem; display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" id="bc-chk-hsn" checked
-                    onchange="window.BarcodeStudioController.renderBarcodePreview()"> Show HSN/SAC Code
-                </label>
-              </div>
-              <div class="form-group" style="margin-bottom:14px;">
-                <label class="form-label">Number of Copies to Print</label>
-                <input type="number" id="bc-copies-input" class="form-input" value="1" min="1" max="100">
-              </div>
+
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:130px;">ITEM CODE</th>
+                    <th>ITEM DESCRIPTION</th>
+                    <th style="width:150px;">CATEGORY</th>
+                    <th style="width:160px; font-family:monospace;">BARCODE / EAN</th>
+                    <th style="width:130px; text-align:right;">SELLING PRICE (&#8377;)</th>
+                    <th style="width:90px; text-align:center;">STOCK</th>
+                    <th style="width:120px; text-align:center;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="bc-items-table-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">
+                      <span class="loading-spinner"></span> Loading items for barcode labeling...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <!-- RIGHT: LIVE LABEL PREVIEW -->
-            <div class="data-panel"
-              style="padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.25);">
-              <h3 style="font-size:0.95rem; color:var(--text-muted); margin-bottom:20px;">Live Thermal Label Preview
-              </h3>
-              <div id="printable-barcode-area">
-                <div class="barcode-sticker" id="preview-barcode-sticker"
-                  style="background:#fff; color:#000; padding:10px 14px; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,0.4); text-align:center; width:260px; font-family:'Plus Jakarta Sans', Arial, sans-serif;">
-                  <div id="lbl-bc-company" style="font-weight:700; font-size:11px; letter-spacing:0.5px;">JASVI
-                    INDUSTRIES</div>
-                  <div id="lbl-bc-title" style="font-weight:600; font-size:9.5px; margin:2px 0;">INDUSTRIAL FASTENER
-                    12MM</div>
-                  <canvas id="barcode-canvas" class="barcode-canvas"
-                    style="margin:4px auto; display:block; max-width:100%; height:45px;"></canvas>
-                  <div id="lbl-bc-code"
-                    style="letter-spacing:2px; font-weight:bold; font-size:11px; font-family:monospace;">ITEM-001</div>
-                  <div
-                    style="display:flex; justify-content:space-between; width:100%; font-size:9px; padding:0 4px; margin-top:2px;">
-                    <span id="lbl-bc-hsn">HSN: 7318</span>
-                    <span id="lbl-bc-price" style="font-weight:700;">&#8377; 450.00</span>
+            <!-- Inline Docked Label Preview & Customizer Drawer -->
+            <div id="bc-preview-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none; width:380px;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="bcd-title">Label Studio</h3>
+                  <span id="bcd-code" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.BarcodeStudioController.closeDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body" style="padding:14px;">
+                <!-- Live Sticker Preview -->
+                <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:14px; display:flex; justify-content:center; margin-bottom:14px;">
+                  <div class="barcode-sticker" id="preview-barcode-sticker"
+                    style="background:#fff; color:#000; padding:10px 12px; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,0.4); text-align:center; width:250px; font-family:'Plus Jakarta Sans', Arial, sans-serif;">
+                    <div id="lbl-bc-company" style="font-weight:700; font-size:11px; letter-spacing:0.5px;">JASVI INDUSTRIES</div>
+                    <div id="lbl-bc-title" style="font-weight:600; font-size:9.5px; margin:2px 0;">INDUSTRIAL FASTENER 12MM</div>
+                    <canvas id="barcode-canvas" class="barcode-canvas" style="margin:4px auto; display:block; max-width:100%; height:45px;"></canvas>
+                    <div id="lbl-bc-code" style="letter-spacing:2px; font-weight:bold; font-size:11px; font-family:monospace;">ITEM-001</div>
+                    <div style="display:flex; justify-content:space-between; width:100%; font-size:9px; padding:0 4px; margin-top:2px;">
+                      <span id="lbl-bc-hsn">HSN: 7318</span>
+                      <span id="lbl-bc-price" style="font-weight:700;">&#8377; 450.00</span>
+                    </div>
                   </div>
                 </div>
+
+                <!-- Customizer Fields -->
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Barcode / SKU String</label>
+                  <input type="text" id="bc-code-input" class="form-input" value="ITEM-001"
+                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Product Title</label>
+                  <input type="text" id="bc-title-input" class="form-input" value="INDUSTRIAL FASTENER 12MM"
+                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.72rem;">HSN Code</label>
+                    <input type="text" id="bc-hsn-input" class="form-input" value="7318"
+                      oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.72rem;">Price (&#8377;)</label>
+                    <input type="text" id="bc-price-input" class="form-input" value="450.00"
+                      oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Label Dimensions</label>
+                  <select id="bc-size-select" class="form-select" onchange="window.BarcodeStudioController.renderBarcodePreview()">
+                    <option value="50x25" selected>50mm &times; 25mm (Standard 2-Inch Thermal)</option>
+                    <option value="38x25">38mm &times; 25mm (Compact Roll)</option>
+                    <option value="100x50">100mm &times; 50mm (Shipping Dispatch Box)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                  <label class="form-label" style="font-size:0.72rem;">Number of Copies</label>
+                  <input type="number" id="bc-copies-input" class="form-input" value="1" min="1" max="500"
+                    onchange="document.getElementById('bc-kpi-selected-copies').innerText = this.value">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.75rem; margin-bottom:10px;">
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-company" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Company</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-title" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Title</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-price" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Price</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-hsn" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> HSN</label>
+                </div>
               </div>
-              <div style="display:flex; gap:10px; margin-top:24px;">
-                <button class="btn btn-primary"
-                  onclick="window.BarcodeStudioController.printThermal()">&#128424;&#65039; Send to Thermal Roll
-                  Printer</button>
-                <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printA4Sheet()">&#128196;
-                  Print on A4 Sticker Sheet</button>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.BarcodeStudioController.printThermal()">
+                  &#128424;&#65039; Print Thermal
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BarcodeStudioController.printA4Sheet()">
+                  &#128196; Print A4
+                </button>
               </div>
             </div>
           </div>
@@ -11051,73 +11362,112 @@
               </div>
             </div>
 
-            <!-- 4. NOTIFICATIONS PANEL (NotificationsSettingsPanel.fxml Parity) -->
-            <div id="settings-panel-notifications" class="settings-subpanel" data-section="NOTIFICATIONS"
-              style="display:none;">
-              <div class="data-panel"
-                style="padding:22px 24px; margin-bottom:18px; background:rgba(30,41,59,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                  <span style="color:#c084fc; font-size:1.15rem;">&#128276;</span>
-                  <h2
-                    style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
-                    Event Dispatch &amp; Notification Triggers</h2>
+            <!-- 4. NOTIFICATIONS PANEL (image18.png Parity) -->
+            <div id="settings-panel-notifications" class="settings-subpanel" data-section="NOTIFICATIONS" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="color:#c084fc; font-size:1.15rem;">&#128276;</span>
+                    <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Notifications</h2>
+                  </div>
+                  <div style="font-size:0.75rem; color:#94a3b8;">Manage notification-centre and desktop-toast preferences for your signed-in user.</div>
                 </div>
-                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">Configure real-time desktop banners
-                  and audible alerts across application operational domains</div>
+                <button type="button" class="btn btn-primary" onclick="window.SettingsController.saveNotifications(event)" style="background:#a855f7; border-color:#9333ea; font-weight:700; padding:6px 16px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+                  <span>&#128190;</span> Save Notifications
+                </button>
+              </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifications" checked> Show in-app system notifications
+              <!-- Main Inner Panel -->
+              <div class="data-panel" style="padding:20px 24px; background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <!-- Top 2 Master Cards -->
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                  <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:10px; padding:7px 16px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:240px;">
+                    <input type="checkbox" id="chkNotifications" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                    <span style="font-size:0.8rem; font-weight:600; color:#f8fafc;">Show application notifications</span>
                   </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotificationToasts" checked> Show real-time desktop toast messages
+                  <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:10px; padding:7px 16px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:240px;">
+                    <input type="checkbox" id="chkNotificationToasts" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                    <span style="font-size:0.8rem; font-weight:600; color:#f8fafc;">Show desktop toast messages</span>
                   </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifySales" checked> Sales Invoices &amp; Dispatch events
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyPurchases" checked> Purchases &amp; Inward goods receipts
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyQuotations" checked> Quotations &amp; Expiry follow-ups
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyReturns" checked> Sales &amp; Purchase returns
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyPayments" checked> Payment receipts &amp; refunds
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyInventory" checked> Low stock &amp; inventory reorder alerts
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyBanking" checked> Bank reconciliation discrepancy alerts
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyReports" checked> Executive reports &amp; analytics
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyReminders" checked> Scheduled reminders &amp; tasks
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyCommunication" checked> Email &amp; WhatsApp activity
-                    confirmations
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyApproval" checked> User access &amp; registration approvals
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyImports" checked> Bulk excel imports
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifyBackup" checked> PostgreSQL Automated Backup status
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifySystem" checked> System diagnostics &amp; health
-                  </label>
-                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                    <input type="checkbox" id="chkNotifySecurity" checked> Security policy &amp; lockout audits
-                  </label>
+                </div>
+
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:16px;">
+                  Choose which activity categories appear for your user. Critical errors and Security &amp; User Access records always remain in Notification Center.
+                </div>
+
+                <!-- 2 Symmetrical Columns of Pill Checkbox Cards -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px 48px; max-width:850px;">
+                  <!-- Left Column -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySales" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Sales and invoices</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyQuotations" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Quotations and follow-ups</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyPayments" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Payments and refunds</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyBanking" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Bank, expenses and reconciliation</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReminders" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Reminders</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyApproval" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Approvals</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyBackup" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Backup, restore &amp; safe rollback</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySystem" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Other system activity</span>
+                    </label>
+                  </div>
+
+                  <!-- Right Column -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyPurchases" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Purchases and supplier invoices</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReturns" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Sales and purchase returns</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyInventory" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Inventory and low stock</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReports" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Reports and scheduled reports</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyCommunication" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Email &amp; WhatsApp activity</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid #a855f7; border-radius:6px; background:rgba(168,85,247,0.18); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyImports" checked style="accent-color:#a855f7; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc; font-weight:600;">Data imports</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyUpdates" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Application updates</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.06); border-radius:6px; background:rgba(15,23,42,0.3); cursor:not-allowed; opacity:0.75; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySecurity" checked disabled style="width:15px; height:15px;">
+                      <span style="font-size:0.8rem; color:#94a3b8;">Security &amp; User Access (mandatory)</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -11474,152 +11824,172 @@ Outstanding Balance: {BalanceAmount}
               </div>
             </div>
 
-            <!-- 7. MODULE MANAGEMENT PANEL (ModulesSettingsPanel.fxml Parity) -->
+            <!-- 7. MODULE ACTIVATION & FEATURE CONTROL PANEL (image19.png & image20.png Parity) -->
             <div id="settings-panel-modules" class="settings-subpanel" data-section="MODULES" style="display:none;">
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:16px;">
-
-                <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">General Ledger
-                    &amp; Accounting</h3>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gl-enabled" checked>
-                      <div>
-                        <strong>General Ledger &amp; Double-Entry Engine</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Maintains chart of accounts and running
-                          debit/credit ledger balances.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gl-autopost" checked>
-                      <div>
-                        <strong>Auto-Post Vouchers to GL on Approval</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Automatically posts sales, purchases, and
-                          receipts directly to running journal accounts.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gl-trialbalance" checked>
-                      <div>
-                        <strong>Running Trial Balance Verification</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Requires debits equal credits before
-                          committing any financial transaction.</div>
-                      </div>
-                    </label>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="color:#c084fc; font-size:1.15rem;">&#9881;&#65039;</span>
+                    <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Module Activation &amp; Feature Control</h2>
                   </div>
+                  <div style="font-size:0.75rem; color:#94a3b8;">Control ERP business modules, statutory engines, and smart operational automations. Deactivated modules are hidden from navigation and bypassed with zero overhead.</div>
                 </div>
+                <button type="button" class="btn btn-primary" onclick="window.SettingsController.saveModules(event)" style="background:#a855f7; border-color:#9333ea; font-weight:700; padding:6px 16px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+                  <span>&#128190;</span> Save Modules
+                </button>
+              </div>
 
-                <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Taxation &amp;
-                    Statutory Compliance</h3>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gst-enabled" checked>
-                      <div>
-                        <strong>GST Compliance &amp; E-Way Bill Engine</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Computes CGST, SGST, IGST and validates
-                          Place of Supply codes.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gst-auto2b" checked>
-                      <div>
-                        <strong>Automated GSTR-2B Inward Purchase Match</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">2-way invoice cross-matching against
-                          government GST portal records.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-gst-posgating" checked>
-                      <div>
-                        <strong>Place of Supply (POS) Gating</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Prevents saving invoices without a
-                          verified state tax code.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-tds-enabled" checked>
-                      <div>
-                        <strong>TDS Statutory Deduction Engine</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Applies Section 194Q / 206C deductions
-                          during payment settlements.</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+              <!-- 5 Full-Width Module Cards matching Desktop image19.png - image20.png -->
+              <div style="display:flex; flex-direction:column; gap:14px;">
 
-                <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Automation &amp;
-                    Risk Governance</h3>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-threeway-enabled" checked>
-                      <div>
-                        <strong>3-Way Matching (PO vs Inward GRN vs Bill)</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Validates purchase order quantities
-                          against warehouse receipt before payment approval.</div>
+                <!-- Card 1: General Ledger & Double-Entry Accounting -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#38bdf8; font-size:0.95rem;">&#127963;&#65039;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#38bdf8; margin:0;">General Ledger &amp; Double-Entry Accounting</h3>
                       </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-threeway-autodebit" checked>
-                      <div>
-                        <strong>Auto-Draft Debit Note on Discrepancy</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Instantly prepares supplier debit note if
-                          inward items arrive damaged or missing.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-reorder-enabled" checked>
-                      <div>
-                        <strong>Automated Stock Reordering Alerts</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Generates reorder triggers when warehouse
-                          stock reaches safety minimums.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-credit-hardstop" checked>
-                      <div>
-                        <strong>Hard-Stop Credit Control</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Blocks new sales invoice creation for
-                          customers with overdue unpaid balances.</div>
-                      </div>
-                    </label>
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-batch-serial" checked>
-                      <div>
-                        <strong>Batch &amp; Serial Number Tracking</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Tracks manufacturing lot numbers and
-                          expiry dates per item.</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="data-panel" style="padding:18px;">
-                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Executive
-                    Intelligence &amp; Briefing</h3>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; cursor:pointer;">
-                      <input type="checkbox" id="mod-briefing-enabled" checked>
-                      <div>
-                        <strong>Daily Executive Summary Briefing</strong>
-                        <div style="font-size:0.72rem; color:var(--text-dim);">Dispatches morning operational digest
-                          (today sales, bank balance, low stock).</div>
-                      </div>
-                    </label>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                      <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                        <input type="checkbox" id="mod-briefing-wa" checked> WhatsApp Digest
-                      </label>
-                      <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
-                        <input type="checkbox" id="mod-briefing-email" checked> Email Digest
-                      </label>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Master Chart of Accounts, debit/credit journal vouchers, real-time Trial Balance, and Profit &amp; Loss.</div>
                     </div>
-                    <div class="form-group">
-                      <label class="form-label" style="font-size:0.75rem;">Executive Contact Phone Number</label>
-                      <input type="text" id="mod-briefing-phone" class="form-input form-input-sm"
-                        value="+91 90999 39193">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-gl-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable GL Module</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-autopost" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Auto-post Journal Vouchers from Sales &amp; Purchases</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-trialbalance" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Maintain Live Trial Balance</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 2: GST Statutory Compliance & GSTR-2B Auto-Reconciliation -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#fbbf24; font-size:0.95rem;">&#127895;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#fbbf24; margin:0;">GST Statutory Compliance &amp; GSTR-2B Auto-Reconciliation</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Automated Place of Supply tax split, GSTR-1 government JSON exports, and GSTR-2B ITC fuzzy reconciliation.</div>
                     </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-gst-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable GST Engine</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid #10b981; border-radius:6px; background:rgba(16,185,129,0.15); cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-auto2b" checked style="accent-color:#10b981; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc; font-weight:600;">Auto-Reconcile GSTR-2B Purchases</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-posgating" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Strict Place of Supply Gating</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-tds-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">TDS / TCS Withholding (Sec 194Q &amp; 206C)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 3: Smart Operational Automations Suite -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#34d399; font-size:0.95rem;">&#9881;&#65039;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#34d399; margin:0;">Smart Operational Automations Suite</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Automate purchase bill verification against PO/GRN, dynamic stock replenishment, and smart FIFO payment matching.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-automations-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Automations</span>
+                    </label>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Smart 3-Way Purchase Matching (PO vs GRN vs Bill)</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-reorder-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Dynamic Safety Stock &amp; Auto-Reorder Alerts</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid #a855f7; border-radius:6px; background:rgba(168,85,247,0.18); cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-autodebit" checked style="accent-color:#a855f7; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc; font-weight:600;">Auto-generate draft debit notes for short shipments</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-credit-hardstop" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Customer Overdue Credit Hard Stop (Block Invoicing)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 4: Executive 8:00 PM Daily Briefing -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#f8fafc; font-size:0.95rem;">&#128227;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#f8fafc; margin:0;">Executive 8:00 PM Daily Briefing</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Daily evening summary of sales, customer collections, vendor payments, bank balances, and overdue accounts.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-briefing-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Daily Briefing</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-briefing-wa" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">WhatsApp Channel</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-briefing-email" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Email Channel</span>
+                    </label>
+                    <div style="display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6);">
+                      <span style="font-size:0.75rem; color:#38bdf8; font-weight:600;">&#128222; Mobile No:</span>
+                      <input type="text" id="mod-briefing-phone" class="form-input form-input-sm" value="+91 90999 39193" style="width:140px; height:26px; font-size:0.75rem; background:transparent; border:none; color:#ffffff; font-weight:600;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 5: Multi-Warehouse, Batch/Expiry (FEFO) & Serial Registry -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#2dd4bf; font-size:0.95rem;">&#128230;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#2dd4bf; margin:0;">Multi-Warehouse, Batch/Expiry (FEFO) &amp; Serial Registry</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Track stock across multiple storage depots, enforce First-Expired First-Out dispatches, and track equipment serial warranties.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-batch-serial" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Batch/Serial Tracking</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-batch-fefo" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Enforce FEFO (First-Expired First-Out) picking</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-serial-mandatory" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Mandatory serial registration for warranty items</span>
+                    </label>
                   </div>
                 </div>
 
@@ -14363,7 +14733,10 @@ Outstanding Balance: {BalanceAmount}
           <div class="form-group">
             <label class="form-label">Original Tax Invoice / Bill # *</label>
             <div style="display:flex; gap:6px;">
-              <input type="text" id="cr-invoice-input" class="form-input"
+              <select id="cr-invoice-select" class="form-select" onchange="window.ReturnsController.onInvoiceSelectChanged(this.value)" style="flex:1;">
+                <option value="">-- Select Paid Invoice / Bill --</option>
+              </select>
+              <input type="text" id="cr-invoice-input" class="form-input" style="display:none;"
                 placeholder="e.g. INV-2026-0001 or BILL-2026-0001">
               <button class="btn btn-secondary" type="button" onclick="window.ReturnsController.loadReturnableLines()"
                 style="white-space:nowrap;">Load Items</button>
@@ -14576,7 +14949,9 @@ Outstanding Balance: {BalanceAmount}
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
             <label class="form-label">Original Tax Invoice Ref #</label>
-            <input type="text" id="m-cn-invoice" class="form-input" placeholder="e.g. INV-2026-0001">
+            <select id="m-cn-invoice" class="form-select" onchange="window.CreditDebitNoteController.onInvoiceSelected(this.value)">
+              <option value="">-- Select Customer Invoice --</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Reason Code *</label>
@@ -14588,6 +14963,12 @@ Outstanding Balance: {BalanceAmount}
               <option value="Other">05 - Other Adjustment</option>
             </select>
           </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Item / Product (for stock adjustment)</label>
+          <select id="m-cn-item" class="form-select" onchange="window.CreditDebitNoteController.onCreditItemSelected(this.value)">
+            <option value="">-- Auto from invoice or select product --</option>
+          </select>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
@@ -14660,7 +15041,9 @@ Outstanding Balance: {BalanceAmount}
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
             <label class="form-label">Original Vendor Bill Ref #</label>
-            <input type="text" id="m-dn-bill" class="form-input" placeholder="e.g. BILL-2026-0001">
+            <select id="m-dn-bill" class="form-select" onchange="window.CreditDebitNoteController.onBillSelected(this.value)">
+              <option value="">-- Select Vendor Bill --</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Reason Code *</label>
@@ -14672,6 +15055,12 @@ Outstanding Balance: {BalanceAmount}
               <option value="Other">05 - Other Adjustment</option>
             </select>
           </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Return Item (for Inventory Stock Adjustment)</label>
+          <select id="m-dn-item" class="form-select" onchange="window.CreditDebitNoteController.onDebitItemSelected(this.value)">
+            <option value="">-- Auto from bill or select product --</option>
+          </select>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
@@ -16685,69 +17074,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.35.07"></script>
+  <script src="js/version.js?v=10.0.36.01"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.35.07"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.35.07"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.35.07"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.35.07"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.35.07"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.35.07"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.35.07"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.35.07"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.35.07"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.35.07"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.35.07"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.35.07"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.35.07"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.35.07"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.35.07"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.35.07"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.36.01"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.36.01"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.01"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.01"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.36.01"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.01"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.01"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.36.01"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.01"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.01"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.01"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.01"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.36.01"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.36.01"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.36.01"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.36.01"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.35.07"></script>
-  <script src="js/services/ApiService.js?v=10.0.35.07"></script>
-  <script src="js/services/AuthService.js?v=10.0.35.07"></script>
-  <script src="js/services/NotificationService.js?v=10.0.35.07"></script>
-  <script src="js/services/MasterService.js?v=10.0.35.07"></script>
-  <script src="js/services/OperationsService.js?v=10.0.35.07"></script>
-  <script src="js/services/ReportService.js?v=10.0.35.07"></script>
-  <script src="js/services/ReconService.js?v=10.0.35.07"></script>
-  <script src="js/services/AccountingService.js?v=10.0.35.07"></script>
-  <script src="js/services/ImportService.js?v=10.0.35.07"></script>
+  <script src="js/services/BrandingService.js?v=10.0.36.01"></script>
+  <script src="js/services/ApiService.js?v=10.0.36.01"></script>
+  <script src="js/services/AuthService.js?v=10.0.36.01"></script>
+  <script src="js/services/NotificationService.js?v=10.0.36.01"></script>
+  <script src="js/services/MasterService.js?v=10.0.36.01"></script>
+  <script src="js/services/OperationsService.js?v=10.0.36.01"></script>
+  <script src="js/services/ReportService.js?v=10.0.36.01"></script>
+  <script src="js/services/ReconService.js?v=10.0.36.01"></script>
+  <script src="js/services/AccountingService.js?v=10.0.36.01"></script>
+  <script src="js/services/ImportService.js?v=10.0.36.01"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/GstController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.35.07"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.35.07"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/GstController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.01"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.01"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.35.07"></script>
-  <script src="js/app.js?v=10.0.35.07"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.36.01"></script>
+  <script src="js/app.js?v=10.0.36.01"></script>
 </body>
 
 </html>

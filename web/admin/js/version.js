@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.35.07",
-  desktopVersion: "10.0.35",
-  webBuild: 7,
-  webVersion: "10.0.35.07",
-  tag: "web-v10.0.35.07",
-  releaseDate: "2026-10-19T20:15:00+05:30",
+  version: "10.0.36.01",
+  desktopVersion: "10.0.36",
+  webBuild: 1,
+  webVersion: "10.0.36.01",
+  tag: "v10.0.36",
+  releaseDate: "2026-10-20T09:00:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.35.07 Comprehensive Desktop Parity & Enterprise Hardening Release - Full 10-Defect Resolution: Sale Import stock fallback, Purchase Import preflight reference checks, Bank Statement ISO date normalization, ERP server error transparency, universal direct PDF file downloads (no window.print), Customer/Supplier 360 segmented tabs & attachments API, Purchase Recon reference/date/link parity, Bank Statement history Actions dropdown & row highlight, Bank Entry table alignment & expense category dropdown, Stock Register KPI card icons & uniform 84px height."
+  summary: "10.0.36 Enterprise Parity & Dialog Usability Release"
 };
 
 // Automatic UI Version Injection
