@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.38.01a">
+  <link rel="stylesheet" href="css/app.css?v=10.0.38.01b">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -199,9 +199,9 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.36.06</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.38.01</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
-            v10.0.36</div>
+            v10.0.38</div>
         </div>
       </div>
 
@@ -2017,31 +2017,31 @@
                     to sell</span>
                 </div>
 
-                <!-- Fast Item Search Strip with Desktop-Grade Autocomplete (Purchase-style spacious layout) -->
+                <!-- Fast Item Search Strip with Desktop-Grade Autocomplete (Matching Desktop Screenshot 1) -->
                 <div class="item-entry-strip" id="ws-item-entry-strip"
-                  style="display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; flex-wrap: nowrap;">
-                  <div style="position: relative; flex: 5; min-width: 280px;">
+                  style="display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; flex-wrap: nowrap;">
+                  <div style="position: relative; flex: 5; min-width: 260px;">
                     <input type="text" id="ws-fast-item-search" class="form-input"
-                      placeholder="Search item by description, code, or HSN... [F2]" autocomplete="off"
+                      placeholder="Search Item Master... [F2 / Enter]" autocomplete="off"
                       oninput="window.SalesController.filterFastItems(this.value)"
                       onfocus="window.SalesController.filterFastItems(this.value)"
                       onkeydown="window.SalesController.onFastSearchKeyDown(event)"
-                      style="height: 36px; font-size: 0.82rem; width: 100%;">
+                      style="height: 32px; font-size: 0.8rem; width: 100%;">
                     <div id="ws-fast-item-results" class="fast-item-autocomplete-popup" style="display: none;"></div>
                   </div>
                   <select id="ws-fast-item-select" class="form-select"
                     onchange="window.SalesController.onFastItemSelect(this)" style="display: none;">
                     <option value="">Select Item Master...</option>
                   </select>
-                  <input type="number" id="ws-fast-qty" class="form-input" min="0.01" step="any" placeholder="Qty"
+                  <input type="number" id="ws-fast-qty" class="form-input" min="0.01" step="any" placeholder="Qty [Tab]"
                     oninput="window.SalesController.updateStockPositionUi()"
-                    style="height: 36px; font-size: 0.8rem; width: 75px; flex-shrink: 0;">
-                  <input type="number" id="ws-fast-rate" step="0.01" class="form-input" placeholder="Rate (&#8377;)"
-                    style="height: 36px; font-size: 0.8rem; width: 90px; flex-shrink: 0;">
+                    style="height: 32px; font-size: 0.78rem; width: 75px; flex-shrink: 0;">
+                  <input type="number" id="ws-fast-rate" step="0.01" class="form-input" placeholder="Rate (&#8377;) [Tab]"
+                    style="height: 32px; font-size: 0.78rem; width: 95px; flex-shrink: 0;">
                   <input type="number" id="ws-fast-disc" step="0.1" min="0" max="100" class="form-input"
-                    placeholder="Disc %" style="height: 36px; font-size: 0.8rem; width: 68px; flex-shrink: 0;">
+                    placeholder="Disc % [Tab]" style="height: 32px; font-size: 0.78rem; width: 75px; flex-shrink: 0;">
                   <select id="ws-fast-tax" class="form-select"
-                    style="height: 36px; font-size: 0.76rem; width: 56px; flex-shrink: 0; padding: 0 4px;"
+                    style="height: 32px; font-size: 0.76rem; width: 62px; flex-shrink: 0; padding: 0 4px;"
                     title="GST %">
                     <option value="18" selected>18%</option>
                     <option value="12">12%</option>
@@ -2049,18 +2049,18 @@
                     <option value="28">28%</option>
                     <option value="0">0%</option>
                   </select>
-                  <button type="button" id="ws-btn-add-line" class="btn"
-                    style="background: #fbbf24; color: #000; font-weight: 700; height: 36px; padding: 0 14px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;"
+                  <button type="button" id="ws-btn-add-line" class="btn btn-add-item"
+                    style="background: #f59e0b; color: #000; font-weight: 700; height: 32px; padding: 0 12px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0; border: 1px solid #d97706;"
                     onclick="window.SalesController.addFastItemRow()">+ Add Item</button>
                   <button type="button" id="ws-btn-cancel-line" class="btn btn-secondary"
-                    style="display: none; height: 36px; padding: 0 10px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;"
+                    style="display: none; height: 32px; padding: 0 10px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;"
                     onclick="window.SalesController.cancelRowEdit()">Cancel</button>
-                  <button type="button" class="btn btn-danger"
-                    style="height: 36px; padding: 0 10px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;"
+                  <button type="button" class="btn btn-danger btn-remove-item"
+                    style="height: 32px; padding: 0 10px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171;"
                     onclick="window.SalesController.removeLastWorkspaceRow()">&#128465; Remove</button>
                 </div>
 
-                <!-- 13-Column Dynamic Items Table (Image 4) -->
+                <!-- 13-Column Dynamic Items Table (Image 4 & Desktop Screenshot 1) -->
                 <div style="overflow-x: auto; max-height: 280px; min-height: 160px;">
                   <table class="data-table" style="font-size: 0.76rem; min-width: 900px;">
                     <thead>
@@ -2090,130 +2090,123 @@
                   </table>
                 </div>
 
-                <!-- Items Table Footer Strip (Image 4) -->
+                <!-- Items Table Footer Strip (Image 4 & Desktop Screenshot 1) -->
                 <div
-                  style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 10px; font-size: 0.8rem;">
-                  <div>Total Items: &#128230; <span id="ws-tot-items-count"
-                      style="font-weight: 700; color: var(--cyan);">0</span></div>
-                  <div style="display: flex; gap: 14px; font-size: 0.78rem;">
-                    <div>Discount: <span id="ws-tot-disc" style="font-weight: 600;">&#8377; 0.00</span></div>
-                    <div>GST: <span id="ws-tot-gst" style="font-weight: 600;">&#8377; 0.00</span></div>
-                    <div>Charges: <span id="ws-tot-charges" style="font-weight: 600;">&#8377; 0.00</span></div>
-                    <div>Net: <span id="ws-tot-net" style="font-weight: 700; color: var(--cyan);">&#8377; 0.00</span>
-                    </div>
+                  style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 6px; margin-top: 6px; font-size: 0.78rem;">
+                  <div>Total Items: <span class="summary-val-pill pill-cyan" style="margin-left: 4px;">&#128230; <span id="ws-tot-items-count">0</span></span></div>
+                  <div style="display: flex; gap: 8px; font-size: 0.76rem; align-items: center;">
+                    <span class="table-footer-badge badge-amber">Discount: <span id="ws-tot-disc">&#8377; 0.00</span></span>
+                    <span class="table-footer-badge badge-cyan">GST: <span id="ws-tot-gst">&#8377; 0.00</span></span>
+                    <span class="table-footer-badge badge-purple">Charges: <span id="ws-tot-charges">&#8377; 0.00</span></span>
+                    <span class="table-footer-badge badge-teal">Net: <span id="ws-tot-net">&#8377; 0.00</span></span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Right 30%: Summary + Transport + Notes (Image 4) -->
+            <!-- Right Column: Summary + Transport + Notes (Image 4 & Desktop Screenshot 1) -->
             <div>
               <!-- Card 1: Invoice Summary -->
-              <div class="editor-card">
+              <div class="editor-card" id="ws-card-summary">
                 <div class="editor-card-header">
                   <span>&#128202; Invoice Summary</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Sub Total</span><span id="ws-sum-subtotal"
-                      style="font-weight: 600;">&#8377; 0.00</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Total Discount</span><span id="ws-sum-discount"
-                      style="font-weight: 600; color: #fbbf24;">&#8377; 0.00</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Taxable Amount</span><span id="ws-sum-taxable"
-                      style="font-weight: 600;">&#8377; 0.00</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Additional Charges</span><span id="ws-sum-charges"
-                      style="font-weight: 600;">&#8377; 0.00</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Total GST</span><span id="ws-sum-gst"
-                      style="font-weight: 600;">&#8377; 0.00</span></div>
-                  <div style="height: 1px; background: var(--border-subtle); margin: 6px 0;"></div>
-                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                    <span style="font-size: 0.95rem; font-weight: 700;">Total Amount</span>
+                <div style="display: flex; flex-direction: column; gap: 7px; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">Sub Total</span>
+                    <span class="summary-val-pill pill-rose"><span style="font-size:0.7em;">&#127991;&#65039;</span> <span id="ws-sum-subtotal">&#8377; 0.00</span></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">Total Discount</span>
+                    <span class="summary-val-pill pill-amber"><span style="font-size:0.7em;">&#127991;&#65039;</span> <span id="ws-sum-discount">&#8377; 0.00</span></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">Taxable Amount</span>
+                    <span class="summary-val-pill pill-green"><span style="font-size:0.7em;">&#8377;</span> <span id="ws-sum-taxable">&#8377; 0.00</span></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">Additional Charges</span>
+                    <span class="summary-val-pill pill-teal"><span style="font-size:0.7em;">&#8377;</span> <span id="ws-sum-charges">&#8377; 0.00</span></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">Total GST</span>
+                    <span class="summary-val-pill pill-cyan"><span style="font-size:0.7em;">%</span> <span id="ws-sum-gst">&#8377; 0.00</span></span>
+                  </div>
+                  <div style="height: 1px; background: var(--border-subtle); margin: 4px 0;"></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; white-space: nowrap;">
+                    <span style="font-size: 0.92rem; font-weight: 700;">Total Amount</span>
                     <span id="ws-sum-grand"
-                      style="font-size: 1.5rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';">&#8377;
-                      0.00</span>
+                      style="font-size: 1.45rem; font-weight: 800; color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Card 2: Tax & Transport Details -->
-              <div class="editor-card">
+              <!-- Card 2: Tax & Transport Details (Desktop 2-col row parity) -->
+              <div class="editor-card" id="ws-card-transport">
                 <div class="editor-card-header">
                   <span>&#128666; Tax &amp; Transport Details</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                  <div>
-                    <label class="form-label" style="font-size: 0.72rem;">GST Type *</label>
-                    <select id="ws-gst-type" class="form-select" onchange="window.SalesController.calcWorkspaceTotals()"
-                      style="height: 34px; font-size: 0.78rem;">
-                      <option value="GST">GST (Intra-State CGST+SGST)</option>
-                      <option value="IGST">IGST (Inter-State)</option>
-                    </select>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label class="form-label" style="font-size: 0.72rem;">GST Type *</label>
+                      <select id="ws-gst-type" class="form-select" onchange="window.SalesController.calcWorkspaceTotals()">
+                        <option value="GST">GST (Intra-State)</option>
+                        <option value="IGST">IGST (Inter-State)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="form-label" style="font-size: 0.72rem;">Transporter GSTIN</label>
+                      <input type="text" id="ws-trans-gstin" class="form-input" placeholder="From transporter master..." readonly>
+                    </div>
                   </div>
                   <div>
                     <label class="form-label" style="font-size: 0.72rem;">Transporter</label>
-                    <select id="ws-transporter" class="form-select"
-                      onchange="window.SalesController.onTransporterChange(this)"
-                      style="height: 34px; font-size: 0.78rem;">
+                    <select id="ws-transporter" class="form-select" onchange="window.SalesController.onTransporterChange(this)">
                       <option value="">Select transporter...</option>
                     </select>
                   </div>
                   <div>
-                    <label class="form-label" style="font-size: 0.72rem;">Transporter GSTIN</label>
-                    <input type="text" id="ws-trans-gstin" class="form-input" placeholder="From transporter master..."
-                      style="height: 34px; font-size: 0.78rem;" readonly>
-                  </div>
-                  <div>
                     <label class="form-label" style="font-size: 0.72rem;">Vehicle Number</label>
-                    <input type="text" id="ws-vehicle-no" class="form-input" placeholder="Vehicle number..."
-                      style="height: 34px; font-size: 0.78rem;">
+                    <input type="text" id="ws-vehicle-no" class="form-input" placeholder="Vehicle number...">
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
                       <label class="form-label" style="font-size: 0.72rem;">Contact Person</label>
-                      <input type="text" id="ws-contact-person" class="form-input" placeholder="Contact person..."
-                        style="height: 34px; font-size: 0.78rem;">
+                      <input type="text" id="ws-contact-person" class="form-input" placeholder="Contact person...">
                     </div>
                     <div>
                       <label class="form-label" style="font-size: 0.72rem;">Contact Mobile</label>
-                      <input type="text" id="ws-contact-mobile" class="form-input" placeholder="Mobile number..."
-                        style="height: 34px; font-size: 0.78rem;">
+                      <input type="text" id="ws-contact-mobile" class="form-input" placeholder="Mobile number...">
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Card 3: Notes & Attachment matching Settings Branding style -->
-              <div class="editor-card">
+              <!-- Card 3: Notes & Attachment matching Desktop Screenshot 1 -->
+              <div class="editor-card" id="ws-card-notes">
                 <div class="editor-card-header">
                   <span>&#128203; Notes &amp; Attachment</span>
                 </div>
-                <textarea id="ws-invoice-notes" class="form-input" placeholder="Optional invoice note..."
-                  style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <textarea id="ws-invoice-notes" class="form-input" placeholder="Optional invoice note..."
+                    style="height: 44px; min-height: 44px; font-size: 0.76rem; resize: none;"></textarea>
 
-                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">📎</span>
-                      <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
+                  <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                      <label class="form-label" style="font-size: 0.72rem; margin: 0;">Attached Document</label>
+                      <span id="ws-attachment-badge" class="badge" style="font-size: 0.65rem; display: none; background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.4);">Attached</span>
                     </div>
-                    <span id="ws-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
-                  </div>
-                  <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Signed invoice copy, delivery challan, or PO scan &bull; Max 10MB</div>
-
-                  <div id="ws-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="ws-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
-                    <div id="ws-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
-                    <div id="ws-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
-                  </div>
-                  <input type="file" id="ws-attachment-file-input" style="display:none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
-                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button type="button" id="ws-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('ws-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewWorkspaceAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
-                    <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeWorkspaceAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                      <div id="ws-attachment-name" style="height: 30px; font-size: 0.74rem; flex: 1; display: flex; align-items: center; padding: 0 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No document attached</div>
+                      <input type="file" id="ws-attachment-file-input" style="display: none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
+                      <button type="button" id="ws-btn-attach-add" class="btn btn-secondary" onclick="document.getElementById('ws-attachment-file-input').click()"
+                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap;" title="Attach Document">&#128206;</button>
+                      <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewWorkspaceAttachment()"
+                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap;" disabled title="Preview Document">&#128065;</button>
+                      <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeWorkspaceAttachment()"
+                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap; color: #f87171;" disabled title="Remove Document">&#128465;</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -17179,71 +17172,71 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.38.01a"></script>
+  <script src="js/version.js?v=10.0.38.01b"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.38.01a"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.38.01a"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.01a"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.01a"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.38.01a"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.01a"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.01a"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.38.01a"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.01a"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.01a"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.01a"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.01a"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.38.01a"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.38.01a"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.38.01a"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.38.01a"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.38.01a"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.38.01a"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.38.01b"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.38.01b"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.01b"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.01b"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.38.01b"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.01b"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.01b"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.38.01b"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.01b"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.01b"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.01b"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.01b"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.38.01b"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.38.01b"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.38.01b"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.38.01b"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.38.01b"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.38.01b"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.38.01a"></script>
-  <script src="js/services/ApiService.js?v=10.0.38.01a"></script>
-  <script src="js/services/AuthService.js?v=10.0.38.01a"></script>
-  <script src="js/services/NotificationService.js?v=10.0.38.01a"></script>
-  <script src="js/services/MasterService.js?v=10.0.38.01a"></script>
-  <script src="js/services/OperationsService.js?v=10.0.38.01a"></script>
-  <script src="js/services/ReportService.js?v=10.0.38.01a"></script>
-  <script src="js/services/ReconService.js?v=10.0.38.01a"></script>
-  <script src="js/services/AccountingService.js?v=10.0.38.01a"></script>
-  <script src="js/services/ImportService.js?v=10.0.38.01a"></script>
+  <script src="js/services/BrandingService.js?v=10.0.38.01b"></script>
+  <script src="js/services/ApiService.js?v=10.0.38.01b"></script>
+  <script src="js/services/AuthService.js?v=10.0.38.01b"></script>
+  <script src="js/services/NotificationService.js?v=10.0.38.01b"></script>
+  <script src="js/services/MasterService.js?v=10.0.38.01b"></script>
+  <script src="js/services/OperationsService.js?v=10.0.38.01b"></script>
+  <script src="js/services/ReportService.js?v=10.0.38.01b"></script>
+  <script src="js/services/ReconService.js?v=10.0.38.01b"></script>
+  <script src="js/services/AccountingService.js?v=10.0.38.01b"></script>
+  <script src="js/services/ImportService.js?v=10.0.38.01b"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/GstController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.01a"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.01a"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/GstController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.01b"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.01b"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.38.01a"></script>
-  <script src="js/app.js?v=10.0.38.01a"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.38.01b"></script>
+  <script src="js/app.js?v=10.0.38.01b"></script>
 </body>
 
 </html>
