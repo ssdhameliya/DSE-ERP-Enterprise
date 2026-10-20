@@ -9,6 +9,9 @@ window.CommunicationController = (function() {
 
   function formatDate(d) {
     if (!d) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDateTime) {
+      return window.FormatUtil.formatDateTime(d);
+    }
     try {
       const dt = new Date(d);
       if (isNaN(dt.getTime())) return d;

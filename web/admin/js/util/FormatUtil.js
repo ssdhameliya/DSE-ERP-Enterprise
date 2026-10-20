@@ -36,6 +36,46 @@
         this._timeZone = timeZone.trim();
         setCached('dse_timeZone', this._timeZone);
       }
+      this.updateLiveClocks();
+      try {
+        window.dispatchEvent(new CustomEvent('dse-date-policy-changed', {
+          detail: {
+            dateFormat: this._dateFormat,
+            timeFormat: this._timeFormat,
+            timeZone: this._timeZone
+          }
+        }));
+      } catch (_) {}
+    },
+
+    formatClockString(date = new Date()) {
+      const d = this.parseDate(date) || new Date();
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = days[d.getDay()];
+      const datePart = this.formatDate(d);
+      const timePart = this.formatTime(d, 'hh:mm:ss a');
+      const tzPart = this.getTimeZoneAbbr();
+      return `${dayName}, ${datePart} | ${timePart} | ${tzPart}`;
+    },
+
+    updateLiveClocks() {
+      const now = new Date();
+      const clockStr = this.formatClockString(now);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const shortStr = `${days[now.getDay()]}, ${this.formatDate(now)} | ${this.formatTime(now, 'hh:mm:ss a')} ${this.getTimeZoneAbbr()}`;
+      const headerClock = document.getElementById('clock-display');
+      if (headerClock) {
+        headerClock.innerText = shortStr;
+        headerClock.title = clockStr;
+      }
+      const footerClock = document.getElementById('footer-live-clock');
+      if (footerClock) {
+        const valSpan = footerClock.querySelector('.footer-val');
+        if (valSpan) valSpan.textContent = `${this.formatDate(now)} | ${this.formatTime(now, 'hh:mm:ss a')} | ${this.getTimeZoneAbbr()}`;
+        else footerClock.innerText = `📅 ${clockStr}`;
+      }
+      const authFooterClock = document.getElementById('auth-footer-clock');
+      if (authFooterClock) authFooterClock.innerText = `📅 ${clockStr}`;
     },
 
     normalizeDateFormat(fmt) {

@@ -3,7 +3,7 @@
  * 100% Desktop Parity with QuotationController.java & QuotationEditorController.java
  * Manages Quotation Register, Pipeline KPIs, Quotation Editor Workspace, Line Calculations, and 1-Click Convert to Sale
  */
-window.QuotationController = (function() {
+window.QuotationController = (function () {
   let currentPage = 0;
   const pageSize = 25;
   let totalRows = 0;
@@ -87,12 +87,16 @@ window.QuotationController = (function() {
     const source = document.getElementById('quote-filter-source')?.value || '';
 
     try {
-      const data = await window.OperationsService.getQuotationsPage(
+      let data = await window.OperationsService.getQuotationsPage(
         currentPage, pageSize, q, number, customer, status, from, to, '', salesperson, '', '', followUp, source
       );
 
+      if (Array.isArray(data)) {
+        data = { rows: data, totalRows: data.length, totalPages: 1 };
+      }
+
       quotationsList = data?.rows || [];
-      totalRows = data?.totalRows || quotationsList.length;
+      totalRows = data?.totalRows != null ? data.totalRows : quotationsList.length;
       totalPages = data?.totalPages || 1;
 
       applyMetrics(data?.metrics);
@@ -101,7 +105,20 @@ window.QuotationController = (function() {
       updatePagination(data?.filteredAmount || 0);
 
     } catch (err) {
-      console.error('Failed to load quotations:', err);
+      console.warn('Failed to load paginated quotations, attempting list fallback:', err);
+      try {
+        const fallbackList = await window.ApiService.get('/api/quotations');
+        if (Array.isArray(fallbackList)) {
+          quotationsList = fallbackList;
+          totalRows = fallbackList.length;
+          totalPages = 1;
+          renderTable(quotationsList);
+          updatePagination(0);
+          return;
+        }
+      } catch (fbErr) {
+        console.error('Quotations list fallback error:', fbErr);
+      }
       if (tbody) {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--red);">⚠️ Failed to load quotations: ${err.message || 'Server error'}</td></tr>`;
       }
@@ -502,7 +519,7 @@ window.QuotationController = (function() {
       if (quote && quote.id) {
         try {
           lines = await window.OperationsService.getQuotationLines(quote.id);
-        } catch (_) {}
+        } catch (_) { }
       }
       if (window.XLSX && quote) {
         const wsData = [
@@ -1024,6 +1041,42 @@ window.QuotationController = (function() {
     if (m) m.style.display = 'none';
   }
 
+  function refreshAttachmentUi(fileName, fileSize) {
+    const badge = document.getElementById('qe-attachment-badge');
+    const nameEl = document.getElementById('qe-attachment-name');
+    const sizeEl = document.getElementById('qe-attachment-size');
+    const btnPreview = document.getElementById('qe-btn-attach-preview');
+    const btnRemove = document.getElementById('qe-btn-attach-remove');
+
+    if (fileName) {
+      const displayName = typeof fileName === 'string' ? fileName.split('/').pop().split('\\').pop() : 'Attached Document';
+      if (badge) badge.style.display = 'inline-block';
+      if (nameEl) {
+        nameEl.innerText = displayName;
+        nameEl.style.color = '#c084fc';
+      }
+      if (sizeEl) {
+        if (fileSize && typeof fileSize === 'number') {
+          const kb = (fileSize / 1024).toFixed(1);
+          sizeEl.innerText = `${kb} KB`;
+        } else {
+          sizeEl.innerText = 'Document attached';
+        }
+      }
+      if (btnPreview) btnPreview.disabled = false;
+      if (btnRemove) btnRemove.disabled = false;
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (nameEl) {
+        nameEl.innerText = 'No document attached';
+        nameEl.style.color = '#cbd5e1';
+      }
+      if (sizeEl) sizeEl.innerText = 'PDF, DOC, XLS, PNG, JPG';
+      if (btnPreview) btnPreview.disabled = true;
+      if (btnRemove) btnRemove.disabled = true;
+    }
+  }
+
   return {
     loadQuotations,
     showDetails,
@@ -1103,6 +1156,8 @@ window.QuotationController = (function() {
       initDateFilters();
       loadQuotations(0);
     },
-    initDateFilters
+    initDateFilters,
+    openQuotationView: showDetails,
+    openDrawer: showDetails
   };
 })();

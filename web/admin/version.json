@@ -1,23 +1,19 @@
 {
   "desktopVersion": "10.0.36",
-  "webBuild": 3,
-  "webVersion": "10.0.36.03",
-  "tag": "web-v10.0.36.03",
-  "releaseDate": "2026-10-20T13:30:00+05:30",
+  "webBuild": 4,
+  "webVersion": "10.0.36.04",
+  "tag": "web-v10.0.36.04",
+  "releaseDate": "2026-10-20T15:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.36.03 Desktop Parity Post-Release Defect Resolution & UI Architecture Synchronization",
+  "summary": "10.0.36.04 Defect Fixes & Parity: Date Policy Centralization, Quotation Load Fix, Reminder Center Modernization, Top Shell Polling, and Reports/E-Way/GST Parity",
   "highlights": [
-    "1. Sales & Purchases: Resolved sale edit line items blank issue by hydrating authoritative lines; fixed attachment download and preview extension sniffing for binary streams.",
-    "2. Quotations: Resolved quotation lines display error; enabled authority email dispatch with attachments; implemented authoritative client SheetJS export and server PDF preview.",
-    "3. Credit & Debit Notes: Order reference dropdown dynamically populated with party orders; eliminated item picker and synthesized adjustment lines matching Desktop CreditNoteRegisterController.",
-    "4. CRM & HRM Navigation: Customer & Supplier 'New Sale' and 'New Purchase' actions in drawers, tables, and 360 profiles now navigate and preselect the entity seamlessly.",
-    "5. GST Compliance: Set period dynamically and ensured live calculation and rendering across all 3 tabs (GSTR-2B, GSTR-3B, GSTR-1).",
-    "6. E-Way Bill & E-Invoice: Replaced raw buttons with canonical purple Actions dropdown menu with Part-B vehicle update, NIC JSON export, slip print, and cancellation.",
-    "7. General Ledger: Fully activated 3 tabs (Journal Vouchers, Chart of Accounts, Trial Balance) against authoritative accounting endpoints.",
-    "8. Financial Statements: Implemented Desktop-matching executive layout with 4 top KPI cards (Gross Revenue, COGS, Gross Profit, Net Operating Profit) and split Balance Sheet & Financial Health Ratios panels.",
-    "9. Accounts Aging: Upgraded Accounts Aging table to purple Actions dropdown menu with Inspect, WhatsApp Reminder, Email Statement, and Ledger drilldown.",
-    "10. Smart Operations & Automation: Fixed MasterService.getItems and OperationsService.getPurchasesPage runtime calls.",
-    "11. Settings Panels: Removed duplicate inner save buttons in Notifications and Module Activation, unifying save actions in the view header.",
-    "12. Universal Lightbox: Integrated in-app document and PDF viewer modal for rich authenticated file inspection."
+    "1. Centralized Date & Timezone: All 8 controllers, report viewers, and header/footer clocks strictly adhere to company format settings (DD-MM-YYYY) and user timezone.",
+    "2. Startup Logo & Mark Parity: Auth card branding automatically toggles mark card visibility when configured or cleared, matching desktop LoginController.java.",
+    "3. Reports & BI Initial Load & Saved Views: Dashboard automatically calculates 'This Month' dates on boot, loads cleanly via Promise.allSettled(), populates saved views dropdown on tab activation, and upgrades saved report actions to canonical purple dropdown.",
+    "4. Top Shell Notification Counters: Polled immediately upon successful post-login and maintained on a continuous 30-second background polling cycle.",
+    "5. E-Way Bill & E-Invoice (IRN): Resolved numeric saleId parameter for E-Way generation and added client-side JSON Blob export for official NIC E-Invoice upload.",
+    "6. GST Compliance GSTR-2B Reconciliation: Modernized period selection to dynamic 24-month dropdown and added live purchases reconciliation fallback when 2B cache is empty.",
+    "7. Quotation Register Load Fix: Resolved missing refreshAttachmentUi ReferenceError, restoring full quotation listing and pipeline KPIs.",
+    "8. Reminder Center Modernization: Upgraded KPI cards to standard .kpi-card with color borders and icon badges, and converted inline gray buttons to canonical purple ::: Actions dropdown menu."
   ]
 }

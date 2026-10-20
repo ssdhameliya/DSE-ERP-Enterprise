@@ -205,25 +205,33 @@ window.ReportsController = (function() {
 
   return {
     async init() {
-      await this.loadSavedFavorites();
-      await this.loadFilterOptions();
-      await this.loadDefinitions();
-      await this.loadSavedReports();
-      this.renderCategoryPills();
-
-      // Set initial dates for "This Month"
+      // Set initial dates for "This Month" FIRST before loading, so inputs always have values
       const defDates = calculatePresetDates('This Month');
       if (defDates) {
         const fEl = document.getElementById('rep-dash-from');
         const tEl = document.getElementById('rep-dash-to');
-        if (fEl) fEl.value = defDates.from;
-        if (tEl) tEl.value = defDates.to;
+        if (fEl && !fEl.value) fEl.value = defDates.from;
+        if (tEl && !tEl.value) tEl.value = defDates.to;
 
         const vfEl = document.getElementById('v-filter-from');
         const vtEl = document.getElementById('v-filter-to');
-        if (vfEl) vfEl.value = defDates.from;
-        if (vtEl) vtEl.value = defDates.to;
+        if (vfEl && !vfEl.value) vfEl.value = defDates.from;
+        if (vtEl && !vtEl.value) vtEl.value = defDates.to;
       }
+
+      try {
+        await Promise.allSettled([
+          this.loadSavedFavorites(),
+          this.loadFilterOptions(),
+          this.loadDefinitions(),
+          this.loadSavedReports()
+        ]);
+      } catch (e) {
+        console.warn('[ReportsController] Non-fatal init load error:', e);
+      }
+
+      this.renderCategoryPills();
+      this.populateViewerSavedDropdown();
 
       await this.applyDashboardFilters();
     },
@@ -433,6 +441,7 @@ window.ReportsController = (function() {
         if (titleEl) titleEl.innerText = this.currentDefinition?.title || 'Report Viewer';
         if (descEl) descEl.innerText = this.currentDefinition?.description || 'Dynamic tabular report viewer with multi-level filtering and export capabilities';
         if (pageIcon) pageIcon.innerText = this.currentDefinition?.icon || '📊';
+        this.populateViewerSavedDropdown();
         this.loadSavedReports();
         this.reflowViewerFilterGrid();
         if (!currentResult) this.applyViewerFilters();
@@ -1664,9 +1673,20 @@ window.ReportsController = (function() {
           <td>${r.sorting}</td>
           <td>${r.columns}</td>
           <td><span class="pill-badge pill-success" style="font-size:0.7rem;">Ready</span></td>
-          <td style="text-align:right; white-space:nowrap;">
-            <button class="btn btn-purple btn-sm" onclick="window.ReportsController.applySavedReportByIndex(${idx})" style="font-size:0.75rem; padding:3px 10px; margin-right:4px;">👁️ Open Report</button>
-            <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.scheduleSavedReportByIndex(${idx})" style="font-size:0.75rem; padding:3px 8px;">⏱️ Schedule</button>
+          <td style="text-align:center; position:relative;" onclick="event.stopPropagation()">
+            <div class="action-cell-container" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.ReportsController.toggleSavedReportActionMenu(${idx}, event)" style="height:28px; padding:0 10px; font-size:0.74rem; font-weight:600;" title="View Actions Menu">
+                ::: Actions &#9660;
+              </button>
+              <div class="action-menu-dropdown" id="saved-report-action-menu-${idx}" style="display:none; position:absolute; right:0; top:100%; z-index:999; background:var(--bg-card, #1e293b); border:1px solid var(--border-subtle, #334155); border-radius:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); min-width:160px; padding:4px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.ReportsController.applySavedReportByIndex(${idx})">
+                  <span style="margin-right:8px;">👁️</span> Open Report
+                </div>
+                <div class="action-menu-item" onclick="window.ReportsController.scheduleSavedReportByIndex(${idx})">
+                  <span style="margin-right:8px;">📅</span> Schedule Report
+                </div>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1685,6 +1705,19 @@ window.ReportsController = (function() {
       if (!select) return;
       select.innerHTML = `<option value="">-- Load Saved Report --</option>` +
         allSavedReports.map(r => `<option value="${r.name}">${r.name} (${r.baseReport} • ${r.datePreset})</option>`).join('');
+    },
+
+    toggleSavedReportActionMenu(idx, event) {
+      if (event) event.stopPropagation();
+      const menuId = `saved-report-action-menu-${idx}`;
+      const allMenus = document.querySelectorAll('.action-menu-dropdown');
+      allMenus.forEach(m => {
+        if (m.id !== menuId) m.style.display = 'none';
+      });
+      const menu = document.getElementById(menuId);
+      if (menu) {
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+      }
     },
 
     onSavedDropdownChange(name) {

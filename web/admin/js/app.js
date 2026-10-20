@@ -5,27 +5,9 @@
 window.App = (function() {
   function startClock() {
     function tick() {
-      const now = new Date();
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const day = days[now.getDay()];
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[now.getMonth()];
-      const dayNum = String(now.getDate()).padStart(2, '0');
-      const year = now.getFullYear();
-      const dateFormatted = `${dayNum} ${month} ${year}`;
-      const timeFormatted = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      const tzAbbr = 'IST';
-      const clockText = `${day}, ${dateFormatted} | ${timeFormatted} | ${tzAbbr}`;
-
-      const el = document.getElementById('clock-display');
-      if (el) {
-        el.innerText = `${day.slice(0, 3)}, ${dateFormatted} | ${timeFormatted} ${tzAbbr}`;
-        el.title = clockText;
+      if (window.FormatUtil && window.FormatUtil.updateLiveClocks) {
+        window.FormatUtil.updateLiveClocks();
       }
-      const footerClock = document.getElementById('footer-live-clock');
-      const authFooterClock = document.getElementById('auth-footer-clock');
-      if (footerClock) footerClock.innerText = `📅 ${clockText}`;
-      if (authFooterClock) authFooterClock.innerText = `📅 ${clockText}`;
     }
     tick();
     setInterval(tick, 1000);
@@ -249,6 +231,12 @@ window.App = (function() {
     }
   }
 
+  let shellPollIntervalId = null;
+  function startShellPolling() {
+    if (shellPollIntervalId) clearInterval(shellPollIntervalId);
+    shellPollIntervalId = setInterval(pollShellCounts, 30000);
+  }
+
   return {
     async init() {
       startClock();
@@ -296,7 +284,7 @@ window.App = (function() {
           console.warn('[App] Could not load company format policy on boot:', e.message);
         }
         await pollShellCounts();
-        setInterval(pollShellCounts, 30000);
+        startShellPolling();
       }
 
       // Global click handler to close profile dropdown
@@ -324,6 +312,10 @@ window.App = (function() {
 
     pollShellCounts() {
       return pollShellCounts();
+    },
+
+    startShellPolling() {
+      startShellPolling();
     },
 
     toggleTheme() {
@@ -620,6 +612,18 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
     }
   } catch (e) {
     console.warn('Party pre-load skipped:', e.message);
+  }
+
+  // Trigger top shell counters polling and activate 30-second interval immediately post-login
+  try {
+    if (window.App && typeof window.App.pollShellCounts === 'function') {
+      await window.App.pollShellCounts();
+    }
+    if (window.App && typeof window.App.startShellPolling === 'function') {
+      window.App.startShellPolling();
+    }
+  } catch (e) {
+    console.warn('[App] Post-login shell counts polling error:', e.message);
   }
 };
 

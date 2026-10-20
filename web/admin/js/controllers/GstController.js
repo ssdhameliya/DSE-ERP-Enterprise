@@ -42,19 +42,43 @@ window.GstController = {
     }
   },
 
+  populateReturnPeriods() {
+    const sel = document.getElementById('gst-return-period');
+    if (!sel) return;
+    if (sel.options.length > 1) return;
+    const cur = sel.value || 'ALL';
+    sel.innerHTML = '<option value="ALL">All Periods</option>';
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const val = `${yyyy}-${mm}`;
+      const label = `${mm}-${yyyy}`;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    }
+    sel.value = cur;
+  },
+
+  onPeriodChange(val) {
+    this.currentPeriod = val || 'ALL';
+    this.loadGstData();
+  },
+
   // ==========================================
   // 1. MASTER INITIALIZATION & KPIS
   // ==========================================
 
   async loadGstData() {
-    const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const periodInput = document.getElementById('gst-period-input');
-    if (periodInput) {
-      if (!periodInput.value) periodInput.value = currentMonthStr;
-      this.currentPeriod = periodInput.value.trim() || currentMonthStr;
-    } else {
-      this.currentPeriod = currentMonthStr;
+    this.populateReturnPeriods();
+    const periodSel = document.getElementById('gst-return-period');
+    if (periodSel && periodSel.value) {
+      this.currentPeriod = periodSel.value;
+    } else if (!this.currentPeriod) {
+      this.currentPeriod = 'ALL';
     }
 
     try {
@@ -185,13 +209,17 @@ window.GstController = {
 
     try {
       let rows = [];
-      if (window.AccountingService) {
+      if (window.AccountingService && this.currentPeriod !== 'ALL') {
         try {
-          rows = await window.AccountingService.getGstr2bReconciliation(this.currentPeriod) || [];
-        } catch {
-          rows = await this.generateLocal2bRows();
-        }
-      } else {
+          const serverRows = await window.AccountingService.getGstr2bReconciliation(this.currentPeriod);
+          if (Array.isArray(serverRows) && serverRows.length > 0) {
+            rows = serverRows;
+          }
+        } catch (_) {}
+      }
+
+      // Live ERP purchases reconciliation if server 2B is empty or period is ALL (Desktop parity)
+      if (rows.length === 0) {
         rows = await this.generateLocal2bRows();
       }
 
@@ -205,28 +233,39 @@ window.GstController = {
   },
 
   async generateLocal2bRows() {
-    const purRes = await (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 50) : window.OperationsService.getPurchases(0, 50)).catch(() => ({ rows: [] }));
-    const purchases = purRes?.rows || purRes?.content || [];
+    const purRes = await (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 150) : window.OperationsService.getPurchases(0, 150)).catch(() => ({ rows: [] }));
+    let purchases = purRes?.rows || purRes?.content || [];
+
+    // Filter by period if not ALL
+    if (this.currentPeriod && this.currentPeriod !== 'ALL') {
+      const pStr = this.currentPeriod; // YYYY-MM
+      purchases = purchases.filter(p => {
+        const d = p.billDate || p.date || p.invoiceDate;
+        return d && d.startsWith(pStr);
+      });
+    }
 
     return purchases.map((p, idx) => {
       const taxable = parseFloat(p.taxableAmount || p.subtotal || (p.totalAmount * 0.85) || 0);
       const gst = parseFloat(p.gstAmount || (p.totalAmount * 0.18) || 0);
-      const isInter = (p.billingGstin && !p.billingGstin.startsWith('24'));
-      const status = idx % 5 === 0 ? 'UNFILED_SUPPLIER' : (idx % 7 === 0 ? 'ROUNDING_DIFF' : 'MATCHED');
+      const gstin = p.supplierGstin || p.billingGstin || p.gstin || '';
+      const isInter = (gstin && !gstin.startsWith('24'));
+      const isGstinValid = gstin && gstin.trim().length === 15;
+      const status = isGstinValid ? 'MATCHED' : 'GSTIN_PENDING';
 
       return {
-        id: p.id || idx+1,
-        erpPurchaseId: p.id,
-        invoiceNumber: p.invoiceNo || `PB-${1000 + idx}`,
-        invoiceDate: p.invoiceDate || new Date().toISOString().slice(0, 10),
-        supplierTradeName: (p.supplier && p.supplier.name) || p.supplierName || 'Vendor Supplier',
-        supplierGstin: p.billingGstin || p.gstin || '24AAACC1206D1ZM',
+        id: p.id || p.purchaseId || idx + 1,
+        erpPurchaseId: p.id || p.purchaseId,
+        invoiceNumber: p.billNumber || p.invoiceNo || `PB-${1000 + idx}`,
+        invoiceDate: p.billDate || p.date || p.invoiceDate || new Date().toISOString().slice(0, 10),
+        supplierTradeName: (p.supplier && p.supplier.name) || p.supplierName || 'Authorized Supplier',
+        supplierGstin: gstin || '24AAACC1206D1ZM',
         taxableValue: taxable,
         cgstAmount: isInter ? 0 : gst / 2,
         sgstAmount: isInter ? 0 : gst / 2,
         igstAmount: isInter ? gst : 0,
         matchStatus: status,
-        itcEligibility: status === 'MATCHED' ? 'Eligible (100% Claimable)' : 'Pending Verification'
+        itcEligibility: isGstinValid ? 'Eligible (100% Claimable)' : 'Pending Verification'
       };
     });
   },

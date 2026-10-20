@@ -12,6 +12,9 @@ window.ReminderCenterController = (function() {
 
   function formatDate(d) {
     if (!d) return '-';
+    if (window.FormatUtil && window.FormatUtil.formatDate) {
+      return window.FormatUtil.formatDate(d);
+    }
     try {
       const parts = d.toString().split('T')[0].split('-');
       if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -243,14 +246,80 @@ window.ReminderCenterController = (function() {
               ${escapeHtml(item.createdBy || 'System')}
             </td>
             <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation()">
-              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.editReminder(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem;" title="Edit Reminder">✏️</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.toggleComplete(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="${isCompleted ? 'Reopen' : 'Mark Complete'}">${isCompleted ? '↩' : '✅'}</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.openSnoozeModal(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="Snooze Reminder">⏰</button>
-              <button class="btn btn-danger btn-sm" onclick="window.ReminderCenterController.deleteReminder(${item.id}, event)" style="padding:2px 7px; font-size:0.75rem; margin-left:4px;" title="Delete Reminder">🗑️</button>
+              <div class="action-cell-container" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.ReminderCenterController.toggleActionMenu(${item.id}, event)" style="height:28px; padding:0 10px; font-size:0.74rem; font-weight:600;" title="View Actions Menu">
+                  ::: Actions &#9660;
+                </button>
+                <div class="action-dropdown-menu" id="rc-action-menu-${item.id}" style="display:none; position:fixed; z-index:100005; min-width:170px; background:#1e293b; border:1px solid #334155; border-radius:6px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.5); padding:4px 0; text-align:left;">
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.showDetailsById(${item.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.editReminder(${item.id}, event)"><span style="margin-right:8px;">✏️</span> Edit Reminder</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.toggleComplete(${item.id}, event)"><span style="margin-right:8px;">${isCompleted ? '↩' : '✅'}</span> ${isCompleted ? 'Reopen Reminder' : 'Mark Complete'}</div>
+                  <div class="action-menu-item" onclick="window.ReminderCenterController.openSnoozeModal(${item.id}, event)"><span style="margin-right:8px;">⏰</span> Snooze Reminder</div>
+                  <div class="action-menu-item" style="color:var(--red);" onclick="window.ReminderCenterController.deleteReminder(${item.id}, event)"><span style="margin-right:8px;">🗑️</span> Delete Reminder</div>
+                </div>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
+    },
+
+    closeActionMenus() {
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m.id && m.id.startsWith('rc-action-menu-')) m.style.display = 'none';
+      });
+    },
+
+    toggleActionMenu(id, event) {
+      if (event) event.stopPropagation();
+      const menuId = 'rc-action-menu-' + id;
+      const targetMenu = document.getElementById(menuId);
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        if (m !== targetMenu && m.id && m.id.startsWith('rc-action-menu-')) m.style.display = 'none';
+      });
+      if (targetMenu) {
+        const isShowing = targetMenu.style.display === 'block';
+        if (isShowing) {
+          targetMenu.style.display = 'none';
+        } else {
+          targetMenu.style.display = 'block';
+          targetMenu.style.position = 'fixed';
+          targetMenu.style.zIndex = '100005';
+          const btn = event?.currentTarget || event?.target;
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+            const menuWidth = 180;
+            let left = rect.right - menuWidth;
+            if (left < 10) left = 10;
+
+            const menuHeight = targetMenu.offsetHeight || 190;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            let top;
+            if (spaceBelow < menuHeight && rect.top > menuHeight) {
+              top = Math.max(10, rect.top - menuHeight - 4);
+            } else {
+              top = rect.bottom + 4;
+            }
+
+            targetMenu.style.top = `${top}px`;
+            targetMenu.style.left = `${left}px`;
+
+            const closeHandler = (e) => {
+              if (!targetMenu.contains(e.target) && e.target !== btn) {
+                targetMenu.style.display = 'none';
+                document.removeEventListener('click', closeHandler);
+              }
+            };
+            document.addEventListener('click', closeHandler);
+          }
+        }
+      }
+    },
+
+    showDetailsById(id) {
+      this.closeActionMenus();
+      const item = sourceReminders.find(r => r.id === id);
+      if (item) this.showDetails(item);
     },
 
     onRowClick(id, event) {
@@ -342,6 +411,7 @@ window.ReminderCenterController = (function() {
 
     editReminder(id, event) {
       if (event) event.stopPropagation();
+      this.closeActionMenus();
       const item = sourceReminders.find(r => r.id === id);
       if (!item) return;
 
@@ -412,6 +482,7 @@ window.ReminderCenterController = (function() {
 
     async toggleComplete(id, event) {
       if (event) event.stopPropagation();
+      this.closeActionMenus();
       const item = sourceReminders.find(r => r.id === id);
       if (!item) return;
 
@@ -437,6 +508,7 @@ window.ReminderCenterController = (function() {
 
     openSnoozeModal(id, event) {
       if (event) event.stopPropagation();
+      this.closeActionMenus();
       const item = sourceReminders.find(r => r.id === id);
       if (!item) return;
 
@@ -488,6 +560,7 @@ window.ReminderCenterController = (function() {
 
     async deleteReminder(id, event) {
       if (event) event.stopPropagation();
+      this.closeActionMenus();
       const item = sourceReminders.find(r => r.id === id);
       const title = item ? item.title : `Reminder #${id}`;
 

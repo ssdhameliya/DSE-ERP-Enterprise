@@ -337,10 +337,17 @@ window.SettingsController = (function() {
 
         if (canonicalKey === 'application.brandImagePath') {
           const authBanner = document.getElementById('auth-brand-banner-img');
+          const authBannerBox = document.getElementById('auth-brand-banner-box');
           if (authBanner) authBanner.src = objectUrl;
+          if (authBannerBox) authBannerBox.style.display = 'block';
+          localStorage.setItem('dse_brand_banner_url', objectUrl);
         } else if (canonicalKey === 'application.markImagePath') {
           const authMark = document.getElementById('auth-brand-mark-img');
+          const authMarkBox = document.getElementById('auth-brand-mark-box');
           if (authMark) authMark.src = objectUrl;
+          if (authMarkBox) authMarkBox.style.display = 'block';
+          localStorage.setItem('dse_brand_mark_url', objectUrl);
+          localStorage.setItem('dse_brand_mark_active', 'true');
         }
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
@@ -409,6 +416,18 @@ window.SettingsController = (function() {
 
         // 3. Clear preview cleanly without dummy fallback images
         setAssetPreview(previewImgId, placeholderId, '', null, statusId, canonicalKey);
+
+        // Desktop LoginController.java:231-239 parity: Instantly hide startup elements when cleared
+        if (canonicalKey === 'application.brandImagePath') {
+          const authBannerBox = document.getElementById('auth-brand-banner-box');
+          if (authBannerBox) authBannerBox.style.display = 'none';
+          localStorage.removeItem('dse_brand_banner_url');
+        } else if (canonicalKey === 'application.markImagePath') {
+          const authMarkBox = document.getElementById('auth-brand-mark-box');
+          if (authMarkBox) authMarkBox.style.display = 'none';
+          localStorage.removeItem('dse_brand_mark_url');
+          localStorage.setItem('dse_brand_mark_active', 'false');
+        }
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" removed.`, 'info');

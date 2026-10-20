@@ -267,6 +267,18 @@ window.UiSemanticRegistry = (function() {
      */
     kpiSemantic(label) {
       const text = normalize(label);
+      if (text.includes('overdue') || text.includes('critical') || text.includes('rejected') || text.includes('cancel')) {
+        return { icon: '⚠️', colour: 'red', glow: 'rgba(248, 113, 113, 0.25)' };
+      }
+      if (text.includes('today')) {
+        return { icon: '📅', colour: 'green', glow: 'rgba(52, 211, 153, 0.25)' };
+      }
+      if (text.includes('reminder') || text.includes('follow up')) {
+        return { icon: '⏰', colour: 'blue', glow: 'rgba(56, 189, 248, 0.25)' };
+      }
+      if (text.includes('next 7') || text.includes('upcoming') || text.includes('scheduled')) {
+        return { icon: '🗓️', colour: 'purple', glow: 'rgba(167, 139, 250, 0.25)' };
+      }
       if (text.includes('revenue') || text.includes('sales') || text.includes('collection') || text.includes('turnover')) {
         return { icon: '💰', colour: 'green', glow: 'rgba(52, 211, 153, 0.25)' };
       }
@@ -275,9 +287,6 @@ window.UiSemanticRegistry = (function() {
       }
       if (text.includes('pending') || text.includes('due') || text.includes('receivable')) {
         return { icon: '⏳', colour: 'yellow', glow: 'rgba(251, 191, 36, 0.25)' };
-      }
-      if (text.includes('overdue') || text.includes('critical') || text.includes('rejected') || text.includes('cancel')) {
-        return { icon: '🚨', colour: 'red', glow: 'rgba(248, 113, 113, 0.25)' };
       }
       if (text.includes('customer') || text.includes('client') || text.includes('party')) {
         return { icon: '👥', colour: 'blue', glow: 'rgba(56, 189, 248, 0.25)' };

@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.36.03">
+  <link rel="stylesheet" href="css/app.css?v=10.0.36.04">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -6305,8 +6305,10 @@
             <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Return Period:</label>
-                <input type="text" id="gst-period-input" class="form-input" value="2026-10"
-                  style="width:105px; font-weight:700; text-align:center;" placeholder="YYYY-MM">
+                <select id="gst-return-period" class="form-select" style="width:140px; font-weight:700;"
+                  onchange="window.GstController.onPeriodChange(this.value)">
+                  <option value="ALL">All Periods</option>
+                </select>
               </div>
               <input type="file" id="gst-2b-file-input" accept=".json" style="display:none;"
                 onchange="window.GstController.handle2bFileSelected(event)">
@@ -9813,25 +9815,52 @@
 
           <!-- 4 REMINDER KPIS (Desktop ReminderCenter.fxml lines 27-87 Parity) -->
           <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
-            <div class="standard-kpi-card kpi-blue">
-              <div class="metric-label">OPEN REMINDERS</div>
-              <div id="rc-kpi-open" class="metric-value">0</div>
-              <div class="metric-note">Active items requiring attention</div>
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--blue, #38bdf8); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-blue" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); flex-shrink: 0;">⏰</span>
+                  <span>Open Reminders</span>
+                </div>
+                <span class="pill-badge pill-neutral metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Active</span>
+              </div>
+              <div id="rc-kpi-open" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: #60a5fa; margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Active items requiring attention</div>
             </div>
-            <div class="standard-kpi-card kpi-red">
-              <div class="metric-label">OVERDUE</div>
-              <div id="rc-kpi-overdue" class="metric-value">0</div>
-              <div class="metric-note">Past due and still incomplete</div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--red, #f87171); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-red" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(248, 113, 113, 0.2); box-shadow: 0 0 12px rgba(248, 113, 113, 0.25); flex-shrink: 0;">⚠️</span>
+                  <span>Overdue</span>
+                </div>
+                <span class="pill-badge pill-danger metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Alert</span>
+              </div>
+              <div id="rc-kpi-overdue" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--red, #f87171); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Past due and still incomplete</div>
             </div>
-            <div class="standard-kpi-card kpi-green">
-              <div class="metric-label">DUE TODAY</div>
-              <div id="rc-kpi-due-today" class="metric-value">0</div>
-              <div class="metric-note">Scheduled for the current day</div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--green, #34d399); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-green" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(52, 211, 153, 0.2); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); flex-shrink: 0;">📅</span>
+                  <span>Due Today</span>
+                </div>
+                <span class="pill-badge pill-success metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Today</span>
+              </div>
+              <div id="rc-kpi-due-today" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--green, #4ade80); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Scheduled for the current day</div>
             </div>
-            <div class="standard-kpi-card kpi-orange">
-              <div class="metric-label">NEXT 7 DAYS</div>
-              <div id="rc-kpi-upcoming" class="metric-value">0</div>
-              <div class="metric-note">Upcoming workload at a glance</div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--purple, #a855f7); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-purple" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(167, 139, 250, 0.2); box-shadow: 0 0 12px rgba(167, 139, 250, 0.25); flex-shrink: 0;">🗓️</span>
+                  <span>Next 7 Days</span>
+                </div>
+                <span class="pill-badge pill-purple metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Upcoming</span>
+              </div>
+              <div id="rc-kpi-upcoming" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--purple, #c084fc); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Upcoming workload at a glance</div>
             </div>
           </div>
 
@@ -17150,69 +17179,69 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.36.03"></script>
+  <script src="js/version.js?v=10.0.36.04"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.36.03"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.36.03"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.03"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.03"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.36.03"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.03"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.03"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.36.03"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.03"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.03"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.03"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.03"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.36.03"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.36.03"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.36.03"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.36.03"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.36.04"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.36.04"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.04"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.04"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.36.04"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.04"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.04"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.36.04"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.04"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.04"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.04"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.04"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.36.04"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.36.04"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.36.04"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.36.04"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.36.03"></script>
-  <script src="js/services/ApiService.js?v=10.0.36.03"></script>
-  <script src="js/services/AuthService.js?v=10.0.36.03"></script>
-  <script src="js/services/NotificationService.js?v=10.0.36.03"></script>
-  <script src="js/services/MasterService.js?v=10.0.36.03"></script>
-  <script src="js/services/OperationsService.js?v=10.0.36.03"></script>
-  <script src="js/services/ReportService.js?v=10.0.36.03"></script>
-  <script src="js/services/ReconService.js?v=10.0.36.03"></script>
-  <script src="js/services/AccountingService.js?v=10.0.36.03"></script>
-  <script src="js/services/ImportService.js?v=10.0.36.03"></script>
+  <script src="js/services/BrandingService.js?v=10.0.36.04"></script>
+  <script src="js/services/ApiService.js?v=10.0.36.04"></script>
+  <script src="js/services/AuthService.js?v=10.0.36.04"></script>
+  <script src="js/services/NotificationService.js?v=10.0.36.04"></script>
+  <script src="js/services/MasterService.js?v=10.0.36.04"></script>
+  <script src="js/services/OperationsService.js?v=10.0.36.04"></script>
+  <script src="js/services/ReportService.js?v=10.0.36.04"></script>
+  <script src="js/services/ReconService.js?v=10.0.36.04"></script>
+  <script src="js/services/AccountingService.js?v=10.0.36.04"></script>
+  <script src="js/services/ImportService.js?v=10.0.36.04"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/GstController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.03"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/GstController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.04"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.04"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.36.03"></script>
-  <script src="js/app.js?v=10.0.36.03"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.36.04"></script>
+  <script src="js/app.js?v=10.0.36.04"></script>
 </body>
 
 </html>

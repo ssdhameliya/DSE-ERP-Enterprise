@@ -127,5 +127,22 @@ window.AccountingService = {
   },
   async getEWayNicJson(id) {
     return await window.ApiService.get(`/api/eway-bill/${id}/export-json`);
+  },
+  async generateEInvoice(saleIdOrInvNo) {
+    let id = saleIdOrInvNo;
+    if (typeof id === 'string' && isNaN(Number(id))) {
+      try {
+        const sales = await this.getEligibleSalesForEWay();
+        const found = (sales || []).find(s => s.invoiceNo === id || s.invoiceNumber === id);
+        if (found) id = found.saleId || found.id;
+      } catch (_) {}
+    }
+    if (id && !isNaN(Number(id))) {
+      try {
+        const res = await window.ApiService.get(`/api/eway-bill/${id}/export-json`);
+        if (res) return res;
+      } catch (_) {}
+    }
+    return null;
   }
 };

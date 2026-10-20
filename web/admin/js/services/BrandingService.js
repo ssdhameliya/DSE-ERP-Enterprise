@@ -145,11 +145,27 @@ window.BrandingService = (function() {
       }
     }
 
-    // Version Badge
-    const versionBadgeEl = document.getElementById('auth-app-version-badge');
-    if (versionBadgeEl) {
-      const ver = (window.DSE_VERSION && (window.DSE_VERSION.webVersion || window.DSE_VERSION.version)) || '10.0.35.02';
-      versionBadgeEl.textContent = `Version ${ver}`;
+    // Desktop LoginController.java:231-239 parity: Hide mark card when asset is removed/empty
+    const markBox = document.getElementById('auth-brand-mark-box');
+    const markImg = document.getElementById('auth-brand-mark-img');
+    const bannerBox = document.getElementById('auth-brand-banner-box');
+    const bannerImg = document.getElementById('auth-brand-banner-img');
+
+    const markActive = localStorage.getItem('dse_brand_mark_active');
+    const markUrl = localStorage.getItem('dse_brand_mark_url') || profile.mark;
+    if (markActive === 'false' || profile.mark === '' || profile.mark === null) {
+      if (markBox) markBox.style.display = 'none';
+    } else if (markBox && (markUrl || markActive === 'true')) {
+      markBox.style.display = 'block';
+      if (markImg && markUrl) markImg.src = markUrl;
+    }
+
+    const bannerUrl = localStorage.getItem('dse_brand_banner_url') || profile.banner;
+    if (profile.banner === '' || profile.banner === null) {
+      if (bannerBox) bannerBox.style.display = 'none';
+    } else if (bannerBox && bannerUrl) {
+      bannerBox.style.display = 'block';
+      if (bannerImg) bannerImg.src = bannerUrl;
     }
   }
 
@@ -159,7 +175,11 @@ window.BrandingService = (function() {
       return;
     }
     try {
-      const settings = await window.ApiService.get('/api/support/settings?prefix=company.').catch(() => null);
+      const [compSettings, appSettings] = await Promise.all([
+        window.ApiService.get('/api/support/settings?prefix=company.').catch(() => null),
+        window.ApiService.get('/api/support/settings?prefix=application.').catch(() => null)
+      ]);
+      const settings = Object.assign({}, compSettings, appSettings);
       if (settings && typeof settings === 'object') {
         const updated = Object.assign({}, currentProfile);
         if (settings['company.name']) updated.name = settings['company.name'];
@@ -169,6 +189,21 @@ window.BrandingService = (function() {
         if (settings['company.website'] !== undefined) updated.website = settings['company.website'];
         if (settings['company.bankName']) updated.bankName = settings['company.bankName'];
         if (settings['company.bankAccount']) updated.bankAccount = settings['company.bankAccount'];
+
+        // Synchronize startup mark & banner assets matching desktop LoginController
+        const markVal = settings['application.markImagePath'] !== undefined ? settings['application.markImagePath'] : settings['application.mark'];
+        if (markVal !== undefined) {
+          if (!markVal || markVal === 'null' || markVal === '') {
+            localStorage.setItem('dse_brand_mark_active', 'false');
+            localStorage.removeItem('dse_brand_mark_url');
+            const markBox = document.getElementById('auth-brand-mark-box');
+            if (markBox) markBox.style.display = 'none';
+          } else {
+            localStorage.setItem('dse_brand_mark_active', 'true');
+            const markBox = document.getElementById('auth-brand-mark-box');
+            if (markBox) markBox.style.display = 'block';
+          }
+        }
 
         currentProfile = updated;
         saveProfileToStorage(updated);
@@ -183,23 +218,11 @@ window.BrandingService = (function() {
   // Live Clock formatting matching desktop SharedApplicationFooter / ClockService
   function startClock() {
     function tick() {
-      const now = new Date();
-      const options = { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' };
-      const datePart = now.toLocaleDateString('en-GB', options);
-      const timePart = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      const clockStr = `📅 ${datePart} | ${timePart} | IST`;
-
-      const authClock = document.getElementById('auth-footer-clock');
-      if (authClock) authClock.textContent = clockStr;
-
-      const appClock = document.getElementById('footer-live-clock');
-      if (appClock) {
-        const valSpan = appClock.querySelector('.footer-val');
-        if (valSpan) valSpan.textContent = `${datePart} | ${timePart} | IST`;
+      if (window.FormatUtil && window.FormatUtil.updateLiveClocks) {
+        window.FormatUtil.updateLiveClocks();
       }
     }
     tick();
-    setInterval(tick, 1000);
   }
 
   // Auto initialize on DOMContentLoaded or immediately
