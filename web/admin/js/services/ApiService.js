@@ -4,7 +4,12 @@
  * 100% Server Authoritative - Zero Mock Poisoning
  */
 window.ApiService = (function() {
-  const BASE_URL = ''; // Relative path communicates directly with the current host/proxy
+  const BASE_URL = (function() {
+    if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+      return 'https://erp.jasviindustries.in';
+    }
+    return ''; // Relative path communicates directly with the current host/proxy
+  })();
 
   return {
     async request(endpoint, options = {}) {
