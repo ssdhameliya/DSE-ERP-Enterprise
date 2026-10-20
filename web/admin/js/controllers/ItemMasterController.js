@@ -618,28 +618,80 @@ window.ItemMasterController = (function() {
   }
 
   async function deleteSingleItem(code, rowVersion = 0) {
-    if (!confirm(`Are you sure you want to delete item ${code}?\n\nThis will remove the SKU from the product catalog.`)) return;
+    if (!code) return;
+    let ok = false;
+    if (window.AppDialogService && window.AppDialogService.destructive) {
+      ok = await window.AppDialogService.destructive(
+        'Confirm Permanent Deletion',
+        `Delete SKU: ${code}`,
+        `Are you sure you want to delete item ${code}?\n\nThis will remove the SKU from the product catalog. Transactions already referencing this item will be protected.`,
+        'Yes, Delete Item',
+        'Cancel'
+      );
+    } else {
+      ok = confirm(`Are you sure you want to delete item ${code}?\n\nThis will remove the SKU from the product catalog.`);
+    }
+    if (!ok) return;
+
     try {
       await window.MasterService.deleteItem(code, rowVersion);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Item ${code} deleted.`);
-      loadItems();
+      if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+        window.AppDialogService.toastSuccess(`Item ${code} deleted.`);
+      }
+      selectedCodes.delete(code);
+      if (selectedItemCode === code) selectedItemCode = null;
+      loadItems(true);
     } catch (err) {
-      alert('Delete failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService && window.AppDialogService.toastError) {
+        window.AppDialogService.toastError('Delete failed: ' + (err.message || 'Server error'));
+      } else {
+        alert('Delete failed: ' + (err.message || 'Server error'));
+      }
     }
   }
 
   async function deleteSelectedItems() {
-    if (selectedCodes.size === 0) return;
-    const count = selectedCodes.size;
-    if (!confirm(`Delete ${count} selected item(s) from catalog?\n\nWARNING: Items used in existing transactions cannot be removed.`)) return;
+    const codeList = Array.from(selectedCodes);
+    const count = codeList.length;
+    if (count === 0) {
+      if (selectedItemCode) {
+        return deleteSelectedItem();
+      }
+      if (window.AppDialogService && window.AppDialogService.toastWarning) {
+        window.AppDialogService.toastWarning('Please select at least one item to delete.');
+      }
+      return;
+    }
+
+    let ok = false;
+    if (window.AppDialogService && window.AppDialogService.destructive) {
+      ok = await window.AppDialogService.destructive(
+        'Bulk Permanent Deletion',
+        `Delete ${count} Selected Item(s)`,
+        `Are you sure you want to delete ${count} selected item(s) from the catalog?\n\nWARNING: Items used in existing transactions cannot be removed.`,
+        `Delete ${count} Items`,
+        'Cancel'
+      );
+    } else {
+      ok = confirm(`Delete ${count} selected item(s) from catalog?\n\nWARNING: Items used in existing transactions cannot be removed.`);
+    }
+    if (!ok) return;
 
     try {
-      const codeList = Array.from(selectedCodes);
       const res = await window.MasterService.bulkDeleteItems(codeList);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(res?.message || `${count} item(s) deleted.`);
-      loadItems();
+      if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+        window.AppDialogService.toastSuccess(res?.message || `${count} item(s) deleted.`);
+      }
+      selectedCodes.clear();
+      selectedItemCode = null;
+      updateBulkActionBar();
+      loadItems(true);
     } catch (err) {
-      alert('Bulk delete failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService && window.AppDialogService.toastError) {
+        window.AppDialogService.toastError('Bulk delete failed: ' + (err.message || 'Server error'));
+      } else {
+        alert('Bulk delete failed: ' + (err.message || 'Server error'));
+      }
     }
   }
 
@@ -1184,9 +1236,15 @@ window.ItemMasterController = (function() {
     } else if (selectedItemCode) {
       const item = items.find(i => i.itemCode === selectedItemCode);
       deleteSingleItem(selectedItemCode, item ? (item.rowVersion || 0) : 0);
+    } else if (items && items.length === 1) {
+      const single = items[0];
+      deleteSingleItem(single.itemCode, single.rowVersion || 0);
     } else {
-      if (window.AppDialogService && window.AppDialogService.toastWarning) window.AppDialogService.toastWarning('Please select an item to delete.');
-      else alert('Please select an item to delete.');
+      if (window.AppDialogService && window.AppDialogService.toastWarning) {
+        window.AppDialogService.toastWarning('Please select an item row or check an item to delete.');
+      } else {
+        alert('Please select an item row or check an item to delete.');
+      }
     }
   }
 

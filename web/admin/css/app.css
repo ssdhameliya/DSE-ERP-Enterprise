@@ -83,7 +83,7 @@
       border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0 14px 0 38px;
       color: var(--text-main); font-size: 0.85rem; outline: none; transition: all 0.2s;
     }
-    .omni-search:focus { border-color: var(--primary-light); background: rgba(255, 255, 255, 0.07); }
+    body:not(.light-theme) .omni-search:focus { border-color: var(--primary-light); background: rgba(255, 255, 255, 0.07); }
     .omni-icon { position: absolute; left: 12px; top: 11px; font-size: 0.85rem; color: var(--text-dim); }
 
     .header-right { display: flex; align-items: center; gap: 10px; }
@@ -459,7 +459,7 @@
       width: 100%; height: 40px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle);
       border-radius: 8px; padding: 0 14px; color: var(--text-main); font-size: 0.85rem; outline: none;
     }
-    .form-input:focus, .form-select:focus { border-color: var(--cyan); background: rgba(0,0,0,0.5); }
+    body:not(.light-theme) .form-input:focus, body:not(.light-theme) .form-select:focus { border-color: var(--cyan); background: rgba(0,0,0,0.5); }
     .auth-alert { padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 16px; display: none; text-align: left; }
     .auth-alert.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; display: block; }
 
@@ -610,6 +610,7 @@
       background: #ffffff !important;
       color: #0f172a !important;
       border: 1px solid #cbd5e1 !important;
+      transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
     }
     body.light-theme input::placeholder,
     body.light-theme textarea::placeholder,
@@ -630,9 +631,18 @@
       background: #ffffff !important;
       color: #0f172a !important;
     }
+    body.light-theme input[type="date"]::-webkit-datetime-edit,
+    body.light-theme input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+    body.light-theme input[type="date"]::-webkit-datetime-edit-text,
+    body.light-theme input[type="date"]::-webkit-datetime-edit-month-field,
+    body.light-theme input[type="date"]::-webkit-datetime-edit-day-field,
+    body.light-theme input[type="date"]::-webkit-datetime-edit-year-field {
+      color: #0f172a !important;
+      background: transparent !important;
+    }
     body.light-theme input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: none !important;
-      opacity: 0.85;
+      filter: invert(0.2) !important;
+      opacity: 0.85 !important;
       cursor: pointer;
     }
 
@@ -692,6 +702,10 @@
       backdrop-filter: blur(4px) !important;
     }
     body.light-theme .modal-card,
+    body.light-theme .modal-content,
+    body.light-theme .modal-body,
+    body.light-theme .modal-dialog,
+    body.light-theme .modal-dialog-body,
     body.light-theme .modal-box,
     body.light-theme .modal-container,
     body.light-theme .app-dialog-card,
@@ -3607,10 +3621,10 @@
     }
 
     /* WORKFLOW FOCUS RING & HIGH-VISIBILITY FIELD TRACKING (DESKTOP PARITY) */
-    .erp-input-active-focused,
-    input:focus:not([type=checkbox]):not([type=radio]),
-    select:focus,
-    textarea:focus {
+    body:not(.light-theme) .erp-input-active-focused,
+    body:not(.light-theme) input:focus:not([type=checkbox]):not([type=radio]),
+    body:not(.light-theme) select:focus,
+    body:not(.light-theme) textarea:focus {
       outline: none !important;
       border-color: #38bdf8 !important;
       box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35), 0 0 12px rgba(56, 189, 248, 0.25) !important;
@@ -3621,13 +3635,29 @@
     body.light-theme input:focus:not([type=checkbox]):not([type=radio]),
     body.light-theme select:focus,
     body.light-theme textarea:focus,
+    body.light-theme .form-control:focus,
     body.light-theme .form-input:focus,
+    body.light-theme .form-select:focus,
     body.light-theme .filter-input:focus,
-    body.light-theme .omni-search:focus {
+    body.light-theme .filter-select:focus,
+    body.light-theme .omni-search:focus,
+    body.light-theme .search-input:focus,
+    body.light-theme input:active:not([type=checkbox]):not([type=radio]),
+    body.light-theme select:active,
+    body.light-theme textarea:active,
+    body.light-theme .form-control:active,
+    body.light-theme .form-input:active,
+    body.light-theme .form-select:active,
+    body.light-theme .filter-input:active,
+    body.light-theme .filter-select:active,
+    body.light-theme .omni-search:active,
+    body.light-theme .search-input:active {
       background: #ffffff !important;
       color: #0f172a !important;
       border-color: #0284c7 !important;
       box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), 0 0 10px rgba(2, 132, 199, 0.15) !important;
+      outline: none !important;
+      transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
     }
 
     /* 3D Attractiveness & Depth for Table Headers and Action Buttons */
@@ -3990,7 +4020,9 @@
       overflow-x: auto;
     }
     .register-tab-btn,
-    .sub-tab-btn {
+    .sub-tab-btn,
+    .tab-btn,
+    .gstr1-subtab-btn {
       padding: 8px 18px;
       font-size: 0.84rem;
       font-weight: 600;
@@ -4006,17 +4038,21 @@
       gap: 6px;
     }
     .register-tab-btn:hover,
-    .sub-tab-btn:hover {
+    .sub-tab-btn:hover,
+    .tab-btn:hover,
+    .gstr1-subtab-btn:hover {
       color: var(--text-main);
       background: rgba(255, 255, 255, 0.05);
     }
     .register-tab-btn.active,
-    .sub-tab-btn.active {
-      background: rgba(56, 189, 248, 0.15) !important;
-      color: var(--cyan) !important;
-      border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    .sub-tab-btn.active,
+    .tab-btn.active,
+    .gstr1-subtab-btn.active {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
       font-weight: 700 !important;
-      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.1);
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
     }
 
     /* ==========================================================================
@@ -4078,6 +4114,14 @@
       border: 1px solid #cbd5e1 !important;
       color: #0f172a !important;
     }
+    body.light-theme .notification-pill-card span,
+    body.light-theme .notification-pill-card label,
+    body.light-theme .module-card-panel span,
+    body.light-theme .module-card-panel label,
+    body.light-theme .module-card-panel strong {
+      color: #0f172a !important;
+      font-weight: 600 !important;
+    }
     body.light-theme .notification-pill-card:hover:not([style*="not-allowed"]) {
       background: #f1f5f9 !important;
       border-color: #0284c7 !important;
@@ -4090,6 +4134,92 @@
     body.light-theme .module-card-panel:hover {
       background: #f1f5f9 !important;
       border-color: #cbd5e1 !important;
+    }
+
+    /* Tabs & Subtabs (Light Theme) */
+    body.light-theme .register-tab-btn,
+    body.light-theme .sub-tab-btn,
+    body.light-theme .tab-btn,
+    body.light-theme .gstr1-subtab-btn {
+      color: #475569 !important;
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .register-tab-btn:hover,
+    body.light-theme .sub-tab-btn:hover,
+    body.light-theme .tab-btn:hover,
+    body.light-theme .gstr1-subtab-btn:hover {
+      color: #0f172a !important;
+      background: #f1f5f9 !important;
+    }
+    body.light-theme .register-tab-btn.active,
+    body.light-theme .sub-tab-btn.active,
+    body.light-theme .tab-btn.active,
+    body.light-theme .gstr1-subtab-btn.active {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+      color: #ffffff !important;
+      border-color: #7c3aed !important;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25) !important;
+    }
+
+    /* Standard KPI Cards (Light Theme Parity) */
+    body.light-theme .standard-kpi-card {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .standard-kpi-card .metric-value {
+      color: #0f172a !important;
+    }
+    body.light-theme .standard-kpi-card .metric-label {
+      color: #64748b !important;
+    }
+    body.light-theme .standard-kpi-card .metric-note {
+      color: #64748b !important;
+    }
+    body.light-theme .standard-kpi-card .standard-kpi-icon {
+      background: #f1f5f9 !important;
+    }
+
+    /* User Access & Matrix Toolbar (Light Theme) */
+    body.light-theme .permission-footer-bar {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.light-theme .permission-matrix-panel strong,
+    body.light-theme .permission-preview-panel strong {
+      color: #0f172a !important;
+    }
+
+    /* Settings Subpanels & Branding Cards (Light Theme) */
+    body.light-theme .settings-subpanel div[style*="background:rgba(15,23,42"],
+    body.light-theme .settings-subpanel div[style*="background: rgba(15, 23, 42"],
+    body.light-theme .settings-subpanel div[style*="background:rgba(30,41,59"],
+    body.light-theme .settings-subpanel div[style*="background: rgba(30, 41, 59"],
+    body.light-theme .settings-subpanel div[style*="background:rgba(0,0,0"],
+    body.light-theme .settings-subpanel div[style*="background: rgba(0, 0, 0"] {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .settings-subpanel h2,
+    body.light-theme .settings-subpanel h3,
+    body.light-theme .settings-subpanel div[style*="color:#ffffff"],
+    body.light-theme .settings-subpanel div[style*="color: #ffffff"],
+    body.light-theme .settings-subpanel div[style*="color:#fff"],
+    body.light-theme .settings-subpanel div[style*="color: #fff"] {
+      color: #0f172a !important;
+    }
+    body.light-theme div[style*="background:rgba(15,23,42,0.6)"],
+    body.light-theme div[style*="background: rgba(15, 23, 42, 0.6)"] {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme #mc-banner-txn {
+      color: #0f172a !important;
     }
 
     /* 2. MASTER DATA SPLIT WORKSPACE (LIGHT THEME) */

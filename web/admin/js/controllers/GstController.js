@@ -630,7 +630,7 @@ Jasvi Industries`;
   // 5. GSTR-1 STATUTORY OUTWARD RETURN CENTER
   // ==========================================
 
-  switchGstr1Subtab(subtab) {
+  async switchGstr1Subtab(subtab) {
     this.activeGstr1Subtab = subtab;
     document.querySelectorAll('.gstr1-subtab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`btn-gstr1-${subtab.toLowerCase()}`)?.classList.add('active');
@@ -639,7 +639,13 @@ Jasvi Industries`;
     const panel = document.getElementById(`panel-gstr1-${subtab.toLowerCase()}`);
     if (panel) panel.style.display = 'block';
 
-    this.renderGstr1Subtab(subtab);
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+
+    if (!this.gstr1Data) {
+      await this.loadGstr1Data();
+    } else {
+      this.renderGstr1Subtab(subtab);
+    }
   },
 
   async loadGstr1Data() {

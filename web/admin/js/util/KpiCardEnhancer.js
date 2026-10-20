@@ -307,7 +307,7 @@ window.KpiCardEnhancer = (function() {
    */
   function rebalanceContainer(grid) {
     if (!grid) return;
-    const cards = grid.querySelectorAll('.compact-kpi-card, .kpi-card, .dash-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
+    const cards = grid.querySelectorAll('.compact-kpi-card, .kpi-card, .dash-kpi-card, .standard-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
     const count = cards.length;
     if (count === 0) return;
 
@@ -317,6 +317,7 @@ window.KpiCardEnhancer = (function() {
     grid.style.flexDirection = 'row';
     grid.style.flexWrap = 'nowrap';
     grid.style.alignItems = 'stretch';
+    grid.style.gridTemplateColumns = 'none';
     grid.style.gap = count >= 7 ? '6px' : '8px';
     grid.style.width = '100%';
     grid.style.boxSizing = 'border-box';
@@ -337,11 +338,12 @@ window.KpiCardEnhancer = (function() {
       grid.classList.add('erp-kpi-density-normal');
     }
 
-    // Flexible card constraints
+    // Flexible card constraints - proportional expansion across full container
     cards.forEach(card => {
       card.style.flex = '1 1 0';
       card.style.minWidth = '0';
-      card.style.maxWidth = '100%';
+      card.style.maxWidth = 'none';
+      card.style.width = 'auto';
       card.style.height = '58px';
       card.style.minHeight = '58px';
       card.style.maxHeight = '58px';
@@ -350,7 +352,7 @@ window.KpiCardEnhancer = (function() {
 
   function enhanceGrid(grid) {
     if (!grid) return;
-    const cards = grid.querySelectorAll('.kpi-card, .dash-kpi-card, .dash-kpi-card.clickable-kpi, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
+    const cards = grid.querySelectorAll('.kpi-card, .dash-kpi-card, .dash-kpi-card.clickable-kpi, .standard-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
     cards.forEach(card => enhanceCard(card));
     rebalanceContainer(grid);
 
@@ -377,7 +379,7 @@ window.KpiCardEnhancer = (function() {
 
       // Also enhance individual ungridded cards if any
       const orphanCards = container.querySelectorAll(
-        '.kpi-card:not([data-erp-kpi-compact-enhanced]), .dash-kpi-card:not([data-erp-kpi-compact-enhanced]), .bank-recon-kpi:not([data-erp-kpi-compact-enhanced]), .user-kpi:not([data-erp-kpi-compact-enhanced])'
+        '.kpi-card:not([data-erp-kpi-compact-enhanced]), .dash-kpi-card:not([data-erp-kpi-compact-enhanced]), .standard-kpi-card:not([data-erp-kpi-compact-enhanced]), .bank-recon-kpi:not([data-erp-kpi-compact-enhanced]), .user-kpi:not([data-erp-kpi-compact-enhanced])'
       );
       orphanCards.forEach(c => enhanceCard(c));
     },

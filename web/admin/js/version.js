@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.05",
+  version: "10.0.38.06",
   desktopVersion: "10.0.38",
-  webBuild: 5,
-  webVersion: "10.0.38.05",
-  tag: "web-v10.0.38.05",
-  releaseDate: "2026-10-21T01:05:00+05:30",
+  webBuild: 6,
+  webVersion: "10.0.38.06",
+  tag: "web-v10.0.38.06",
+  releaseDate: "2026-10-21T02:00:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.05 Desktop Dynamic KPI Single-Panel Engine & 38-Screen Unique Icon/Color Parity: Single-Row Never-Wrap Ribbon Authority (8 Cards on Bank Statement in One Panel), 58px Standard Desktop Height, Usable-Width Dynamic Density (Normal/Compact/Dense) with ResizeObserver, and 100% Semantic Icon & 10-Color Palette Parity matching Desktop ResponsiveKpiLayoutManager.java and UiSemanticRegistry.java"
+  summary: "10.0.38.06 Comprehensive Light Mode Polish, Zero-Glitch Focus Engine, Universal 100% Single-Row KPI Ribbon Parity, Master Data 50% Category Rail Expansion, and Controller Robustness"
 };
 
 // Automatic UI Version Injection

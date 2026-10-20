@@ -1715,10 +1715,18 @@ window.ReportsController = (function() {
         if (m.id !== menuId) m.style.display = 'none';
       });
       const menu = document.getElementById(menuId);
+      const btn = event ? (event.currentTarget || event.target) : null;
       if (menu) {
         const isShown = menu.style.display === 'block';
-        menu.style.display = isShown ? 'none' : 'block';
         if (!isShown) {
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = (rect.bottom + 4) + 'px';
+            menu.style.left = Math.max(10, rect.right - 160) + 'px';
+            menu.style.zIndex = '99999';
+          }
+          menu.style.display = 'block';
           const closeHandler = (e) => {
             if (!menu.contains(e.target)) {
               menu.style.display = 'none';
@@ -1726,6 +1734,8 @@ window.ReportsController = (function() {
             }
           };
           setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        } else {
+          menu.style.display = 'none';
         }
       }
     },
