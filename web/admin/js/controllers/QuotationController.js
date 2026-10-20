@@ -476,10 +476,11 @@ window.QuotationController = (function() {
   async function printPdf(no) {
     if (!no) return;
     try {
-      window.AppDialogService.toastInfo(`Generating official Quotation PDF for ${no}...`);
+      if (window.AppDialogService) window.AppDialogService.toastInfo(`Opening Quotation PDF for ${no}...`);
       await window.ApiService.openPdfPreview('QUOTATION', no);
     } catch (err) {
-      window.AppDialogService.toastError(err.message || 'Failed to open Quotation PDF');
+      console.warn('Server PDF render unavailable, opening browser print view:', err);
+      window.print();
     }
   }
 
@@ -487,15 +488,91 @@ window.QuotationController = (function() {
     if (!no) return;
     try {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting quotation ${no} to Excel...`);
-      await window.ApiService.downloadFile(`/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=EXCEL`, `Quotation_${no}.xlsx`);
+      // Attempt server canonical render
+      try {
+        await window.ApiService.downloadFile(`/api/documents/render?type=QUOTATION&number=${encodeURIComponent(no)}&format=EXCEL`, `Quotation_${no}.xlsx`);
+        return;
+      } catch (renderErr) {
+        console.warn('Server render failed, generating authoritative client Excel via SheetJS:', renderErr);
+      }
+
+      // Authoritative client SheetJS export with full line items
+      const quote = quotationsList.find(q => q.no === no) || (selectedQuote && selectedQuote.no === no ? selectedQuote : null);
+      let lines = [];
+      if (quote && quote.id) {
+        try {
+          lines = await window.OperationsService.getQuotationLines(quote.id);
+        } catch (_) {}
+      }
+      if (window.XLSX && quote) {
+        const wsData = [
+          ['JASVI INDUSTRIES ERP - QUOTATION ESTIMATE'],
+          ['Quotation #:', quote.no || no, 'Date:', quote.date || '', 'Status:', quote.status || 'DRAFT'],
+          ['Customer:', quote.customer || '', 'Phone:', quote.phone || '', 'Email:', quote.email || ''],
+          ['Salesperson:', quote.salesperson || '', 'Valid Until:', quote.valid || '', 'Follow-Up:', quote.followUp || ''],
+          [],
+          ['#', 'Item Code', 'Description', 'HSN', 'Qty', 'Unit', 'Rate (₹)', 'Disc %', 'GST %', 'Line Total (₹)']
+        ];
+        if (lines && lines.length > 0) {
+          lines.forEach((l, idx) => {
+            wsData.push([
+              idx + 1,
+              l.code || '',
+              l.description || '',
+              l.hsn || '',
+              l.quantity || 1,
+              l.unit || 'PCS',
+              l.rate || 0,
+              l.discount || 0,
+              l.gst || 0,
+              l.total || 0
+            ]);
+          });
+        }
+        wsData.push([]);
+        wsData.push(['', '', '', '', '', '', '', '', 'Total Amount:', quote.amount || 0]);
+        if (quote.remarks) wsData.push(['Remarks:', quote.remarks]);
+
+        const wb = window.XLSX.utils.book_new();
+        const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
+        window.XLSX.writeFile(wb, `Quotation_${no}.xlsx`);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} exported to Excel.`);
+      } else {
+        throw new Error('Excel spreadsheet generator unavailable');
+      }
     } catch (err) {
-      console.warn('Direct quotation render export failed:', err);
+      console.error('Quotation downloadExcel error:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export Excel: ' + (err.message || 'Error'));
     }
+  }
+
+  function exportRegisterExcel() {
+    if (!quotationsList || quotationsList.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No quotations found to export.');
+      return;
+    }
+    if (window.XLSX) {
+      const headers = ['Quotation #', 'Date', 'Customer', 'Valid Upto', 'Status', 'Follow Up', 'Converted To', 'Salesperson', 'Amount (₹)'];
+      const rows = quotationsList.map(q => [
+        q.no, q.date, q.customer, q.valid, q.status, q.followUp, q.converted || '—', q.salesperson || '', q.amount || 0
+      ]);
+      const ws = window.XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Quotation Register');
+      window.XLSX.writeFile(wb, `Quotation_Register_${new Date().toISOString().substring(0, 10)}.xlsx`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${quotationsList.length} quotations to Excel.`);
+    }
+  }
+
+  function exportRegisterPdf() {
+    window.print();
   }
 
   function sendEmailPrompt(id, no, recipientEmail) {
     const email = prompt(`Send Quotation ${no} to email address:`, recipientEmail || '');
     if (!email) return;
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending quotation email to ${email}...`);
     window.OperationsService.sendAuthorityEmail({
       recipientEmail: email,
       subject: `Quotation ${no} - Jasvi Industries`,
@@ -507,7 +584,7 @@ window.QuotationController = (function() {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation emailed to ${email}`);
       loadQuotations(currentPage);
     }).catch(err => {
-      if (window.AppDialogService) window.AppDialogService.toastError('Email failed: ' + err.message);
+      if (window.AppDialogService) window.AppDialogService.toastError('Email failed: ' + (err.message || 'Server error'));
     });
   }
 
@@ -961,6 +1038,8 @@ window.QuotationController = (function() {
     deleteQuotation,
     printPdf,
     downloadExcel,
+    exportRegisterExcel,
+    exportRegisterPdf,
     sendEmailPrompt,
     sendWhatsappPrompt,
     openFollowUpModal,

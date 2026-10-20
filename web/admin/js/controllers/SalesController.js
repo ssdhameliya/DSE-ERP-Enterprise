@@ -809,6 +809,22 @@ window.SalesController = {
     if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
     this.isNavigatingToEditor = true;
     this.viewMode = isViewMode;
+
+    // Hydrate authoritative full sale entity if lines are missing (Summary DTO vs Full Entity)
+    if (existingSale && (!existingSale.lines || existingSale.lines.length === 0)) {
+      const invNo = existingSale.invoiceNo || existingSale.number || existingSale.invoice;
+      if (invNo) {
+        try {
+          const fullSale = await window.OperationsService.getSaleByInvoice(invNo);
+          if (fullSale && (fullSale.lines || fullSale.invoiceNo)) {
+            existingSale = fullSale;
+          }
+        } catch (e) {
+          console.warn('Could not hydrate full sale with lines:', e);
+        }
+      }
+    }
+
     this.editingSale = existingSale || null;
 
     if (window.NavigationRouter) {
@@ -816,6 +832,36 @@ window.SalesController = {
     }
 
     await this.initSaleWorkspace(existingSale, isViewMode);
+  },
+
+  async openSaleWorkspace(existingSale = null, customerIdentifier = '') {
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+    this.isNavigatingToEditor = true;
+    this.viewMode = false;
+    this.editingSale = existingSale || null;
+
+    if (window.NavigationRouter) {
+      window.NavigationRouter.selectNav('view-sale-create');
+    }
+
+    await this.initSaleWorkspace(existingSale, false);
+
+    if (customerIdentifier) {
+      const selCust = document.getElementById('ws-customer');
+      if (selCust) {
+        const idStr = String(customerIdentifier).trim().toLowerCase();
+        let opt = Array.from(selCust.options).find(o => o.value == customerIdentifier || o.text.trim().toLowerCase().includes(idStr));
+        if (opt) {
+          selCust.value = opt.value;
+          this.onWorkspaceCustomerChange(selCust);
+        }
+      }
+    }
+  },
+
+  async openSaleForCustomer(customerObjOrName) {
+    const name = typeof customerObjOrName === 'object' && customerObjOrName ? (customerObjOrName.name || customerObjOrName.partyName) : customerObjOrName;
+    return this.openSaleWorkspace(null, name);
   },
 
   async openSaleCreatorFromQuotation(quote) {

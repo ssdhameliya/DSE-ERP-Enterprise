@@ -50,8 +50,8 @@ window.AutomationCenterController = (function() {
 
       try {
         const [itemsRes, purchasesRes] = await Promise.all([
-          window.OperationsService ? window.OperationsService.getItems(0, 300) : Promise.resolve([]),
-          window.OperationsService ? window.OperationsService.getPurchases(0, 100) : Promise.resolve([])
+          window.MasterService ? window.MasterService.getItems(0, 300).catch(() => ({ rows: [] })) : (window.OperationsService && window.OperationsService.getItems ? window.OperationsService.getItems(0, 300).catch(() => ({ rows: [] })) : Promise.resolve([])),
+          window.OperationsService ? (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 100).catch(() => ({ rows: [] })) : window.OperationsService.getPurchases(0, 100).catch(() => ({ rows: [] }))) : Promise.resolve([])
         ]);
 
         const items = Array.isArray(itemsRes) ? itemsRes : (itemsRes?.rows || itemsRes?.content || []);

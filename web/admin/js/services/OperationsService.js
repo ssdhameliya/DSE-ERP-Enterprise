@@ -100,6 +100,18 @@ window.OperationsService = {
   async markQuotationSent(id, channel = 'EMAIL', rowVersion = 0) {
     return await window.ApiService.post(`/api/quotations/${id}/sent?channel=${encodeURIComponent(channel)}&rowVersion=${rowVersion}`, {});
   },
+  async getQuotationLines(id) {
+    return await window.ApiService.get(`/api/quotations/${id}/lines`);
+  },
+  async sendAuthorityEmail(emailData) {
+    return await window.ApiService.post('/api/authority/email', {
+      recipient: emailData.recipientEmail || emailData.recipient,
+      subject: emailData.subject,
+      body: emailData.body,
+      attachmentName: emailData.attachmentName || (emailData.documentType ? `${emailData.documentType}_${emailData.documentNumber}.pdf` : null),
+      attachmentBase64: emailData.attachmentBase64 || null
+    });
+  },
 
   // Returns (Sales Return & Purchase Return - ReturnController Parity)
   async getReturnsPage(type = 'SALES RETURN', page = 0, size = 25, q = '', party = '', status = '', from = '', to = '') {

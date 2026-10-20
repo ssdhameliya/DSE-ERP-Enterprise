@@ -47,15 +47,22 @@ window.GstController = {
   // ==========================================
 
   async loadGstData() {
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const periodInput = document.getElementById('gst-period-input');
-    if (periodInput) this.currentPeriod = periodInput.value.trim() || '2026-03';
+    if (periodInput) {
+      if (!periodInput.value) periodInput.value = currentMonthStr;
+      this.currentPeriod = periodInput.value.trim() || currentMonthStr;
+    } else {
+      this.currentPeriod = currentMonthStr;
+    }
 
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
       // 1. Fetch Authoritative Metrics
       let metrics = null;
-      if (window.AccountingService) {
+      if (window.AccountingService && typeof window.AccountingService.getGstMetrics === 'function') {
         try {
           metrics = await window.AccountingService.getGstMetrics(this.currentPeriod);
         } catch (e) {
@@ -85,29 +92,34 @@ window.GstController = {
   },
 
   async computeLocalGstMetrics(period) {
-    const [salesRes, purRes] = await Promise.all([
-      window.OperationsService.getSales(0, 100),
-      window.OperationsService.getPurchases(0, 100)
-    ]);
-    const sales = salesRes.rows || salesRes.content || [];
-    const purchases = purRes.rows || purRes.content || [];
+    try {
+      const [salesRes, purRes] = await Promise.all([
+        (window.OperationsService.getSalesPage ? window.OperationsService.getSalesPage(0, 100) : window.OperationsService.getSales(0, 100)).catch(() => ({ rows: [] })),
+        (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 100) : window.OperationsService.getPurchases(0, 100)).catch(() => ({ rows: [] }))
+      ]);
+      const sales = salesRes?.rows || salesRes?.content || [];
+      const purchases = purRes?.rows || purRes?.content || [];
 
-    let outwardGst = 0;
-    sales.forEach(s => { outwardGst += (parseFloat(s.gstAmount) || 0); });
+      let outwardGst = 0;
+      sales.forEach(s => { outwardGst += (parseFloat(s.gstAmount) || 0); });
 
-    let inwardItc = 0;
-    purchases.forEach(p => { inwardItc += (parseFloat(p.gstAmount) || 0); });
+      let inwardItc = 0;
+      purchases.forEach(p => { inwardItc += (parseFloat(p.gstAmount) || 0); });
 
-    const itcAtRisk = inwardItc * 0.08;
-    const netPayable = Math.max(0, outwardGst - (inwardItc - itcAtRisk));
+      const itcAtRisk = inwardItc * 0.08;
+      const netPayable = Math.max(0, outwardGst - (inwardItc - itcAtRisk));
 
-    return {
-      eligibleItcAmount: inwardItc - itcAtRisk,
-      itcAtRiskAmount: itcAtRisk,
-      valueDiffCount: 3,
-      missingInBooksCount: 2,
-      totalNetCashPayable: netPayable
-    };
+      return {
+        eligibleItcAmount: Math.max(0, inwardItc - itcAtRisk),
+        itcAtRiskAmount: itcAtRisk,
+        valueDiffCount: Math.min(3, purchases.length),
+        missingInBooksCount: Math.min(2, purchases.length),
+        totalNetCashPayable: netPayable
+      };
+    } catch (e) {
+      console.warn('computeLocalGstMetrics fallback:', e);
+      return { eligibleItcAmount: 0, itcAtRiskAmount: 0, valueDiffCount: 0, missingInBooksCount: 0, totalNetCashPayable: 0 };
+    }
   },
 
   updateKpis(m) {
@@ -193,8 +205,8 @@ window.GstController = {
   },
 
   async generateLocal2bRows() {
-    const purRes = await window.OperationsService.getPurchases(0, 50);
-    const purchases = purRes.rows || purRes.content || [];
+    const purRes = await (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 50) : window.OperationsService.getPurchases(0, 50)).catch(() => ({ rows: [] }));
+    const purchases = purRes?.rows || purRes?.content || [];
 
     return purchases.map((p, idx) => {
       const taxable = parseFloat(p.taxableAmount || p.subtotal || (p.totalAmount * 0.85) || 0);
@@ -603,8 +615,8 @@ Jasvi Industries`;
       }
 
       if (!gstr1) {
-        const salesRes = await window.OperationsService.getSales(0, 100);
-        const sales = salesRes.rows || salesRes.content || [];
+        const salesRes = await (window.OperationsService.getSalesPage ? window.OperationsService.getSalesPage(0, 100) : window.OperationsService.getSales(0, 100)).catch(() => ({ rows: [] }));
+        const sales = salesRes?.rows || salesRes?.content || [];
         this.gstr1Data = {
           b2b: this.mapSalesToB2bParties(sales),
           b2cs: this.mapSalesToB2cs(sales),

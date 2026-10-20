@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.36.02">
+  <link rel="stylesheet" href="css/app.css?v=10.0.36.03">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -2589,11 +2589,11 @@
               <p>Client estimates, pricing proposals, live tracking, and one-click sales invoice conversion</p>
             </div>
             <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">📊 Export Excel</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">📄 Export PDF</button>
               <button class="btn btn-secondary" onclick="window.QuotationController.resetFilters()">Reset</button>
-              <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635;
-                Refresh</button>
-              <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New
-                Quotation</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New Quotation</button>
             </div>
           </div>
 
@@ -6066,6 +6066,81 @@
               </div>
             </div>
           </div>
+
+          <!-- Tab Navigation for Statements matching FinancialStatements.fxml -->
+          <div class="tabs-nav" style="display:flex; gap:6px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px;">
+            <button class="tab-btn active" id="tab-btn-fs-pnl" onclick="window.FinanceController.switchFsTab('pnl')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-main); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:8px;">
+              <span>&#128202;</span> Profit &amp; Loss Statement
+            </button>
+            <button class="tab-btn" id="tab-btn-fs-bs" onclick="window.FinanceController.switchFsTab('bs')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#9878;&#65039;</span> Balance Sheet
+            </button>
+            <button class="tab-btn" id="tab-btn-fs-ratios" onclick="window.FinanceController.switchFsTab('ratios')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#128200;</span> Executive Ratio Health
+            </button>
+          </div>
+
+          <!-- TAB 1: P&L STATEMENT -->
+          <div id="fs-panel-pnl" class="fs-tab-panel">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-pnl-table">
+                <thead>
+                  <tr>
+                    <th>Account Name / Classification</th>
+                    <th style="width:120px;">Account Code</th>
+                    <th style="width:180px;">Group</th>
+                    <th style="text-align:right; width:180px;">Amount (&#8377;)</th>
+                    <th style="text-align:right; width:130px;">Revenue %</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-pnl-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Profit &amp; Loss Statement...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: BALANCE SHEET -->
+          <div id="fs-panel-bs" class="fs-tab-panel" style="display:none;">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-bs-table">
+                <thead>
+                  <tr>
+                    <th>Assets / Liabilities &amp; Equity</th>
+                    <th style="width:120px;">Account Code</th>
+                    <th style="width:180px;">Category</th>
+                    <th style="text-align:right; width:200px;">Closing Balance (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-bs-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Balance Sheet items...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: EXECUTIVE RATIOS -->
+          <div id="fs-panel-ratios" class="fs-tab-panel" style="display:none;">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-ratios-table">
+                <thead>
+                  <tr>
+                    <th>Classification</th>
+                    <th>Financial Metric / Ratio</th>
+                    <th style="text-align:right; width:160px;">Calculated Value</th>
+                    <th style="width:180px;">Industry Benchmark</th>
+                    <th style="text-align:center; width:160px;">Health Assessment</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-ratios-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Ratio Health matrix...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- VIEW: AGING ANALYSIS (AgingAnalysis.fxml Parity) -->
@@ -6230,7 +6305,7 @@
             <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Return Period:</label>
-                <input type="text" id="gst-period-input" class="form-input" value="2026-03"
+                <input type="text" id="gst-period-input" class="form-input" value="2026-10"
                   style="width:105px; font-weight:700; text-align:center;" placeholder="YYYY-MM">
               </div>
               <input type="file" id="gst-2b-file-input" accept=".json" style="display:none;"
@@ -11366,17 +11441,12 @@
 
             <!-- 4. NOTIFICATIONS PANEL (image18.png Parity) -->
             <div id="settings-panel-notifications" class="settings-subpanel" data-section="NOTIFICATIONS" style="display:none;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                <div>
-                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                    <span style="color:#c084fc; font-size:1.15rem;">&#128276;</span>
-                    <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Notifications</h2>
-                  </div>
-                  <div style="font-size:0.75rem; color:#94a3b8;">Manage notification-centre and desktop-toast preferences for your signed-in user.</div>
+              <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#c084fc; font-size:1.15rem;">&#128276;</span>
+                  <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Notifications</h2>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="window.SettingsController.saveNotifications(event)" style="background:#a855f7; border-color:#9333ea; font-weight:700; padding:6px 16px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
-                  <span>&#128190;</span> Save Notifications
-                </button>
+                <div style="font-size:0.75rem; color:#94a3b8;">Manage notification-centre and desktop-toast preferences for your signed-in user.</div>
               </div>
 
               <!-- Main Inner Panel -->
@@ -11828,17 +11898,12 @@ Outstanding Balance: {BalanceAmount}
 
             <!-- 7. MODULE ACTIVATION & FEATURE CONTROL PANEL (image19.png & image20.png Parity) -->
             <div id="settings-panel-modules" class="settings-subpanel" data-section="MODULES" style="display:none;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                <div>
-                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                    <span style="color:#c084fc; font-size:1.15rem;">&#9881;&#65039;</span>
-                    <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Module Activation &amp; Feature Control</h2>
-                  </div>
-                  <div style="font-size:0.75rem; color:#94a3b8;">Control ERP business modules, statutory engines, and smart operational automations. Deactivated modules are hidden from navigation and bypassed with zero overhead.</div>
+              <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#c084fc; font-size:1.15rem;">&#9881;&#65039;</span>
+                  <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Module Activation &amp; Feature Control</h2>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="window.SettingsController.saveModules(event)" style="background:#a855f7; border-color:#9333ea; font-weight:700; padding:6px 16px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
-                  <span>&#128190;</span> Save Modules
-                </button>
+                <div style="font-size:0.75rem; color:#94a3b8;">Control ERP business modules, statutory engines, and smart operational automations. Deactivated modules are hidden from navigation and bypassed with zero overhead.</div>
               </div>
 
               <!-- 5 Full-Width Module Cards matching Desktop image19.png - image20.png -->
@@ -14966,12 +15031,6 @@ Outstanding Balance: {BalanceAmount}
             </select>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label">Item / Product (for stock adjustment)</label>
-          <select id="m-cn-item" class="form-select" onchange="window.CreditDebitNoteController.onCreditItemSelected(this.value)">
-            <option value="">-- Auto from invoice or select product --</option>
-          </select>
-        </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
             <label class="form-label">Taxable Amount (&#8377;) *</label>
@@ -15057,12 +15116,6 @@ Outstanding Balance: {BalanceAmount}
               <option value="Other">05 - Other Adjustment</option>
             </select>
           </div>
-        </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label">Return Item (for Inventory Stock Adjustment)</label>
-          <select id="m-dn-item" class="form-select" onchange="window.CreditDebitNoteController.onDebitItemSelected(this.value)">
-            <option value="">-- Auto from bill or select product --</option>
-          </select>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
@@ -17073,72 +17126,93 @@ Outstanding Balance: {BalanceAmount}
     </div>
   </div>
 
+  <!-- UNIVERSAL LIGHTBOX PREVIEW MODAL (Desktop Parity for PDF, Image & Documents) -->
+  <div id="modal-universal-preview" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:1000005; align-items:center; justify-content:center;">
+    <div style="background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:12px; width:94vw; max-width:1100px; height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 60px -15px rgba(0,0,0,0.9);">
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="universal-preview-icon" style="font-size:1.2rem;">📄</span>
+          <span id="universal-preview-title" style="font-size:0.95rem; font-weight:700; color:#ffffff;">Document Preview</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <a id="universal-preview-download-btn" href="#" download="preview_document" class="btn btn-secondary btn-sm" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">⬇️ Download</a>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.closeUniversalPreviewModal()" style="font-size:1.1rem; line-height:1; padding:2px 8px;">&times;</button>
+        </div>
+      </div>
+      <!-- Body Container -->
+      <div id="universal-preview-body" style="flex:1; width:100%; height:100%; background:#090d16; display:flex; align-items:center; justify-content:center; overflow:auto;">
+        <!-- Embedded Iframe or Image dynamically inserted -->
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.36.02"></script>
+  <script src="js/version.js?v=10.0.36.03"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.36.02"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.36.02"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.02"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.02"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.36.02"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.02"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.02"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.36.02"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.02"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.02"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.02"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.02"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.36.02"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.36.02"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.36.02"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.36.02"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.36.03"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.36.03"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.03"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.03"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.36.03"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.03"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.03"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.36.03"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.03"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.03"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.03"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.03"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.36.03"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.36.03"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.36.03"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.36.03"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.36.02"></script>
-  <script src="js/services/ApiService.js?v=10.0.36.02"></script>
-  <script src="js/services/AuthService.js?v=10.0.36.02"></script>
-  <script src="js/services/NotificationService.js?v=10.0.36.02"></script>
-  <script src="js/services/MasterService.js?v=10.0.36.02"></script>
-  <script src="js/services/OperationsService.js?v=10.0.36.02"></script>
-  <script src="js/services/ReportService.js?v=10.0.36.02"></script>
-  <script src="js/services/ReconService.js?v=10.0.36.02"></script>
-  <script src="js/services/AccountingService.js?v=10.0.36.02"></script>
-  <script src="js/services/ImportService.js?v=10.0.36.02"></script>
+  <script src="js/services/BrandingService.js?v=10.0.36.03"></script>
+  <script src="js/services/ApiService.js?v=10.0.36.03"></script>
+  <script src="js/services/AuthService.js?v=10.0.36.03"></script>
+  <script src="js/services/NotificationService.js?v=10.0.36.03"></script>
+  <script src="js/services/MasterService.js?v=10.0.36.03"></script>
+  <script src="js/services/OperationsService.js?v=10.0.36.03"></script>
+  <script src="js/services/ReportService.js?v=10.0.36.03"></script>
+  <script src="js/services/ReconService.js?v=10.0.36.03"></script>
+  <script src="js/services/AccountingService.js?v=10.0.36.03"></script>
+  <script src="js/services/ImportService.js?v=10.0.36.03"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/GstController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.02"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.02"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/GstController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.03"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.03"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.36.02"></script>
-  <script src="js/app.js?v=10.0.36.02"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.36.03"></script>
+  <script src="js/app.js?v=10.0.36.03"></script>
 </body>
 
 </html>

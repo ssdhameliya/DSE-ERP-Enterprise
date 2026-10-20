@@ -205,7 +205,9 @@ window.PartyController = (function() {
   function drawerNewSale() {
     if (selectedCustomerId) {
       const cust = customers.find(c => c.id === selectedCustomerId);
-      if (window.SalesController && window.SalesController.openSaleWorkspace) {
+      if (window.SalesController && window.SalesController.openSaleForCustomer) {
+        window.SalesController.openSaleForCustomer(cust || selectedCustomerId);
+      } else if (window.SalesController && window.SalesController.openSaleWorkspace) {
         window.SalesController.openSaleWorkspace(null, cust?.name || '');
       }
     }
@@ -262,7 +264,7 @@ window.PartyController = (function() {
               <div id="cust-action-menu-${c.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PartyController.openCustomer360(${c.id})"><span style="margin-right:8px;">🌐</span> Customer 360° Profile</div>
                 <div class="action-menu-item" onclick="window.PartyController.openEditPartyModal('CUSTOMER', ${c.id})"><span style="margin-right:8px;">✏️</span> Edit Customer</div>
-                <div class="action-menu-item" onclick="window.SalesController.openSaleWorkspace(null, '${(c.name || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🛒</span> New Sales Invoice</div>
+                <div class="action-menu-item" onclick="window.SalesController && window.SalesController.openSaleForCustomer ? window.SalesController.openSaleForCustomer('${(c.name || '').replace(/'/g, "\\'")}') : window.SalesController.openSaleWorkspace(null, '${(c.name || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🛒</span> New Sales Invoice</div>
                 <div class="action-menu-item" onclick="window.PartyController.viewAuditTrail('CUSTOMER', ${c.id})"><span style="margin-right:8px;">📜</span> View Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
                 <div class="action-menu-item" style="color:var(--red);" onclick="window.PartyController.deleteParty(${c.id}, ${c.rowVersion || 0}, 'CUSTOMER')"><span style="margin-right:8px;">🗑️</span> Delete Customer</div>
@@ -450,8 +452,10 @@ window.PartyController = (function() {
   function drawerNewPurchase() {
     if (selectedSupplierId) {
       const supp = suppliers.find(s => s.id === selectedSupplierId);
-      if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
-        window.PurchaseController.openPurchaseEditor(null, supp?.name || '');
+      if (window.PurchaseController && window.PurchaseController.openPurchaseForSupplier) {
+        window.PurchaseController.openPurchaseForSupplier(supp || selectedSupplierId);
+      } else if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+        window.PurchaseController.openPurchaseEditor(null, false, false, supp?.name || '');
       }
     }
   }
@@ -507,7 +511,7 @@ window.PartyController = (function() {
               <div id="supp-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PartyController.openSupplier360(${s.id})"><span style="margin-right:8px;">🏢</span> Supplier 360° Profile</div>
                 <div class="action-menu-item" onclick="window.PartyController.openEditPartyModal('SUPPLIER', ${s.id})"><span style="margin-right:8px;">✏️</span> Edit Supplier</div>
-                <div class="action-menu-item" onclick="window.PurchaseController.openPurchaseEditor()"><span style="margin-right:8px;">📦</span> Record Inward Bill</div>
+                <div class="action-menu-item" onclick="window.PurchaseController && window.PurchaseController.openPurchaseForSupplier ? window.PurchaseController.openPurchaseForSupplier('${(s.name || '').replace(/'/g, "\\'")}') : window.PurchaseController.openPurchaseEditor()"><span style="margin-right:8px;">📦</span> Record Inward Bill</div>
                 <div class="action-menu-item" onclick="window.PartyController.viewAuditTrail('SUPPLIER', ${s.id})"><span style="margin-right:8px;">📜</span> View Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
                 <div class="action-menu-item" style="color:var(--red);" onclick="window.PartyController.deleteParty(${s.id}, ${s.rowVersion || 0}, 'SUPPLIER')"><span style="margin-right:8px;">🗑️</span> Delete Supplier</div>
@@ -774,8 +778,8 @@ window.PartyController = (function() {
   function newSaleForCustomer360() {
     if (!selectedCustomerId) return;
     const cust = customers.find(c => c.id === selectedCustomerId) || (customer360SummaryData && customer360SummaryData.customer);
-    if (window.SalesInvoiceController && typeof window.SalesInvoiceController.createForCustomer === 'function') {
-      window.SalesInvoiceController.createForCustomer(cust || { id: selectedCustomerId });
+    if (window.SalesController && typeof window.SalesController.openSaleForCustomer === 'function') {
+      window.SalesController.openSaleForCustomer(cust || { id: selectedCustomerId });
     } else if (window.SalesController && typeof window.SalesController.openSaleWorkspace === 'function') {
       window.SalesController.openSaleWorkspace(null, cust?.name || '');
     } else if (window.NavigationRouter) {
@@ -786,10 +790,10 @@ window.PartyController = (function() {
   function newPurchaseForSupplier360() {
     if (!selectedSupplierId) return;
     const sup = suppliers.find(s => s.id === selectedSupplierId) || (supplier360SummaryData && supplier360SummaryData.supplier);
-    if (window.PurchaseInvoiceController && typeof window.PurchaseInvoiceController.createForSupplier === 'function') {
-      window.PurchaseInvoiceController.createForSupplier(sup || { id: selectedSupplierId });
+    if (window.PurchaseController && typeof window.PurchaseController.openPurchaseForSupplier === 'function') {
+      window.PurchaseController.openPurchaseForSupplier(sup || { id: selectedSupplierId });
     } else if (window.PurchaseController && typeof window.PurchaseController.openPurchaseEditor === 'function') {
-      window.PurchaseController.openPurchaseEditor(null, sup?.name || '');
+      window.PurchaseController.openPurchaseEditor(null, false, false, sup?.name || '');
     } else if (window.NavigationRouter) {
       window.NavigationRouter.selectNav('view-purchase-creation');
     }

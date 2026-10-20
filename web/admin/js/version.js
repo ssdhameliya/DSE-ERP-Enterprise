@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.36.02",
+  version: "10.0.36.03",
   desktopVersion: "10.0.36",
-  webBuild: 2,
-  webVersion: "10.0.36.02",
-  tag: "v10.0.36",
-  releaseDate: "2026-10-20T11:45:00+05:30",
-  environment: "Production / Enterprise",
-  summary: "10.0.36 Enterprise Parity & Workspace Layout Restoration"
+  webBuild: 3,
+  webVersion: "10.0.36.03",
+  tag: "web-v10.0.36.03",
+  releaseDate: "2026-10-20T13:30:00+05:30",
+  environment": "Production / Enterprise",
+  summary": "10.0.36.03 Desktop Parity Post-Release Defect Resolution & UI Architecture Synchronization"
 };
 
 // Automatic UI Version Injection

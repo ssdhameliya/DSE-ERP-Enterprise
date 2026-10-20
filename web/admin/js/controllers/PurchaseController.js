@@ -1339,8 +1339,14 @@ window.PurchaseController = (function() {
 
   let isNavigatingToPurchaseEditor = false;
 
-  async function openPurchaseEditor(invoiceNo = null, isViewMode = false, isDuplicate = false) {
+  async function openPurchaseEditor(invoiceNo = null, isViewMode = false, isDuplicate = false, preselectedSupplier = null) {
     if (isNavigatingToPurchaseEditor) return;
+    // Guard against callers passing supplier name as second argument
+    if (typeof isViewMode === 'string' && !preselectedSupplier) {
+      preselectedSupplier = isViewMode;
+      isViewMode = false;
+    }
+
     isNavigatingToPurchaseEditor = true;
     try {
       editingInvoiceNo = isDuplicate ? null : invoiceNo;
@@ -1428,6 +1434,15 @@ window.PurchaseController = (function() {
       if (suppSelect) {
         suppSelect.innerHTML = `<option value="">Select supplier... *</option>` +
           cachedSuppliers.map(s => `<option value="${s.id}">${s.partyCode ? s.partyCode + ' - ' : ''}${s.name}</option>`).join('');
+
+        if (preselectedSupplier) {
+          const matchStr = String(preselectedSupplier).trim().toLowerCase();
+          const opt = Array.from(suppSelect.options).find(o => o.value == preselectedSupplier || o.text.trim().toLowerCase().includes(matchStr));
+          if (opt) {
+            suppSelect.value = opt.value;
+            onEditorSupplierChange();
+          }
+        }
       }
 
     } catch (e) {
@@ -2226,6 +2241,10 @@ window.PurchaseController = (function() {
     openPayments,
     recordPaymentForCurrentDrawer,
     openPurchaseEditor,
+    openPurchaseForSupplier(supplier) {
+      const name = typeof supplier === 'object' && supplier ? (supplier.name || supplier.partyName) : supplier;
+      return openPurchaseEditor(null, false, false, name);
+    },
     get isNavigatingToEditor() { return isNavigatingToPurchaseEditor; },
     openNewPurchaseModal() { openPurchaseEditor(); },
     openChargesDialog,

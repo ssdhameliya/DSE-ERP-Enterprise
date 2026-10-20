@@ -483,9 +483,10 @@ window.CreditDebitNoteController = (function() {
           inpParty.onchange = async () => {
             const pName = inpParty.value.trim().toLowerCase();
             const matched = (customers || []).find(c => (c.name || c.partyName || '').toLowerCase() === pName);
-            if (matched && window.OperationsService && window.OperationsService.getSalesPage) {
+            const customerSearchName = (matched && (matched.name || matched.partyName)) ? (matched.name || matched.partyName) : inpParty.value.trim();
+            if (customerSearchName && window.OperationsService && window.OperationsService.getSalesPage) {
               try {
-                const sRes = await window.OperationsService.getSalesPage(0, 50, '', '', matched.id);
+                const sRes = await window.OperationsService.getSalesPage(0, 50, '', '', customerSearchName);
                 const sList = sRes.rows || sRes.content || [];
                 cachedCustomerInvoices = sList;
                 if (selInv) {
@@ -508,37 +509,14 @@ window.CreditDebitNoteController = (function() {
   function onInvoiceSelected(invNo) {
     const selInv = cachedCustomerInvoices.find(s => (s.invoiceNo || s.number) === invNo);
     const inpTax = document.getElementById('m-cn-taxable');
-    const selItem = document.getElementById('m-cn-item');
-    if (selInv) {
-      if (inpTax && !inpTax.value) {
-        inpTax.value = selInv.taxableAmount || selInv.subtotal || selInv.totalAmount || '';
-        recalcCreditTax();
-      }
-      if (selItem && selInv.lines && selInv.lines.length > 0) {
-        selItem.innerHTML = '<option value="">-- Auto from invoice or select product --</option>' +
-          selInv.lines.map(l => `<option value="${l.itemId || l.id || ''}" data-code="${l.itemCode || ''}" data-desc="${l.itemDescription || ''}">${l.itemCode} - ${l.itemDescription || ''} (Qty: ${l.quantity})</option>`).join('');
-        if (selInv.lines.length === 1) {
-          selItem.selectedIndex = 1;
-          selectedCreditItem = selInv.lines[0];
-        }
-      }
+    if (selInv && inpTax) {
+      inpTax.value = selInv.taxableAmount || selInv.subtotal || selInv.totalAmount || '';
+      recalcCreditTax();
     }
   }
 
   function onCreditItemSelected(itemId) {
-    if (!itemId) {
-      selectedCreditItem = null;
-      return;
-    }
-    const selItemEl = document.getElementById('m-cn-item');
-    if (selItemEl) {
-      const opt = selItemEl.options[selItemEl.selectedIndex];
-      selectedCreditItem = {
-        itemId: parseInt(itemId, 10),
-        itemCode: opt.getAttribute('data-code') || '',
-        itemDescription: opt.getAttribute('data-desc') || ''
-      };
-    }
+    // Retained for backward-compatibility if invoked
   }
 
   function recalcCreditTax() {
@@ -569,28 +547,9 @@ window.CreditDebitNoteController = (function() {
     const sgst = Math.round((taxTotal - cgst) * 100) / 100;
     const total = taxable + taxTotal;
 
-    const selItemEl = document.getElementById('m-cn-item');
-    let chosenItemId = null;
-    let chosenItemCode = 'CREDIT-ADJ';
-    let chosenItemDesc = `${reason} adjustment for ${party}`;
-
-    if (selItemEl && selItemEl.value) {
-      chosenItemId = parseInt(selItemEl.value, 10) || null;
-      const opt = selItemEl.options[selItemEl.selectedIndex];
-      if (opt) {
-        chosenItemCode = opt.getAttribute('data-code') || chosenItemCode;
-        chosenItemDesc = opt.getAttribute('data-desc') || chosenItemDesc;
-      }
-    } else if (selectedCreditItem) {
-      chosenItemId = selectedCreditItem.itemId || selectedCreditItem.id || null;
-      chosenItemCode = selectedCreditItem.itemCode || chosenItemCode;
-      chosenItemDesc = selectedCreditItem.itemDescription || chosenItemDesc;
-    } else if (adjustStock && cachedAllItems.length > 0) {
-      chosenItemId = cachedAllItems[0].id;
-      chosenItemCode = cachedAllItems[0].code || cachedAllItems[0].itemCode || 'ITEM';
-    } else if (adjustStock) {
-      chosenItemId = 1;
-    }
+    // Synthesize document-level adjustment line item (100% Desktop CreditNoteRegisterController.java parity)
+    const chosenItemCode = 'CREDIT-ADJ';
+    const chosenItemDesc = `Credit Note Adjustment: ${reason}`;
 
     // Build complete payload matching CreditDebitNoteDtos.CreditNoteDto with lines
     const payload = {
@@ -602,11 +561,10 @@ window.CreditDebitNoteController = (function() {
       sgstAmount: sgst,
       igstAmount: 0,
       totalAmount: total,
-      stockReturned: adjustStock,
+      stockReturned: !!adjustStock,
       status: 'ACTIVE',
       lines: [
         {
-          itemId: chosenItemId,
           itemCode: chosenItemCode,
           itemDescription: chosenItemDesc,
           quantity: 1,
@@ -700,9 +658,10 @@ window.CreditDebitNoteController = (function() {
           inpSupp.onchange = async () => {
             const sName = inpSupp.value.trim().toLowerCase();
             const matched = (suppliers || []).find(s => (s.name || s.partyName || '').toLowerCase() === sName);
-            if (matched && window.OperationsService && window.OperationsService.getPurchasesPage) {
+            const supplierSearchName = (matched && (matched.name || matched.partyName)) ? (matched.name || matched.partyName) : inpSupp.value.trim();
+            if (supplierSearchName && window.OperationsService && window.OperationsService.getPurchasesPage) {
               try {
-                const pRes = await window.OperationsService.getPurchasesPage(0, 50, '', matched.id);
+                const pRes = await window.OperationsService.getPurchasesPage(0, 50, '', supplierSearchName);
                 const pList = pRes.rows || pRes.content || [];
                 cachedSupplierBills = pList;
                 if (selBill) {
@@ -725,37 +684,14 @@ window.CreditDebitNoteController = (function() {
   function onBillSelected(billNo) {
     const selBill = cachedSupplierBills.find(p => (p.invoiceNo || p.billNo || p.number) === billNo);
     const inpTax = document.getElementById('m-dn-taxable');
-    const selItem = document.getElementById('m-dn-item');
-    if (selBill) {
-      if (inpTax && !inpTax.value) {
-        inpTax.value = selBill.taxableAmount || selBill.subtotal || selBill.totalAmount || '';
-        recalcDebitTax();
-      }
-      if (selItem && selBill.lines && selBill.lines.length > 0) {
-        selItem.innerHTML = '<option value="">-- Auto from bill or select product --</option>' +
-          selBill.lines.map(l => `<option value="${l.itemId || l.id || ''}" data-code="${l.itemCode || ''}" data-desc="${l.itemDescription || ''}">${l.itemCode} - ${l.itemDescription || ''} (Qty: ${l.quantity})</option>`).join('');
-        if (selBill.lines.length === 1) {
-          selItem.selectedIndex = 1;
-          selectedDebitItem = selBill.lines[0];
-        }
-      }
+    if (selBill && inpTax) {
+      inpTax.value = selBill.taxableAmount || selBill.subtotal || selBill.totalAmount || '';
+      recalcDebitTax();
     }
   }
 
   function onDebitItemSelected(itemId) {
-    if (!itemId) {
-      selectedDebitItem = null;
-      return;
-    }
-    const selItemEl = document.getElementById('m-dn-item');
-    if (selItemEl) {
-      const opt = selItemEl.options[selItemEl.selectedIndex];
-      selectedDebitItem = {
-        itemId: parseInt(itemId, 10),
-        itemCode: opt.getAttribute('data-code') || '',
-        itemDescription: opt.getAttribute('data-desc') || ''
-      };
-    }
+    // Retained for backward-compatibility if invoked
   }
 
   function recalcDebitTax() {
@@ -786,28 +722,9 @@ window.CreditDebitNoteController = (function() {
     const sgst = Math.round((taxTotal - cgst) * 100) / 100;
     const total = taxable + taxTotal;
 
-    const selItemEl = document.getElementById('m-dn-item');
-    let chosenItemId = null;
-    let chosenItemCode = 'DEBIT-ADJ';
-    let chosenItemDesc = `${reason} adjustment to ${supplier}`;
-
-    if (selItemEl && selItemEl.value) {
-      chosenItemId = parseInt(selItemEl.value, 10) || null;
-      const opt = selItemEl.options[selItemEl.selectedIndex];
-      if (opt) {
-        chosenItemCode = opt.getAttribute('data-code') || chosenItemCode;
-        chosenItemDesc = opt.getAttribute('data-desc') || chosenItemDesc;
-      }
-    } else if (selectedDebitItem) {
-      chosenItemId = selectedDebitItem.itemId || selectedDebitItem.id || null;
-      chosenItemCode = selectedDebitItem.itemCode || chosenItemCode;
-      chosenItemDesc = selectedDebitItem.itemDescription || chosenItemDesc;
-    } else if (adjustStock && cachedAllItems.length > 0) {
-      chosenItemId = cachedAllItems[0].id;
-      chosenItemCode = cachedAllItems[0].code || cachedAllItems[0].itemCode || 'ITEM';
-    } else if (adjustStock) {
-      chosenItemId = 1;
-    }
+    // Synthesize document-level adjustment line item (100% Desktop DebitNoteRegisterController.java parity)
+    const chosenItemCode = 'DEBIT-ADJ';
+    const chosenItemDesc = `Debit Note Adjustment: ${reason}`;
 
     // Build complete payload matching CreditDebitNoteDtos.DebitNoteDto with lines
     const payload = {
@@ -819,11 +736,10 @@ window.CreditDebitNoteController = (function() {
       sgstAmount: sgst,
       igstAmount: 0,
       totalAmount: total,
-      stockReturned: adjustStock,
+      stockReturned: !!adjustStock,
       status: 'ACTIVE',
       lines: [
         {
-          itemId: chosenItemId,
           itemCode: chosenItemCode,
           itemDescription: chosenItemDesc,
           quantity: 1,

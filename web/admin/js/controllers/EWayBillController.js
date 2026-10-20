@@ -140,11 +140,18 @@ window.EWayBillController = {
           <td style="text-align:right;">${dist} km</td>
           <td style="text-align:right; font-weight:700;">${this.formatMoney(val)}</td>
           <td style="text-align:center;"><span class="pill-badge ${statusClass}">${status}</span></td>
-          <td style="text-align:center; white-space:nowrap;">
-            <div style="display:flex; gap:4px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.openUpdateVehicleModal('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">Vehicle</button>
-              <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.exportNicJson('${b.id || b.ewayBillNo}')" style="padding:2px 6px; font-size:0.72rem;">NIC JSON</button>
-              <button class="btn btn-secondary btn-sm" onclick="window.EWayBillController.printEWaySlip('${b.ewayBillNo}', '${invNo}')" style="padding:2px 6px; font-size:0.72rem;">Print</button>
+          <td style="text-align:center;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.EWayBillController.toggleActionMenu('gen', '${b.id || b.ewayBillNo}', event)" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" title="View Actions Menu">
+                ::: Actions
+              </button>
+              <div id="eway-gen-action-menu-${b.id || b.ewayBillNo}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:190px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.EWayBillController.openUpdateVehicleModal('${b.id || b.ewayBillNo}')"><span style="margin-right:8px;">🚚</span> Update Vehicle (Part-B)</div>
+                <div class="action-menu-item" onclick="window.EWayBillController.exportNicJson('${b.id || b.ewayBillNo}')"><span style="margin-right:8px;">📦</span> Export NIC JSON</div>
+                <div class="action-menu-item" onclick="window.EWayBillController.printEWaySlip('${b.ewayBillNo}', '${invNo}')"><span style="margin-right:8px;">🖨️</span> Print E-Way Slip</div>
+                <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+                <div class="action-menu-item" style="color:var(--red);" onclick="window.EWayBillController.cancelEWayBillPrompt('${b.id || b.ewayBillNo}', '${b.ewayBillNo}')"><span style="margin-right:8px;">❌</span> Cancel E-Way Bill</div>
+              </div>
             </div>
           </td>
         </tr>
@@ -163,6 +170,7 @@ window.EWayBillController = {
 
     tbody.innerHTML = this.eligibleSales.map(s => {
       const invNo = s.invoiceNumber || s.invoiceNo || '-';
+      const cleanInvId = invNo.replace(/[^a-zA-Z0-9]/g, '_');
       const invDate = s.invoiceDate || s.date;
       const custName = s.customerName || (s.customer && s.customer.name) || 'Client';
       const gstin = s.customerGstin || s.billingGstin || 'Unregistered';
@@ -176,8 +184,17 @@ window.EWayBillController = {
           <td style="font-family:monospace; color:var(--purple);">${gstin}</td>
           <td>${city}</td>
           <td style="text-align:right; font-weight:700;">${this.formatMoney(amt)}</td>
-          <td style="text-align:center;">
-            <button class="btn btn-primary btn-sm" onclick="window.EWayBillController.openGenerateEWayModal('${invNo}')" style="padding:3px 10px; font-size:0.75rem;">+ Generate E-Way Bill</button>
+          <td style="text-align:center;" onclick="event.stopPropagation();">
+            <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+              <button class="btn-purple" onclick="window.EWayBillController.toggleActionMenu('elig', '${cleanInvId}', event)" style="height: 28px; padding: 0 10px; font-size: 0.74rem; font-weight: 600;" title="View Actions Menu">
+                ::: Actions
+              </button>
+              <div id="eway-elig-action-menu-${cleanInvId}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:200px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.EWayBillController.openGenerateEWayModal('${invNo}')"><span style="margin-right:8px;">⚡</span> Generate E-Way Bill</div>
+                <div class="action-menu-item" onclick="window.EWayBillController.generateEInvoicePrompt('${invNo}')"><span style="margin-right:8px;">📑</span> Generate E-Invoice (IRN)</div>
+                <div class="action-menu-item" onclick="window.EWayBillController.viewInvoiceDetails('${invNo}')"><span style="margin-right:8px;">👁️</span> View Invoice Details</div>
+              </div>
+            </div>
           </td>
         </tr>
       `;
@@ -282,6 +299,89 @@ window.EWayBillController = {
 
   printEWaySlip(ewayNo, invNo) {
     window.print();
+  },
+
+  toggleActionMenu(type, id, event) {
+    if (event) event.stopPropagation();
+    const menuId = type === 'gen' ? `eway-gen-action-menu-${id}` : `eway-elig-action-menu-${id}`;
+    const targetMenu = document.getElementById(menuId);
+    document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+      if (m !== targetMenu) m.style.display = 'none';
+    });
+    if (targetMenu) {
+      const isShowing = targetMenu.style.display === 'block';
+      if (isShowing) {
+        targetMenu.style.display = 'none';
+      } else {
+        targetMenu.style.display = 'block';
+        targetMenu.style.position = 'fixed';
+        targetMenu.style.zIndex = '100005';
+        const btn = event?.currentTarget || event?.target;
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          const menuWidth = 200;
+          let left = rect.right - menuWidth;
+          if (left < 10) left = 10;
+
+          const menuHeight = targetMenu.offsetHeight || 220;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          let top;
+          if (spaceBelow < menuHeight && rect.top > menuHeight) {
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = rect.bottom + 4;
+          }
+
+          targetMenu.style.top = `${top}px`;
+          targetMenu.style.left = `${left}px`;
+
+          const closeHandler = (e) => {
+            if (!targetMenu.contains(e.target) && e.target !== btn) {
+              targetMenu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }
+      }
+    }
+  },
+
+  async cancelEWayBillPrompt(id, ewayNo) {
+    const reason = prompt(`Reason for cancelling E-Way Bill ${ewayNo}:`, 'Order Cancelled');
+    if (!reason) return;
+    try {
+      if (window.AccountingService && window.AccountingService.cancelEWayBill) {
+        await window.AccountingService.cancelEWayBill(id, { reason });
+      } else {
+        const bill = this.cachedBills.find(b => (b.id || b.ewayBillNo) === id);
+        if (bill) bill.status = 'CANCELLED';
+      }
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`E-Way Bill ${ewayNo} cancelled successfully.`);
+      this.renderGeneratedTable();
+    } catch (err) {
+      alert('Failed to cancel E-Way Bill: ' + (err.message || err));
+    }
+  },
+
+  async generateEInvoicePrompt(invNo) {
+    if (!confirm(`Generate E-Invoice (IRN) for Invoice ${invNo}?`)) return;
+    try {
+      if (window.AccountingService && window.AccountingService.generateEInvoice) {
+        await window.AccountingService.generateEInvoice(invNo);
+      }
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`E-Invoice IRN generated for ${invNo}!`);
+    } catch (err) {
+      alert('E-Invoice generation error: ' + (err.message || err));
+    }
+  },
+
+  viewInvoiceDetails(invNo) {
+    if (window.SalesController && window.SalesController.openSaleByInvoice) {
+      window.SalesController.openSaleByInvoice(invNo);
+    } else if (window.NavigationController && window.NavigationController.switchTab) {
+      window.NavigationController.switchTab('view-sales');
+    }
   },
 
   closeModal(id) {

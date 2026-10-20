@@ -167,11 +167,57 @@ window.ApiService = (function() {
           }
           throw new Error(errorMsg);
         }
-        const blob = await res.blob();
+
+        // Parse authentic filename from server response headers if available
+        let resolvedFilename = '';
+        const xAttachmentName = res.headers.get('X-Attachment-Name') || '';
+        if (xAttachmentName) {
+          try { resolvedFilename = decodeURIComponent(xAttachmentName); } catch (_) { resolvedFilename = xAttachmentName; }
+        }
+        if (!resolvedFilename) {
+          const disposition = res.headers.get('Content-Disposition') || '';
+          if (disposition) {
+            const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            if (utf8Match && utf8Match[1]) {
+              try { resolvedFilename = decodeURIComponent(utf8Match[1]); } catch (_) { resolvedFilename = utf8Match[1]; }
+            } else {
+              const stdMatch = disposition.match(/filename="?([^";]+)"?/i);
+              if (stdMatch && stdMatch[1]) {
+                resolvedFilename = stdMatch[1].trim();
+              }
+            }
+          }
+        }
+        if (!resolvedFilename) resolvedFilename = filename || 'download';
+        resolvedFilename = resolvedFilename.split('/').pop().split('\\').pop();
+
+        let blob = await res.blob();
+        // Sniff magic bytes if filename lacks extension or is token 'FILE'
+        if (!resolvedFilename.includes('.') || resolvedFilename.toUpperCase() === 'FILE') {
+          const buffer = await blob.slice(0, 8).arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let ext = '';
+          let mime = '';
+          if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+            ext = '.pdf'; mime = 'application/pdf';
+          } else if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+            ext = '.png'; mime = 'image/png';
+          } else if (bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+            ext = '.jpg'; mime = 'image/jpeg';
+          } else if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
+            ext = '.xlsx'; mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          }
+          if (ext) {
+            const base = (resolvedFilename.toUpperCase() === 'FILE' || !resolvedFilename) ? 'attachment' : resolvedFilename;
+            resolvedFilename = base.endsWith(ext) ? base : (base + ext);
+            if (mime) blob = new Blob([blob], { type: mime });
+          }
+        }
+
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = filename || 'download';
+        a.download = resolvedFilename;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -188,9 +234,9 @@ window.ApiService = (function() {
     },
 
     /**
-     * Open any authenticated file stream in a new browser tab using blob URL
+     * Open any authenticated file stream in browser tab or in-app preview modal using typed blob URL
      */
-    async viewFile(endpoint) {
+    async viewFile(endpoint, previewTitle) {
       try {
         const token = localStorage.getItem('dse_access_token');
         const url = endpoint.startsWith('http') ? endpoint : (BASE_URL + endpoint);
@@ -205,10 +251,30 @@ window.ApiService = (function() {
           } catch (_) {}
           throw new Error(errorMsg);
         }
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+        let blob = await res.blob();
+        let mime = blob.type;
+        // Determine real MIME type by inspecting magic bytes
+        const buffer = await blob.slice(0, 8).arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+          mime = 'application/pdf';
+        } else if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+          mime = 'image/png';
+        } else if (bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+          mime = 'image/jpeg';
+        }
+
+        const typedBlob = mime ? new Blob([blob], { type: mime }) : blob;
+        const blobUrl = URL.createObjectURL(typedBlob);
+
+        // If in-app lightbox modal is available, show modal; otherwise open in new tab
+        if (typeof window.showUniversalPreviewModal === 'function') {
+          window.showUniversalPreviewModal(blobUrl, mime, previewTitle || 'Document Preview');
+        } else {
+          window.open(blobUrl, '_blank');
+        }
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
       } catch (err) {
         console.error('[ApiService] viewFile failed:', err);
         if (window.AppDialogService) {
@@ -232,7 +298,7 @@ window.ApiService = (function() {
      */
     async viewDocumentPdf(type, number) {
       const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
-      return this.viewFile(endpoint);
+      return this.viewFile(endpoint, `${type} ${number} PDF`);
     },
 
     /**
@@ -243,5 +309,59 @@ window.ApiService = (function() {
       const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
       return this.downloadFile(endpoint, filename);
     }
+  };
+
+  /**
+   * Universal Lightbox Modal Helper for PDFs, Images, and Documents
+   */
+  window.showUniversalPreviewModal = function(blobUrl, mime, title) {
+    const modal = document.getElementById('modal-universal-preview');
+    const titleEl = document.getElementById('universal-preview-title');
+    const iconEl = document.getElementById('universal-preview-icon');
+    const bodyEl = document.getElementById('universal-preview-body');
+    const dlBtn = document.getElementById('universal-preview-download-btn');
+
+    if (!modal || !bodyEl) {
+      window.open(blobUrl, '_blank');
+      return;
+    }
+
+    if (titleEl) titleEl.innerText = title || 'Document Preview';
+    if (dlBtn) {
+      dlBtn.href = blobUrl;
+      const downloadName = (title || 'preview_document').replace(/[^a-zA-Z0-9._-]/g, '_');
+      dlBtn.setAttribute('download', downloadName);
+    }
+
+    const isPdf = (mime === 'application/pdf' || (title && title.toLowerCase().endsWith('.pdf')));
+    const isImage = (mime && mime.startsWith('image/')) || (title && (title.toLowerCase().endsWith('.png') || title.toLowerCase().endsWith('.jpg') || title.toLowerCase().endsWith('.jpeg')));
+
+    if (iconEl) {
+      iconEl.innerText = isPdf ? '📄' : (isImage ? '🖼️' : '📁');
+    }
+
+    if (isPdf) {
+      bodyEl.innerHTML = `<iframe src="${blobUrl}#toolbar=1" style="width:100%; height:100%; border:none;" title="PDF Preview"></iframe>`;
+    } else if (isImage) {
+      bodyEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:20px;"><img src="${blobUrl}" style="max-width:96%; max-height:96%; object-fit:contain; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.5);" alt="Image Preview" /></div>`;
+    } else {
+      bodyEl.innerHTML = `
+        <div style="text-align:center; padding:40px; color:#94a3b8;">
+          <div style="font-size:3rem; margin-bottom:12px;">📁</div>
+          <div style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:8px;">${title || 'Document File'}</div>
+          <div style="font-size:0.8rem; margin-bottom:16px;">This file type cannot be previewed inline. Click below to download.</div>
+          <a href="${blobUrl}" download="document" class="btn btn-primary" style="text-decoration:none;">Download File</a>
+        </div>
+      `;
+    }
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeUniversalPreviewModal = function() {
+    const modal = document.getElementById('modal-universal-preview');
+    if (modal) modal.style.display = 'none';
+    const bodyEl = document.getElementById('universal-preview-body');
+    if (bodyEl) bodyEl.innerHTML = '';
   };
 })();
