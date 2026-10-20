@@ -93,19 +93,22 @@ window.DynamicTableLayoutManager = (function() {
   function readableMinimum(semantic, heading, th) {
     const key = (semantic + ' ' + heading).toLowerCase();
     if (isSelectionColumn(heading, semantic, th)) return 38.0;
-    if (key.includes('actions') || key.includes('action')) return ACTION_CONTROL_MIN_WIDTH;
-    if (isLongTextSemantic(semantic, heading)) return 110.0;
+    if (key.includes('actions') || key.includes('action')) return 98.0;
+    if (isLongTextSemantic(semantic, heading)) return 165.0;
     if (key.includes('invoice') || key.includes('reference') || key.includes('document') ||
-        key.includes('order') || key.includes('code') || key.includes('account')) return 96.0;
-    if (key.includes('gstin') || key.includes('gst')) return 92.0;
-    if (key.includes('status') || key.includes('payment due') || key.includes('return')) return 80.0;
-    if (key.includes('amount') || key.includes('balance') || key.includes('paid') ||
-        key.includes('pending') || key.includes('total') || key.includes('rate')) return 78.0;
-    if (key.includes('mobile') || key.includes('phone') || key.includes('contact')) return 78.0;
-    if (key.includes('date') || key.includes('due') || key.includes('time')) return 70.0;
-    if (key.includes('email')) return 72.0;
-    if (key.includes('qty') || key.includes('quantity') || key.includes('unit')) return 58.0;
-    return Math.max(MIN_READABLE_COLUMN, 70.0);
+        key.includes('order') || key.includes('code') || key.includes('account')) return 135.0;
+    if (key.includes('gstin') || key.includes('gst')) return 135.0;
+    if (key.includes('doc status')) return 120.0;
+    if (key.includes('payment') || key.includes('return')) return 110.0;
+    if (key.includes('status') || key.includes('payment due')) return 105.0;
+    if (key.includes('pending') || key.includes('balance')) return 118.0;
+    if (key.includes('amount') || key.includes('total') || key.includes('rate')) return 118.0;
+    if (key.includes('paid')) return 105.0;
+    if (key.includes('mobile') || key.includes('phone') || key.includes('contact')) return 105.0;
+    if (key.includes('date') || key.includes('due') || key.includes('time')) return 100.0;
+    if (key.includes('email')) return 95.0;
+    if (key.includes('qty') || key.includes('quantity') || key.includes('unit')) return 75.0;
+    return 95.0;
   }
 
   /**
@@ -114,12 +117,12 @@ window.DynamicTableLayoutManager = (function() {
    */
   function headerMinimum(semantic, heading, th) {
     if (isSelectionColumn(heading, semantic, th)) return 38.0;
-    if ((semantic || '').includes('action')) return ACTION_CONTROL_MIN_WIDTH;
+    if ((semantic || '').includes('action')) return 98.0;
 
     const font = '700 11px "Plus Jakarta Sans", sans-serif';
     const longestToken = longestHeaderTokenWidth(heading, font);
-    // Header space: icon (~14px) + gap (~4px) + th padding (10px) + margin/sort (8px) = ~36px
-    const iconPadding = 36.0;
+    // Header space: icon (~14px) + gap (~3px) + th padding (8px) + badge padding (12px) = ~37px
+    const iconPadding = 37.0;
     const measuredFloor = longestToken + iconPadding;
 
     const semFloor = readableMinimum(semantic, heading, th);
@@ -131,16 +134,21 @@ window.DynamicTableLayoutManager = (function() {
    */
   function denseFloor(semantic, heading, th) {
     const key = (semantic + ' ' + heading).toLowerCase();
-    if (isSelectionColumn(heading, semantic, th)) return 30.0;
-    if (key.includes('actions') || key.includes('action')) return 80.0;
-    if (isLongTextSemantic(semantic, heading)) return 72.0;
-    if (key.includes('status') || key.includes('payment') || key.includes('return')) return 62.0;
-    if (key.includes('invoice') || key.includes('document') || key.includes('reference')) return 65.0;
-    if (key.includes('gstin')) return 68.0;
-    if (key.includes('amount') || key.includes('total') || key.includes('balance') || key.includes('paid')) return 58.0;
-    if (key.includes('mobile') || key.includes('phone')) return 62.0;
-    if (key.includes('date') || key.includes('due') || key.includes('email')) return 54.0;
-    return DENSE_MIN_READABLE_COLUMN;
+    if (isSelectionColumn(heading, semantic, th)) return 38.0;
+    if (key.includes('actions') || key.includes('action')) return 92.0;
+    if (isLongTextSemantic(semantic, heading)) return 150.0;
+    if (key.includes('doc status')) return 115.0;
+    if (key.includes('payment') || key.includes('return')) return 105.0;
+    if (key.includes('status')) return 98.0;
+    if (key.includes('invoice') || key.includes('document') || key.includes('reference')) return 125.0;
+    if (key.includes('gstin')) return 125.0;
+    if (key.includes('pending') || key.includes('balance')) return 112.0;
+    if (key.includes('amount') || key.includes('total')) return 112.0;
+    if (key.includes('paid')) return 100.0;
+    if (key.includes('mobile') || key.includes('phone')) return 100.0;
+    if (key.includes('date') || key.includes('due') || key.includes('email')) return 95.0;
+    if (key.includes('qty') || key.includes('quantity') || key.includes('unit')) return 70.0;
+    return 88.0;
   }
 
   /**
@@ -323,8 +331,10 @@ window.DynamicTableLayoutManager = (function() {
       weightTotal += p.weight;
     }
 
-    const effectiveAvailable = Math.max(available, floorTotal);
-    table.style.minWidth = floorTotal > available ? (floorTotal + 'px') : '100%';
+    const isConstrained = floorTotal > available;
+    const effectiveAvailable = isConstrained ? floorTotal : available;
+    table.style.width = isConstrained ? (floorTotal + 'px') : '100%';
+    table.style.minWidth = isConstrained ? (floorTotal + 'px') : '100%';
 
     // Allocate widths
     const widths = allocateFromFloors(profiles, effectiveAvailable, floorTotal, weightTotal);
@@ -350,13 +360,14 @@ window.DynamicTableLayoutManager = (function() {
     for (let i = 0; i < ths.length; i++) {
       const w = Math.round(widths[i] * 10) / 10;
       const pct = ((w / effectiveAvailable) * 100).toFixed(2) + '%';
+      const colWidthVal = isConstrained ? (Math.round(w) + 'px') : pct;
       const p = profiles[i];
 
       // Set width on <col> tag
-      cols[i].style.width = pct;
+      cols[i].style.width = colWidthVal;
 
       // Set width, min-width, max-width on <th>
-      p.th.style.width = pct;
+      p.th.style.width = colWidthVal;
       p.th.style.minWidth = Math.round(p.floor) + 'px';
       p.th.style.maxWidth = 'none';
       p.th.style.overflow = 'visible';
@@ -390,10 +401,21 @@ window.DynamicTableLayoutManager = (function() {
         const cells = row.children;
         for (let i = 0; i < cells.length && i < profiles.length; i++) {
           const td = cells[i];
-          const p = profiles[i];
-          td.style.overflow = 'hidden';
-          td.style.textOverflow = 'ellipsis';
-          td.style.whiteSpace = 'nowrap';
+          const isNumericOrCurrency = p.align === 'right' ||
+            (p.semantic && (p.semantic.includes('amount') || p.semantic.includes('total') || p.semantic.includes('rate') || p.semantic.includes('price') || p.semantic.includes('pending') || p.semantic.includes('paid') || p.semantic.includes('balance'))) ||
+            td.classList.contains('sales-amount-cell') ||
+            td.classList.contains('sales-rate-cell') ||
+            td.innerText.includes('₹');
+
+          if (isNumericOrCurrency) {
+            td.style.overflow = 'visible';
+            td.style.textOverflow = 'clip';
+            td.style.whiteSpace = 'nowrap';
+          } else {
+            td.style.overflow = 'hidden';
+            td.style.textOverflow = 'ellipsis';
+            td.style.whiteSpace = 'nowrap';
+          }
           td.style.verticalAlign = 'middle';
           if (p.align && !td.style.textAlign) {
             td.style.textAlign = p.align;

@@ -146,6 +146,9 @@ window.TableUiEnhancer = (function() {
           td.style.textAlign = 'right';
           td.style.fontFamily = "'Space Grotesk', monospace";
           td.style.fontWeight = '600';
+          td.style.whiteSpace = 'nowrap';
+          td.style.overflow = 'visible';
+          td.style.textOverflow = 'clip';
           return;
         }
       });

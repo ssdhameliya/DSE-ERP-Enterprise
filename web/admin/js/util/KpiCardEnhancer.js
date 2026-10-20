@@ -56,7 +56,14 @@ window.KpiCardEnhancer = (function() {
 
     // Apply compact card styles
     card.classList.add('compact-kpi-card', sem.theme);
+    card.style.display = 'flex';
+    card.style.flexDirection = 'row';
+    card.style.alignItems = 'center';
     card.style.height = '58px';
+    card.style.minHeight = '58px';
+    card.style.maxHeight = '58px';
+    card.style.boxSizing = 'border-box';
+    card.style.overflow = 'hidden';
     card.style.padding = '8px 12px 8px 10px';
 
     // Construct micro badge pill
@@ -71,13 +78,13 @@ window.KpiCardEnhancer = (function() {
 
     // Reconstruct modern 2-row compact layout while preserving live value ID
     card.innerHTML = `
-      <div class="kpi-icon-bubble">${sem.icon}</div>
-      <div class="kpi-content-box">
-        <div class="kpi-row-top">
-          <span class="kpi-title-text" title="${labelText}">${labelText}</span>
+      <div class="kpi-icon-bubble" style="width:38px;height:38px;min-width:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${sem.icon}</div>
+      <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+        <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+          <span class="kpi-title-text" title="${labelText}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${labelText}</span>
           ${pillHtml}
         </div>
-        <div class="kpi-val-text" ${valueId ? `id="${valueId}"` : ''}>${valueText}</div>
+        <div class="kpi-val-text" ${valueId ? `id="${valueId}"` : ''} style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${valueText}</div>
       </div>
     `;
 

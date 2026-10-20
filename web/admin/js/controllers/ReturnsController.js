@@ -44,17 +44,29 @@ window.ReturnsController = (function () {
     return `<span class="pill-badge pill-neutral">${status || 'DRAFT'}</span>`;
   }
 
+  function formatLocalDate(d) {
+    if (!d) return '';
+    if (window.FormatUtil && typeof window.FormatUtil.formatLocalDate === 'function') {
+      return window.FormatUtil.formatLocalDate(d);
+    }
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   function initDateFilters(isSales) {
     const fromEl = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from');
     const toEl = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to');
     if (fromEl && !fromEl.value) {
       const now = new Date();
-      const sixMonthsAgo = new Date(now);
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      fromEl.value = sixMonthsAgo.toISOString().split('T')[0];
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      fromEl.value = formatLocalDate(sixMonthsAgo);
     }
     if (toEl && !toEl.value) {
-      toEl.value = new Date().toISOString().split('T')[0];
+      toEl.value = formatLocalDate(new Date());
     }
   }
 
@@ -548,7 +560,7 @@ window.ReturnsController = (function () {
     const isSales = currentType === 'SALES RETURN';
     document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
     document.getElementById('cr-type').value = currentType;
-    document.getElementById('cr-return-date').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('cr-return-date').value = formatLocalDate(new Date());
     const textInput = document.getElementById('cr-invoice-input');
     if (textInput) textInput.value = prefillInvoice || '';
     document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
@@ -934,7 +946,7 @@ window.ReturnsController = (function () {
       const elBalance = document.getElementById('rr-balance'); if (elBalance) elBalance.innerText = formatMoney(balance);
 
       // Default form values
-      const dateInp = document.getElementById('rr-date'); if (dateInp) dateInp.value = new Date().toISOString().substring(0, 10);
+      const dateInp = document.getElementById('rr-date'); if (dateInp) dateInp.value = formatLocalDate(new Date());
       const partyInp = document.getElementById('rr-refunded-party'); if (partyInp) partyInp.value = details.party || '';
       const refInp = document.getElementById('rr-reference'); if (refInp) refInp.value = '';
       const notesInp = document.getElementById('rr-notes'); if (notesInp) notesInp.value = '';
@@ -1257,12 +1269,12 @@ window.ReturnsController = (function () {
       const f = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from');
       const t = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to');
       if (f) {
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        f.value = sixMonthsAgo.toISOString().split('T')[0];
+        const now = new Date();
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        f.value = formatLocalDate(sixMonthsAgo);
       }
       if (t) {
-        t.value = new Date().toISOString().split('T')[0];
+        t.value = formatLocalDate(new Date());
       }
       loadReturns(currentType, 0);
     },

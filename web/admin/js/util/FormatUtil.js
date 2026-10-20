@@ -213,12 +213,25 @@
       return `${this.formatDate(d)} ${this.formatTime(d)}`;
     },
 
+    formatLocalDate(d) {
+      if (!d) return '';
+      const dt = (d instanceof Date) ? d : this.parseDate(d);
+      if (!dt || isNaN(dt.getTime())) return '';
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
+
     formatDateISO(dateStr) {
       if (!dateStr) return '';
       try {
-        const d = this.parseDate(dateStr);
-        if (!d) return '';
-        return d.toISOString().split('T')[0];
+        const d = (dateStr instanceof Date) ? dateStr : this.parseDate(dateStr);
+        if (!d || isNaN(d.getTime())) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
       } catch (e) {
         return '';
       }
@@ -558,4 +571,8 @@
       }
     }
   };
+  if (window.FormatUtil) {
+    window.formatLocalDate = window.FormatUtil.formatLocalDate.bind(window.FormatUtil);
+  }
 })();
+

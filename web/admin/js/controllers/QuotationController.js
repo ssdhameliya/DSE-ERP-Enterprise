@@ -53,17 +53,29 @@ window.QuotationController = (function () {
     return `<span class="pill-badge pill-warning">${status || 'DRAFT'}</span>`;
   }
 
+  function formatLocalDate(d) {
+    if (!d) return '';
+    if (window.FormatUtil && typeof window.FormatUtil.formatLocalDate === 'function') {
+      return window.FormatUtil.formatLocalDate(d);
+    }
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   function initDateFilters() {
     const fromEl = document.getElementById('quote-filter-from');
     const toEl = document.getElementById('quote-filter-to');
     if (fromEl && !fromEl.value) {
       const now = new Date();
-      const sixMonthsAgo = new Date(now);
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      fromEl.value = sixMonthsAgo.toISOString().split('T')[0];
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      fromEl.value = formatLocalDate(sixMonthsAgo);
     }
     if (toEl && !toEl.value) {
-      toEl.value = new Date().toISOString().split('T')[0];
+      toEl.value = formatLocalDate(new Date());
     }
   }
 
@@ -630,7 +642,7 @@ window.QuotationController = (function () {
     document.getElementById('qf-id').value = id;
     document.getElementById('qf-row-version').value = rowVersion;
     document.getElementById('qf-title').innerText = `Schedule Follow-Up for ${no}`;
-    document.getElementById('qf-date').value = currentFollowUp ? currentFollowUp.substring(0, 10) : new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10);
+    document.getElementById('qf-date').value = currentFollowUp ? currentFollowUp.substring(0, 10) : formatLocalDate(new Date(Date.now() + 7 * 86400000));
     document.getElementById('qf-notes').value = `Follow up for ${no}`;
     modal.style.display = 'flex';
   }
@@ -666,9 +678,9 @@ window.QuotationController = (function () {
     if (titleEl) titleEl.innerText = quoteId ? 'Edit Quotation' : 'Create Quotation';
     if (subtitleEl) subtitleEl.innerText = quoteId ? 'Modify quotation items and pricing terms' : 'New Proforma quotation with live GST calculations';
 
-    document.getElementById('qe-date').value = new Date().toISOString().substring(0, 10);
-    document.getElementById('qe-valid').value = new Date(Date.now() + 30 * 86400000).toISOString().substring(0, 10);
-    document.getElementById('qe-followup').value = new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10);
+    document.getElementById('qe-date').value = formatLocalDate(new Date());
+    document.getElementById('qe-valid').value = formatLocalDate(new Date(Date.now() + 30 * 86400000));
+    document.getElementById('qe-followup').value = formatLocalDate(new Date(Date.now() + 7 * 86400000));
     document.getElementById('qe-remarks').value = '';
 
     pendingAttachmentFile = null;

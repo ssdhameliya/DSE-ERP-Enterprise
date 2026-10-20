@@ -691,25 +691,6 @@
       border-color: #fecdd3 !important;
       color: #9f1239 !important;
     }
-    body.light-theme .compact-kpi-card {
-      background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
-    }
-    body.light-theme .compact-kpi-card:hover {
-      background: #ffffff !important;
-      border-color: #38bdf8 !important;
-      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.18) !important;
-    }
-    body.light-theme .kpi-title-text {
-      color: #64748b !important;
-    }
-    body.light-theme .kpi-val-text {
-      color: #0f172a !important;
-    }
-    body.light-theme .kpi-val-unit {
-      color: #64748b !important;
-    }
 
     /* MODAL SIZES */
     .modal-card.modal-lg { width: 980px; max-width: 95vw; }
@@ -940,18 +921,13 @@
     /* SALES REGISTER 14-COL TABLE (DESKTOP DYNAMIC PARITY) */
     .sales-table-scroll,
     .table-responsive,
-    .data-table-wrap {
-      overflow-x: hidden;
+    .data-table-wrap,
+    .table-scroll,
+    .table-panel-viewport {
+      overflow-x: auto !important;
       max-height: calc(100vh - 420px);
       min-height: 380px;
       width: 100%;
-    }
-    @media (max-width: 850px) {
-      .sales-table-scroll,
-      .table-responsive,
-      .data-table-wrap {
-        overflow-x: auto;
-      }
     }
     .sales-desktop-table,
     table.data-table {
@@ -960,6 +936,24 @@
       border-collapse: collapse !important;
       font-size: 0.75rem !important;
       text-align: left;
+    }
+    /* Fast Entry Line Item Tables exempt from squashing */
+    #view-sale-create table.data-table,
+    #view-purchase-creation table.data-table,
+    .sale-workspace-container table.data-table {
+      table-layout: auto !important;
+      width: 100% !important;
+      min-width: 1050px !important;
+    }
+    #view-sale-create .erp-th-badge,
+    #view-purchase-creation .erp-th-badge {
+      white-space: nowrap !important;
+    }
+    #view-sale-create .erp-th-label,
+    #view-purchase-creation .erp-th-label {
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: nowrap !important;
     }
     .sales-desktop-table th,
     table.data-table th,
@@ -2186,8 +2180,8 @@
     .erp-th-badge {
       display: inline-flex !important;
       align-items: center !important;
-      gap: 5px !important;
-      padding: 4px 9px !important;
+      gap: 3px !important;
+      padding: 3px 6px !important;
       border-radius: 6px !important;
       font-size: 0.72rem !important;
       font-weight: 700 !important;
@@ -2500,19 +2494,25 @@
       margin-bottom: 14px !important;
       flex-shrink: 0 !important;
     }
-    .compact-kpi-card {
-      height: 58px;
+    .compact-kpi-card,
+    .kpi-card.compact-kpi-card,
+    .dash-kpi-card.compact-kpi-card {
+      height: 58px !important;
+      min-height: 58px !important;
+      max-height: 58px !important;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 8px 12px 8px 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      padding: 8px 12px 8px 10px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 10px !important;
       position: relative;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
     }
     .compact-kpi-card:hover {
       transform: translateY(-2px);
@@ -2802,6 +2802,131 @@
       background: #ffffff !important;
       border: 1px solid #cbd5e1 !important;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    /* Universal Light Theme Modernization across ALL Screens */
+    body.light-theme .sales-filter-box,
+    body.light-theme .filter-box,
+    body.light-theme .register-toolbar,
+    body.light-theme .user-table-toolbar,
+    body.light-theme .editor-card,
+    body.light-theme .data-panel,
+    body.light-theme .panel-box,
+    body.light-theme .card {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .sales-filter-box label,
+    body.light-theme .filter-box label,
+    body.light-theme .editor-card label {
+      color: #334155 !important;
+      font-weight: 600 !important;
+    }
+    body.light-theme .btn-preset-chip {
+      background: #f1f5f9 !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #334155 !important;
+    }
+    body.light-theme .btn-preset-chip:hover,
+    body.light-theme .btn-preset-chip.active {
+      background: #e0f2fe !important;
+      border-color: #0284c7 !important;
+      color: #0369a1 !important;
+    }
+    body.light-theme .slide-detail-drawer,
+    body.light-theme .register-inline-drawer,
+    body.light-theme .sales-inline-drawer,
+    body.light-theme .side-drawer,
+    body.light-theme .detail-drawer-panel {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .drawer-header {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .drawer-header h3,
+    body.light-theme .drawer-header h4,
+    body.light-theme .drawer-header span {
+      color: #0f172a !important;
+    }
+    body.light-theme .drawer-body {
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .drawer-footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .drawer-label,
+    body.light-theme .drawer-field-label {
+      color: #64748b !important;
+    }
+    body.light-theme .drawer-value,
+    body.light-theme .drawer-field-value {
+      color: #0f172a !important;
+    }
+    body.light-theme .drawer-section {
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    body.light-theme .drawer-section-title {
+      color: #0284c7 !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek {
+      background: #ffffff !important;
+      border-right: 1px solid #cbd5e1 !important;
+      box-shadow: 12px 0 35px rgba(0, 0, 0, 0.15) !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-parent-row,
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-single-item {
+      color: #1e293b !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-parent-row:hover,
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-single-item:hover {
+      background: #f1f5f9 !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-children {
+      background: #f8fafc !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-child-item {
+      color: #334155 !important;
+    }
+    body.light-theme aside.app-sidebar.collapsed.hover-peek .nav-child-item:hover {
+      background: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme [id*="attachment-dropzone"],
+    body.light-theme [id*="attachment-section"],
+    body.light-theme .attachment-dropzone,
+    body.light-theme .dropzone {
+      background: #f8fafc !important;
+      border: 1px dashed #cbd5e1 !important;
+    }
+    body.light-theme [id*="attachment-dropzone"] div,
+    body.light-theme [id*="attachment-dropzone"] span,
+    body.light-theme [id*="attachment-section"] div,
+    body.light-theme [id*="attachment-section"] span {
+      color: #1e293b !important;
+    }
+    body.light-theme .sales-desktop-table tbody tr:hover,
+    body.light-theme table.data-table tbody tr:hover {
+      background: #f8fafc !important;
+    }
+    body.light-theme .sales-desktop-table tr.active-selected-row td,
+    body.light-theme table.data-table tr.active-selected-row td,
+    body.light-theme tbody tr.row-selected td {
+      background: #e0f2fe !important;
+      color: #0369a1 !important;
+    }
+    body.light-theme .sales-desktop-table tr.active-selected-row td:first-child,
+    body.light-theme table.data-table tr.active-selected-row td:first-child,
+    body.light-theme tbody tr.row-selected td:first-child {
+      border-left: 4px solid #0284c7 !important;
     }
 
     /* Deep-Linking Reference Links & Pulsing Row Selection - Pillar 7 */

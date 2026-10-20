@@ -41,6 +41,16 @@ window.SalesController = {
   attachmentRemovalPending: false,
   activeBarcodeData: null,
 
+  formatLocalDate(d) {
+    if (!d) return '';
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  },
+
   initDateFilters() {
     const fromInput = document.getElementById('sr-filter-from-date');
     const toInput = document.getElementById('sr-filter-to-date');
@@ -48,10 +58,10 @@ window.SalesController = {
       const now = new Date();
       const sixMonthsAgo = new Date(now);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      fromInput.value = sixMonthsAgo.toISOString().split('T')[0];
+      fromInput.value = this.formatLocalDate(sixMonthsAgo);
     }
     if (toInput && !toInput.value) {
-      toInput.value = new Date().toISOString().split('T')[0];
+      toInput.value = this.formatLocalDate(new Date());
     }
   },
 
@@ -752,7 +762,7 @@ window.SalesController = {
     if (!fromInput || !toInput) return;
 
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = this.formatLocalDate(now);
 
     if (type === 'ALL') {
       fromInput.value = '';
@@ -763,27 +773,29 @@ window.SalesController = {
     } else if (type === 'YESTERDAY') {
       const yest = new Date(now);
       yest.setDate(yest.getDate() - 1);
-      fromInput.value = yest.toISOString().split('T')[0];
-      toInput.value = yest.toISOString().split('T')[0];
+      const yestStr = this.formatLocalDate(yest);
+      fromInput.value = yestStr;
+      toInput.value = yestStr;
     } else if (type === '7DAYS') {
       const d7 = new Date(now);
       d7.setDate(d7.getDate() - 7);
-      fromInput.value = d7.toISOString().split('T')[0];
+      fromInput.value = this.formatLocalDate(d7);
       toInput.value = todayStr;
     } else if (type === '30DAYS') {
       const d30 = new Date(now);
       d30.setDate(d30.getDate() - 30);
-      fromInput.value = d30.toISOString().split('T')[0];
+      fromInput.value = this.formatLocalDate(d30);
       toInput.value = todayStr;
     } else if (type === 'THIS_FY') {
       const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
       fromInput.value = `${yr}-04-01`;
       toInput.value = `${yr + 1}-03-31`;
     } else if (type === 'THIS_QUARTER') {
-      const d90 = new Date(now);
-      d90.setDate(d90.getDate() - 90);
-      fromInput.value = d90.toISOString().split('T')[0];
-      toInput.value = todayStr;
+      const m = now.getMonth();
+      const y = now.getFullYear();
+      const qStartMonth = Math.floor(m / 3) * 3;
+      fromInput.value = this.formatLocalDate(new Date(y, qStartMonth, 1));
+      toInput.value = this.formatLocalDate(new Date(y, qStartMonth + 3, 0));
     }
 
     this.applyFilters();

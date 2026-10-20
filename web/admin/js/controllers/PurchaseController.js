@@ -27,6 +27,16 @@ window.PurchaseController = (function() {
   let isReadOnlyView = false;
   let availableChargeTypes = ['Freight', 'Loading / Packing', 'Insurance', 'Inspection', 'Miscellaneous'];
 
+  function formatLocalDate(d) {
+    if (!d) return '';
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   function initDateFilters() {
     const fromInput = document.getElementById('pur-filter-from');
     const toInput = document.getElementById('pur-filter-to');
@@ -34,10 +44,10 @@ window.PurchaseController = (function() {
       const now = new Date();
       const sixMonthsAgo = new Date(now);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      fromInput.value = sixMonthsAgo.toISOString().split('T')[0];
+      fromInput.value = formatLocalDate(sixMonthsAgo);
     }
     if (toInput && !toInput.value) {
-      toInput.value = new Date().toISOString().split('T')[0];
+      toInput.value = formatLocalDate(new Date());
     }
   }
 
@@ -1259,7 +1269,7 @@ window.PurchaseController = (function() {
 
   function showToday(btnEl) {
     activateChip(btnEl);
-    const now = new Date().toISOString().substring(0, 10);
+    const now = formatLocalDate(new Date());
     const f = document.getElementById('pur-filter-from'); if (f) f.value = now;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = now;
     loadPurchases(0);
@@ -1267,7 +1277,7 @@ window.PurchaseController = (function() {
 
   function showYesterday(btnEl) {
     activateChip(btnEl);
-    const yest = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
+    const yest = formatLocalDate(new Date(Date.now() - 86400000));
     const f = document.getElementById('pur-filter-from'); if (f) f.value = yest;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = yest;
     loadPurchases(0);
@@ -1275,8 +1285,8 @@ window.PurchaseController = (function() {
 
   function showSevenDays(btnEl) {
     activateChip(btnEl);
-    const now = new Date().toISOString().substring(0, 10);
-    const prev = new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10);
+    const now = formatLocalDate(new Date());
+    const prev = formatLocalDate(new Date(Date.now() - 7 * 86400000));
     const f = document.getElementById('pur-filter-from'); if (f) f.value = prev;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = now;
     loadPurchases(0);
@@ -1284,8 +1294,8 @@ window.PurchaseController = (function() {
 
   function showThirtyDays(btnEl) {
     activateChip(btnEl);
-    const now = new Date().toISOString().substring(0, 10);
-    const prev = new Date(Date.now() - 30 * 86400000).toISOString().substring(0, 10);
+    const now = formatLocalDate(new Date());
+    const prev = formatLocalDate(new Date(Date.now() - 30 * 86400000));
     const f = document.getElementById('pur-filter-from'); if (f) f.value = prev;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = now;
     loadPurchases(0);
@@ -1308,8 +1318,8 @@ window.PurchaseController = (function() {
     const m = now.getMonth();
     const y = now.getFullYear();
     const qStartMonth = Math.floor(m / 3) * 3;
-    const start = new Date(y, qStartMonth, 1).toISOString().substring(0, 10);
-    const end = new Date(y, qStartMonth + 3, 0).toISOString().substring(0, 10);
+    const start = formatLocalDate(new Date(y, qStartMonth, 1));
+    const end = formatLocalDate(new Date(y, qStartMonth + 3, 0));
     const f = document.getElementById('pur-filter-from'); if (f) f.value = start;
     const t = document.getElementById('pur-filter-to'); if (t) t.value = end;
     loadPurchases(0);
