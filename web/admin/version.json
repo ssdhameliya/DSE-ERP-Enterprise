@@ -1,17 +1,17 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 4,
-  "webVersion": "10.0.38.04",
-  "tag": "web-v10.0.38.04",
-  "releaseDate": "2026-10-21T00:45:00+05:30",
+  "webBuild": 5,
+  "webVersion": "10.0.38.05",
+  "tag": "web-v10.0.38.05",
+  "releaseDate": "2026-10-21T01:05:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.04 Dynamic Table Auto-Fit & Side Panel Viewport Parity: Desktop allocateDense Algorithm, Proportional Dense Floor Compression, Zero Horizontal Scroll, Word-Boundary Multi-Line Header Wrapping & Universal Register Drawer Coordination across 22 Modules",
+  "summary": "10.0.38.05 Desktop Dynamic KPI Single-Panel Engine & 38-Screen Unique Icon/Color Parity: Single-Row Never-Wrap Ribbon Authority (8 Cards on Bank Statement in One Panel), 58px Standard Desktop Height, Usable-Width Dynamic Density (Normal/Compact/Dense) with ResizeObserver, and 100% Semantic Icon & 10-Color Palette Parity matching Desktop ResponsiveKpiLayoutManager.java and UiSemanticRegistry.java",
   "highlights": [
-    "1. Desktop Dynamic Table Parity (allocateDense): Implemented exact mathematical algorithm from DynamicTableLayoutManager.java, dynamically fitting all 12-14 columns into remaining available width when side drawers open.",
-    "2. Eliminated Horizontal Scrollbar: Locked table width strictly to 100% and removed destructive fixed-pixel floorTotal min-width overrides, eliminating right-to-left scrolling across all operational registers.",
-    "3. Compact Dense Floors: Aligned semantic floor values with Desktop JavaFX (denseFloor 44px-66px, actions 96px, select 36px) so all columns remain visible simultaneously.",
-    "4. Word-Boundary Multi-Line Header Wrapping: Ensured table headers wrap cleanly without awkward word breaks or clipping.",
-    "5. Universal Side Drawer Coordination: Connected RegisterUiSupport showDrawer and hideDrawer to DynamicTableLayoutManager across all 22 registered screens with side drawers.",
-    "6. Cell Text Ellipsis with Native Tooltips: Data cells truncate with clean ellipsis and provide native browser hover tooltips for complete content readability."
+    "1. Single-Panel Never-Wrap Authority: All KPI cards strictly stay in ONE horizontal ribbon row, completely preventing wrap to row 2 even with 8 cards (e.g. Bank Statement) or when side drawers open.",
+    "2. Desktop Height Parity (58px Compact Ribbon): Aligned all KPI cards to exact 58px Desktop height with 2-row layout, saving maximum vertical space for data tables.",
+    "3. Usable-Width Responsive Density: Implemented Desktop ResponsiveKpiLayoutManager density thresholds (Dense <170px or 7+ cards, Compact 170-225px, Normal >225px) driven by native ResizeObserver.",
+    "4. 38 Screens & Sub-Screens Full Parity: Comprehensive audit and enhancement across all 38 KPI-enabled screens and sub-screens.",
+    "5. Unique Colorful Icons & 10-Color Families: Full semantic color palette (Emerald, Sky Blue, Indigo, Purple, Amber, Crimson Red, Teal, Cyan, Gold) with unique vibrant icons and hover tooltips matching Desktop.",
+    "6. Interactive Drill-Down Filtering: Clicking any enhanced KPI card immediately activates corresponding filter dropdowns."
   ]
 }

@@ -386,7 +386,7 @@
     }
 
     /* KPI GRIDS & 3D CARDS */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .kpi-grid { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 14px; width: 100%; overflow: hidden; }
     .kpi-card {
       background: var(--bg-card); border: 1px solid var(--border-subtle);
       border-radius: 12px; padding: 20px; position: relative; overflow: hidden;
@@ -1617,10 +1617,13 @@
 
     /* BATCH 1: DESKTOP-PARITY KPI CARDS & REGISTERS */
     .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      width: 100%;
+      overflow: hidden;
     }
     .kpi-card {
       background: rgba(15, 23, 42, 0.72);
@@ -2942,68 +2945,106 @@
     .consequence-item:last-child { margin-bottom: 0; }
     .consequence-icon { flex-shrink: 0; font-size: 0.9rem; }
 
-    /* COMPACT KPI RIBBON (58px Height) - Pillar 4 */
+    /* ==========================================================================
+       PILLAR 4: DYNAMIC DESKTOP KPI SINGLE-PANEL ENGINE (Desktop Parity)
+       Single runtime width authority matching ResponsiveKpiLayoutManager.java
+       Cards strictly stay in ONE horizontal row; density auto-switches based on
+       usable width per card (Normal, Compact, Dense). Never wraps to row 2!
+       ========================================================================== */
     .compact-kpi-ribbon,
-    .kpi-grid.compact-kpi-ribbon {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
-      gap: 12px !important;
-      margin-bottom: 14px !important;
+    .kpi-grid,
+    .dash-kpi-row-6,
+    .bank-recon-kpi-panel,
+    .standard-kpi-row,
+    .entity-kpi-row,
+    .return-kpi-row,
+    .quotation-metric-row,
+    .recon-metric-row,
+    .sales-metric-row,
+    .audit-kpi-section,
+    .master-kpi-row,
+    .reminder-metrics-row,
+    .erp-kpi-section,
+    .erp-kpi-single-row {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+      margin-bottom: 12px !important;
       flex-shrink: 0 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
     }
+
     .compact-kpi-card,
-    .kpi-card.compact-kpi-card,
-    .dash-kpi-card.compact-kpi-card {
+    .kpi-card,
+    .dash-kpi-card,
+    .bank-recon-kpi,
+    .user-kpi,
+    .metric-card,
+    .approved-card {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
       height: 58px !important;
       min-height: 58px !important;
       max-height: 58px !important;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 8px 12px 8px 10px !important;
+      border-radius: 9px;
+      padding: 7px 10px !important;
       display: flex !important;
       flex-direction: row !important;
       align-items: center !important;
-      gap: 10px !important;
+      gap: 8px !important;
       position: relative;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s;
       overflow: hidden !important;
       box-sizing: border-box !important;
     }
-    .compact-kpi-card:hover {
+    .compact-kpi-card:hover,
+    .kpi-card:hover {
       transform: translateY(-2px);
       border-color: var(--cyan);
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
-    .compact-kpi-card::before {
+    .compact-kpi-card::before,
+    .kpi-card::before {
       content: '';
       position: absolute;
       left: 0; top: 0; bottom: 0;
       width: 3.5px;
       background: var(--accent-color, #38bdf8);
-      border-radius: 10px 0 0 10px;
+      border-radius: 9px 0 0 9px;
     }
+
     .kpi-icon-bubble {
-      width: 38px; height: 38px; border-radius: 8px;
+      width: 34px; height: 34px; min-width: 34px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       background: var(--bubble-bg, rgba(56, 189, 248, 0.15));
       border: 1px solid var(--bubble-border, rgba(56, 189, 248, 0.35));
       color: var(--bubble-color, #38bdf8);
-      font-size: 1.15rem; flex-shrink: 0;
+      font-size: 1.10rem; flex-shrink: 0;
     }
     .kpi-content-box {
       flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+      overflow: hidden;
     }
     .kpi-row-top {
-      display: flex; justify-content: space-between; align-items: center; line-height: 1; margin-bottom: 3px;
+      display: flex; justify-content: space-between; align-items: center; line-height: 1; margin-bottom: 2px;
+      gap: 4px;
     }
     .kpi-title-text {
-      font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
       color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .kpi-pill-badge {
-      font-size: 0.62rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      font-size: 0.60rem; font-weight: 700; padding: 1px 5px; border-radius: 4px;
       background: var(--pill-bg, rgba(56, 189, 248, 0.14));
       color: var(--pill-color, #38bdf8);
       border: 1px solid var(--pill-border, rgba(56, 189, 248, 0.35));
@@ -3011,14 +3052,101 @@
     }
     .kpi-val-text {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.10rem; font-weight: 700; color: var(--text-main);
+      font-size: 1.08rem; font-weight: 700; color: var(--text-main);
       letter-spacing: -0.01em; line-height: 1.15; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
     }
     .kpi-val-unit {
-      font-size: 0.72rem; font-weight: 500; color: var(--text-muted); margin-left: 3px;
+      font-size: 0.70rem; font-weight: 500; color: var(--text-muted); margin-left: 3px;
     }
 
-    /* Semantic Color Themes */
+    /* Density Level 1: Normal (usable per card > 225px) */
+    .erp-kpi-density-normal .compact-kpi-card,
+    .erp-kpi-density-normal .kpi-card {
+      padding: 9px 12px !important;
+      gap: 10px !important;
+    }
+    .erp-kpi-density-normal .kpi-icon-bubble {
+      width: 38px !important; height: 38px !important; min-width: 38px !important;
+      font-size: 1.15rem !important;
+    }
+    .erp-kpi-density-normal .kpi-title-text {
+      font-size: 0.68rem !important;
+    }
+    .erp-kpi-density-normal .kpi-val-text {
+      font-size: 1.18rem !important;
+    }
+
+    /* Density Level 2: Compact (usable per card 170px - 225px, or 5-6 cards) */
+    .erp-kpi-density-compact .compact-kpi-card,
+    .erp-kpi-density-compact .kpi-card {
+      padding: 7px 9px !important;
+      gap: 8px !important;
+    }
+    .erp-kpi-density-compact .kpi-icon-bubble {
+      width: 32px !important; height: 32px !important; min-width: 32px !important;
+      font-size: 1.0rem !important;
+    }
+    .erp-kpi-density-compact .kpi-title-text {
+      font-size: 0.64rem !important;
+    }
+    .erp-kpi-density-compact .kpi-val-text {
+      font-size: 1.05rem !important;
+    }
+
+    /* Density Level 3: Dense (usable per card < 170px, or 7-8 cards like Bank Statement) */
+    .erp-kpi-density-dense,
+    .erp-kpi-density-dense.compact-kpi-ribbon {
+      gap: 6px !important;
+    }
+    .erp-kpi-density-dense .compact-kpi-card,
+    .erp-kpi-density-dense .kpi-card,
+    .erp-kpi-density-dense .bank-recon-kpi {
+      padding: 5px 7px !important;
+      gap: 5px !important;
+    }
+    .erp-kpi-density-dense .kpi-icon-bubble {
+      width: 28px !important; height: 28px !important; min-width: 28px !important;
+      font-size: 0.88rem !important;
+      border-radius: 6px !important;
+    }
+    .erp-kpi-density-dense .kpi-title-text {
+      font-size: 0.58rem !important;
+      letter-spacing: 0.01em !important;
+    }
+    .erp-kpi-density-dense .kpi-pill-badge {
+      display: none !important; /* Conceal pill in dense 8-card mode to maximize text/value readability */
+    }
+    .erp-kpi-density-dense .kpi-val-text {
+      font-size: 0.95rem !important;
+      line-height: 1.1 !important;
+    }
+
+    /* Light Theme Compatibility for KPI Cards */
+    body.light-theme .compact-kpi-card,
+    body.light-theme .kpi-card,
+    body.light-theme .dash-kpi-card,
+    body.light-theme .bank-recon-kpi,
+    body.light-theme .user-kpi,
+    body.light-theme .metric-card,
+    body.light-theme .approved-card {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    }
+    body.light-theme .compact-kpi-card:hover,
+    body.light-theme .kpi-card:hover {
+      border-color: #0284c7 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10) !important;
+    }
+    body.light-theme .kpi-val-text {
+      color: #0f172a !important;
+    }
+    body.light-theme .kpi-title-text {
+      color: #64748b !important;
+    }
+
+    /* Complete 10-Theme Semantic Color Families matching Desktop */
     .theme-emerald {
       --accent-color: #10b981;
       --bubble-bg: rgba(16, 185, 129, 0.15);
@@ -3072,6 +3200,42 @@
       --pill-bg: rgba(168, 85, 247, 0.14);
       --pill-border: rgba(168, 85, 247, 0.35);
       --pill-color: #c084fc;
+    }
+    .theme-crimson {
+      --accent-color: #ef4444;
+      --bubble-bg: rgba(239, 68, 68, 0.15);
+      --bubble-border: rgba(239, 68, 68, 0.35);
+      --bubble-color: #f87171;
+      --pill-bg: rgba(239, 68, 68, 0.14);
+      --pill-border: rgba(239, 68, 68, 0.35);
+      --pill-color: #f87171;
+    }
+    .theme-indigo {
+      --accent-color: #6366f1;
+      --bubble-bg: rgba(99, 102, 241, 0.15);
+      --bubble-border: rgba(99, 102, 241, 0.35);
+      --bubble-color: #818cf8;
+      --pill-bg: rgba(99, 102, 241, 0.14);
+      --pill-border: rgba(99, 102, 241, 0.35);
+      --pill-color: #818cf8;
+    }
+    .theme-cyan {
+      --accent-color: #06b6d4;
+      --bubble-bg: rgba(6, 182, 212, 0.15);
+      --bubble-border: rgba(6, 182, 212, 0.35);
+      --bubble-color: #22d3ee;
+      --pill-bg: rgba(6, 182, 212, 0.14);
+      --pill-border: rgba(6, 182, 212, 0.35);
+      --pill-color: #22d3ee;
+    }
+    .theme-gold {
+      --accent-color: #eab308;
+      --bubble-bg: rgba(234, 179, 8, 0.15);
+      --bubble-border: rgba(234, 179, 8, 0.35);
+      --bubble-color: #facc15;
+      --pill-bg: rgba(234, 179, 8, 0.14);
+      --pill-border: rgba(234, 179, 8, 0.35);
+      --pill-color: #facc15;
     }
 
     /* ==========================================================================
