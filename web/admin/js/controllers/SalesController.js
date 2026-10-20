@@ -3612,6 +3612,15 @@ window.SalesController = {
 
         // Display the inline drawer docked beside table (Screenshots 3 & 4)
         inlineDrawer.style.display = 'flex';
+        if (window.DynamicTableLayoutManager) {
+          const tbl = document.getElementById('sales-main-table');
+          if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+          window.DynamicTableLayoutManager.reflowAllTables();
+          setTimeout(() => {
+            if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+            window.DynamicTableLayoutManager.reflowAllTables();
+          }, 50);
+        }
       }
 
       // Also populate the modal drawer elements if present
@@ -3937,6 +3946,16 @@ window.SalesController = {
     document.querySelectorAll('#sales-main-table tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     this.currentDrawerSale = null;
     this.selectedDrawerInvoiceNo = null;
+
+    if (window.DynamicTableLayoutManager) {
+      const tbl = document.getElementById('sales-main-table');
+      if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => {
+        if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+        window.DynamicTableLayoutManager.reflowAllTables();
+      }, 50);
+    }
   },
 
   previewCurrentDrawerAttachment() {

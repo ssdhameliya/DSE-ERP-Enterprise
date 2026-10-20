@@ -114,7 +114,7 @@ window.BarcodeStudioController = (function() {
                 <button class="btn-purple" onclick="window.BarcodeStudioController.toggleActionMenu(${idx}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Actions">
                   ::: Actions
                 </button>
-                <div id="bc-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div id="bc-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                   <div class="action-menu-item" onclick="window.BarcodeStudioController.showPreview(${idx})"><span style="margin-right:8px;">📄</span> View / Preview Label</div>
                   <div class="action-menu-item" onclick="window.BarcodeStudioController.generateBarcode(${idx})"><span style="margin-right:8px;">🏷️</span> Generate Barcode</div>
                   <div class="action-menu-item" onclick="window.BarcodeStudioController.printDispatch(${idx})"><span style="margin-right:8px;">🚚</span> Print Dispatch Label (PDF)</div>

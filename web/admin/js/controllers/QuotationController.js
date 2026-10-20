@@ -375,6 +375,10 @@ window.QuotationController = (function () {
 
       drawer.classList.add('open');
       drawer.style.display = 'flex';
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      }
     } catch (e) {
       console.error('Failed to load quotation details:', e);
       if (window.AppDialogService) window.AppDialogService.toastError('Failed to load details: ' + e.message);
@@ -400,6 +404,10 @@ window.QuotationController = (function () {
     }
     document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedQuote = null;
+    if (window.DynamicTableLayoutManager) {
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+    }
   }
 
   function previewCurrentDrawerAttachment() {

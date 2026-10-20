@@ -364,6 +364,10 @@ window.CreditDebitNoteController = (function() {
 
       drawer.classList.add('open');
       drawer.style.display = 'flex';
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      }
     } catch (e) {
       console.error('Failed to load note details:', e);
       if (window.AppDialogService) window.AppDialogService.toastError('Failed to load note details: ' + e.message);
@@ -379,6 +383,10 @@ window.CreditDebitNoteController = (function() {
     const tableId = isCredit ? 'tbl-credit-notes-body' : 'tbl-debit-notes-body';
     document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
     selectedNote = null;
+    if (window.DynamicTableLayoutManager) {
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+    }
   }
 
   // Install escape listeners

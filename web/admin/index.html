@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.38.02a">
+  <link rel="stylesheet" href="css/app.css?v=10.0.38.04a">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -199,7 +199,7 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.38.02</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.38.04</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v10.0.38</div>
         </div>
@@ -541,7 +541,7 @@
           <div class="brand-title">JASVI <span>INDUSTRIES</span></div>
         </div>
         <span id="env-badge" style="display: none;"></span>
-        <span id="header-app-version-badge" style="display: none;">v10.0.38.02</span>
+        <span id="header-app-version-badge" style="display: none;">v10.0.38.04</span>
         <div
           style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title"
@@ -651,7 +651,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.36.06</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.38.04</span></div>
           </div>
         </div>
       </div>
@@ -4249,7 +4249,7 @@
                 &#128218;
               </div>
               <div>
-                <h1 style="font-size: 1.45rem; font-weight: 800; color: #fff; margin: 0 0 2px;">Master Data Management
+                <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin: 0 0 2px;">Master Data Management
                 </h1>
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Manage lookup categories, unit
                   definitions, reference codes and master values</p>
@@ -4267,29 +4267,29 @@
           <!-- Split Workspace matching Masterdata.fxml -->
           <div style="display: flex; gap: 16px; align-items: flex-start;">
             <!-- Left Panel: Lookup Categories Rail -->
-            <div class="data-panel"
-              style="width: 320px; flex-shrink: 0; padding: 16px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: 10px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="font-weight: 700; font-size: 0.92rem; color: #fff;">Lookup Categories</div>
+            <div class="data-panel master-categories-rail"
+              style="width: 230px; min-width: 210px; max-width: 240px; flex-shrink: 0; padding: 14px; border-radius: 10px; max-height: calc(100vh - 220px); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="font-weight: 700; font-size: 0.90rem; color: var(--text-main);">Lookup Categories</div>
                 <button class="btn btn-primary" style="height: 28px; padding: 0 10px; font-size: 0.72rem;"
                   onclick="window.MasterDataController.openAddCategoryModal()">+ Add</button>
               </div>
 
               <input type="text" id="masters-category-search" class="filter-input" placeholder="Search Categories..."
                 oninput="window.MasterDataController.filterCategories(this.value)"
-                style="width: 100%; height: 36px; margin-bottom: 12px; font-size: 0.8rem;">
+                style="width: 100%; height: 34px; margin-bottom: 10px; font-size: 0.8rem;">
 
-              <div id="masters-category-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
+              <div id="masters-category-list" style="flex: 1; max-height: calc(100vh - 360px); min-height: 160px; overflow-y: auto; padding-right: 4px;">
                 <!-- Category items populated by MasterDataController -->
               </div>
 
               <div
-                style="display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
                 <button id="btn-master-rename-cat" class="btn btn-secondary"
-                  style="flex: 1; height: 32px; font-size: 0.74rem;"
+                  style="flex: 1; height: 30px; font-size: 0.74rem;"
                   onclick="window.MasterDataController.openRenameCategoryModal()">Rename</button>
                 <button id="btn-master-deact-cat" class="btn btn-secondary"
-                  style="flex: 1; height: 32px; font-size: 0.74rem; color: #f87171;"
+                  style="flex: 1; height: 30px; font-size: 0.74rem; color: #f87171;"
                   onclick="window.MasterDataController.deactivateCurrentCategory()">Deactivate</button>
               </div>
             </div>
@@ -4335,7 +4335,7 @@
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                       <h3 id="masters-selected-title"
-                        style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">Lookup Values</h3>
+                        style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">Lookup Values</h3>
                       <input type="text" id="masters-lookup-search" class="filter-input"
                         placeholder="Search lookup records..."
                         oninput="window.MasterDataController.applyLookupFilter(this.value)"
@@ -10045,7 +10045,7 @@
             <div class="user-table-toolbar-left">
               <span style="font-size: 1.2rem;">&#9881;&#65039;</span>
               <div>
-                <strong style="color: #fff; font-size: 0.92rem;">User Management</strong>
+                <strong style="color: var(--text-main); font-size: 0.92rem;">User Management</strong>
                 <div style="font-size: 0.72rem; color: var(--text-muted);">Search, filter and manage ERP users</div>
               </div>
             </div>
@@ -10816,12 +10816,12 @@
 
             <!-- 1. SCREEN 1: COMPANY & BILLING PANEL (Settings.fxml & CompanySettingsPanel.fxml Parity) -->
             <div id="settings-panel-company" class="settings-subpanel" data-section="COMPANY">
-              <div class="data-panel"
-                style="padding:22px 24px; margin-bottom:18px; background:rgba(30,41,59,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+              <div class="data-panel settings-card-panel"
+                style="padding:22px 24px; margin-bottom:18px; border-radius:10px;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                   <span style="color:#38bdf8; font-size:1.15rem;">&#128196;</span>
                   <h2
-                    style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                    style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin:0; font-family:'Space Grotesk',sans-serif;">
                     Company &amp; Billing</h2>
                 </div>
                 <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">Business identity, primary contact
@@ -14195,7 +14195,7 @@ Outstanding Balance: {BalanceAmount}
     <div class="modal-card"
       style="width: 760px; max-width: 95vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); padding: 0; overflow: hidden; backdrop-filter: blur(16px);">
       <div class="modal-header"
-        style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.9);">
+        style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);">
         <div>
           <h3
             style="margin: 0; font-size: 1.1rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-main);">
@@ -14206,7 +14206,7 @@ Outstanding Balance: {BalanceAmount}
         <button type="button" class="modal-close" onclick="window.SalesController.closeChargesDialog()">&times;</button>
       </div>
 
-      <div style="padding: 18px 20px; max-height: 52vh; overflow-y: auto;">
+      <div class="modal-body" style="padding: 18px 20px; max-height: 52vh; overflow-y: auto;">
         <div id="charges-dialog-rows" style="display: flex; flex-direction: column; gap: 10px;">
           <!-- Dynamically generated rows -->
         </div>
@@ -14219,8 +14219,8 @@ Outstanding Balance: {BalanceAmount}
         </div>
       </div>
 
-      <div
-        style="padding: 14px 20px; border-top: 1px solid var(--border-subtle); background: rgba(0, 0, 0, 0.25); display: flex; justify-content: space-between; align-items: center;">
+      <div class="modal-footer"
+        style="padding: 14px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
         <div id="charges-dialog-totals"
           style="font-family: 'Space Grotesk'; font-size: 0.9rem; font-weight: 700; color: var(--cyan);">
           Charges &#8377; 0.00 &nbsp;&bull;&nbsp; GST &#8377; 0.00 &nbsp;&bull;&nbsp; Total &#8377; 0.00
@@ -17172,73 +17172,73 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.38.02a"></script>
+  <script src="js/version.js?v=10.0.38.04a"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.38.02a"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.38.02a"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.38.02a"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.02a"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.02a"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.38.02a"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.02a"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.02a"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.38.02a"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.02a"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.02a"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.02a"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.02a"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.38.02a"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.38.02a"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.38.02a"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.38.02a"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.38.02a"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.38.02a"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.38.04a"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.38.04a"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.38.04a"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.04a"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.04a"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.38.04a"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.04a"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.04a"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.38.04a"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.04a"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.04a"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.04a"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.04a"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.38.04a"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.38.04a"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.38.04a"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.38.04a"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.38.04a"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.38.04a"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.38.02a"></script>
-  <script src="js/services/ApiService.js?v=10.0.38.02a"></script>
-  <script src="js/services/AuthService.js?v=10.0.38.02a"></script>
-  <script src="js/services/NotificationService.js?v=10.0.38.02a"></script>
-  <script src="js/services/MasterService.js?v=10.0.38.02a"></script>
-  <script src="js/services/OperationsService.js?v=10.0.38.02a"></script>
-  <script src="js/services/ReportService.js?v=10.0.38.02a"></script>
-  <script src="js/services/ReconService.js?v=10.0.38.02a"></script>
-  <script src="js/services/AccountingService.js?v=10.0.38.02a"></script>
-  <script src="js/services/ImportService.js?v=10.0.38.02a"></script>
+  <script src="js/services/BrandingService.js?v=10.0.38.04a"></script>
+  <script src="js/services/ApiService.js?v=10.0.38.04a"></script>
+  <script src="js/services/AuthService.js?v=10.0.38.04a"></script>
+  <script src="js/services/NotificationService.js?v=10.0.38.04a"></script>
+  <script src="js/services/MasterService.js?v=10.0.38.04a"></script>
+  <script src="js/services/OperationsService.js?v=10.0.38.04a"></script>
+  <script src="js/services/ReportService.js?v=10.0.38.04a"></script>
+  <script src="js/services/ReconService.js?v=10.0.38.04a"></script>
+  <script src="js/services/AccountingService.js?v=10.0.38.04a"></script>
+  <script src="js/services/ImportService.js?v=10.0.38.04a"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/GstController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.02a"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.02a"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/GstController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.04a"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.04a"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.38.02a"></script>
-  <script src="js/app.js?v=10.0.38.02a"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.38.04a"></script>
+  <script src="js/app.js?v=10.0.38.04a"></script>
 </body>
 
 </html>

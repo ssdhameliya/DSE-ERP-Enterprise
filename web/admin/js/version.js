@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.02",
+  version: "10.0.38.04",
   desktopVersion: "10.0.38",
-  webBuild: 2,
-  webVersion: "10.0.38.02",
-  tag: "web-v10.0.38.02",
-  releaseDate: "2026-10-20T18:50:00+05:30",
+  webBuild: 4,
+  webVersion: "10.0.38.04",
+  tag: "web-v10.0.38.04",
+  releaseDate: "2026-10-21T00:45:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.02 Full Desktop v10.0.38 Parity: DatePickerFormatter Company Date Format, Universal Print Table Spooler, Document Studio & SheetJS Quotation/Returns Export, jsPDF Fallback Generation, Remember-Me Persistence, Dynamic Table Auto-Fit & Unlocked Table Scrolling"
+  summary: "10.0.38.04 Dynamic Table Auto-Fit & Side Panel Viewport Parity: Desktop allocateDense Algorithm, Proportional Dense Floor Compression, Zero Horizontal Scroll, Word-Boundary Multi-Line Header Wrapping & Universal Register Drawer Coordination across 22 Modules"
 };
 
 // Automatic UI Version Injection

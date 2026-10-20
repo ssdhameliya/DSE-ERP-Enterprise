@@ -1,18 +1,17 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 2,
-  "webVersion": "10.0.38.02",
-  "tag": "web-v10.0.38.02",
-  "releaseDate": "2026-10-20T18:50:00+05:30",
+  "webBuild": 4,
+  "webVersion": "10.0.38.04",
+  "tag": "web-v10.0.38.04",
+  "releaseDate": "2026-10-21T00:45:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.02 Full Desktop v10.0.38 Parity: DatePickerFormatter System-Wide Company Date Format, Universal Print High-Contrast Table Spooler, Document Studio & SheetJS Quotation/Returns Export, jsPDF Fallback Generation, Remember-Me Persistence, Dynamic Table Auto-Fit & Unlocked Independent Table Scrolling",
+  "summary": "10.0.38.04 Dynamic Table Auto-Fit & Side Panel Viewport Parity: Desktop allocateDense Algorithm, Proportional Dense Floor Compression, Zero Horizontal Scroll, Word-Boundary Multi-Line Header Wrapping & Universal Register Drawer Coordination across 22 Modules",
   "highlights": [
-    "1. Fixed Viewport Architecture: Pinned 100% height layouts across 25 registers eliminating page-level scrollbars; sticky table headers and permanently docked pagination.",
-    "2. 58px Modern Compact KPI Ribbon: Replaced bulky 160px cards with 58px high-density ribbons saving 102px vertical space while preserving live controller IDs and telemetry.",
-    "3. 3D Destructive Consequence Window Dialogs: Eliminated toasts and raw alert/confirm with rich 3D dialogs featuring 3-point consequence analysis and keyboard-accessible navigation.",
-    "4. Universal Form Dirty Tracker: Intercepts navigation, tab closures, and escape events across document editors to prevent accidental data loss.",
-    "5. High-Contrast Light Mode Overhaul: Full support for color-scheme light, crisp white cards, readable inputs, high-contrast calendar pickers, and explicit select options.",
-    "6. Colorful Table Header Icons & Action Popovers: Rich semantic identity badges across table headers and form labels in both Dark and Light themes.",
-    "7. Universal Cross-Module Deep-Linking: DeepLinkService enables instant one-click navigation between Ledger, Bank Statements, Invoices, and Orders with automatic date reset and drawer opening."
+    "1. Desktop Dynamic Table Parity (allocateDense): Implemented exact mathematical algorithm from DynamicTableLayoutManager.java, dynamically fitting all 12-14 columns into remaining available width when side drawers open.",
+    "2. Eliminated Horizontal Scrollbar: Locked table width strictly to 100% and removed destructive fixed-pixel floorTotal min-width overrides, eliminating right-to-left scrolling across all operational registers.",
+    "3. Compact Dense Floors: Aligned semantic floor values with Desktop JavaFX (denseFloor 44px-66px, actions 96px, select 36px) so all columns remain visible simultaneously.",
+    "4. Word-Boundary Multi-Line Header Wrapping: Ensured table headers wrap cleanly without awkward word breaks or clipping.",
+    "5. Universal Side Drawer Coordination: Connected RegisterUiSupport showDrawer and hideDrawer to DynamicTableLayoutManager across all 22 registered screens with side drawers.",
+    "6. Cell Text Ellipsis with Native Tooltips: Data cells truncate with clean ellipsis and provide native browser hover tooltips for complete content readability."
   ]
 }

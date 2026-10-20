@@ -2431,7 +2431,7 @@ window.FinanceController = {
               <button class="btn-purple" onclick="window.FinanceController.toggleAgingActionMenu(${idx}, event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Aging Actions">
                 ::: Actions
               </button>
-              <div id="aging-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:190px; white-space:nowrap; padding:6px 0; text-align:left;">
+              <div id="aging-action-menu-${idx}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; min-width:190px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.FinanceController.onAgingRowClick(${idx}, event)"><span style="margin-right:8px;">👁️</span> Inspect Breakdown</div>
                 <div class="action-menu-item" onclick="window.FinanceController.sendAgingReminder(${r.partyId || idx}, '${(r.partyName || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">💬</span> Send Overdue Notice</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openParty360FromAging('${(r.partyName || '').replace(/'/g, "\\'")}')"><span style="margin-right:8px;">👤</span> Party 360 Profile</div>

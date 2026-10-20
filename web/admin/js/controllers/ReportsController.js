@@ -1678,7 +1678,7 @@ window.ReportsController = (function() {
               <button class="btn-purple" onclick="window.ReportsController.toggleSavedReportActionMenu(${idx}, event)" style="height:28px; padding:0 10px; font-size:0.74rem; font-weight:600;" title="View Actions Menu">
                 ::: Actions &#9660;
               </button>
-              <div class="action-menu-dropdown" id="saved-report-action-menu-${idx}" style="display:none; position:absolute; right:0; top:100%; z-index:999; background:var(--bg-card, #1e293b); border:1px solid var(--border-subtle, #334155); border-radius:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); min-width:160px; padding:4px 0; text-align:left;">
+              <div class="action-menu-dropdown action-dropdown-menu" id="saved-report-action-menu-${idx}" style="display:none; position:absolute; right:0; top:100%; z-index:9999; min-width:160px; padding:4px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.ReportsController.applySavedReportByIndex(${idx})">
                   <span style="margin-right:8px;">👁️</span> Open Report
                 </div>
@@ -1716,7 +1716,17 @@ window.ReportsController = (function() {
       });
       const menu = document.getElementById(menuId);
       if (menu) {
-        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        const isShown = menu.style.display === 'block';
+        menu.style.display = isShown ? 'none' : 'block';
+        if (!isShown) {
+          const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+              menu.style.display = 'none';
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        }
       }
     },
 

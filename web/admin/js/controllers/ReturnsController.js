@@ -371,6 +371,10 @@ window.ReturnsController = (function () {
 
       drawer.classList.add('open');
       drawer.style.display = 'flex';
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      }
 
     } catch (e) {
       console.error('Failed to load return details:', e);
@@ -387,6 +391,10 @@ window.ReturnsController = (function () {
     }
     document.querySelectorAll('#tbl-sales-returns-body tr.active-selected-row, #tbl-purchase-returns-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedReturn = null;
+    if (window.DynamicTableLayoutManager) {
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+    }
   }
 
   // Install escape listeners

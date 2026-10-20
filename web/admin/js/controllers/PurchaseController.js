@@ -432,6 +432,16 @@ window.PurchaseController = (function() {
       overlay.classList.remove('open');
     }
 
+    if (window.DynamicTableLayoutManager) {
+      const tbl = document.getElementById('purchases-main-table') || document.querySelector('#view-purchase table');
+      if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => {
+        if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+        window.DynamicTableLayoutManager.reflowAllTables();
+      }, 50);
+    }
+
     // 2. Load complete details and line items in background if missing
     if (!p.lines || p.lines.length === 0) {
       try {
@@ -712,6 +722,16 @@ window.PurchaseController = (function() {
     selectedPurchase = null;
     currentDrawerPurchase = null;
     selectedDrawerBillNo = null;
+
+    if (window.DynamicTableLayoutManager) {
+      const tbl = document.getElementById('purchases-main-table') || document.querySelector('#view-purchase table');
+      if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+      window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => {
+        if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
+        window.DynamicTableLayoutManager.reflowAllTables();
+      }, 50);
+    }
   }
 
   function closeDrawer() {

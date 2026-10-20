@@ -5,16 +5,22 @@
  *
  * Automatically fits every table dynamically to 100% of the viewport width based on
  * column header semantics and weights. Eliminates horizontal scrolling and right-side
- * whitespace gaps across all screens in the application.
+ * whitespace gaps across all screens in the application, including when a side inspection
+ * drawer or details panel opens.
  */
 window.DynamicTableLayoutManager = (function() {
   'use strict';
 
   const INSTALLED = 'erpTableDynamicLayoutInstalled';
-  const ACTION_CONTROL_MIN_WIDTH = 92.0;
-  const ABSOLUTE_MIN_COLUMN = 36.0;
-  const MIN_READABLE_COLUMN = 52.0;
-  const DENSE_MIN_READABLE_COLUMN = 42.0;
+  const ACTION_CONTROL_MIN_WIDTH = 118.0;
+  const ACTION_CONTROL_DENSE_WIDTH = 96.0;
+  const ACTION_CONTROL_HARD_FLOOR = 76.0;
+  const MIN_READABLE_COLUMN = 58.0;
+  const DENSE_MIN_READABLE_COLUMN = 44.0;
+  const ABSOLUTE_MIN_COLUMN = 34.0;
+  const SELECTION_FLOOR = 48.0;
+  const SELECTION_DENSE_FLOOR = 36.0;
+  const SELECTION_HARD_FLOOR = 30.0;
 
   // Active ResizeObservers and Debouncers
   const tableObservers = new WeakMap();
@@ -31,14 +37,14 @@ window.DynamicTableLayoutManager = (function() {
     return measureCtx;
   }
 
-  function measureTextWidth(text, font = '700 11.5px "Plus Jakarta Sans", sans-serif') {
+  function measureTextWidth(text, font = '700 11px "Plus Jakarta Sans", sans-serif') {
     if (!text) return 0;
     try {
       const ctx = getMeasureContext();
       ctx.font = font;
       return Math.ceil(ctx.measureText(text).width);
     } catch (e) {
-      return (text.length || 0) * 7.5;
+      return (text.length || 0) * 7.0;
     }
   }
 
@@ -72,7 +78,7 @@ window.DynamicTableLayoutManager = (function() {
     if (semantic === 'select' || semantic === 'check') return true;
     if (th && th.classList.contains('erp-th-checkbox')) return true;
     if (th && th.querySelector('input[type="checkbox"]')) return true;
-    const h = (heading || '').toLowerCase();
+    const h = (heading || '').toLowerCase().trim();
     return h === '#' || h === 'no.' || h === 'no' || h === 'sr no' || h === 'select' || h === '✓';
   }
 
@@ -88,84 +94,67 @@ window.DynamicTableLayoutManager = (function() {
   }
 
   /**
-   * Minimum readable floor width for normal desktop layouts (matching desktop headerMinimum)
+   * Minimum readable floor width for normal desktop layouts (exact parity with Desktop readableMinimum)
    */
   function readableMinimum(semantic, heading, th) {
+    if (isSelectionColumn(heading, semantic, th)) return SELECTION_FLOOR;
     const key = (semantic + ' ' + heading).toLowerCase();
-    if (isSelectionColumn(heading, semantic, th)) return 38.0;
-    if (key.includes('actions') || key.includes('action')) return 98.0;
-    if (isLongTextSemantic(semantic, heading)) return 165.0;
+    if (key.includes('actions') || key.includes('action')) return ACTION_CONTROL_MIN_WIDTH;
+    if (isLongTextSemantic(semantic, heading)) return 86.0;
     if (key.includes('invoice') || key.includes('reference') || key.includes('document') ||
-        key.includes('order') || key.includes('code') || key.includes('account')) return 135.0;
-    if (key.includes('gstin') || key.includes('gst')) return 135.0;
-    if (key.includes('doc status')) return 120.0;
-    if (key.includes('payment') || key.includes('return')) return 110.0;
-    if (key.includes('status') || key.includes('payment due')) return 105.0;
-    if (key.includes('pending') || key.includes('balance')) return 118.0;
-    if (key.includes('amount') || key.includes('total') || key.includes('rate')) return 118.0;
-    if (key.includes('paid')) return 105.0;
-    if (key.includes('mobile') || key.includes('phone') || key.includes('contact')) return 105.0;
-    if (key.includes('date') || key.includes('due') || key.includes('time')) return 100.0;
-    if (key.includes('email')) return 95.0;
-    if (key.includes('qty') || key.includes('quantity') || key.includes('unit')) return 75.0;
-    return 95.0;
+        key.includes('account') || key.includes('email') || key.includes('gst')) return 74.0;
+    if (key.includes('payment') || key.includes('return') || key.includes('status')) return 78.0;
+    if (key.includes('amount') || key.includes('balance') || key.includes('paid') ||
+        key.includes('pending') || key.includes('total') || key.includes('rate')) return 72.0;
+    if (key.includes('date') || key.includes('due') || key.includes('mobile') ||
+        key.includes('quantity') || key.includes('qty')) return 64.0;
+    return 68.0;
   }
 
   /**
    * Calculates the true minimum floor so header words NEVER clip or truncate
-   * (Exact parity with desktop DynamicTableLayoutManager.headerMinimum)
+   * (Exact parity with Desktop DynamicTableLayoutManager.headerMinimum)
    */
   function headerMinimum(semantic, heading, th) {
-    if (isSelectionColumn(heading, semantic, th)) return 38.0;
-    if ((semantic || '').includes('action')) return 98.0;
+    if (isSelectionColumn(heading, semantic, th)) return SELECTION_FLOOR;
+    if ((semantic || '').includes('action')) return ACTION_CONTROL_MIN_WIDTH;
 
     const font = '700 11px "Plus Jakarta Sans", sans-serif';
     const longestToken = longestHeaderTokenWidth(heading, font);
-    // Header space: icon (~14px) + gap (~3px) + th padding (8px) + badge padding (12px) = ~37px
-    const iconPadding = 37.0;
+    // Header space: icon (~14px) + gap (~3px) + badge padding (~12px) = ~29px
+    const iconPadding = 29.0;
     const measuredFloor = longestToken + iconPadding;
 
     const semFloor = readableMinimum(semantic, heading, th);
-    return Math.max(semFloor, measuredFloor);
+    return Math.max(MIN_READABLE_COLUMN, Math.max(semFloor, measuredFloor));
   }
 
   /**
-   * Dense floor width for narrow screens / open drawers (matching desktop denseFloor)
+   * Dense floor width for narrow viewports / open side panels (exact parity with Desktop denseFloor)
    */
   function denseFloor(semantic, heading, th) {
+    if (isSelectionColumn(heading, semantic, th)) return SELECTION_DENSE_FLOOR;
+    if ((semantic || '').includes('action')) return ACTION_CONTROL_DENSE_WIDTH;
     const key = (semantic + ' ' + heading).toLowerCase();
-    if (isSelectionColumn(heading, semantic, th)) return 38.0;
-    if (key.includes('actions') || key.includes('action')) return 92.0;
-    if (isLongTextSemantic(semantic, heading)) return 150.0;
-    if (key.includes('doc status')) return 115.0;
-    if (key.includes('payment') || key.includes('return')) return 105.0;
-    if (key.includes('status')) return 98.0;
-    if (key.includes('invoice') || key.includes('document') || key.includes('reference')) return 125.0;
-    if (key.includes('gstin')) return 125.0;
-    if (key.includes('pending') || key.includes('balance')) return 112.0;
-    if (key.includes('amount') || key.includes('total')) return 112.0;
-    if (key.includes('paid')) return 100.0;
-    if (key.includes('mobile') || key.includes('phone')) return 100.0;
-    if (key.includes('date') || key.includes('due') || key.includes('email')) return 95.0;
-    if (key.includes('qty') || key.includes('quantity') || key.includes('unit')) return 70.0;
-    return 88.0;
+    if (isLongTextSemantic(semantic, heading)) return 66.0;
+    if (key.includes('status') || key.includes('payment') || key.includes('return')) return 58.0;
+    if (key.includes('invoice') || key.includes('document') || key.includes('reference')) return 56.0;
+    if (key.includes('amount') || key.includes('total') || key.includes('balance') || key.includes('paid')) return 52.0;
+    return DENSE_MIN_READABLE_COLUMN; // 44.0
   }
 
   /**
-   * Flex weight for proportional distribution of extra space (matching desktop flexWeight)
+   * Flex weight for proportional distribution of extra space (exact parity with Desktop flexWeight)
    */
   function flexWeight(semantic, heading) {
     const key = (semantic + ' ' + heading).toLowerCase();
-    if (isLongTextSemantic(semantic, heading)) return 3.2; // Primary sponge column
+    if (isLongTextSemantic(semantic, heading)) return 3.0; // Primary sponge column
     if (key.includes('email') || key.includes('invoice') || key.includes('reference') ||
         key.includes('document') || key.includes('code') || key.includes('account')) return 1.8;
-    if (key.includes('gstin')) return 1.2;
-    if (key.includes('amount') || key.includes('paid') || key.includes('pending') ||
-        key.includes('total') || key.includes('balance')) return 1.1;
-    if (key.includes('actions') || key.includes('select')) return 0.55;
+    if (key.includes('actions') || key.includes('select')) return 0.65;
     if (key.includes('date') || key.includes('status') || key.includes('quantity') ||
-        key.includes('mobile') || key.includes('tax')) return 0.95;
-    return 1.1;
+        key.includes('tax') || key.includes('percent') || key.includes('number')) return 1.0;
+    return 1.35;
   }
 
   /**
@@ -215,8 +204,7 @@ window.DynamicTableLayoutManager = (function() {
   function contentViewportWidth(table) {
     const container = table.parentElement;
     if (!container) return table.clientWidth || 1000;
-    
-    // Parent container width minus paddings
+
     const style = window.getComputedStyle(container);
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
@@ -227,6 +215,7 @@ window.DynamicTableLayoutManager = (function() {
 
   /**
    * Allocates extra width to columns proportionally based on flex weights
+   * (Exact parity with Desktop allocateFromFloors)
    */
   function allocateFromFloors(profiles, available, floorTotal, weightTotal) {
     const widths = new Array(profiles.length);
@@ -239,18 +228,27 @@ window.DynamicTableLayoutManager = (function() {
   }
 
   /**
-   * Proportional dense allocation for narrow viewports (matching desktop allocateDense)
+   * Proportional dense allocation for narrow viewports & open side drawers
+   * (Exact mathematical parity with Desktop DynamicTableLayoutManager.allocateDense)
    */
   function allocateDense(profiles, available) {
     const dense = new Array(profiles.length);
     let total = 0;
     for (let i = 0; i < profiles.length; i++) {
       const p = profiles[i];
-      const floor = denseFloor(p.semantic, p.heading, p.th);
+      let floor;
+      if (isSelectionColumn(p.heading, p.semantic, p.th)) {
+        floor = SELECTION_DENSE_FLOOR; // 36px
+      } else if (p.semantic.includes('action')) {
+        floor = Math.min(ACTION_CONTROL_MIN_WIDTH, ACTION_CONTROL_DENSE_WIDTH); // 96px
+      } else {
+        floor = Math.max(ABSOLUTE_MIN_COLUMN, Math.min(p.floor, denseFloor(p.semantic, p.heading, p.th)));
+      }
       dense[i] = floor;
       total += floor;
     }
 
+    // If total dense floor fits into available viewport (normal drawer open situation):
     if (total <= available) {
       const extra = available - total;
       let weights = 0;
@@ -261,15 +259,33 @@ window.DynamicTableLayoutManager = (function() {
       return dense;
     }
 
-    // Extremely narrow viewports: proportionally scale down while protecting Actions
-    const scale = Math.max(0.55, available / total);
+    // Extremely constrained viewports: proportionally scale down while protecting Actions & selection
+    const scale = Math.max(0.45, available / total);
     let scaledTotal = 0;
     for (let i = 0; i < dense.length; i++) {
       const isAct = profiles[i].semantic.includes('action');
       const isSel = isSelectionColumn(profiles[i].heading, profiles[i].semantic, profiles[i].th);
-      const hardFloor = isAct ? 76.0 : isSel ? 28.0 : ABSOLUTE_MIN_COLUMN;
+      const hardFloor = isAct ? ACTION_CONTROL_HARD_FLOOR : isSel ? SELECTION_HARD_FLOOR : ABSOLUTE_MIN_COLUMN;
       dense[i] = Math.max(hardFloor, dense[i] * scale);
       scaledTotal += dense[i];
+    }
+
+    // Residual reduction pass to guarantee widths NEVER exceed available container
+    if (scaledTotal > available) {
+      let reducible = 0;
+      for (let i = 0; i < dense.length; i++) {
+        const isAct = profiles[i].semantic.includes('action');
+        const hardFloor = isAct ? 72.0 : ABSOLUTE_MIN_COLUMN;
+        reducible += Math.max(0, dense[i] - hardFloor);
+      }
+      let needed = scaledTotal - available;
+      for (let i = 0; i < dense.length && needed > 0.25; i++) {
+        const isAct = profiles[i].semantic.includes('action');
+        const hardFloor = isAct ? 72.0 : ABSOLUTE_MIN_COLUMN;
+        const own = Math.max(0, dense[i] - hardFloor);
+        const reduction = reducible <= 0 ? 0 : Math.min(own, (needed * own) / reducible);
+        dense[i] -= reduction;
+      }
     }
 
     return dense;
@@ -277,13 +293,14 @@ window.DynamicTableLayoutManager = (function() {
 
   /**
    * Closes residual pixel rounding difference into the primary flex column or last column
+   * (Exact parity with Desktop closeResidual)
    */
   function closeResidual(widths, available, profiles) {
     if (widths.length === 0) return;
     let used = 0;
     for (let i = 0; i < widths.length; i++) used += widths[i];
     const diff = available - used;
-    
+
     // Give residual to the longest text column if available, else last column
     let targetIdx = widths.length - 1;
     for (let i = 0; i < profiles.length; i++) {
@@ -308,19 +325,26 @@ window.DynamicTableLayoutManager = (function() {
     if (ths.length === 0) return;
 
     const available = contentViewportWidth(table);
-    if (!Number.isFinite(available) || available < 150) return;
+    if (!Number.isFinite(available) || available < 120) return;
 
     const lastWidth = parseFloat(table.dataset.lastLayoutWidth) || 0;
     const currentCols = table.querySelectorAll('colgroup > col').length;
-    if (Math.abs(available - lastWidth) < 2 && currentCols === ths.length) {
+    if (Math.abs(available - lastWidth) < 1.5 && currentCols === ths.length) {
       return;
     }
     table.dataset.lastLayoutWidth = available;
 
-    // Enforce fixed layout on table & hide container horizontal scroll for desktop
+    // Enforce fixed layout on table & prevent horizontal scrollbar on parent
     table.style.tableLayout = 'fixed';
     table.style.width = '100%';
+    table.style.minWidth = '0';
+    table.style.maxWidth = '100%';
     table.style.borderCollapse = 'collapse';
+
+    const container = table.parentElement;
+    if (container) {
+      container.style.overflowX = 'hidden'; // Guarantees zero right-to-left scrolling
+    }
 
     // Profile columns
     const profiles = ths.map(th => profile(th));
@@ -331,14 +355,12 @@ window.DynamicTableLayoutManager = (function() {
       weightTotal += p.weight;
     }
 
-    const isConstrained = floorTotal > available;
-    const effectiveAvailable = isConstrained ? floorTotal : available;
-    table.style.width = isConstrained ? (floorTotal + 'px') : '100%';
-    table.style.minWidth = isConstrained ? (floorTotal + 'px') : '100%';
+    // Desktop Parity Decision: Normal vs Dense Allocation
+    const widths = floorTotal <= available
+      ? allocateFromFloors(profiles, available, floorTotal, weightTotal)
+      : allocateDense(profiles, available);
 
-    // Allocate widths
-    const widths = allocateFromFloors(profiles, effectiveAvailable, floorTotal, weightTotal);
-    closeResidual(widths, effectiveAvailable, profiles);
+    closeResidual(widths, available, profiles);
 
     // Ensure <colgroup> exists for fast native layout
     let colgroup = table.querySelector('colgroup');
@@ -359,24 +381,24 @@ window.DynamicTableLayoutManager = (function() {
 
     for (let i = 0; i < ths.length; i++) {
       const w = Math.round(widths[i] * 10) / 10;
-      const pct = ((w / effectiveAvailable) * 100).toFixed(2) + '%';
-      const colWidthVal = isConstrained ? (Math.round(w) + 'px') : pct;
+      const pct = ((w / available) * 100).toFixed(2) + '%';
       const p = profiles[i];
 
       // Set width on <col> tag
-      cols[i].style.width = colWidthVal;
+      cols[i].style.width = pct;
 
       // Set width, min-width, max-width on <th>
-      p.th.style.width = colWidthVal;
-      p.th.style.minWidth = Math.round(p.floor) + 'px';
-      p.th.style.maxWidth = 'none';
-      p.th.style.overflow = 'visible';
-      p.th.style.textOverflow = 'clip';
+      p.th.style.width = pct;
+      p.th.style.minWidth = '0';
+      p.th.style.maxWidth = pct;
+      p.th.style.overflow = 'hidden';
+      p.th.style.textOverflow = 'ellipsis';
       p.th.style.whiteSpace = 'normal'; // Allow clean multi-line word wrapping on word boundaries
       p.th.style.wordBreak = 'normal';
       p.th.style.overflowWrap = 'normal';
-      p.th.style.lineHeight = '1.25';
+      p.th.style.lineHeight = '1.2';
       p.th.style.verticalAlign = 'middle';
+      p.th.style.padding = '6px 8px';
       if (p.align && !p.th.style.textAlign) {
         p.th.style.textAlign = p.align;
       }
@@ -386,10 +408,20 @@ window.DynamicTableLayoutManager = (function() {
       if (badge) {
         badge.style.whiteSpace = 'normal';
         badge.style.wordBreak = 'normal';
-        badge.style.lineHeight = '1.25';
+        badge.style.lineHeight = '1.2';
         badge.style.display = 'inline-flex';
         badge.style.alignItems = 'center';
         badge.style.justifyContent = p.align === 'right' ? 'flex-end' : p.align === 'center' ? 'center' : 'flex-start';
+        badge.style.maxWidth = '100%';
+      }
+
+      const label = p.th.querySelector('.erp-th-label');
+      if (label) {
+        label.style.whiteSpace = 'normal';
+        label.style.wordBreak = 'normal';
+        label.style.lineHeight = '1.2';
+        label.style.overflow = 'hidden';
+        label.style.textOverflow = 'ellipsis';
       }
     }
 
@@ -401,6 +433,7 @@ window.DynamicTableLayoutManager = (function() {
         const cells = row.children;
         for (let i = 0; i < cells.length && i < profiles.length; i++) {
           const td = cells[i];
+          const p = profiles[i];
           const isNumericOrCurrency = p.align === 'right' ||
             (p.semantic && (p.semantic.includes('amount') || p.semantic.includes('total') || p.semantic.includes('rate') || p.semantic.includes('price') || p.semantic.includes('pending') || p.semantic.includes('paid') || p.semantic.includes('balance'))) ||
             td.classList.contains('sales-amount-cell') ||
@@ -423,7 +456,7 @@ window.DynamicTableLayoutManager = (function() {
           // Native tooltip if cell text is long and doesn't have child inputs/buttons
           if (!td.title && !td.querySelector('button, input, select, a')) {
             const txt = td.innerText.trim();
-            if (txt.length > 10) td.title = txt;
+            if (txt.length > 8) td.title = txt;
           }
         }
       });
@@ -438,6 +471,7 @@ window.DynamicTableLayoutManager = (function() {
       if (!table || table.nodeType !== 1) return;
       if (table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) return;
       if (table.dataset[INSTALLED] === 'true') {
+        layoutNow(table);
         return;
       }
       table.dataset[INSTALLED] = 'true';
@@ -453,14 +487,14 @@ window.DynamicTableLayoutManager = (function() {
           const ro = new ResizeObserver((entries) => {
             const entry = entries && entries[0];
             const currentW = entry ? entry.contentRect.width : container.clientWidth;
-            if (Math.abs(currentW - lastContainerW) < 12) return;
+            if (Math.abs(currentW - lastContainerW) < 4) return;
             lastContainerW = currentW;
 
             let debouncer = tableDebouncers.get(table);
             if (debouncer) clearTimeout(debouncer);
             debouncer = setTimeout(() => {
               layoutNow(table);
-            }, 100);
+            }, 50);
             tableDebouncers.set(table, debouncer);
           });
           ro.observe(container);
@@ -470,7 +504,7 @@ window.DynamicTableLayoutManager = (function() {
     },
 
     /**
-     * Schedules a coalesced layout calculation
+     * Schedules a coalesced layout calculation for a single table
      */
     requestLayout(table) {
       if (!table) return;
@@ -487,7 +521,7 @@ window.DynamicTableLayoutManager = (function() {
      */
     requestLayoutIn(root = document) {
       if (!root) return;
-      const tables = root.querySelectorAll('table.sales-desktop-table, table.data-table, table.erp-table, .sales-table-scroll table, .data-panel table');
+      const tables = root.querySelectorAll('table.sales-desktop-table, table.data-table, table.erp-table, .sales-table-scroll table, .data-panel table, .table-container table');
       tables.forEach(tbl => {
         if (tbl.dataset[INSTALLED] === 'true') {
           layoutNow(tbl);
@@ -498,11 +532,18 @@ window.DynamicTableLayoutManager = (function() {
     },
 
     /**
+     * Alias for requestLayoutIn to guarantee parity with callers
+     */
+    reflowAllTables(root = document) {
+      this.requestLayoutIn(root);
+    },
+
+    /**
      * Installs layout authority on all tables within a container
      */
     installAll(container = document) {
       if (!container) return;
-      const tables = container.querySelectorAll('table.sales-desktop-table, table.data-table, table.erp-table, .sales-table-scroll table, .data-panel table');
+      const tables = container.querySelectorAll('table.sales-desktop-table, table.data-table, table.erp-table, .sales-table-scroll table, .data-panel table, .table-container table');
       tables.forEach(tbl => this.install(tbl));
     }
   };

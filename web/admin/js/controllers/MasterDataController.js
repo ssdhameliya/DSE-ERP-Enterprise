@@ -88,12 +88,12 @@ window.MasterDataController = (function() {
         return `
           <div class="master-category-item ${isSel ? 'active' : ''}" 
                onclick="window.MasterDataController.selectCategory('${escapeHtml(name)}')"
-               style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: all 0.15s; background: ${isSel ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255,255,255,0.02)'}; border-left: 3px solid ${isSel ? 'var(--cyan)' : 'transparent'};">
+               style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: all 0.15s; border-left: 3px solid ${isSel ? 'var(--cyan)' : 'transparent'};">
             <div>
-              <div style="font-size: 0.84rem; font-weight: ${isSel ? '700' : '600'}; color: ${isSel ? 'var(--cyan)' : 'var(--text-main)'};">${escapeHtml(name)}</div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">${activeBadge}</div>
+              <div class="category-name-text" style="font-size: 0.82rem; font-weight: ${isSel ? '700' : '600'}; color: ${isSel ? 'var(--cyan)' : 'var(--text-main)'};">${escapeHtml(name)}</div>
+              <div style="font-size: 0.70rem; color: var(--text-dim); margin-top: 1px;">${activeBadge}</div>
             </div>
-            <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.7rem; color: var(--text-muted);">${c.count != null ? c.count : '•'}</span>
+            <span class="badge category-count-badge" style="font-size: 0.7rem; color: var(--text-muted);">${c.count != null ? c.count : '•'}</span>
           </div>
         `;
       }).join('');

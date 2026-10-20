@@ -596,62 +596,35 @@
     body.light-theme table.sales-desktop-table tr:hover td {
       background: #f8fafc;
     }
-    body.light-theme #app-container .form-input, 
-    body.light-theme #app-container .form-select {
-      background: #ffffff;
-      color: #0f172a;
-      border-color: rgba(148, 163, 184, 0.5);
+    /* UNIVERSAL FORM CONTROLS & INPUTS (LIGHT THEME) */
+    body.light-theme input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+    body.light-theme select,
+    body.light-theme textarea,
+    body.light-theme .form-control,
+    body.light-theme .form-input,
+    body.light-theme .form-select,
+    body.light-theme .filter-input,
+    body.light-theme .filter-select,
+    body.light-theme .omni-search,
+    body.light-theme .search-input {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
     }
-    body.light-theme #app-container .form-input::placeholder {
-      color: #94a3b8;
+    body.light-theme input::placeholder,
+    body.light-theme textarea::placeholder,
+    body.light-theme .form-input::placeholder,
+    body.light-theme .filter-input::placeholder,
+    body.light-theme .omni-search::placeholder {
+      color: #94a3b8 !important;
     }
-    body.light-theme .profile-dropdown-menu {
-      background: #ffffff;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      border-color: rgba(148, 163, 184, 0.35);
-    }
-    body.light-theme .profile-menu-item {
-      color: #0f172a;
-    }
-    body.light-theme .profile-menu-item:hover {
-      background: #f1f5f9;
-    }
-    body.light-theme .modal-card {
-      background: #ffffff;
-      color: #0f172a;
-      border-color: rgba(148, 163, 184, 0.35);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-    }
-    body.light-theme .modal-header h3 {
-      color: #0f172a;
-    }
-    body.light-theme .auth-box {
-      background: #ffffff;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-    }
-    body.light-theme .actions-dropdown-menu {
-      background: #ffffff;
-      border-color: rgba(148, 163, 184, 0.35);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-    }
-    body.light-theme .actions-menu-item {
-      color: #0f172a;
-    }
-    body.light-theme .actions-menu-item:hover {
-      background: #f1f5f9;
-      color: var(--primary);
-    }
-    body.light-theme .actions-menu-divider {
-      background: rgba(148, 163, 184, 0.25);
-    }
-    body.light-theme .btn-quick-action {
-      background: #f1f5f9;
-      color: #0f172a;
-      border-color: rgba(148, 163, 184, 0.35);
-    }
-    body.light-theme .btn-quick-action:hover {
-      background: #e2e8f0;
-      border-color: var(--primary);
+    body.light-theme input[readonly],
+    body.light-theme textarea[readonly],
+    body.light-theme input:disabled,
+    body.light-theme select:disabled {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border-color: #e2e8f0 !important;
     }
     body.light-theme select option {
       background: #ffffff !important;
@@ -662,16 +635,94 @@
       opacity: 0.85;
       cursor: pointer;
     }
-    body.light-theme .app-dialog-card {
+
+    /* PROFILE & FLOATING CONTEXT MENUS */
+    body.light-theme .profile-dropdown-menu {
       background: #ffffff !important;
-      border-color: #cbd5e1 !important;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2), 0 0 30px rgba(2, 132, 199, 0.1) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+      border: 1px solid #cbd5e1 !important;
     }
-    body.light-theme .app-dialog-header {
+    body.light-theme .profile-menu-item {
+      color: #0f172a !important;
+    }
+    body.light-theme .profile-menu-item:hover {
+      background: #f1f5f9 !important;
+    }
+
+    /* ALL FLOATING ACTION MENUS (DESKTOP PARITY) */
+    body.light-theme .actions-dropdown-menu,
+    body.light-theme .action-dropdown-menu,
+    body.light-theme .action-menu-dropdown,
+    body.light-theme .rep-export-dropdown-menu,
+    body.light-theme [id*="action-menu-"],
+    body.light-theme [id*="-actions-menu"] {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+    body.light-theme .actions-menu-item,
+    body.light-theme .action-menu-item,
+    body.light-theme .dropdown-item {
+      color: #0f172a !important;
+    }
+    body.light-theme .actions-menu-item:hover,
+    body.light-theme .action-menu-item:hover,
+    body.light-theme .dropdown-item:hover {
+      background: #f1f5f9 !important;
+      color: #0284c7 !important;
+    }
+    body.light-theme .actions-menu-divider,
+    body.light-theme .action-menu-divider {
+      background: #e2e8f0 !important;
+    }
+    body.light-theme .btn-quick-action {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .btn-quick-action:hover {
+      background: #e2e8f0 !important;
+      border-color: var(--primary) !important;
+    }
+
+    /* ALL MODALS, WINDOW POPUPS & DIALOGS */
+    body.light-theme .modal-overlay {
+      background: rgba(15, 23, 42, 0.45) !important;
+      backdrop-filter: blur(4px) !important;
+    }
+    body.light-theme .modal-card,
+    body.light-theme .modal-box,
+    body.light-theme .modal-container,
+    body.light-theme .app-dialog-card,
+    body.light-theme .user-dialog-card,
+    body.light-theme .auth-box {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15) !important;
+    }
+    body.light-theme .modal-header,
+    body.light-theme .modal-footer,
+    body.light-theme .modal-box .modal-header,
+    body.light-theme .modal-box .modal-footer,
+    body.light-theme .app-dialog-header,
+    body.light-theme .app-dialog-footer {
       background: #f8fafc !important;
-      border-bottom-color: #e2e8f0 !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
     }
+    body.light-theme .modal-header h1,
+    body.light-theme .modal-header h2,
+    body.light-theme .modal-header h3,
+    body.light-theme .modal-header h4,
     body.light-theme .app-dialog-title {
+      color: #0f172a !important;
+    }
+    body.light-theme .modal-close {
+      color: #64748b !important;
+    }
+    body.light-theme .modal-close:hover {
       color: #0f172a !important;
     }
     body.light-theme .app-dialog-heading {
@@ -680,14 +731,42 @@
     body.light-theme .app-dialog-body {
       color: #1e293b !important;
     }
-    body.light-theme .app-dialog-footer {
-      background: #f8fafc !important;
-      border-top-color: #e2e8f0 !important;
-    }
     body.light-theme .dialog-consequence-card {
       background: #fff1f2 !important;
       border-color: #fecdd3 !important;
       color: #9f1239 !important;
+    }
+
+    /* PERSISTENT FOOTER BAR & DASHBOARD PANELS */
+    body.light-theme .app-footer-bar,
+    body.light-theme footer.app-footer,
+    body.light-theme #app-footer-bar,
+    body.light-theme .auth-desktop-footer {
+      background: #ffffff !important;
+      border-top: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    body.light-theme .app-footer-bar .footer-company,
+    body.light-theme .app-footer-bar .footer-clock,
+    body.light-theme .app-footer-bar .footer-trust {
+      color: #334155 !important;
+    }
+    body.light-theme .app-footer-bar .footer-phone,
+    body.light-theme .app-footer-bar .footer-email,
+    body.light-theme .app-footer-bar .footer-website {
+      color: #64748b !important;
+    }
+    body.light-theme .dash-bottom-panel {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.light-theme .dash-bottom-panel .panel-top h3 {
+      color: #0f172a !important;
+    }
+    body.light-theme .dash-list-row {
+      border-bottom-color: #f1f5f9 !important;
+      color: #334155 !important;
     }
 
     /* MODAL SIZES */
@@ -3374,6 +3453,18 @@
       background: rgba(15, 23, 42, 0.95) !important;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
+    body.light-theme .erp-input-active-focused,
+    body.light-theme input:focus:not([type=checkbox]):not([type=radio]),
+    body.light-theme select:focus,
+    body.light-theme textarea:focus,
+    body.light-theme .form-input:focus,
+    body.light-theme .filter-input:focus,
+    body.light-theme .omni-search:focus {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #0284c7 !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), 0 0 10px rgba(2, 132, 199, 0.15) !important;
+    }
 
     /* 3D Attractiveness & Depth for Table Headers and Action Buttons */
     .sales-desktop-table th,
@@ -3786,4 +3877,250 @@
       border-color: rgba(255, 255, 255, 0.14) !important;
       background: rgba(15, 23, 42, 0.6) !important;
     }
+
+    /* ==========================================================================
+       CENTRALIZED LIGHT THEME ENGINE (v10.0.38.03) - SYSTEM-WIDE STABILIZATION
+       ========================================================================== */
+
+    /* 1. SETTINGS STUDIO & MODULE MANAGEMENT (LIGHT THEME) */
+    body.light-theme .settings-tab-nav {
+      background: #f1f5f9 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .settings-tab-btn {
+      color: #475569 !important;
+      background: transparent;
+    }
+    body.light-theme .settings-tab-btn:hover {
+      color: #0f172a !important;
+      background: #e2e8f0 !important;
+    }
+    body.light-theme .settings-tab-btn.active {
+      color: #0284c7 !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+    body.light-theme .settings-card-panel,
+    body.light-theme .settings-subpanel .data-panel,
+    body.light-theme .settings-panel-host .data-panel {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .notification-pill-card {
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .notification-pill-card:hover:not([style*="not-allowed"]) {
+      background: #f1f5f9 !important;
+      border-color: #0284c7 !important;
+    }
+    body.light-theme .module-card-panel {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .module-card-panel:hover {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    /* 2. MASTER DATA SPLIT WORKSPACE (LIGHT THEME) */
+    body.light-theme .master-categories-rail,
+    body.light-theme #view-masters .data-panel {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .master-category-item {
+      background: transparent;
+      color: #334155;
+    }
+    body.light-theme .master-category-item:hover {
+      background: #f1f5f9 !important;
+    }
+    body.light-theme .master-category-item.active {
+      background: #e0f2fe !important;
+      border-left-color: #0284c7 !important;
+    }
+    body.light-theme .master-category-item .category-name-text {
+      color: #0f172a !important;
+    }
+    body.light-theme .master-category-item.active .category-name-text {
+      color: #0284c7 !important;
+    }
+    body.light-theme .master-category-item .category-count-badge {
+      background: #f1f5f9 !important;
+      color: #64748b !important;
+    }
+
+    /* 3. USER ACCESS & PERMISSIONS (LIGHT THEME) */
+    body.light-theme .user-table-toolbar {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+    }
+    body.light-theme #users-table-tbody td,
+    body.light-theme #users-table-tbody .user-fullname-cell,
+    body.light-theme #view-users table.data-table td {
+      color: #0f172a !important;
+    }
+    body.light-theme .user-bottom-action-strip {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+    }
+    body.light-theme .permission-matrix-panel,
+    body.light-theme .permission-control-card,
+    body.light-theme .permission-preview-panel {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .permission-matrix-table th {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .permission-matrix-table td {
+      border-bottom: 1px solid #f1f5f9 !important;
+      color: #334155 !important;
+    }
+    body.light-theme .permission-category-header-row td {
+      background: #f0fdf4 !important;
+      color: #166534 !important;
+      border-top: 1px solid #bbf7d0 !important;
+      border-bottom: 1px solid #bbf7d0 !important;
+    }
+    body.light-theme .reg-approval-bottom-bar {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    /* 4. AUTOCOMPLETE & TYPEAHEAD DROPDOWNS (LIGHT THEME) */
+    body.light-theme .autocomplete-dropdown,
+    body.light-theme .typeahead-dropdown,
+    body.light-theme .address-suggest-box,
+    body.light-theme .fast-item-autocomplete-popup,
+    body.light-theme [id*="-autocomplete"],
+    body.light-theme [id*="-results"] {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .autocomplete-item,
+    body.light-theme .typeahead-item,
+    body.light-theme .fast-item-row {
+      color: #0f172a !important;
+      border-bottom-color: #f1f5f9 !important;
+    }
+    body.light-theme .autocomplete-item:hover,
+    body.light-theme .typeahead-item:hover,
+    body.light-theme .fast-item-row:hover,
+    body.light-theme .fast-item-row.selected {
+      background: #f1f5f9 !important;
+    }
+
+    /* 5. UNIVERSAL TABLE VERTICAL SCROLLING ACROSS ALL MODULES */
+    .module-view.fixed-viewport .table-container,
+    .module-view.fixed-viewport .standard-table-card,
+    .module-view.fixed-viewport .fs-tab-panel,
+    .module-view.fixed-viewport .register-table-panel,
+    .module-view.fixed-viewport .table-scroll,
+    .module-view.fixed-viewport .sales-table-scroll,
+    .module-view.fixed-viewport .table-responsive,
+    .module-view.fixed-viewport .table-panel-viewport,
+    .module-view.fixed-viewport .table-panel,
+    .module-view.fixed-viewport .data-panel:has(table) {
+      flex: 1 1 0 !important;
+      min-height: 180px !important;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+    }
+
+    /* Views with mixed cards or long content scroll smoothly */
+    .module-view:not(.fixed-viewport).active,
+    #view-settings.active,
+    #view-reports.active,
+    #view-barcode.active,
+    #view-automation.active,
+    #view-import.active,
+    #view-registration-approvals.active,
+    #view-permission-matrix.active {
+      overflow-y: auto !important;
+      max-height: 100% !important;
+      flex: 1 !important;
+    }
+
+    /* 6. UNIVERSAL TEXT CONTRAST OVERRIDES FOR LIGHT THEME */
+    body.light-theme .view-header h1,
+    body.light-theme .view-title-group h1,
+    body.light-theme .editor-card-header h3,
+    body.light-theme .panel-header-title,
+    body.light-theme h1:not(.btn *),
+    body.light-theme h2:not(.btn *),
+    body.light-theme h3:not(.btn *),
+    body.light-theme h4:not(.btn *) {
+      color: #0f172a !important;
+    }
+
+    /* ==========================================================================
+       7. DYNAMIC TABLE AUTO-FIT & SIDE PANEL COMPRESSION (DESKTOP PARITY)
+       Single authority width management matching DynamicTableLayoutManager.java
+       CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN parity across all 22 screens
+       ========================================================================== */
+    table.sales-desktop-table[data-erp-table-dynamic-layout-installed="true"],
+    table.data-table[data-erp-table-dynamic-layout-installed="true"],
+    table.erp-table[data-erp-table-dynamic-layout-installed="true"] {
+      table-layout: fixed !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+
+    .table-container:has(table[data-erp-table-dynamic-layout-installed="true"]),
+    .sales-table-scroll:has(table[data-erp-table-dynamic-layout-installed="true"]),
+    .register-table-panel:has(table[data-erp-table-dynamic-layout-installed="true"]) {
+      overflow-x: hidden !important;
+      min-width: 0 !important;
+      flex: 1 1 auto !important;
+    }
+
+    /* Word-boundary multi-line header wrapping so all 12-14 headers fit beside open drawer */
+    table[data-erp-table-dynamic-layout-installed="true"] th {
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      line-height: 1.2 !important;
+      padding: 6px 8px !important;
+      box-sizing: border-box !important;
+    }
+
+    table[data-erp-table-dynamic-layout-installed="true"] .erp-th-badge {
+      white-space: normal !important;
+      word-break: normal !important;
+      line-height: 1.2 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      max-width: 100% !important;
+    }
+
+    table[data-erp-table-dynamic-layout-installed="true"] .erp-th-label {
+      white-space: normal !important;
+      word-break: normal !important;
+      line-height: 1.2 !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    /* Prevent action button clipping in dense layout */
+    table[data-erp-table-dynamic-layout-installed="true"] td .row-actions,
+    table[data-erp-table-dynamic-layout-installed="true"] td .btn-action {
+      white-space: nowrap !important;
+      min-width: 72px !important;
+    }
+
+
 

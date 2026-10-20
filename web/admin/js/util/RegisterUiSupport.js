@@ -83,9 +83,12 @@ window.RegisterUiSupport = (function() {
     drawer.style.display = 'flex';
     drawer.removeAttribute('hidden');
 
-    // Notify UI enhancer if available
+    // Notify UI enhancer if available (immediate + 50ms settled pulse matching Desktop)
     if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
       window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => {
+        window.DynamicTableLayoutManager.reflowAllTables();
+      }, 50);
     }
   }
 
@@ -111,6 +114,9 @@ window.RegisterUiSupport = (function() {
 
     if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
       window.DynamicTableLayoutManager.reflowAllTables();
+      setTimeout(() => {
+        window.DynamicTableLayoutManager.reflowAllTables();
+      }, 50);
     }
   }
 

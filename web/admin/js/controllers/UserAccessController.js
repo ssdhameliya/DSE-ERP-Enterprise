@@ -348,7 +348,7 @@ window.UserAccessController = (function() {
         return `
           <tr onclick="window.UserAccessController.onUserRowClick(${u.id}, event)" data-user-id="${u.id}" class="${isSelected ? 'active-selected-row' : ''}" style="cursor: pointer;">
             <td>
-              <div style="font-weight: 700; color: #fff;">${u.fullName || u.username}</div>
+              <div class="user-fullname-cell" style="font-weight: 700; color: var(--text-main);">${u.fullName || u.username}</div>
             </td>
             <td>
               <div style="font-size: 0.8rem; color: var(--text-muted);">${u.email || '-'}</div>

@@ -362,6 +362,10 @@ window.ReminderCenterController = (function() {
       if (drawer) drawer.style.display = 'flex';
 
       this.renderTable(filteredReminders);
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      }
     },
 
     closeReminderDrawer() {
@@ -369,6 +373,10 @@ window.ReminderCenterController = (function() {
       const drawer = document.getElementById('reminder-detail-drawer');
       if (drawer) drawer.style.display = 'none';
       this.renderTable(filteredReminders);
+      if (window.DynamicTableLayoutManager) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      }
     },
 
     editSelected() {
