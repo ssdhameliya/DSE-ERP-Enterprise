@@ -1,17 +1,16 @@
 {
-  "desktopVersion": "10.0.36",
-  "webBuild": 5,
-  "webVersion": "10.0.36.05",
-  "tag": "web-v10.0.36.05",
-  "releaseDate": "2026-10-20T16:00:00+05:30",
+  "desktopVersion": "10.0.37",
+  "webBuild": 6,
+  "webVersion": "10.0.36.06",
+  "tag": "web-v10.0.36.06",
+  "releaseDate": "2026-10-20T17:15:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.36.05 Desktop Parity & User-Friendly Errors: Sales & Purchase Register Import Studio Parity with Charges & Calculations, Database Constraints & Error Propagation in ApiExceptionHandler, and UI Badge Sync",
+  "summary": "10.0.36.06 Full Contract Parity: Zero-Null Primitives & Explicit Field Population for Sales & Purchases Loader, OperationsService Contract Sanitizer, and Desktop Record Deserialization Guard",
   "highlights": [
-    "1. Sales & Purchase Register Import Studio Parity: Added document charge parsing (charge_1_..., charge_2_..., additional_charges), matching Desktop DocumentCalculationEngine and ImportDocumentPolicy.",
-    "2. Canonical Document Calculation Engine: Calculates item taxable, line tax, charge amounts, taxable charges, and charge GST matching Desktop down to the exact penny.",
-    "3. Mandatory Database Constraint & Snapshot Parity: Populated sameAsBilling: true, dueDate from payment terms, master billing/delivery addresses and GSTIN snapshots, total quantity, and canonical APPROVED documentStatus.",
-    "4. User-Friendly Backend Server Error Propagation: Added specific exception handlers in ApiExceptionHandler for DataIntegrityViolationException, HttpMessageNotReadableException, and MethodArgumentNotValidException, returning root cause details instead of masked generic error.",
-    "5. ApiService Error Enhancement: Surfaces backend error details and field validation lists directly in modal dialogs.",
-    "6. Version & Cache-Buster Synchronization: Updated static HTML version tags (lines 202, 204, 544, 654) and script cache-buster query parameters to 10.0.36.05 across index.html."
+    "1. Sales & Purchase Loader Contract Parity: Explicitly provided all 45 contract fields on salePayload and purchasePayload in ImportService.js, including emailSent: false, whatsappSent: false, chargeType, chargeAmount, and metadata defaults.",
+    "2. OperationsService Defense-in-Depth Sanitizer: Added _sanitizeSalePayload and _sanitizePurchasePayload in OperationsService to ensure all boolean and numeric contract fields are safely defaulted before HTTP transmission.",
+    "3. PurchaseController Contract Fix: Added emailSent: false to new purchase creations in PurchaseController.js.",
+    "4. Server Record Deserialization Hardening: Updated SaleDto and PurchaseDto in OperationDtos.java to use Boolean with compact constructor defaults, eliminating Jackson InvalidNullException when primitives are omitted.",
+    "5. Version & Cache-Buster Synchronization: Updated index.html, version.json, and js/version.js to 10.0.36.06."
   ]
 }

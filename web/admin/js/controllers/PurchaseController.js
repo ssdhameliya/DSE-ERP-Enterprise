@@ -2077,6 +2077,7 @@ window.PurchaseController = (function() {
       warehouse: 'Main Warehouse',
       paymentTerms: document.getElementById('pe-payment-terms')?.value || 'Net 30',
       currency: 'INR',
+      emailSent: false,
       referenceNo: document.getElementById('pe-order-no')?.value || '',
       gstTreatment: 'Taxable Goods',
       transporter: document.getElementById('pe-transporter')?.value || '',

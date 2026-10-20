@@ -33,11 +33,40 @@ window.OperationsService = {
   async getSaleByInvoice(invoiceNo) {
     return await window.ApiService.get(`/api/operations/sales/by-invoice?invoiceNo=${encodeURIComponent(invoiceNo)}`);
   },
+  _sanitizeSalePayload(saleData) {
+    if (!saleData || typeof saleData !== 'object') return saleData;
+    return {
+      emailSent: false,
+      whatsappSent: false,
+      sameAsBilling: true,
+      paidAmount: 0.0,
+      quantity: 0.0,
+      rowVersion: 0,
+      charges: [],
+      lines: [],
+      chargeType: '',
+      chargeAmount: 0.0,
+      doorDelivery: 'NO',
+      vehicleNumber: '',
+      contactPerson: '',
+      contactPersonMobile: '',
+      transportNote: '',
+      orderNo: null,
+      referenceNo: '',
+      poDate: null,
+      transporter: '',
+      transporterGstin: '',
+      salesperson: 'Admin',
+      notes: '',
+      attachmentPath: null,
+      ...saleData
+    };
+  },
   async createSale(saleData) {
-    return await window.ApiService.post('/api/operations/sales', saleData);
+    return await window.ApiService.post('/api/operations/sales', this._sanitizeSalePayload(saleData));
   },
   async updateSale(saleData) {
-    return await window.ApiService.put('/api/operations/sales', saleData);
+    return await window.ApiService.put('/api/operations/sales', this._sanitizeSalePayload(saleData));
   },
   async cancelSale(invoiceNo) {
     return await window.ApiService.post(`/api/operations/sales/cancel?invoiceNo=${encodeURIComponent(invoiceNo)}`, {});
@@ -213,11 +242,43 @@ window.OperationsService = {
   async checkPurchaseExists(invoiceNo) {
     return await window.ApiService.get(`/api/operations/purchases/exists?invoiceNo=${encodeURIComponent(invoiceNo)}`);
   },
+  _sanitizePurchasePayload(purchaseData) {
+    if (!purchaseData || typeof purchaseData !== 'object') return purchaseData;
+    return {
+      emailSent: false,
+      sameAsBilling: true,
+      paidAmount: 0.0,
+      discountAmount: 0.0,
+      quantity: 0.0,
+      rowVersion: 0,
+      charges: [],
+      lines: [],
+      warehouse: 'Default Warehouse',
+      currency: 'INR',
+      gstTreatment: 'STANDARD',
+      transporter: '',
+      transporterGstin: '',
+      lrAwbNo: '',
+      discountType: 'PERCENT',
+      attachmentPath: null,
+      createdBy: 'Admin',
+      deliveryDate: null,
+      vehicleNumber: '',
+      contactPerson: '',
+      contactPersonMobile: '',
+      notes: '',
+      orderNo: null,
+      poDate: null,
+      chargeType: '',
+      chargeAmount: 0.0,
+      ...purchaseData
+    };
+  },
   async createPurchase(purchaseData) {
-    return await window.ApiService.post('/api/operations/purchases', purchaseData);
+    return await window.ApiService.post('/api/operations/purchases', this._sanitizePurchasePayload(purchaseData));
   },
   async updatePurchase(purchaseData) {
-    return await window.ApiService.put('/api/operations/purchases', purchaseData);
+    return await window.ApiService.put('/api/operations/purchases', this._sanitizePurchasePayload(purchaseData));
   },
   async deletePurchase(invoiceNo) {
     return await window.ApiService.delete(`/api/operations/purchases?invoiceNo=${encodeURIComponent(invoiceNo)}`);

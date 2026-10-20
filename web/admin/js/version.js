@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.36.05",
-  desktopVersion: "10.0.36",
-  webBuild: 5,
-  webVersion: "10.0.36.05",
-  tag: "web-v10.0.36.05",
-  releaseDate: "2026-10-20T16:00:00+05:30",
+  version: "10.0.36.06",
+  desktopVersion: "10.0.37",
+  webBuild: 6,
+  webVersion: "10.0.36.06",
+  tag: "web-v10.0.36.06",
+  releaseDate: "2026-10-20T17:15:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.36.05 Desktop Parity & User-Friendly Errors: Sales & Purchase Register Import Studio Parity with Charges & Calculations, Database Constraints & Error Propagation in ApiExceptionHandler, and UI Badge Sync"
+  summary: "10.0.36.06 Full Contract Parity: Zero-Null Primitives & Explicit Field Population for Sales & Purchases Loader, OperationsService Contract Sanitizer, and Desktop Record Deserialization Guard"
 };
 
 // Automatic UI Version Injection
