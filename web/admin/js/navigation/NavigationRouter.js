@@ -148,7 +148,17 @@ window.NavigationRouter = (function() {
         const targetView = document.getElementById(domViewId);
         if (targetView) {
           targetView.classList.add('active');
-          targetView.style.display = 'block';
+          const isFixed = targetView.classList.contains('fixed-viewport');
+          const stage = document.getElementById('main-content-stage');
+          if (stage) {
+            if (isFixed) stage.classList.add('has-fixed-viewport');
+            else stage.classList.remove('has-fixed-viewport');
+          }
+          if (isFixed) {
+            targetView.style.display = 'flex';
+          } else {
+            targetView.style.display = 'block';
+          }
         }
 
         if (isSettingsSub) {

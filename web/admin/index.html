@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -24,7 +24,7 @@
       visibility: hidden !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.36.06">
+  <link rel="stylesheet" href="css/app.css?v=10.0.38.01">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -1138,7 +1138,7 @@
         </div>
 
         <!-- VIEW 2: SALES REGISTER (EXACT DESKTOP PARITY - IMAGES 2 & 3) -->
-        <div id="view-sales-register" class="module-view">
+        <div id="view-sales-register" class="module-view fixed-viewport">
           <!-- Page Header Banner (Image 2) -->
           <div class="view-header" style="margin-bottom: 12px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
@@ -2266,7 +2266,7 @@
         </div>
 
         <!-- VIEW: SALES RETURNS (DESKTOP SalesReturns.fxml PARITY) -->
-        <div id="view-sales-returns" class="module-view">
+        <div id="view-sales-returns" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#8617;&#65039;</span> Sales Return Register</h1>
@@ -2444,7 +2444,7 @@
         </div>
 
         <!-- VIEW: CREDIT NOTES (DESKTOP CreditNoteRegister.fxml PARITY) -->
-        <div id="view-credit-notes" class="module-view">
+        <div id="view-credit-notes" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128179;</span> Sales Credit Note Register</h1>
@@ -2582,7 +2582,7 @@
         </div>
 
         <!-- VIEW: QUOTATIONS (DESKTOP Quotations.fxml PARITY) -->
-        <div id="view-quotations" class="module-view">
+        <div id="view-quotations" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128221;</span> Quotations &amp; Proforma Pipeline</h1>
@@ -2992,7 +2992,7 @@
         </div>
 
         <!-- VIEW: PURCHASE REGISTER (DESKTOP PurchaseList.fxml PARITY) -->
-        <div id="view-purchase-register" class="module-view">
+        <div id="view-purchase-register" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128230;</span> Purchase Register</h1>
@@ -3698,7 +3698,7 @@
         </div>
 
         <!-- VIEW: PURCHASE RETURNS (DESKTOP PurchaseReturns.fxml PARITY) -->
-        <div id="view-purchase-returns" class="module-view">
+        <div id="view-purchase-returns" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128260;</span> Purchase Return Register</h1>
@@ -3879,7 +3879,7 @@
         </div>
 
         <!-- VIEW: DEBIT NOTES (DESKTOP DebitNoteRegister.fxml PARITY) -->
-        <div id="view-debit-notes" class="module-view">
+        <div id="view-debit-notes" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#129534;</span> Supplier Debit Note Register</h1>
@@ -4017,7 +4017,7 @@
         </div>
 
         <!-- VIEW: ITEM MASTER (ItemMaster.fxml Desktop Parity) -->
-        <div id="view-item-master" class="module-view">
+        <div id="view-item-master" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
               <div
@@ -4248,7 +4248,7 @@
 
 
         <!-- VIEW: MASTER DATA MANAGEMENT (Masterdata.fxml & MasterDataController.java PARITY) -->
-        <div id="view-masters" class="module-view">
+        <div id="view-masters" class="module-view fixed-viewport">
           <div class="view-header" style="margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
               <div
@@ -4455,7 +4455,7 @@
         </div>
 
         <!-- VIEW: BANK ENTRY JOURNAL (BankExpense.fxml Parity) -->
-        <div id="view-bank-entry" class="module-view">
+        <div id="view-bank-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
               <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">₹</span>
@@ -4672,7 +4672,7 @@
         </div>
 
         <!-- VIEW: OPERATING EXPENSE REGISTER (BankExpense.fxml Parity) -->
-        <div id="view-expense-entry" class="module-view">
+        <div id="view-expense-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
               <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">₹</span>
@@ -4891,7 +4891,7 @@
         </div>
 
         <!-- VIEW: BANK STATEMENT IMPORT & RECONCILIATION (BankStatement.fxml Parity) -->
-        <div id="view-bank-statement" class="module-view">
+        <div id="view-bank-statement" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
               <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">📑</span>
@@ -5261,7 +5261,7 @@
         </div>
 
         <!-- VIEW: PURCHASE RECONCILIATION (PurchaseRecon.fxml Parity) -->
-        <div id="view-purchase-recon" class="module-view">
+        <div id="view-purchase-recon" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128269;</span> Purchase Reconciliation (PRC)</h1>
@@ -5622,7 +5622,7 @@
 
 
         <!-- VIEW: GENERAL LEDGER (GeneralLedger.fxml Parity) -->
-        <div id="view-general-ledger" class="module-view">
+        <div id="view-general-ledger" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128176;</span> Double-Entry General Ledger</h1>
@@ -5956,7 +5956,7 @@
         </div>
 
         <!-- VIEW: FINANCIAL STATEMENTS (FinancialStatements.fxml Parity) -->
-        <div id="view-financial-statements" class="module-view">
+        <div id="view-financial-statements" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128200;</span> Financial Statements (P&amp;L &amp; Balance Sheet)</h1>
@@ -6144,7 +6144,7 @@
         </div>
 
         <!-- VIEW: AGING ANALYSIS (AgingAnalysis.fxml Parity) -->
-        <div id="view-aging-analysis" class="module-view">
+        <div id="view-aging-analysis" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#9203;</span> Accounts Aging Analysis (Debtors &amp; Creditors)</h1>
@@ -6296,7 +6296,7 @@
         </div>
 
         <!-- VIEW: GST COMPLIANCE CENTER (GstComplianceCenter.fxml Parity) -->
-        <div id="view-gst-compliance" class="module-view">
+        <div id="view-gst-compliance" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>⚖️</span> GST Compliance &amp; 2B Reconciliation Center</h1>
@@ -6687,7 +6687,7 @@
         </div>
 
         <!-- VIEW: E-WAY BILL GATEWAY (EWayBillCenter.fxml Parity) -->
-        <div id="view-eway-bill" class="module-view">
+        <div id="view-eway-bill" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128666;</span> E-Way Bill &amp; E-Invoice Gateway</h1>
@@ -7513,7 +7513,7 @@
         </div>
 
         <!-- VIEW: INVENTORY STOCK LEDGER (Inventory.fxml Desktop Parity) -->
-        <div id="view-inventory" class="module-view">
+        <div id="view-inventory" class="module-view fixed-viewport">
           <div class="view-header" style="margin-bottom:14px;">
             <div class="view-title-group">
               <div style="display:flex; align-items:center; gap:10px;">
@@ -7918,7 +7918,7 @@
         </div>
 
         <!-- VIEW: CRM / CUSTOMERS -->
-        <div id="view-customers" class="module-view">
+        <div id="view-customers" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128101;</span> CRM / Customer 360&deg; Directory</h1>
@@ -8464,7 +8464,7 @@
         </div>
 
         <!-- VIEW: HRM / SUPPLIERS -->
-        <div id="view-suppliers" class="module-view">
+        <div id="view-suppliers" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#127981;</span> HRM / Supplier Master Directory</h1>
@@ -9790,7 +9790,7 @@
         </div>
 
         <!-- VIEW: REMINDER CENTER (ReminderCenter.fxml Desktop Parity) -->
-        <div id="view-reminders" class="module-view">
+        <div id="view-reminders" class="module-view fixed-viewport">
           <div class="view-header"
             style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
             <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
@@ -9987,7 +9987,7 @@
 
         <!-- VIEW: USER ACCESS & SECURITY -->
         <!-- VIEW: USER ACCESS & PERMISSIONS (EXACT DESKTOP UserAccess.fxml PARITY) -->
-        <div id="view-users" class="module-view">
+        <div id="view-users" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128100;</span> User Access &amp; Permissions</h1>
@@ -10399,7 +10399,7 @@
         </div>
 
         <!-- VIEW: AUDIT TRAIL (EXACT DESKTOP GlobalAudit.fxml PARITY) -->
-        <div id="view-audit" class="module-view">
+        <div id="view-audit" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128220;</span> Global Audit Trail</h1>
@@ -10516,7 +10516,7 @@
         </div>
 
         <!-- VIEW: COMMUNICATION (EXACT DESKTOP CommunicationCenter.fxml PARITY) -->
-        <div id="view-communication" class="module-view">
+        <div id="view-communication" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
               <h1><span>&#128172;</span> Communication Center</h1>
@@ -17179,69 +17179,71 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.36.06"></script>
+  <script src="js/version.js?v=10.0.38.01"></script>
 
   <!-- 1. Utilities matching org.example.util -->
-  <script src="js/util/xlsx.full.min.js?v=10.0.36.06"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.36.06"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.36.06"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.36.06"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.36.06"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.36.06"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.36.06"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.36.06"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.36.06"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.36.06"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.36.06"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.36.06"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.36.06"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.36.06"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.36.06"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.36.06"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.38.01"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.38.01"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.01"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.01"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.38.01"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.01"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.01"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.38.01"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.01"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.01"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.01"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.01"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.38.01"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.38.01"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.38.01"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.38.01"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.38.01"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.38.01"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.36.06"></script>
-  <script src="js/services/ApiService.js?v=10.0.36.06"></script>
-  <script src="js/services/AuthService.js?v=10.0.36.06"></script>
-  <script src="js/services/NotificationService.js?v=10.0.36.06"></script>
-  <script src="js/services/MasterService.js?v=10.0.36.06"></script>
-  <script src="js/services/OperationsService.js?v=10.0.36.06"></script>
-  <script src="js/services/ReportService.js?v=10.0.36.06"></script>
-  <script src="js/services/ReconService.js?v=10.0.36.06"></script>
-  <script src="js/services/AccountingService.js?v=10.0.36.06"></script>
-  <script src="js/services/ImportService.js?v=10.0.36.06"></script>
+  <script src="js/services/BrandingService.js?v=10.0.38.01"></script>
+  <script src="js/services/ApiService.js?v=10.0.38.01"></script>
+  <script src="js/services/AuthService.js?v=10.0.38.01"></script>
+  <script src="js/services/NotificationService.js?v=10.0.38.01"></script>
+  <script src="js/services/MasterService.js?v=10.0.38.01"></script>
+  <script src="js/services/OperationsService.js?v=10.0.38.01"></script>
+  <script src="js/services/ReportService.js?v=10.0.38.01"></script>
+  <script src="js/services/ReconService.js?v=10.0.38.01"></script>
+  <script src="js/services/AccountingService.js?v=10.0.38.01"></script>
+  <script src="js/services/ImportService.js?v=10.0.38.01"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/GstController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.36.06"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.36.06"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/GstController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.01"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.01"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.36.06"></script>
-  <script src="js/app.js?v=10.0.36.06"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.38.01"></script>
+  <script src="js/app.js?v=10.0.38.01"></script>
 </body>
 
 </html>

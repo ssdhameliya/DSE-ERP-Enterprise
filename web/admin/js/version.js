@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.36.06",
-  desktopVersion: "10.0.37",
-  webBuild: 6,
-  webVersion: "10.0.36.06",
-  tag: "web-v10.0.36.06",
-  releaseDate: "2026-10-20T17:15:00+05:30",
+  version: "10.0.38.01",
+  desktopVersion: "10.0.38",
+  webBuild: 1,
+  webVersion: "10.0.38.01",
+  tag: "web-v10.0.38.01",
+  releaseDate: "2026-10-20T18:50:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.36.06 Full Contract Parity: Zero-Null Primitives & Explicit Field Population for Sales & Purchases Loader, OperationsService Contract Sanitizer, and Desktop Record Deserialization Guard"
+  summary: "10.0.38.01 Comprehensive Modern Enterprise Web Overhaul: Fixed Viewport Architecture, 58px Compact KPI Ribbons, 3D Consequence Dialogs, Universal Form Dirty Guard, High-Contrast Light Mode, and Cross-Module Deep-Linking"
 };
 
 // Automatic UI Version Injection

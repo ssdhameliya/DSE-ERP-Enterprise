@@ -173,11 +173,21 @@ window.AppDialogService = (function() {
 
     /**
      * Destructive action confirmation (Delete, Void, Cancel, Discard)
-     * Renders in red danger styling with trash/cross icon
+     * Renders in red danger styling with consequence analysis and safe default focus
      * @returns {Promise<boolean>}
      */
     destructive(title, heading, message, primaryAction = 'Delete', safeAction = 'Cancel') {
-      if (arguments.length === 1) {
+      let consequenceItems = null;
+
+      if (typeof title === 'object' && title !== null) {
+        const opt = title;
+        title = opt.title || 'Confirm Permanent Deletion';
+        heading = opt.heading || (opt.entityRef ? `Delete ${opt.entityType || 'Record'} • ${opt.entityRef}` : 'This action cannot be undone');
+        message = opt.message || `Are you sure you want to permanently delete this ${opt.entityType || 'document'}?`;
+        primaryAction = opt.primaryAction || opt.confirmText || 'Yes, Delete Document';
+        safeAction = opt.safeAction || opt.cancelText || 'Cancel / Keep';
+        consequenceItems = opt.consequences || null;
+      } else if (arguments.length === 1) {
         message = title;
         title = 'Confirm Delete';
         heading = 'This action cannot be undone';
@@ -209,7 +219,24 @@ window.AppDialogService = (function() {
       iconBox.className = 'app-dialog-icon-box sem-red';
       titleEl.innerText = title || 'Confirm Delete';
       headingEl.innerText = heading || 'This action cannot be undone';
-      bodyEl.innerText = message || '';
+      
+      let html = `<div style="font-weight:600; margin-bottom:8px;">${message || ''}</div>`;
+      if (consequenceItems && Array.isArray(consequenceItems) && consequenceItems.length > 0) {
+        html += `<div class="dialog-consequence-card">
+          <div class="consequence-title">⚠️ Consequence Breakdown:</div>`;
+        consequenceItems.forEach(c => {
+          html += `<div class="consequence-item"><span class="consequence-icon">${c.icon || '•'}</span><span>${c.text || c}</span></div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div class="dialog-consequence-card">
+          <div class="consequence-title">⚠️ Consequence Breakdown:</div>
+          <div class="consequence-item"><span class="consequence-icon">📦</span><span>Physical stock quantities will be restored to warehouse inventory.</span></div>
+          <div class="consequence-item"><span class="consequence-icon">⚖️</span><span>General ledger journals & customer balance will be reversed.</span></div>
+          <div class="consequence-item"><span class="consequence-icon">📜</span><span>An immutable audit trail log will preserve this deletion event.</span></div>
+        </div>`;
+      }
+      bodyEl.innerHTML = html;
       detailEl.style.display = 'none';
 
       btnCancel.style.display = 'inline-flex';
@@ -221,7 +248,8 @@ window.AppDialogService = (function() {
       container.style.zIndex = '100020';
       container.classList.add('active');
 
-      setTimeout(() => btnConfirm.focus(), 80);
+      // Focus safe action by default to prevent accidental deletion on Enter key
+      setTimeout(() => btnCancel.focus(), 80);
 
       return new Promise((resolve) => {
         activeDialogResolver = resolve;
@@ -569,3 +597,14 @@ window.AppDialogService = (function() {
     }
   };
 })();
+
+// Universal interception of legacy browser alert to render 3D window dialogs
+if (typeof window !== 'undefined') {
+  window.alert = function(message) {
+    if (window.AppDialogService && typeof window.AppDialogService.info === 'function') {
+      window.AppDialogService.info('Notice', '', String(message));
+    } else {
+      console.warn('[Alert Intercepted]:', message);
+    }
+  };
+}
