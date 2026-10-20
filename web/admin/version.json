@@ -1,18 +1,16 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 6,
-  "webVersion": "10.0.38.06",
-  "tag": "web-v10.0.38.06",
-  "releaseDate": "2026-10-21T02:00:00+05:30",
+  "webBuild": 7,
+  "webVersion": "10.0.38.07",
+  "tag": "web-v10.0.38.07",
+  "releaseDate": "2026-10-21T02:25:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.06 Comprehensive Light Mode Polish, Zero-Glitch Focus Engine, Universal 100% Single-Row KPI Ribbon Parity, Master Data 50% Category Rail Expansion, and Controller Robustness",
+  "summary": "10.0.38.07 Enterprise DatePicker Engine Parity with Desktop DatePickerFormatter & Company Date Format Setting",
   "highlights": [
-    "1. Focus Flash Glitch Fix: Scoped dark active input rules away from light mode and eliminated CSS background transitions to completely prevent the blank/black input flash on click.",
-    "2. Universal KPI Ribbon Parity: Extended KpiCardEnhancer to .standard-kpi-card with flex 1 1 0 and proportional expansion, eliminating right-side white voids across Item Master, Barcode Studio, Stock Register, General Ledger, Data Import, and Reports.",
-    "3. Manual Match Candidate Modal Parity: Top 6 KPI cards strictly stay in a single row without wrapping card #6, and cleaned up dark inlines.",
-    "4. Master Data Categories Rail Expansion: Increased left category panel width by 50% to 345px with full container width to eliminate dead white space.",
-    "5. Items Master Delete Button Fix: Added single-row auto-fallback and AppDialogService confirmation modal so Delete button never fails silently.",
-    "6. GSTR-1 Subtab Coordination: Synchronized GSTR-1 subtab button styles and active purple gradients with click handlers.",
-    "7. Modals & Settings Light Mode Parity: Cleaned up hardcoded dark backgrounds on Party/Item/Audit modals, settings branding/SMTP/signature panels, and fixed notification/module checkbox pill text contrast."
+    "1. Enterprise Dual-Layer Formatted Datepicker Engine: Upgraded DatePickerFormatter with a synchronized display overlay (.dse-datepicker-display) enforcing company.dateFormat (e.g. dd/MM/yyyy) across all 60+ datepickers.",
+    "2. 100% Backend API ISO Compatibility: Decoupled visual formatted presentation from underlying DOM .value (retaining standard YYYY-MM-DD), ensuring backend Spring Boot controllers receive expected ISO dates without exceptions.",
+    "3. Real-Time Dynamic Format Synchronization: Listens to dse-date-policy-changed events and instantly updates all active datepickers when the user modifies Date Format in Settings -> Company Profile.",
+    "4. Programmatic Value Interception: Overrode property descriptor to ensure JavaScript assignments like input.value = '...' immediately reflect formatted dates on screen.",
+    "5. Full Theme & Interaction Parity: Cleaned up native WebKit datetime shadow DOM text masking with transparent styling, visible clickable native calendar icon, and light/dark theme typography."
   ]
 }

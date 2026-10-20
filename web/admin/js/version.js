@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.06",
+  version: "10.0.38.07",
   desktopVersion: "10.0.38",
-  webBuild: 6,
-  webVersion: "10.0.38.06",
-  tag: "web-v10.0.38.06",
-  releaseDate: "2026-10-21T02:00:00+05:30",
+  webBuild: 7,
+  webVersion: "10.0.38.07",
+  tag: "web-v10.0.38.07",
+  releaseDate: "2026-10-21T02:25:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.06 Comprehensive Light Mode Polish, Zero-Glitch Focus Engine, Universal 100% Single-Row KPI Ribbon Parity, Master Data 50% Category Rail Expansion, and Controller Robustness"
+  summary: "10.0.38.07 Enterprise DatePicker Engine Parity with Desktop DatePickerFormatter & Company Date Format Setting"
 };
 
 // Automatic UI Version Injection
