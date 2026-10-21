@@ -492,7 +492,7 @@
     .barcode-canvas { max-width: 220px; height: 50px; }
 
     /* LIGHT THEME DESKTOP OVERRIDES - FULL HIGH-CONTRAST READABILITY */
-    body.light-theme {
+    html.light-theme, body.light-theme, html.light-theme body {
       --bg-dark: #f8fafc;
       --bg-surface: #ffffff;
       --bg-card: #ffffff;
@@ -508,7 +508,7 @@
       background-color: #f8fafc;
       color-scheme: light;
     }
-    body.light-theme #app-container {
+    body.light-theme #app-container, html.light-theme #app-container {
       background: #f8fafc;
     }
     body.light-theme header.app-header {
@@ -1894,54 +1894,138 @@
       width: 860px; max-width: 95vw;
     }
 
-    /* Permanent Dark Luxury Auth Styling (Immune to body.light-theme) - Matching Image 2 */
-    body.light-theme #auth-overlay {
-      background: radial-gradient(circle at 75% 50%, #0d1527 0%, #080d1a 100%) !important;
-      color: #ffffff !important;
+    /* HIGH-FIDELITY LIGHT THEME AUTH STYLING (Full Parity with Dashboard Light Mode) */
+    body.light-theme #auth-overlay,
+    html.light-theme #auth-overlay {
+      background: radial-gradient(circle at 75% 50%, #f1f5f9 0%, #e2e8f0 100%) !important;
+      color: #0f172a !important;
     }
     body.light-theme #auth-overlay .auth-brand-title,
+    html.light-theme #auth-overlay .auth-brand-title,
     body.light-theme #auth-overlay #auth-card-title,
+    html.light-theme #auth-overlay #auth-card-title,
     body.light-theme #auth-overlay h1,
+    html.light-theme #auth-overlay h1,
     body.light-theme #auth-overlay h2,
-    body.light-theme #auth-overlay h3 {
-      color: #ffffff !important;
+    html.light-theme #auth-overlay h2,
+    body.light-theme #auth-overlay h3,
+    html.light-theme #auth-overlay h3 {
+      color: #0f172a !important;
     }
     body.light-theme #auth-overlay .auth-brand-subtitle,
+    html.light-theme #auth-overlay .auth-brand-subtitle {
+      color: #334155 !important;
+    }
     body.light-theme #auth-overlay .auth-brand-tagline,
-    body.light-theme #auth-overlay #auth-card-subtitle {
-      color: #94a3b8 !important;
-    }
-    body.light-theme #auth-overlay .auth-card-col {
-      background: #0c1424 !important;
-      border: 1px solid rgba(56, 189, 248, 0.22) !important;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65) !important;
-    }
-    body.light-theme #auth-overlay .form-label {
-      color: #94a3b8 !important;
-    }
-    body.light-theme #auth-overlay .form-input,
-    body.light-theme #auth-overlay .form-select {
-      background: rgba(0, 0, 0, 0.45) !important;
-      color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    }
-    body.light-theme #auth-overlay .form-input:focus,
-    body.light-theme #auth-overlay .form-select:focus {
-      border-color: #38bdf8 !important;
-      background: rgba(0, 0, 0, 0.6) !important;
-    }
-    body.light-theme #auth-overlay .form-input::placeholder {
+    html.light-theme #auth-overlay .auth-brand-tagline,
+    body.light-theme #auth-overlay #auth-card-subtitle,
+    html.light-theme #auth-overlay #auth-card-subtitle {
       color: #64748b !important;
     }
-    body.light-theme #auth-overlay .btn-secondary {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #cbd5e1 !important;
-      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    body.light-theme #auth-overlay .auth-brand-line,
+    html.light-theme #auth-overlay .auth-brand-line {
+      background: #0284c7 !important;
     }
-    body.light-theme #auth-overlay .auth-footer-bar {
-      background: #050a14 !important;
-      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    body.light-theme #auth-overlay .auth-brand-banner-box,
+    html.light-theme #auth-overlay .auth-brand-banner-box {
+      background: #ffffff !important;
+      border: 1px solid rgba(203, 213, 225, 0.8) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+    }
+    body.light-theme #auth-overlay .auth-brand-mark-box,
+    html.light-theme #auth-overlay .auth-brand-mark-box {
+      background: rgba(2, 132, 199, 0.08) !important;
+      border: 1px solid rgba(2, 132, 199, 0.3) !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06) !important;
+    }
+    body.light-theme #auth-overlay .auth-brand-version-badge,
+    html.light-theme #auth-overlay .auth-brand-version-badge {
+      background: rgba(2, 132, 199, 0.08) !important;
+      border: 1px solid rgba(2, 132, 199, 0.35) !important;
+      color: #0284c7 !important;
+    }
+    body.light-theme #auth-overlay .auth-card-col,
+    html.light-theme #auth-overlay .auth-card-col {
+      background: #ffffff !important;
+      border: 1px solid rgba(203, 213, 225, 0.9) !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.12) !important;
+      color: #0f172a !important;
+    }
+    body.light-theme #auth-overlay .form-label,
+    html.light-theme #auth-overlay .form-label {
+      color: #334155 !important;
+      font-weight: 600 !important;
+    }
+    body.light-theme #auth-overlay .form-input,
+    html.light-theme #auth-overlay .form-input,
+    body.light-theme #auth-overlay .form-select,
+    html.light-theme #auth-overlay .form-select {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme #auth-overlay .form-input:focus,
+    html.light-theme #auth-overlay .form-input:focus,
+    body.light-theme #auth-overlay .form-select:focus,
+    html.light-theme #auth-overlay .form-select:focus {
+      border-color: #0284c7 !important;
+      background: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    }
+    body.light-theme #auth-overlay .form-input::placeholder,
+    html.light-theme #auth-overlay .form-input::placeholder {
       color: #94a3b8 !important;
+    }
+    body.light-theme #auth-overlay .btn-secondary,
+    html.light-theme #auth-overlay .btn-secondary {
+      background: #f1f5f9 !important;
+      color: #1e293b !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme #auth-overlay .btn-secondary:hover,
+    html.light-theme #auth-overlay .btn-secondary:hover {
+      background: #e2e8f0 !important;
+      border-color: #94a3b8 !important;
+    }
+    body.light-theme #auth-overlay .auth-divider-or,
+    html.light-theme #auth-overlay .auth-divider-or {
+      color: #64748b !important;
+    }
+    body.light-theme #auth-overlay .auth-divider-or::before,
+    html.light-theme #auth-overlay .auth-divider-or::before,
+    body.light-theme #auth-overlay .auth-divider-or::after,
+    html.light-theme #auth-overlay .auth-divider-or::after {
+      background: #e2e8f0 !important;
+    }
+    body.light-theme #auth-overlay .auth-footer-bar,
+    html.light-theme #auth-overlay .auth-footer-bar,
+    body.light-theme #auth-overlay .auth-desktop-footer,
+    html.light-theme #auth-overlay .auth-desktop-footer {
+      background: #ffffff !important;
+      border-top: 1px solid #e2e8f0 !important;
+      color: #64748b !important;
+    }
+    body.light-theme #auth-overlay .auth-desktop-footer a,
+    html.light-theme #auth-overlay .auth-desktop-footer a {
+      color: #0284c7 !important;
+    }
+    body.light-theme #auth-overlay .auth-card-step,
+    html.light-theme #auth-overlay .auth-card-step,
+    body.light-theme #auth-overlay .registration-step-card,
+    html.light-theme #auth-overlay .registration-step-card {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #1e293b !important;
+    }
+    body.light-theme #auth-overlay label,
+    html.light-theme #auth-overlay label {
+      color: #334155 !important;
+    }
+    body.light-theme #auth-overlay .auth-shield-icon-box,
+    html.light-theme #auth-overlay .auth-shield-icon-box {
+      background: rgba(99, 102, 241, 0.1) !important;
+      border: 1px solid rgba(99, 102, 241, 0.25) !important;
+      color: #4f46e5 !important;
     }
     .import-validation-fail-row {
       background: rgba(239, 68, 68, 0.08) !important;

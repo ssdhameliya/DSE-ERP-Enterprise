@@ -10,9 +10,16 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
     rel="stylesheet">
   <script>
-    if (!localStorage.getItem('dse_access_token')) {
-      document.documentElement.classList.add('auth-required');
-    }
+    (function () {
+      try {
+        if (localStorage.getItem('dse_theme') === 'light') {
+          document.documentElement.classList.add('light-theme');
+        }
+        if (!localStorage.getItem('dse_access_token')) {
+          document.documentElement.classList.add('auth-required');
+        }
+      } catch (_) {}
+    })();
   </script>
   <style>
     html.auth-required #auth-overlay {
@@ -204,10 +211,12 @@
       <!-- LEFT BRAND COLUMN -->
       <div class="auth-brand-col">
         <div class="auth-brand-banner-box" id="auth-brand-banner-box">
-          <img src="assets/brand-banner.png" alt="Jasvi Industries" id="auth-brand-banner-img">
+          <img src="assets/brand-banner.png" alt="Jasvi Industries" id="auth-brand-banner-img"
+            onerror="this.onerror=null; const p = document.getElementById('auth-brand-banner-box'); if(p) p.style.display='none';">
         </div>
         <div class="auth-brand-mark-box" id="auth-brand-mark-box">
-          <img src="assets/brand-mark.png" alt="Jasvi Mark" id="auth-brand-mark-img">
+          <img src="assets/brand-mark.png" alt="Jasvi Mark" id="auth-brand-mark-img"
+            onerror="this.onerror=null; const p = document.getElementById('auth-brand-mark-box'); if(p) p.style.display='none';">
         </div>
         <h1 class="auth-brand-title">Jasvi Creation</h1>
         <div class="auth-brand-line"></div>
@@ -297,8 +306,8 @@
               <input type="checkbox" id="login-remember"> Remember Me
             </label>
             <button type="button" class="btn btn-secondary" onclick="window.App.toggleTheme()"
-              style="height: 28px; padding: 0 10px; font-size: 0.72rem;">
-              <span id="login-theme-icon">&#9788;</span> Light Mode
+              id="btn-login-theme-toggle" style="height: 28px; padding: 0 10px; font-size: 0.72rem;">
+              <span id="login-theme-icon">&#9788;</span> <span id="login-theme-text">Light Mode</span>
             </button>
           </div>
 
@@ -675,6 +684,39 @@
         </div>
       </div>
     </header>
+    <script>
+      (function () {
+        try {
+          var isLight = document.documentElement.classList.contains('light-theme') || localStorage.getItem('dse_theme') === 'light';
+          if (isLight) {
+            if (document.body) document.body.classList.add('light-theme');
+            var ti = document.getElementById('theme-icon'), tt = document.getElementById('theme-text');
+            if (ti) ti.textContent = '☀️';
+            if (tt) tt.textContent = 'Light';
+            var li = document.getElementById('login-theme-icon'), lt = document.getElementById('login-theme-text');
+            if (li) li.textContent = '🌙';
+            if (lt) lt.textContent = 'Dark Mode';
+          }
+          var rawUser = localStorage.getItem('dse_user');
+          if (rawUser) {
+            var u = JSON.parse(rawUser);
+            var name = u.fullName || u.username || 'User';
+            var role = (u.role || 'STAFF').toUpperCase();
+            var initial = (u.fullName || u.username || 'U').charAt(0).toUpperCase();
+            var hn = document.getElementById('header-user-name');
+            var hr = document.getElementById('header-user-role');
+            var ha = document.getElementById('header-user-avatar');
+            if (hn) hn.textContent = name;
+            if (hr) hr.textContent = role;
+            if (ha) ha.textContent = initial;
+            var mn = document.getElementById('menu-user-name');
+            var mr = document.getElementById('menu-user-role');
+            if (mn) mn.textContent = name;
+            if (mr) mr.textContent = role;
+          }
+        } catch (_) {}
+      })();
+    </script>
 
     <!-- MULTI-DOCUMENT WORKSPACE TAB BAR -->
     <div class="workspace-tab-bar">

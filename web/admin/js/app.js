@@ -287,10 +287,26 @@ window.App = (function() {
       const savedTheme = localStorage.getItem('dse_theme');
       if (savedTheme === 'light') {
         document.body.classList.add('light-theme');
+        document.documentElement.classList.add('light-theme');
         const icon = document.getElementById('theme-icon');
         const text = document.getElementById('theme-text');
         if (icon) icon.innerText = '☀️';
         if (text) text.innerText = 'Light';
+        const loginIcon = document.getElementById('login-theme-icon');
+        const loginText = document.getElementById('login-theme-text');
+        if (loginIcon) loginIcon.innerText = '🌙';
+        if (loginText) loginText.innerText = 'Dark Mode';
+      } else {
+        document.body.classList.remove('light-theme');
+        document.documentElement.classList.remove('light-theme');
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (icon) icon.innerText = '🌙';
+        if (text) text.innerText = 'Dark';
+        const loginIcon = document.getElementById('login-theme-icon');
+        const loginText = document.getElementById('login-theme-text');
+        if (loginIcon) loginIcon.innerText = '☀️';
+        if (loginText) loginText.innerText = 'Light Mode';
       }
 
       // Initial shell counts poll and background timer only when session is authenticated
@@ -350,11 +366,16 @@ window.App = (function() {
 
     toggleTheme() {
       const isLight = document.body.classList.toggle('light-theme');
+      document.documentElement.classList.toggle('light-theme', isLight);
       localStorage.setItem('dse_theme', isLight ? 'light' : 'dark');
       const icon = document.getElementById('theme-icon');
       const text = document.getElementById('theme-text');
       if (icon) icon.innerText = isLight ? '☀️' : '🌙';
       if (text) text.innerText = isLight ? 'Light' : 'Dark';
+      const loginIcon = document.getElementById('login-theme-icon');
+      const loginText = document.getElementById('login-theme-text');
+      if (loginIcon) loginIcon.innerText = isLight ? '🌙' : '☀️';
+      if (loginText) loginText.innerText = isLight ? 'Dark Mode' : 'Light Mode';
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       window.AppDialogService.showToast(`Switched to ${isLight ? 'Light' : 'Dark'} theme`, 'info');
     },
