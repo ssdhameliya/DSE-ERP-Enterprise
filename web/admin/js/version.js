@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.39.02",
-  desktopVersion: "10.0.39",
-  webBuild: 2,
-  webVersion: "10.0.39.02",
-  tag: "web-v10.0.39.02",
-  releaseDate: "2026-10-21T23:50:00+05:30",
+  version: "10.0.41.01",
+  desktopVersion: "10.0.41",
+  webBuild: 1,
+  webVersion: "10.0.41.01",
+  tag: "web-v10.0.41.01",
+  releaseDate: "2026-10-22T01:25:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.39.02 Universal Transmit Email Modal Parity across Quotation, Sales & Purchase Returns"
+  summary: "10.0.41.01 Document Date Formatting Parity, ConfigManager Global Fallback, and Multi-line Email Message Body Expansion"
 };
 
 // Automatic UI Version Injection
@@ -42,7 +42,7 @@ window.DSE_VERSION = {
     // 4. Profile Menu Footer Version
     const profileFooter = document.getElementById('menu-version-footer');
     if (profileFooter) {
-      profileFooter.textContent = `Web v${v.webVersion} • Desktop v${v.desktopVersion}`;
+      profileFooter.innerHTML = `<span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v${v.webVersion}</span>`;
     }
   }
 
