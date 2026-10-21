@@ -1,17 +1,16 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 10,
-  "webVersion": "10.0.38.10",
-  "tag": "web-v10.0.38.10",
-  "releaseDate": "2026-10-21T22:15:00+05:30",
+  "webBuild": 11,
+  "webVersion": "10.0.38.11",
+  "tag": "web-v10.0.38.11",
+  "releaseDate": "2026-10-21T22:25:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.10 Enterprise Light Theme Audit & Desktop Feature Parity Release",
+  "summary": "10.0.38.11 DatePicker In-Field Desktop Parity Formatting & Label Cleanup",
   "highlights": [
-    "1. GSTR-1 Subpanel Strict Display Isolation: Enforced CSS display: none !important vs display: block !important across Table 4 (B2B), Table 7 (B2CS), Table 9B (CDNR), Table 12 (HSN), and Table 13 (Docs) eliminating stale table overlap.",
-    "2. GSTR-1 CDNR Credit/Debit Note Mapping: Integrated OperationsService.getCreditNotes() and getDebitNotes() to populate Table 9B with real data and fallback parity.",
-    "3. Smart Operations PO Navigation Parity: Fixed '+ Create PO' button in AutomationCenterController to route to view-purchase-creation with pre-populated item code and quantity instead of blank screen.",
-    "4. Reports & BI Exception Elimination: Added TableUiEnhancer.enhance(target) alias resolving TypeError in ReportsController and enabling dynamic auto-adjusting headers.",
-    "5. Bank Statement Two-Step Delete Parity: Enhanced Delete Confirmation modal with interactive validation, Enter key support, click feedback, and light theme contrast fixes.",
-    "6. Comprehensive Light Theme Hardening: Resolved all 17 defects from user audit across Dashboard Reminders, My Profile, User Permission Matrix, Quotation Editor, Filter Toolbars, and KPI ribbons."
+    "1. In-Field Formatted Date Display: Formats dates directly inside the datepicker box (e.g. '21 Apr 2026') matching JavaFX Desktop DatePicker StringConverter.",
+    "2. Label Header Cleanup: Completely eliminated top [dd/MM/yyyy] format badges above date inputs for clean, uncluttered headers.",
+    "3. Duplicate Calendar Icon Elimination: Enhanced LabelIconEnhancer to detect existing emoji text and prevent double calendar icons (📅 📅 From Date).",
+    "4. Reactive Property Hooking: Intercepted input.value setter to synchronize in-field date display in real time during preset filtering (Today, 30 Days, This FY).",
+    "5. 100% ISO Compatibility: Retained standard ISO YYYY-MM-DD underlying value for zero regression on backend Spring Boot APIs and controller queries."
   ]
 }

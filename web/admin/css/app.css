@@ -4423,25 +4423,79 @@
     }
 
     /* ==========================================================================
-       DSE ENTERPRISE DATE FORMAT SYNCHRONIZATION (v10.0.38.08)
+       DSE ENTERPRISE IN-FIELD DATE FORMAT DISPLAY (v10.0.38.11)
        Desktop Parity with org.example.util.DatePickerFormatter.java
+       Formats date inside the datepicker box, with clean header labels
        ========================================================================== */
 
-    .erp-date-format-badge {
-      font-size: 0.68rem !important;
+    .erp-date-field-container {
+      position: relative !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      vertical-align: middle !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      cursor: pointer !important;
+    }
+
+    .erp-date-field-container input[type="date"] {
+      width: 100% !important;
+      cursor: pointer !important;
+    }
+
+    .erp-date-field-container .erp-date-display-val {
+      position: absolute !important;
+      left: 12px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      pointer-events: none !important;
+      font-family: inherit !important;
+      font-size: 0.82rem !important;
       font-weight: 600 !important;
-      letter-spacing: 0.02em !important;
-      margin-left: 6px !important;
-      transition: color 0.15s ease !important;
+      white-space: nowrap !important;
       user-select: none !important;
+      z-index: 2 !important;
     }
 
-    body.light-theme .erp-date-format-badge {
-      color: #0284c7 !important;
+    body.light-theme .erp-date-field-container .erp-date-display-val {
+      color: #0f172a !important;
     }
 
-    body:not(.light-theme) .erp-date-format-badge {
-      color: #38bdf8 !important;
+    body:not(.light-theme) .erp-date-field-container .erp-date-display-val {
+      color: #f8fafc !important;
+    }
+
+    /* Hide native browser date text only when value is present and formatted text is displayed */
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit {
+      color: transparent !important;
+    }
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit-fields-wrapper {
+      color: transparent !important;
+    }
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit-text {
+      color: transparent !important;
+    }
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit-month-field {
+      color: transparent !important;
+    }
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit-day-field {
+      color: transparent !important;
+    }
+    .erp-date-field-container input[type="date"].erp-date-value-present::-webkit-datetime-edit-year-field {
+      color: transparent !important;
+    }
+
+    /* Native calendar icon on the right */
+    .erp-date-field-container input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer !important;
+      position: relative !important;
+      z-index: 3 !important;
+      opacity: 0.85 !important;
+    }
+
+    /* Legacy badge cleanup */
+    .erp-date-format-badge {
+      display: none !important;
     }
 
     /* ==========================================================================

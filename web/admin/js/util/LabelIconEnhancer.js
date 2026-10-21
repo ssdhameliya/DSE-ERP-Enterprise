@@ -23,6 +23,11 @@ window.LabelIconEnhancer = (function() {
     const text = (label.innerText || label.textContent || '').trim();
     if (!text || text.length < 2) return;
 
+    // If label text already contains an emoji (e.g. 📅 from HTML), skip
+    if (/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(text)) {
+      return;
+    }
+
     // Check if label has 'for' attribute or input inside
     const forId = label.getAttribute('for') || '';
     const icon = window.UiSemanticRegistry.fieldSemantic(text, forId);

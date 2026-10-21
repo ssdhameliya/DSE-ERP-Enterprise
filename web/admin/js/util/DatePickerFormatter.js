@@ -1,17 +1,17 @@
 /**
- * Jasvi Industries ERP - DatePickerFormatter (v10.0.38.08)
+ * Jasvi Industries ERP - DatePickerFormatter (v10.0.38.11)
  * Desktop Parity with org.example.util.DatePickerFormatter & BusinessClock
- * Enforces company.dateFormat strictly across all datepickers and filter inputs.
+ * Enforces company.dateFormat strictly inside datepickers directly matching Desktop.
  *
- * Non-Invasive Architecture:
- * 1. Preserves 100% native DOM structure: No wrapper elements, no DOM node moves,
- *    and no prototype overriding (zero risk of breaking login or form serialization).
- * 2. Underlying DOM Element: Native <input type="date"> retaining standard ISO YYYY-MM-DD
- *    values for 100% compatibility with backend Spring Boot APIs and controller queries.
- * 3. Formatted Badges & Tooltips: Updates parent filter labels with format badges [dd/MM/yyyy]
- *    and live formatted date previews when a date is selected.
- * 4. Re-entrancy & Scope Guarded: Strictly ignores #auth-overlay to guarantee instant login transitions.
- *    Debounced rescan prevents any MutationObserver recursion.
+ * Architecture:
+ * 1. Desktop Parity: Formats date values (e.g. '21 Apr 2026') directly INSIDE the datepicker
+ *    box, matching JavaFX DatePicker StringConverter behavior.
+ * 2. Clean Header Labels: Never appends format badges to top parent labels.
+ * 3. Underlying ISO Contract: Retains standard ISO YYYY-MM-DD on <input type="date">
+ *    for 100% compatibility with backend Spring Boot APIs and controller queries.
+ * 4. Reactive Property Hooking: Intercepts value property setter to keep in-field display
+ *    synchronized in real time during preset filtering (Today, 30 Days, This FY).
+ * 5. Re-entrancy & Scope Guarded: Strictly ignores #auth-overlay.
  */
 window.DatePickerFormatter = (function() {
   'use strict';
@@ -30,11 +30,10 @@ window.DatePickerFormatter = (function() {
   }
 
   /**
-   * Safely synchronizes tooltip and label badge without mutating the input control
+   * Synchronizes the in-field formatted date overlay
    */
   function syncDisplay(picker) {
     if (!picker || isUpdating) return;
-    // Strictly skip login and auth dialogs
     if (picker.closest && picker.closest('#auth-overlay')) return;
 
     const val = picker.value ? picker.value.trim() : '';
@@ -43,61 +42,53 @@ window.DatePickerFormatter = (function() {
 
     picker.setAttribute('placeholder', prompt);
 
-    if (val && window.FormatUtil) {
-      const formatted = window.FormatUtil.formatDate(val, fmt);
-      picker.title = `Selected: ${formatted} [${fmt}]`;
-    } else {
-      picker.title = `Format: ${prompt} [${fmt}]`;
-    }
-
-    // Update parent filter label badge and preview if present
-    updateLabelBadge(picker, fmt, val);
-  }
-
-  /**
-   * Updates or appends a [dd/MM/yyyy] badge and preview on the parent label
-   */
-  function updateLabelBadge(picker, fmt, val) {
-    const parent = picker.closest && picker.closest('.form-group, .filter-item, .filter-field, .col, div');
-    if (!parent || parent.id === 'auth-overlay' || parent.closest('#auth-overlay')) return;
-
-    isUpdating = true;
-    try {
-      let badge = parent.querySelector('.erp-date-format-badge');
-      if (!badge && (picker.id.includes('from') || picker.id.includes('to') || picker.id.includes('date') || picker.classList.contains('filter-date'))) {
-        badge = document.createElement('span');
-        badge.className = 'erp-date-format-badge';
-        badge.style.cssText = 'font-size: 0.65rem; color: var(--text-dim, #94a3b8); margin-left: 4px; font-weight: 500; letter-spacing: 0.02em;';
-        const label = parent.querySelector('label, .filter-label');
-        if (label && !label.querySelector('.erp-date-format-badge')) {
-          label.appendChild(badge);
-        }
-      }
-      if (badge) {
+    const wrapper = picker.parentElement;
+    if (wrapper && wrapper.classList.contains('erp-date-field-container')) {
+      const display = wrapper.querySelector('.erp-date-display-val');
+      if (display) {
         if (val && window.FormatUtil) {
           const formatted = window.FormatUtil.formatDate(val, fmt);
-          badge.textContent = `[${formatted}]`;
-          badge.style.color = 'var(--cyan, #06b6d4)';
-          badge.style.fontWeight = '600';
-          badge.title = `Business formatted: ${formatted}`;
+          display.textContent = formatted;
+          display.style.display = 'block';
+          picker.classList.add('erp-date-value-present');
+          picker.title = `Selected: ${formatted} [${fmt}]`;
         } else {
-          badge.textContent = `[${fmt}]`;
-          badge.style.color = 'var(--text-dim, #94a3b8)';
-          badge.style.fontWeight = '500';
-          badge.title = `Date format setting: ${fmt}`;
+          display.textContent = '';
+          display.style.display = 'none';
+          picker.classList.remove('erp-date-value-present');
+          picker.title = `Format: ${prompt} [${fmt}]`;
         }
       }
-    } finally {
-      isUpdating = false;
     }
   }
 
   /**
-   * Attaches format listeners to a specific <input type="date">
+   * Wraps picker in field container and attaches display overlay and listeners
    */
   function attach(picker) {
     if (!picker || picker.type !== 'date') return picker;
     if (picker.closest && picker.closest('#auth-overlay')) return picker;
+
+    // Wrap in .erp-date-field-container if not already wrapped
+    let wrapper = picker.parentElement;
+    if (!wrapper || !wrapper.classList.contains('erp-date-field-container')) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'erp-date-field-container';
+      if (picker.style.width) wrapper.style.width = picker.style.width;
+      if (picker.classList.contains('form-input-sm')) wrapper.classList.add('form-input-sm');
+      if (picker.parentNode) {
+        picker.parentNode.insertBefore(wrapper, picker);
+        wrapper.appendChild(picker);
+      }
+    }
+
+    // Add display text overlay
+    let display = wrapper.querySelector('.erp-date-display-val');
+    if (!display) {
+      display = document.createElement('span');
+      display.className = 'erp-date-display-val';
+      wrapper.appendChild(display);
+    }
 
     if (picker[ATTACHED_KEY]) {
       syncDisplay(picker);
@@ -107,6 +98,21 @@ window.DatePickerFormatter = (function() {
     picker[ATTACHED_KEY] = true;
     activePickers.add(picker);
 
+    // Clicking anywhere on the wrapper opens the calendar picker
+    wrapper.addEventListener('click', (e) => {
+      if (e.target !== picker) {
+        try {
+          if (typeof picker.showPicker === 'function') {
+            picker.showPicker();
+          } else {
+            picker.focus();
+          }
+        } catch (_) {
+          picker.focus();
+        }
+      }
+    });
+
     picker.addEventListener('input', () => syncDisplay(picker));
     picker.addEventListener('change', () => {
       syncDisplay(picker);
@@ -114,6 +120,25 @@ window.DatePickerFormatter = (function() {
         picker.dispatchEvent(new CustomEvent('dse-date-changed', { bubbles: true, detail: { value: picker.value } }));
       } catch (_) {}
     });
+
+    // Intercept .value setter for reactive programmatic updates
+    if (!picker._dseValHooked) {
+      picker._dseValHooked = true;
+      const proto = HTMLInputElement.prototype;
+      const desc = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (desc && desc.set) {
+        Object.defineProperty(picker, 'value', {
+          get() {
+            return desc.get.call(this);
+          },
+          set(v) {
+            desc.set.call(this, v);
+            syncDisplay(this);
+          },
+          configurable: true
+        });
+      }
+    }
 
     syncDisplay(picker);
     return picker;
@@ -125,6 +150,9 @@ window.DatePickerFormatter = (function() {
   }
 
   function refreshAll() {
+    // Clean up any legacy top label badges if present
+    document.querySelectorAll('.erp-date-format-badge').forEach(b => b.remove());
+
     activePickers.forEach(picker => {
       if (document.body.contains(picker)) {
         syncDisplay(picker);
@@ -136,6 +164,9 @@ window.DatePickerFormatter = (function() {
   }
 
   function attachAll(root) {
+    // Remove any legacy top label badges from DOM
+    document.querySelectorAll('.erp-date-format-badge').forEach(b => b.remove());
+
     const scope = root || document.getElementById('main-content-stage') || document.body;
     if (!scope) return;
     const inputs = scope.querySelectorAll('input[type="date"]');
@@ -156,6 +187,7 @@ window.DatePickerFormatter = (function() {
           for (let j = 0; j < m.addedNodes.length; j++) {
             const n = m.addedNodes[j];
             if (n.nodeType === 1) {
+              if (n.matches && n.matches('.erp-date-field-container')) continue;
               if ((n.matches && n.matches('input[type="date"]')) || (n.querySelector && n.querySelector('input[type="date"]'))) {
                 hasDateInput = true;
                 break;
@@ -171,7 +203,7 @@ window.DatePickerFormatter = (function() {
       debounceTimer = setTimeout(() => {
         attachAll(target);
         debounceTimer = null;
-      }, 200);
+      }, 150);
     });
 
     observer.observe(target, { childList: true, subtree: true });
