@@ -15,3 +15,4 @@ by chance if i ask to change something on any page, always check that page end t
 date formate should be based on setting set up for all table data, datapicker, forms, reports etc if still not build for all screens make sure that generic function are build and available for all screens
 stick and hard coded rule, if you dont know or you dont understand the code or any funcationality behaviour , please ask but never assume anything and never make any changes in code until you completely understand it
 follow the coding standard and best practices strictly and always write clean, maintainable and well-documented code.
+dsp-erp-environment.md is the file for desktop PR generation and sync the all copy rules. when we have desktop , please use this file and raise the PR. make sure that all copy sync only once we are ready else only work on gravity copy. just raise the PR and donw wit for completation.. user will let you know if PR get failed

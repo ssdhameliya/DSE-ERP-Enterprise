@@ -24,6 +24,18 @@ window.DocumentPdfGenerator = (function () {
     return 'INR ' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function cleanDate(d) {
+    if (!d) return '-';
+    if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
+      const formatted = window.FormatUtil.formatDate(d);
+      if (formatted && formatted !== '-') return formatted;
+    }
+    const s = String(d).trim();
+    if (s.includes('T')) return s.split('T')[0];
+    if (s.includes('+')) return s.split('+')[0].trim();
+    return s;
+  }
+
   function amountInWords(amount) {
     if (window.FormatUtil && typeof window.FormatUtil.amountInWords === 'function') {
       return window.FormatUtil.amountInWords(amount);
@@ -114,8 +126,8 @@ window.DocumentPdfGenerator = (function () {
 
     doc.setFont('helvetica', 'normal');
     doc.text(quote.no || '-', 120, 100);
-    doc.text(quote.date || '-', 120, 116);
-    doc.text(quote.valid || '-', 120, 132);
+    doc.text(cleanDate(quote.date), 120, 116);
+    doc.text(cleanDate(quote.valid), 120, 132);
 
     doc.setFont('helvetica', 'bold');
     doc.text('Customer:', 280, 100);
@@ -139,10 +151,10 @@ window.DocumentPdfGenerator = (function () {
     doc.text('Item Code / Description', 70, y + 15);
     doc.text('HSN', 260, y + 15);
     doc.text('Qty', 315, y + 15, { align: 'right' });
-    doc.text('Rate (₹)', 380, y + 15, { align: 'right' });
+    doc.text('Rate (INR)', 380, y + 15, { align: 'right' });
     doc.text('Disc%', 425, y + 15, { align: 'right' });
     doc.text('GST%', 475, y + 15, { align: 'right' });
-    doc.text('Total (₹)', 545, y + 15, { align: 'right' });
+    doc.text('Total (INR)', 545, y + 15, { align: 'right' });
 
     y += 22;
     const items = lines || [];
@@ -281,7 +293,7 @@ window.DocumentPdfGenerator = (function () {
 
     doc.setFont('helvetica', 'normal');
     doc.text(ret.no || '-', 130, 100);
-    doc.text(ret.date || '-', 130, 116);
+    doc.text(cleanDate(ret.date), 130, 116);
     doc.text(ret.invoice || ret.originalDocNo || '-', 130, 132);
 
     const partyLabel = isSales ? 'Customer:' : 'Supplier:';
@@ -305,9 +317,9 @@ window.DocumentPdfGenerator = (function () {
     doc.text('#', 48, y + 15);
     doc.text('Item Description', 70, y + 15);
     doc.text('Qty', 315, y + 15, { align: 'right' });
-    doc.text('Rate (₹)', 380, y + 15, { align: 'right' });
+    doc.text('Rate (INR)', 380, y + 15, { align: 'right' });
     doc.text('Tax %', 440, y + 15, { align: 'right' });
-    doc.text('Amount (₹)', 545, y + 15, { align: 'right' });
+    doc.text('Amount (INR)', 545, y + 15, { align: 'right' });
 
     y += 22;
     const items = lines || [];
