@@ -460,6 +460,7 @@
       border-radius: 8px; padding: 0 14px; color: var(--text-main); font-size: 0.85rem; outline: none;
     }
     body:not(.light-theme) .form-input:focus, body:not(.light-theme) .form-select:focus { border-color: var(--cyan); background: rgba(0,0,0,0.5); }
+    textarea.form-input { height: auto; min-height: 90px; padding: 10px 14px; resize: vertical; }
     .auth-alert { padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 16px; display: none; text-align: left; }
     .auth-alert.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; display: block; }
 
