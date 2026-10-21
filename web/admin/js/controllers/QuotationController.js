@@ -842,6 +842,11 @@ window.QuotationController = (function () {
   }
 
   async function sendEmailPrompt(id, no, recipientEmail) {
+    const quote = quotationsList.find(q => q.no === no || q.id === id) || (selectedQuote && (selectedQuote.no === no || selectedQuote.id === id) ? selectedQuote : null) || { id, no, quotationNo: no, customerEmail: recipientEmail };
+    if (window.SalesController && typeof window.SalesController.openEmailModal === 'function') {
+      window.SalesController.openEmailModal(no, 'QUOTATION', quote);
+      return;
+    }
     const email = prompt(`Send Quotation ${no} to email address:`, recipientEmail || '');
     if (!email) return;
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending quotation email to ${email}...`);

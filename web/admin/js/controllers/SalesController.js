@@ -2581,27 +2581,49 @@ window.SalesController = {
       docType = 'PURCHASE';
     }
 
-    if (docType === 'SALES_RETURN') {
+    if (docType === 'QUOTATION') {
+      const qList = (window.QuotationController && (window.QuotationController.quotationsCache || window.QuotationController.quotations || [])) || [];
+      const q = customDetails || qList.find(x => (x.quotationNo || x.number || x.no) === invoiceNo);
+      docId = (q && q.id) || 0;
+      recipientEmail = (q && (q.customerEmail || q.email)) || '';
+      partyName = (q && (q.customerName || q.customer)) || 'Valued Client';
+      amountStr = window.FormatUtil ? window.FormatUtil.formatRupees((q && (q.totalAmount || q.amount || q.total)) || 0) : '₹ 0.00';
+      if (!recipientEmail && q && partyName) {
+        const parties = (window.MasterService && typeof window.MasterService.getCachedParties === 'function' ? window.MasterService.getCachedParties() : []) || [];
+        const matched = parties.find(p => (p.name || '').toLowerCase() === partyName.toLowerCase());
+        if (matched && matched.email) recipientEmail = matched.email;
+      }
+    } else if (docType === 'SALES_RETURN') {
       const retList = (window.ReturnsController && (window.ReturnsController.salesReturnsCache || [])) || [];
-      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number) === invoiceNo);
+      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number || x.no) === invoiceNo);
       docId = (r && r.id) || 0;
-      recipientEmail = (r && r.customer && r.customer.email) || (r && r.email) || '';
-      partyName = (r && r.customer && r.customer.name) || (r && r.customerName) || 'Customer';
-      amountStr = window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0);
+      recipientEmail = (r && r.customer && r.customer.email) || (r && r.email) || (r && r.partyEmail) || '';
+      partyName = (r && r.customer && r.customer.name) || (r && r.customerName) || (r && r.party) || 'Customer';
+      amountStr = window.FormatUtil ? window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0) : '₹ 0.00';
+      if (!recipientEmail && r && partyName) {
+        const parties = (window.MasterService && typeof window.MasterService.getCachedParties === 'function' ? window.MasterService.getCachedParties() : []) || [];
+        const matched = parties.find(p => (p.name || '').toLowerCase() === partyName.toLowerCase());
+        if (matched && matched.email) recipientEmail = matched.email;
+      }
     } else if (docType === 'PURCHASE_RETURN') {
       const retList = (window.ReturnsController && (window.ReturnsController.purchaseReturnsCache || [])) || [];
-      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number) === invoiceNo);
+      const r = customDetails || retList.find(x => (x.returnNo || x.invoiceNo || x.number || x.no) === invoiceNo);
       docId = (r && r.id) || 0;
-      recipientEmail = (r && r.supplier && r.supplier.email) || (r && r.email) || '';
-      partyName = (r && r.supplier && r.supplier.name) || (r && r.supplierName) || 'Supplier';
-      amountStr = window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0);
+      recipientEmail = (r && r.supplier && r.supplier.email) || (r && r.email) || (r && r.partyEmail) || '';
+      partyName = (r && r.supplier && r.supplier.name) || (r && r.supplierName) || (r && r.party) || 'Supplier';
+      amountStr = window.FormatUtil ? window.FormatUtil.formatRupees((r && (r.totalAmount || r.refundAmount || r.total)) || 0) : '₹ 0.00';
+      if (!recipientEmail && r && partyName) {
+        const parties = (window.MasterService && typeof window.MasterService.getCachedParties === 'function' ? window.MasterService.getCachedParties() : []) || [];
+        const matched = parties.find(p => (p.name || '').toLowerCase() === partyName.toLowerCase());
+        if (matched && matched.email) recipientEmail = matched.email;
+      }
     } else if (docType === 'PURCHASE') {
       const pList = (window.PurchaseController && (typeof window.PurchaseController.getPurchasesCache === 'function' ? window.PurchaseController.getPurchasesCache() : window.PurchaseController.purchases)) || [];
       const p = customDetails || pList.find(x => (x.invoiceNo || x.number) === invoiceNo);
       docId = (p && p.id) || 0;
       recipientEmail = (p && p.supplier && p.supplier.email) || (p && p.email) || '';
       partyName = (p && p.supplier && p.supplier.name) || (p && p.supplierName) || 'Supplier';
-      amountStr = window.FormatUtil.formatRupees((p && p.totalAmount) || 0);
+      amountStr = window.FormatUtil ? window.FormatUtil.formatRupees((p && p.totalAmount) || 0) : '₹ 0.00';
     } else {
       docType = 'SALE';
       const sale = customDetails || this.salesCache.find(s => (s.invoiceNo || s.number) === invoiceNo);
@@ -2610,10 +2632,11 @@ window.SalesController = {
       const cust = sale.customer || {};
       recipientEmail = cust.email || sale.email || '';
       partyName = cust.name || sale.customerName || 'Valued Customer';
-      amountStr = window.FormatUtil.formatRupees(sale.totalAmount || 0);
+      amountStr = window.FormatUtil ? window.FormatUtil.formatRupees(sale.totalAmount || 0) : '₹ 0.00';
     }
 
     const modal = document.getElementById('modal-email-invoice');
+    const modalTitle = document.getElementById('mei-title');
     const inpSaleId = document.getElementById('mei-sale-id');
     const inpInvNo = document.getElementById('mei-inv-no');
     const inpDocType = document.getElementById('mei-doc-type');
@@ -2622,37 +2645,34 @@ window.SalesController = {
     const inpBody = document.getElementById('mei-body');
     const lblAttach = document.getElementById('mei-attachment-name');
     const subTitle = document.getElementById('mei-subtitle');
+    const sendBtn = document.getElementById('mei-send-btn');
 
     if (!modal) return;
     if (inpSaleId) inpSaleId.value = docId;
     if (inpInvNo) inpInvNo.value = invoiceNo;
     if (inpDocType) inpDocType.value = docType;
     if (inpRecipient) inpRecipient.value = recipientEmail || '';
-    if (inpSubject) {
-      if (docType === 'SALES_RETURN') {
-        inpSubject.value = `Credit Note / Sales Return - ${invoiceNo} | Jasvi Industries`;
+
+    const cleanNo = invoiceNo.replace(/[^A-Za-z0-9]/g, '_');
+
+    if (modalTitle) {
+      if (docType === 'QUOTATION') {
+        modalTitle.innerText = 'Transmit Quotation Estimate via Email';
+      } else if (docType === 'SALES_RETURN') {
+        modalTitle.innerText = 'Transmit Sales Return Credit Note via Email';
       } else if (docType === 'PURCHASE_RETURN') {
-        inpSubject.value = `Debit Note / Purchase Return - ${invoiceNo} | Jasvi Industries`;
+        modalTitle.innerText = 'Transmit Purchase Return Debit Note via Email';
       } else if (docType === 'PURCHASE') {
-        inpSubject.value = `Purchase Inward Bill - ${invoiceNo} | Jasvi Industries`;
+        modalTitle.innerText = 'Transmit Purchase Inward Bill via Email';
       } else {
-        inpSubject.value = `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
+        modalTitle.innerText = 'Transmit Tax Invoice via Email';
       }
     }
-    if (lblAttach) {
-      const cleanNo = invoiceNo.replace(/[^A-Za-z0-9]/g, '_');
-      if (docType === 'SALES_RETURN') {
-        lblAttach.innerText = `Sales_Return_${cleanNo}.pdf`;
-      } else if (docType === 'PURCHASE_RETURN') {
-        lblAttach.innerText = `Purchase_Return_${cleanNo}.pdf`;
-      } else if (docType === 'PURCHASE') {
-        lblAttach.innerText = `Purchase_Bill_${cleanNo}.pdf`;
-      } else {
-        lblAttach.innerText = `Tax_Invoice_${cleanNo}.pdf`;
-      }
-    }
+
     if (subTitle) {
-      if (docType === 'SALES_RETURN') {
+      if (docType === 'QUOTATION') {
+        subTitle.innerText = 'Direct SMTP delivery of pricing proposal to client';
+      } else if (docType === 'SALES_RETURN') {
         subTitle.innerText = 'Direct SMTP delivery of credit memo to customer';
       } else if (docType === 'PURCHASE_RETURN') {
         subTitle.innerText = 'Direct SMTP delivery of debit memo to supplier';
@@ -2662,8 +2682,53 @@ window.SalesController = {
         subTitle.innerText = 'Direct SMTP delivery to customer billing contact';
       }
     }
+
+    if (inpSubject) {
+      if (docType === 'QUOTATION') {
+        inpSubject.value = `Quotation Estimate - ${invoiceNo} | Jasvi Industries`;
+      } else if (docType === 'SALES_RETURN') {
+        inpSubject.value = `Credit Note / Sales Return - ${invoiceNo} | Jasvi Industries`;
+      } else if (docType === 'PURCHASE_RETURN') {
+        inpSubject.value = `Debit Note / Purchase Return - ${invoiceNo} | Jasvi Industries`;
+      } else if (docType === 'PURCHASE') {
+        inpSubject.value = `Purchase Inward Bill - ${invoiceNo} | Jasvi Industries`;
+      } else {
+        inpSubject.value = `Tax Invoice - ${invoiceNo} | Jasvi Industries`;
+      }
+    }
+
+    if (lblAttach) {
+      if (docType === 'QUOTATION') {
+        lblAttach.innerText = `Quotation_${cleanNo}.pdf`;
+      } else if (docType === 'SALES_RETURN') {
+        lblAttach.innerText = `Sales_Return_${cleanNo}.pdf`;
+      } else if (docType === 'PURCHASE_RETURN') {
+        lblAttach.innerText = `Purchase_Return_${cleanNo}.pdf`;
+      } else if (docType === 'PURCHASE') {
+        lblAttach.innerText = `Purchase_Bill_${cleanNo}.pdf`;
+      } else {
+        lblAttach.innerText = `Tax_Invoice_${cleanNo}.pdf`;
+      }
+    }
+
+    if (sendBtn) {
+      if (docType === 'QUOTATION') {
+        sendBtn.innerHTML = '&#9992; Send Quotation';
+      } else if (docType === 'SALES_RETURN') {
+        sendBtn.innerHTML = '&#9992; Send Credit Note';
+      } else if (docType === 'PURCHASE_RETURN') {
+        sendBtn.innerHTML = '&#9992; Send Debit Note';
+      } else if (docType === 'PURCHASE') {
+        sendBtn.innerHTML = '&#9992; Send Purchase Bill';
+      } else {
+        sendBtn.innerHTML = '&#9992; Send Tax Invoice';
+      }
+    }
+
     if (inpBody) {
-      if (docType === 'SALES_RETURN') {
+      if (docType === 'QUOTATION') {
+        inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Quotation Estimate #${invoiceNo} for ${amountStr}.\n\nThis pricing proposal is valid as per agreed terms.\n\nThank you for considering Jasvi Industries.\n\nBest regards,\nSales & Commercial Division\nJasvi Industries`;
+      } else if (docType === 'SALES_RETURN') {
         inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Sales Return Credit Note #${invoiceNo} for ${amountStr}.\n\nThe credit adjustment has been posted into your ledger balance.\n\nThank you for your business.\n\nBest regards,\nAccounts & Returns Division\nJasvi Industries`;
       } else if (docType === 'PURCHASE_RETURN') {
         inpBody.value = `Dear ${partyName},\n\nPlease find attached the official Purchase Return Debit Note #${invoiceNo} for ${amountStr}.\n\nThe debit adjustment has been posted into your supplier ledger.\n\nThank you for your cooperation.\n\nBest regards,\nProcurement & Inventory Division\nJasvi Industries`;
@@ -2684,10 +2749,14 @@ window.SalesController = {
     const invNo = (document.getElementById('mei-inv-no') || {}).value;
     const docType = (document.getElementById('mei-doc-type') || {}).value || 'SALE';
     const isPurchase = docType === 'PURCHASE';
+    const isQuotation = docType === 'QUOTATION';
+    const isSalesReturn = docType === 'SALES_RETURN';
+    const isPurchaseReturn = docType === 'PURCHASE_RETURN';
     const recipient = (document.getElementById('mei-recipient') || {}).value;
     const subject = (document.getElementById('mei-subject') || {}).value;
     const body = (document.getElementById('mei-body') || {}).value;
     const sendBtn = document.getElementById('mei-send-btn');
+    const cleanNo = invNo.replace(/[^A-Za-z0-9]/g, '_');
 
     if (!recipient) {
       window.AppDialogService.showToast('Please enter recipient email address', 'error');
@@ -2700,10 +2769,24 @@ window.SalesController = {
     }
 
     try {
-      // 1. Fetch real canonical PDF bytes from backend document service
       let attachmentBase64 = null;
-      const docTypeParam = isPurchase ? 'PURCHASE' : 'SALES_INVOICE';
-      const filePrefix = isPurchase ? 'Purchase_Bill' : 'Tax_Invoice';
+      let docTypeParam = 'SALES_INVOICE';
+      let filePrefix = 'Tax_Invoice';
+      if (isPurchase) {
+        docTypeParam = 'PURCHASE';
+        filePrefix = 'Purchase_Bill';
+      } else if (isQuotation) {
+        docTypeParam = 'QUOTATION';
+        filePrefix = 'Quotation';
+      } else if (isSalesReturn) {
+        docTypeParam = 'SALES_RETURN';
+        filePrefix = 'Sales_Return';
+      } else if (isPurchaseReturn) {
+        docTypeParam = 'PURCHASE_RETURN';
+        filePrefix = 'Purchase_Return';
+      }
+
+      // 1. Fetch real canonical PDF bytes from backend document service
       try {
         const token = localStorage.getItem('dse_access_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -2725,28 +2808,53 @@ window.SalesController = {
         console.warn('Could not fetch server PDF:', pdfErr);
       }
 
-      // 2. Client jsPDF fallback for sales if server PDF unreachable
-      if (!attachmentBase64 && !isPurchase && window.jspdf) {
+      // 2. Client fallback via DocumentPdfGenerator if server PDF unavailable
+      if (!attachmentBase64 && window.DocumentPdfGenerator) {
         try {
-          const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
-          if (saleObj) {
-            const doc = this.buildSalesInvoiceJsPdf(saleObj);
-            if (doc) {
-              const dataUri = doc.output('datauristring');
-              attachmentBase64 = dataUri.split(',')[1];
+          if (isQuotation) {
+            let quote = (window.QuotationController && (window.QuotationController.quotationsCache || window.QuotationController.quotations || [])).find(x => (x.quotationNo || x.number || x.no) === invNo);
+            let lines = quote ? quote.lines : null;
+            if (!lines && window.ApiService && typeof window.ApiService.getQuotationLines === 'function') {
+              try { lines = await window.ApiService.getQuotationLines(invNo); } catch (_) {}
+            }
+            attachmentBase64 = window.DocumentPdfGenerator.generateQuotationPdf(quote || { no: invNo }, lines || [], 'base64');
+          } else if (isSalesReturn || isPurchaseReturn) {
+            const retList = isSalesReturn
+              ? ((window.ReturnsController && window.ReturnsController.salesReturnsCache) || [])
+              : ((window.ReturnsController && window.ReturnsController.purchaseReturnsCache) || []);
+            let ret = retList.find(x => (x.returnNo || x.invoiceNo || x.number || x.no) === invNo) || { no: invNo };
+            let lines = ret.lines || [];
+            if (!lines.length && window.OperationsService && typeof window.OperationsService.getReturnDetails === 'function') {
+              try {
+                const res = await window.OperationsService.getReturnDetails(invNo, isSalesReturn);
+                const details = res?.data || res || {};
+                if (details && details.no) ret = details;
+                lines = details.lines || [];
+              } catch (_) {}
+            }
+            attachmentBase64 = window.DocumentPdfGenerator.generateReturnPdf(ret, lines, isSalesReturn, 'base64');
+          } else if (!isPurchase) {
+            const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+            if (saleObj) {
+              const doc = this.buildSalesInvoiceJsPdf(saleObj);
+              if (doc) {
+                const dataUri = doc.output('datauristring');
+                attachmentBase64 = dataUri.split(',')[1];
+              }
             }
           }
-        } catch (jsPdfErr) {
-          console.warn('jsPDF fallback failed:', jsPdfErr);
+        } catch (genErr) {
+          console.warn('Client fallback PDF generation failed:', genErr);
         }
       }
 
       // 3. Dispatch through backend SMTP gateway
       const emailPayload = {
         recipient,
+        recipientEmail: recipient,
         subject,
         body,
-        attachmentName: `${filePrefix}_${invNo.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
+        attachmentName: `${filePrefix}_${cleanNo}.pdf`,
         attachmentBase64
       };
 
@@ -2754,12 +2862,36 @@ window.SalesController = {
 
       if (isPurchase) {
         if (saleId > 0) {
-          try {
-            await window.OperationsService.markPurchaseEmailSent(saleId);
-          } catch (_) {}
+          try { await window.OperationsService.markPurchaseEmailSent(saleId); } catch (_) {}
         }
         if (window.PurchaseController && window.PurchaseController.loadPurchases) {
           window.PurchaseController.loadPurchases();
+        }
+      } else if (isQuotation) {
+        if (window.OperationsService && typeof window.OperationsService.recordCommunication === 'function') {
+          try {
+            await window.OperationsService.recordCommunication({
+              entityType: 'QUOTATION',
+              entityId: saleId || invNo,
+              channel: 'EMAIL',
+              recipient,
+              subject,
+              status: 'SENT'
+            });
+          } catch (_) {}
+        }
+      } else if (isSalesReturn || isPurchaseReturn) {
+        if (window.OperationsService && typeof window.OperationsService.recordCommunication === 'function') {
+          try {
+            await window.OperationsService.recordCommunication({
+              entityType: isSalesReturn ? 'SALES_RETURN' : 'PURCHASE_RETURN',
+              entityId: saleId || invNo,
+              channel: 'EMAIL',
+              recipient,
+              subject,
+              status: 'SENT'
+            });
+          } catch (_) {}
         }
       } else {
         if (saleId > 0) {
@@ -2790,7 +2922,7 @@ window.SalesController = {
     } finally {
       if (sendBtn) {
         sendBtn.disabled = false;
-        sendBtn.innerText = '✈ Send Email';
+        sendBtn.innerHTML = '&#9992; Send Email';
       }
     }
   },
@@ -2798,22 +2930,64 @@ window.SalesController = {
   async previewAttachedPdf() {
     const invNo = (document.getElementById('mei-inv-no') || {}).value;
     if (!invNo) {
-      if (window.AppDialogService) window.AppDialogService.showToast('No invoice selected for preview', 'warning');
+      if (window.AppDialogService) window.AppDialogService.showToast('No document selected for preview', 'warning');
       return;
     }
     const docType = (document.getElementById('mei-doc-type') || {}).value || 'SALE';
     let docTypeParam = 'SALES_INVOICE';
     if (docType === 'PURCHASE') docTypeParam = 'PURCHASE';
+    else if (docType === 'QUOTATION') docTypeParam = 'QUOTATION';
     else if (docType === 'SALES_RETURN') docTypeParam = 'SALES_RETURN';
     else if (docType === 'PURCHASE_RETURN') docTypeParam = 'PURCHASE_RETURN';
     const isPurchase = docType === 'PURCHASE';
+    const isQuotation = docType === 'QUOTATION';
+    const isSalesReturn = docType === 'SALES_RETURN';
+    const isPurchaseReturn = docType === 'PURCHASE_RETURN';
+
     const token = localStorage.getItem('dse_access_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     try {
       const res = await fetch(`/api/documents/render?type=${docTypeParam}&number=${encodeURIComponent(invNo)}&format=PDF`, { headers });
-      if (!res.ok) {
-        // Fallback for sales if server render throws error
-        if (!isPurchase && window.jspdf) {
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        if (window.showUniversalPreviewModal) {
+          window.showUniversalPreviewModal(blobUrl, 'application/pdf', `${docTypeParam}_${invNo}.pdf`);
+        } else {
+          window.open(blobUrl, '_blank');
+        }
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback via DocumentPdfGenerator if server PDF unavailable
+    if (window.DocumentPdfGenerator) {
+      try {
+        if (isQuotation) {
+          let quote = (window.QuotationController && (window.QuotationController.quotationsCache || window.QuotationController.quotations || [])).find(x => (x.quotationNo || x.number || x.no) === invNo);
+          let lines = quote ? quote.lines : null;
+          if (!lines && window.ApiService && typeof window.ApiService.getQuotationLines === 'function') {
+            try { lines = await window.ApiService.getQuotationLines(invNo); } catch (_) {}
+          }
+          window.DocumentPdfGenerator.generateQuotationPdf(quote || { no: invNo }, lines || [], 'preview');
+          return;
+        } else if (isSalesReturn || isPurchaseReturn) {
+          const retList = isSalesReturn
+            ? ((window.ReturnsController && window.ReturnsController.salesReturnsCache) || [])
+            : ((window.ReturnsController && window.ReturnsController.purchaseReturnsCache) || []);
+          let ret = retList.find(x => (x.returnNo || x.invoiceNo || x.number || x.no) === invNo) || { no: invNo };
+          let lines = ret.lines || [];
+          if (!lines.length && window.OperationsService && typeof window.OperationsService.getReturnDetails === 'function') {
+            try {
+              const res = await window.OperationsService.getReturnDetails(invNo, isSalesReturn);
+              const details = res?.data || res || {};
+              if (details && details.no) ret = details;
+              lines = details.lines || [];
+            } catch (_) {}
+          }
+          window.DocumentPdfGenerator.generateReturnPdf(ret, lines, isSalesReturn, 'preview');
+          return;
+        } else if (!isPurchase) {
           const saleObj = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
           if (saleObj) {
             const doc = this.buildSalesInvoiceJsPdf(saleObj);
@@ -2825,15 +2999,11 @@ window.SalesController = {
             }
           }
         }
-        throw new Error(`HTTP ${res.status}`);
+      } catch (fallbackErr) {
+        console.warn('Fallback preview error:', fallbackErr);
       }
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
-    } catch (e) {
-      if (window.AppDialogService) window.AppDialogService.showToast('Could not load PDF preview: ' + e.message, 'error');
-      else alert('Could not load PDF preview: ' + e.message);
     }
+    if (window.AppDialogService) window.AppDialogService.showToast('Could not preview PDF document', 'error');
   },
 
   buildSalesInvoiceJsPdf(saleObj) {

@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.39.01",
+  version: "10.0.39.02",
   desktopVersion: "10.0.39",
-  webBuild: 1,
-  webVersion: "10.0.39.01",
-  tag: "web-v10.0.39.01",
-  releaseDate: "2026-10-21T23:25:00+05:30",
+  webBuild: 2,
+  webVersion: "10.0.39.02",
+  tag: "web-v10.0.39.02",
+  releaseDate: "2026-10-21T23:50:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.39.01 Server-Based Canonical Document Parity for Quotations, Returns & Notes"
+  summary: "10.0.39.02 Universal Transmit Email Modal Parity across Quotation, Sales & Purchase Returns"
 };
 
 // Automatic UI Version Injection

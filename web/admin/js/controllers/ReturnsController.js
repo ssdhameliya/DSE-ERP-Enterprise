@@ -687,6 +687,11 @@ window.ReturnsController = (function () {
   async function sendEmailPrompt(no) {
     const isSales = currentType === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
+    let ret = (returnsList || []).find(r => r.no === no || r.returnNo === no) || selectedReturn || { no, returnNo: no };
+    if (window.SalesController && typeof window.SalesController.openEmailModal === 'function') {
+      window.SalesController.openEmailModal(no, typeCode, ret);
+      return;
+    }
     const email = prompt(`Send Return ${no} to email address:`);
     if (!email) return;
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending ${currentType} ${no} to ${email}...`);

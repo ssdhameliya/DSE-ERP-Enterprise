@@ -1,17 +1,16 @@
 {
   "desktopVersion": "10.0.39",
-  "webBuild": 1,
-  "webVersion": "10.0.39.01",
-  "tag": "web-v10.0.39.01",
-  "releaseDate": "2026-10-21T23:25:00+05:30",
+  "webBuild": 2,
+  "webVersion": "10.0.39.02",
+  "tag": "web-v10.0.39.02",
+  "releaseDate": "2026-10-21T23:50:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.39.01 Server-Based Canonical Document Parity for Quotations, Returns & Notes",
+  "summary": "10.0.39.02 Universal Transmit Email Modal Parity across Quotation, Sales & Purchase Returns",
   "highlights": [
-    "1. Server-First Document Rendering Parity: Quotation, Sales Return, Purchase Return, and Credit/Debit Notes now call /api/documents/render for 100% desktop-identical PDF and Excel generation.",
-    "2. 2-Way Generation Flow: PDF Studio custom template check (Way 1) with seamless fallback to standard ProfessionalDocumentRenderer & ExcelTemplateRenderer (Way 2).",
-    "3. Email Dispatch with Generated PDF Attachment: Encodes rendered PDF blob to Base64 and dispatches via OperationsService with recipient email and attachmentBase64.",
-    "4. WhatsApp Action Support: Added WhatsApp document sharing flow to Sales & Purchase Return registers and slide drawers.",
-    "5. Sales Return Register Export Parity: Added Excel export button to view-sales-returns header matching Purchase Return register.",
-    "6. Resilient Client Fallbacks: DocumentPdfGenerator.js and DocumentExcelGenerator.js provide styled offline/client generation matching desktop starter workbook."
+    "1. Universal Transmit Email Modal: Completely replaced browser window.prompt() on Quotation and Return registers with the rich, modern, dark/light theme 3D card modal matching Sales and Purchase.",
+    "2. Auto-Populated Intelligence: Automatically pre-fills recipient email from customer/supplier master, dynamic subject line, and polite personalized message body.",
+    "3. Real-Time Attached PDF Preview: Integrated [👁 Preview PDF] button inside the email modal allowing users to inspect the generated PDF in lightbox before transmitting.",
+    "4. Dynamic Modal Context: Dynamically adapts modal title ('Transmit Quotation Estimate via Email' / 'Transmit Credit Note via Email'), subtitle, file attachment badge, and primary action button ('✈ Send Quotation' / '✈ Send Credit Note').",
+    "5. Resilient Attachment Generation: Transparently dispatches authentic server PDF or client-generated fallback PDF base64 directly through backend SMTP gateway."
   ]
 }
