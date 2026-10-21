@@ -273,6 +273,9 @@ window.App = (function() {
       setupAuthForms();
       syncFooterCompanyProfile();
       restoreCachedShellCounts();
+      if (window.DashboardController && window.DashboardController.restoreCachedDashboard) {
+        window.DashboardController.restoreCachedDashboard();
+      }
 
       if (window.ShortcutManager) window.ShortcutManager.init();
       if (window.NavigationRouter) window.NavigationRouter.init();

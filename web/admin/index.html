@@ -697,23 +697,32 @@
             if (li) li.textContent = '🌙';
             if (lt) lt.textContent = 'Dark Mode';
           }
-          var rawUser = localStorage.getItem('dse_user');
+          var rawUser = localStorage.getItem('dse_user_info') || localStorage.getItem('dse_user');
+          var name = 'User', role = 'STAFF', initial = 'U';
           if (rawUser) {
-            var u = JSON.parse(rawUser);
-            var name = u.fullName || u.username || 'User';
-            var role = (u.role || 'STAFF').toUpperCase();
-            var initial = (u.fullName || u.username || 'U').charAt(0).toUpperCase();
-            var hn = document.getElementById('header-user-name');
-            var hr = document.getElementById('header-user-role');
-            var ha = document.getElementById('header-user-avatar');
-            if (hn) hn.textContent = name;
-            if (hr) hr.textContent = role;
-            if (ha) ha.textContent = initial;
-            var mn = document.getElementById('menu-user-name');
-            var mr = document.getElementById('menu-user-role');
-            if (mn) mn.textContent = name;
-            if (mr) mr.textContent = role;
+            try {
+              var u = JSON.parse(rawUser);
+              name = u.fullName || u.username || name;
+              role = (u.role || role).toUpperCase();
+              initial = name.charAt(0).toUpperCase();
+            } catch (_) {}
+          } else {
+            var savedName = localStorage.getItem('dse_saved_identity');
+            var savedRole = localStorage.getItem('dse_saved_role');
+            if (savedName) name = savedName;
+            if (savedRole) role = savedRole.toUpperCase();
+            initial = name.charAt(0).toUpperCase();
           }
+          var hn = document.getElementById('header-user-name');
+          var hr = document.getElementById('header-user-role');
+          var ha = document.getElementById('header-user-avatar');
+          if (hn) hn.textContent = name;
+          if (hr) hr.textContent = role;
+          if (ha) ha.textContent = initial;
+          var mn = document.getElementById('menu-user-name');
+          var mr = document.getElementById('menu-user-role');
+          if (mn) mn.textContent = name;
+          if (mr) mr.textContent = role;
         } catch (_) {}
       })();
     </script>
@@ -1150,6 +1159,49 @@
             </div>
           </div>
         </div>
+        <script>
+          (function () {
+            try {
+              var raw = localStorage.getItem('dse_dashboard_cache_This Month') || localStorage.getItem('dse_dashboard_cache');
+              if (!raw) return;
+              var d = JSON.parse(raw);
+              if (d.snapshot) {
+                var s = d.snapshot;
+                var fmt = function (v) { return '₹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var sa = document.getElementById('dash-kpi-sales-amount'); if (sa) sa.textContent = fmt(s.salesValue);
+                var sc = document.getElementById('dash-kpi-sales-count'); if (sc) sc.textContent = s.invoices || 0;
+                var pa = document.getElementById('dash-kpi-pur-amount'); if (pa) pa.textContent = fmt(s.purchaseValue);
+                var pc = document.getElementById('dash-kpi-pur-count'); if (pc) pc.textContent = s.purchases || 0;
+                var ra = document.getElementById('dash-kpi-receivables'); if (ra) ra.textContent = fmt(s.receivables);
+                var rc = document.getElementById('dash-kpi-receivables-count'); if (rc) rc.textContent = s.openReceivables || 0;
+                var pya = document.getElementById('dash-kpi-payables'); if (pya) pya.textContent = fmt(s.payables);
+                var pyc = document.getElementById('dash-kpi-payables-count'); if (pyc) pyc.textContent = s.openPayables || 0;
+                var ca = document.getElementById('dash-kpi-cash-position'); if (ca) ca.textContent = fmt(s.cash);
+                var ls = document.getElementById('dash-kpi-low-stock'); if (ls) ls.textContent = s.lowStock || 0;
+                var dsc = document.getElementById('dash-dir-sales-count'); if (dsc) dsc.textContent = s.invoices || 0;
+                var dpc = document.getElementById('dash-dir-pur-count'); if (dpc) dpc.textContent = s.purchases || 0;
+                var dcc = document.getElementById('dash-dir-cust-count'); if (dcc) dcc.textContent = s.customers || 0;
+                var dic = document.getElementById('dash-dir-item-count'); if (dic) dic.textContent = s.products || 0;
+                var rem = document.getElementById('dash-reminders-count'); if (rem) rem.textContent = s.openReminders || 0;
+              }
+              if (d.topCustomersHtml) {
+                var tc = document.getElementById('dash-top-customers-list'); if (tc) tc.innerHTML = d.topCustomersHtml;
+              }
+              if (d.ageing) {
+                var a = d.ageing;
+                var fmt2 = function (v) { return '₹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var eo = document.getElementById('dash-ageing-overdue'); if (eo) eo.textContent = fmt2(a.overdue30);
+                var e21 = document.getElementById('dash-ageing-21-30'); if (e21) e21.textContent = fmt2(a.b21_30);
+                var e11 = document.getElementById('dash-ageing-11-20'); if (e11) e11.textContent = fmt2(a.b11_20);
+                var e1 = document.getElementById('dash-ageing-1-10'); if (e1) e1.textContent = fmt2(a.b1_10);
+                var end = document.getElementById('dash-ageing-not-due'); if (end) end.textContent = fmt2(a.notDue);
+              }
+              if (d.recentActivitiesHtml) {
+                var rac = document.getElementById('dash-recent-activities-list'); if (rac) rac.innerHTML = d.recentActivitiesHtml;
+              }
+            } catch (_) {}
+          })();
+        </script>
 
         <!-- VIEW: GLOBAL SEARCH (EXACT DESKTOP PARITY) -->
         <div id="view-global-search" class="module-view">
