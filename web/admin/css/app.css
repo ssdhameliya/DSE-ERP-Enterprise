@@ -4417,86 +4417,27 @@
     }
 
     /* ==========================================================================
-       DSE ENTERPRISE FORMATTED DATEPICKER ENGINE (v10.0.38.07)
+       DSE ENTERPRISE DATE FORMAT SYNCHRONIZATION (v10.0.38.08)
        Desktop Parity with org.example.util.DatePickerFormatter.java
-       Enforces company.dateFormat strictly across all datepickers
        ========================================================================== */
 
-    .dse-datepicker-wrap {
-      position: relative !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      vertical-align: middle !important;
-      box-sizing: border-box !important;
-    }
-
-    .dse-datepicker-wrap input[type="date"] {
-      color: transparent !important;
-      cursor: pointer !important;
-      width: 100% !important;
-    }
-
-    /* Chrome, Edge, Safari WebKit shadow DOM text masking */
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit,
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit-fields-wrapper,
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit-text,
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit-month-field,
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit-day-field,
-    .dse-datepicker-wrap input[type="date"]::-webkit-datetime-edit-year-field {
-      color: transparent !important;
-    }
-
-    .dse-datepicker-wrap input[type="date"]::-webkit-calendar-picker-indicator {
-      opacity: 1 !important;
-      cursor: pointer !important;
-      position: relative !important;
-      z-index: 4 !important;
-    }
-
-    /* Formatted Display Overlay */
-    .dse-datepicker-display {
-      position: absolute !important;
-      left: 10px !important;
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-      pointer-events: none !important;
-      font-family: inherit !important;
-      font-size: 0.82rem !important;
-      font-weight: 500 !important;
-      z-index: 2 !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      max-width: calc(100% - 32px) !important;
+    .erp-date-format-badge {
+      font-size: 0.68rem !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em !important;
+      margin-left: 6px !important;
+      transition: color 0.15s ease !important;
       user-select: none !important;
     }
 
-    body.light-theme .dse-datepicker-display {
-      color: #0f172a !important;
+    body.light-theme .erp-date-format-badge {
+      color: #0284c7 !important;
     }
 
-    body:not(.light-theme) .dse-datepicker-display {
-      color: #f8fafc !important;
+    body:not(.light-theme) .erp-date-format-badge {
+      color: #38bdf8 !important;
     }
 
-    .dse-datepicker-display.is-empty {
-      color: #94a3b8 !important;
-      font-weight: 400 !important;
-      font-style: italic !important;
-      opacity: 0.8 !important;
-    }
-
-    body.light-theme .dse-datepicker-display.is-empty {
-      color: #64748b !important;
-    }
-
-    /* Compact filter inputs */
-    .dse-datepicker-wrap.is-sm .dse-datepicker-display,
-    .dse-datepicker-wrap input.form-input-sm ~ .dse-datepicker-display {
-      font-size: 0.76rem !important;
-      left: 8px !important;
-      max-width: calc(100% - 26px) !important;
-    }
 
 
 

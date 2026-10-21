@@ -1,24 +1,25 @@
 /**
- * Jasvi Industries ERP - DatePickerFormatter
+ * Jasvi Industries ERP - DatePickerFormatter (v10.0.38.08)
  * Desktop Parity with org.example.util.DatePickerFormatter & BusinessClock
  * Enforces company.dateFormat strictly across all datepickers and filter inputs.
  *
- * Implements a Dual-Layer Formatted DatePicker Engine:
- * 1. Underlying DOM Element: Native <input type="date"> retaining standard ISO YYYY-MM-DD
+ * Non-Invasive Architecture:
+ * 1. Preserves 100% native DOM structure: No wrapper elements, no DOM node moves,
+ *    and no prototype overriding (zero risk of breaking login or form serialization).
+ * 2. Underlying DOM Element: Native <input type="date"> retaining standard ISO YYYY-MM-DD
  *    values for 100% compatibility with backend Spring Boot APIs and controller queries.
- * 2. Visual Presentation Layer: Synchronized formatted overlay (.dse-datepicker-display)
- *    displaying the date strictly formatted according to FormatUtil._dateFormat (e.g. dd/MM/yyyy).
- * 3. Dynamic Real-Time Updates: Listens to 'dse-date-policy-changed' and refreshes all active
- *    pickers across all 38+ screens instantly when Settings -> Company Profile date format is modified.
- * 4. Value Interception: Intercepts programmatic .value assignments so setting input.value = '...'
- *    immediately updates the visual overlay.
+ * 3. Formatted Badges & Tooltips: Updates parent filter labels with format badges [dd/MM/yyyy]
+ *    and live formatted date previews when a date is selected.
+ * 4. Re-entrancy & Scope Guarded: Strictly ignores #auth-overlay to guarantee instant login transitions.
+ *    Debounced rescan prevents any MutationObserver recursion.
  */
 window.DatePickerFormatter = (function() {
   'use strict';
 
   const ATTACHED_KEY = '__dseDatePickerAttached';
   const activePickers = new Set();
-  const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  let isUpdating = false;
+  let debounceTimer = null;
 
   function getActiveFormat() {
     return (window.FormatUtil && window.FormatUtil._dateFormat) || 'dd/MM/yyyy';
@@ -29,49 +30,39 @@ window.DatePickerFormatter = (function() {
   }
 
   /**
-   * Synchronizes the visible formatted text overlay with the input's current ISO value
+   * Safely synchronizes tooltip and label badge without mutating the input control
    */
   function syncDisplay(picker) {
-    if (!picker) return;
-    const wrap = picker.closest('.dse-datepicker-wrap');
-    if (!wrap) return;
-
-    let display = wrap.querySelector('.dse-datepicker-display');
-    if (!display) {
-      display = document.createElement('span');
-      display.className = 'dse-datepicker-display';
-      wrap.appendChild(display);
-    }
+    if (!picker || isUpdating) return;
+    // Strictly skip login and auth dialogs
+    if (picker.closest && picker.closest('#auth-overlay')) return;
 
     const val = picker.value ? picker.value.trim() : '';
     const fmt = getActiveFormat();
     const prompt = getFormatPrompt();
 
+    picker.setAttribute('placeholder', prompt);
+
     if (val && window.FormatUtil) {
       const formatted = window.FormatUtil.formatDate(val, fmt);
-      display.textContent = formatted;
-      display.classList.remove('is-empty');
-      display.title = `${formatted} (Business Format: ${fmt})`;
+      picker.title = `Selected: ${formatted} [${fmt}]`;
     } else {
-      display.textContent = prompt;
-      display.classList.add('is-empty');
-      display.title = `Expected format: ${prompt}`;
+      picker.title = `Format: ${prompt} [${fmt}]`;
     }
 
-    picker.title = val && window.FormatUtil
-      ? `Date: ${window.FormatUtil.formatDate(val, fmt)} [${fmt}]`
-      : `Select date [${fmt}]`;
-
-    // Update parent filter label badge if present
-    updateLabelBadge(picker, fmt);
+    // Update parent filter label badge and preview if present
+    updateLabelBadge(picker, fmt, val);
   }
 
   /**
-   * Updates or appends a [dd/MM/yyyy] badge on the parent label
+   * Updates or appends a [dd/MM/yyyy] badge and preview on the parent label
    */
-  function updateLabelBadge(picker, fmt) {
-    const parent = picker.closest('.form-group, .filter-item, .filter-field, .col, div');
-    if (parent) {
+  function updateLabelBadge(picker, fmt, val) {
+    const parent = picker.closest && picker.closest('.form-group, .filter-item, .filter-field, .col, div');
+    if (!parent || parent.id === 'auth-overlay' || parent.closest('#auth-overlay')) return;
+
+    isUpdating = true;
+    try {
       let badge = parent.querySelector('.erp-date-format-badge');
       if (!badge && (picker.id.includes('from') || picker.id.includes('to') || picker.id.includes('date') || picker.classList.contains('filter-date'))) {
         badge = document.createElement('span');
@@ -83,18 +74,31 @@ window.DatePickerFormatter = (function() {
         }
       }
       if (badge) {
-        badge.textContent = `[${fmt}]`;
+        if (val && window.FormatUtil) {
+          const formatted = window.FormatUtil.formatDate(val, fmt);
+          badge.textContent = `[${formatted}]`;
+          badge.style.color = 'var(--cyan, #06b6d4)';
+          badge.style.fontWeight = '600';
+          badge.title = `Business formatted: ${formatted}`;
+        } else {
+          badge.textContent = `[${fmt}]`;
+          badge.style.color = 'var(--text-dim, #94a3b8)';
+          badge.style.fontWeight = '500';
+          badge.title = `Date format setting: ${fmt}`;
+        }
       }
+    } finally {
+      isUpdating = false;
     }
   }
 
   /**
-   * Attaches the formatted display engine to a specific <input type="date">
+   * Attaches format listeners to a specific <input type="date">
    */
   function attach(picker) {
     if (!picker || picker.type !== 'date') return picker;
+    if (picker.closest && picker.closest('#auth-overlay')) return picker;
 
-    // If already attached, simply sync and return
     if (picker[ATTACHED_KEY]) {
       syncDisplay(picker);
       return picker;
@@ -103,59 +107,6 @@ window.DatePickerFormatter = (function() {
     picker[ATTACHED_KEY] = true;
     activePickers.add(picker);
 
-    // 1. Wrap in .dse-datepicker-wrap if not already wrapped
-    let wrap = picker.parentElement;
-    if (!wrap || !wrap.classList.contains('dse-datepicker-wrap')) {
-      wrap = document.createElement('div');
-      wrap.className = 'dse-datepicker-wrap';
-
-      // Preserve sizing styles from original input
-      if (picker.style.width) {
-        wrap.style.width = picker.style.width;
-      }
-      if (picker.style.minWidth) {
-        wrap.style.minWidth = picker.style.minWidth;
-      }
-      if (picker.style.maxWidth) {
-        wrap.style.maxWidth = picker.style.maxWidth;
-      }
-      if (picker.style.flex) {
-        wrap.style.flex = picker.style.flex;
-      }
-      if (picker.style.margin) {
-        wrap.style.margin = picker.style.margin;
-      }
-      if (picker.classList.contains('form-input-sm')) {
-        wrap.classList.add('is-sm');
-      }
-
-      picker.parentNode.insertBefore(wrap, picker);
-      wrap.appendChild(picker);
-    }
-
-    // 2. Create formatted text display overlay
-    let display = wrap.querySelector('.dse-datepicker-display');
-    if (!display) {
-      display = document.createElement('span');
-      display.className = 'dse-datepicker-display';
-      wrap.appendChild(display);
-    }
-
-    // 3. Intercept .value property to catch programmatic assignments like picker.value = '...'
-    try {
-      Object.defineProperty(picker, 'value', {
-        get() {
-          return originalValueDescriptor.get.call(this);
-        },
-        set(newVal) {
-          originalValueDescriptor.set.call(this, newVal);
-          syncDisplay(this);
-        },
-        configurable: true
-      });
-    } catch (_) {}
-
-    // 4. Listen to native events
     picker.addEventListener('input', () => syncDisplay(picker));
     picker.addEventListener('change', () => {
       syncDisplay(picker);
@@ -164,28 +115,10 @@ window.DatePickerFormatter = (function() {
       } catch (_) {}
     });
 
-    // 5. Open native calendar picker on click
-    picker.addEventListener('click', (e) => {
-      if (!picker.disabled && !picker.readOnly && typeof picker.showPicker === 'function') {
-        try {
-          // If click was not directly on the native indicator (left portion of input)
-          const rect = picker.getBoundingClientRect();
-          if (e.clientX < rect.right - 28) {
-            picker.showPicker();
-          }
-        } catch (_) {}
-      }
-    });
-
-    // Initial display sync
     syncDisplay(picker);
-
     return picker;
   }
 
-  /**
-   * Refreshes all active datepickers
-   */
   function refresh(picker) {
     if (!picker) return;
     syncDisplay(picker);
@@ -199,32 +132,31 @@ window.DatePickerFormatter = (function() {
         activePickers.delete(picker);
       }
     });
-    // Scan for any newly rendered date inputs
     attachAll();
   }
 
-  function attachAll() {
-    const inputs = document.querySelectorAll('input[type="date"]');
+  function attachAll(root) {
+    const scope = root || document.getElementById('main-content-stage') || document.body;
+    if (!scope) return;
+    const inputs = scope.querySelectorAll('input[type="date"]');
     inputs.forEach(attach);
   }
 
-  // Setup MutationObserver for dynamic modal and drawer datepickers
+  // Debounced observer only targeting main-content-stage, NEVER auth-overlay
   function initObserver() {
-    if (typeof MutationObserver !== 'undefined' && document.body) {
-      const observer = new MutationObserver((mutations) => {
-        let shouldScan = false;
-        for (let i = 0; i < mutations.length; i++) {
-          if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
-            shouldScan = true;
-            break;
-          }
-        }
-        if (shouldScan) {
-          attachAll();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
+    if (typeof MutationObserver === 'undefined') return;
+    const target = document.getElementById('main-content-stage');
+    if (!target) return;
+
+    const observer = new MutationObserver(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        attachAll(target);
+        debounceTimer = null;
+      }, 250);
+    });
+
+    observer.observe(target, { childList: true, subtree: true });
   }
 
   // Listen to global date policy updates from FormatUtil

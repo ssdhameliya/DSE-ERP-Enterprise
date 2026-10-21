@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.07",
+  version: "10.0.38.08",
   desktopVersion: "10.0.38",
-  webBuild: 7,
-  webVersion: "10.0.38.07",
-  tag: "web-v10.0.38.07",
-  releaseDate: "2026-10-21T02:25:00+05:30",
+  webBuild: 8,
+  webVersion: "10.0.38.08",
+  tag: "web-v10.0.38.08",
+  releaseDate: "2026-10-21T10:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.07 Enterprise DatePicker Engine Parity with Desktop DatePickerFormatter & Company Date Format Setting"
+  summary: "10.0.38.08 Web Studio Login Stabilization and Non-Invasive DatePicker Synchronization Engine"
 };
 
 // Automatic UI Version Injection
