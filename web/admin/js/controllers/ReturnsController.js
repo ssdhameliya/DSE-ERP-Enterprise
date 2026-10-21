@@ -578,7 +578,19 @@ window.ReturnsController = (function () {
 
   async function downloadPdf(no) {
     const isSales = currentType === 'SALES RETURN';
-    if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing Return voucher for ${no}...`);
+    const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Downloading ${currentType} PDF for ${no}...`);
+    try {
+      if (window.ApiService && typeof window.ApiService.downloadDocumentPdf === 'function') {
+        await window.ApiService.downloadDocumentPdf(typeCode, no);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded ${no}.pdf`);
+        return;
+      }
+    } catch (serverErr) {
+      console.warn('[ReturnsController] Server PDF render failed, falling back to client generator:', serverErr);
+    }
+
+    // Client-side fallback
     try {
       let ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
       let lines = [];
@@ -588,8 +600,11 @@ window.ReturnsController = (function () {
         if (details && details.no) ret = details;
         lines = details.lines || [];
       } catch (_) {}
-      
-      if (ret) {
+
+      if (window.DocumentPdfGenerator && typeof window.DocumentPdfGenerator.generateReturnPdf === 'function') {
+        window.DocumentPdfGenerator.generateReturnPdf(ret, lines, isSales, 'download');
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return voucher ${no} downloaded.`);
+      } else if (ret) {
         openReturnPrintModal(ret, lines, isSales);
       } else {
         window.print();
@@ -605,6 +620,17 @@ window.ReturnsController = (function () {
     const isSales = currentType === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
     try {
+      if (window.ApiService && typeof window.ApiService.downloadDocumentExcel === 'function') {
+        await window.ApiService.downloadDocumentExcel(typeCode, no);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Downloaded ${typeCode}_${no}.xlsx`);
+        return;
+      }
+    } catch (serverErr) {
+      console.warn('[ReturnsController] Server Excel render failed, falling back to client generator:', serverErr);
+    }
+
+    // Client-side fallback
+    try {
       let ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
       let lines = [];
       try {
@@ -614,36 +640,8 @@ window.ReturnsController = (function () {
         lines = details.lines || [];
       } catch (_) {}
 
-      if (window.XLSX && ret) {
-        const wsData = [
-          [`JASVI INDUSTRIES ERP - ${isSales ? 'SALES RETURN (CREDIT NOTE)' : 'PURCHASE RETURN (DEBIT NOTE)'}`],
-          ['Return #:', ret.no || no, 'Date:', ret.date || '', 'Status:', ret.status || ''],
-          [isSales ? 'Customer:' : 'Supplier:', ret.partyName || ret.customer || ret.supplier || '', 'Original Bill #:', ret.originalDocNo || '-'],
-          ['Reason:', ret.reason || '', 'Total Amount:', ret.amount || 0],
-          [],
-          ['#', 'Item Description', 'Return Qty', 'Unit', 'Rate (₹)', 'Line Reason', 'Total Amount (₹)']
-        ];
-
-        if (lines && lines.length > 0) {
-          lines.forEach((l, idx) => {
-            wsData.push([
-              idx + 1,
-              l.itemDescription || l.description || l.itemCode || '',
-              l.quantity || 1,
-              l.unit || '',
-              l.rate || 0,
-              l.reason || ret.reason || '',
-              l.totalAmount || (l.quantity * l.rate) || 0
-            ]);
-          });
-        }
-        wsData.push([]);
-        wsData.push(['', '', '', '', '', 'Total Return Value:', ret.amount || 0]);
-
-        const wb = window.XLSX.utils.book_new();
-        const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-        window.XLSX.utils.book_append_sheet(wb, ws, 'Return Note');
-        window.XLSX.writeFile(wb, `${typeCode}_${no}.xlsx`);
+      if (window.DocumentExcelGenerator && typeof window.DocumentExcelGenerator.generateReturnWorkbook === 'function') {
+        window.DocumentExcelGenerator.generateReturnWorkbook(ret, lines, isSales);
         if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} exported to Excel.`);
       } else {
         throw new Error('Excel generator unavailable');
@@ -657,22 +655,27 @@ window.ReturnsController = (function () {
   function exportExcel(type) {
     const isSales = (type || currentType) === 'SALES RETURN';
     const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
+    const title = isSales ? 'Sales Returns Register' : 'Purchase Returns Register';
     if (!returnsList || returnsList.length === 0) {
       if (window.AppDialogService) window.AppDialogService.toastWarning('No return records found to export.');
       return;
     }
-    if (window.XLSX) {
-      const headers = ['Return #', 'Date', isSales ? 'Customer' : 'Supplier', 'Original Doc #', 'Amount (₹)', 'Reason', 'Status', 'Settled'];
-      const rows = returnsList.map(r => [
-        r.no,
-        window.FormatUtil ? window.FormatUtil.formatDate(r.date) : r.date,
-        r.partyName || r.customer || r.supplier || '',
-        r.originalDocNo || '-',
-        r.amount || 0,
-        r.reason || '',
-        r.status || '',
-        r.settled ? 'YES' : 'NO'
-      ]);
+    const headers = ['Return #', 'Date', isSales ? 'Customer' : 'Supplier', 'Original Doc #', 'Amount (₹)', 'Reason', 'Status', 'Settled'];
+    const rows = returnsList.map(r => [
+      r.no,
+      window.FormatUtil ? window.FormatUtil.formatDate(r.date) : r.date,
+      r.partyName || r.customer || r.supplier || '',
+      r.originalDocNo || '-',
+      r.amount || 0,
+      r.reason || '',
+      r.status || '',
+      r.settled ? 'YES' : 'NO'
+    ]);
+
+    if (window.DocumentExcelGenerator && typeof window.DocumentExcelGenerator.generateRegisterWorkbook === 'function') {
+      window.DocumentExcelGenerator.generateRegisterWorkbook(rows, title, headers, `${typeCode}_Register`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${returnsList.length} returns to Excel.`);
+    } else if (window.XLSX) {
       const ws = window.XLSX.utils.aoa_to_sheet([headers, ...rows]);
       const wb = window.XLSX.utils.book_new();
       window.XLSX.utils.book_append_sheet(wb, ws, `${typeCode} Register`);
@@ -683,15 +686,55 @@ window.ReturnsController = (function () {
 
   async function sendEmailPrompt(no) {
     const isSales = currentType === 'SALES RETURN';
+    const typeCode = isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN';
     const email = prompt(`Send Return ${no} to email address:`);
     if (!email) return;
-    if (window.AppDialogService) window.AppDialogService.toastInfo(`Sending ${currentType} ${no} to ${email}...`);
+    if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending ${currentType} ${no} to ${email}...`);
+
+    let attachmentBase64 = null;
+    try {
+      if (window.ApiService && typeof window.ApiService.fetchDocumentBlob === 'function') {
+        const blob = await window.ApiService.fetchDocumentBlob(typeCode, no, 'PDF');
+        attachmentBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result;
+            const b64 = dataUrl.split(',')[1];
+            resolve(b64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (blobErr) {
+      console.warn('[ReturnsController] Server PDF fetch for email failed, trying client generator:', blobErr);
+    }
+
+    if (!attachmentBase64 && window.DocumentPdfGenerator && typeof window.DocumentPdfGenerator.generateReturnPdf === 'function') {
+      try {
+        let ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
+        let lines = [];
+        try {
+          const res = await window.OperationsService.getReturnDetails(no, isSales);
+          const details = res?.data || res || {};
+          if (details && details.no) ret = details;
+          lines = details.lines || [];
+        } catch (_) {}
+        attachmentBase64 = window.DocumentPdfGenerator.generateReturnPdf(ret, lines, isSales, 'base64');
+      } catch (genErr) {
+        console.warn('[ReturnsController] Client PDF generation failed:', genErr);
+      }
+    }
+
     window.OperationsService.sendAuthorityEmail({
+      recipient: email,
       recipientEmail: email,
       subject: `${currentType} ${no} - Jasvi Industries`,
-      body: `Dear Partner,\n\nPlease find details for ${currentType} note ${no}.\n\nBest regards,\nJasvi Industries ERP Studio`,
-      documentType: isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN',
-      documentNumber: no
+      body: `Dear Partner,\n\nPlease find attached ${currentType} note ${no}.\n\nBest regards,\nJasvi Industries ERP Studio`,
+      documentType: typeCode,
+      documentNumber: no,
+      attachmentName: `${isSales ? 'Sales_Return_Credit_Note' : 'Purchase_Return_Debit_Note'}_${no.replace(/[^A-Za-z0-9]/g, '_')}.pdf`,
+      attachmentBase64: attachmentBase64
     }).then(() => {
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Email sent to ${email}`);
     }).catch(err => {
@@ -703,6 +746,20 @@ window.ReturnsController = (function () {
       if (window.AppDialogService) window.AppDialogService.toastError(errMsg);
       else alert(errMsg);
     });
+  }
+
+  function sendWhatsappPrompt(no) {
+    const isSales = currentType === 'SALES RETURN';
+    const ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
+    const phone = ret?.phone || ret?.contactPersonMobile || '';
+    const mobile = prompt(`Send ${currentType} ${no} via WhatsApp to number (with country code):`, phone);
+    if (!mobile) return;
+    const clean = mobile.replace(/\D/g, '');
+    const num = clean.length === 10 ? '91' + clean : clean;
+    const partyName = ret?.partyName || ret?.party || ret?.customer || ret?.supplier || 'Valued Partner';
+    const amountStr = ret?.amount ? formatMoney(ret.amount) : '';
+    const msg = encodeURIComponent(`Hello ${partyName},\n\nPlease find details for ${currentType} Note ${no}${amountStr ? ' of ' + amountStr : ''} from Jasvi Industries.\n\nThank you.`);
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   }
 
   function viewOriginalDoc(docNo) {
@@ -1421,6 +1478,7 @@ window.ReturnsController = (function () {
     downloadExcel,
     exportExcel,
     sendEmailPrompt,
+    sendWhatsappPrompt,
     viewOriginalDoc,
     openCreateReturnModal,
     onInvoiceSelectChanged,

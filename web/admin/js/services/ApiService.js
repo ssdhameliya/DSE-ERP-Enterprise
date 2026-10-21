@@ -329,6 +329,36 @@ window.ApiService = (function() {
       const filename = `${type}-${number}.pdf`;
       const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=PDF`;
       return this.downloadFile(endpoint, filename);
+    },
+
+    /**
+     * Download document Excel directly using valid JWT credentials (100% Desktop Parity)
+     */
+    async downloadDocumentExcel(type, number) {
+      const filename = `${type}-${number}.xlsx`;
+      const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=XLSX`;
+      return this.downloadFile(endpoint, filename);
+    },
+
+    /**
+     * Fetch document blob for email/WhatsApp attachments
+     */
+    async fetchDocumentBlob(type, number, format = 'PDF') {
+      const endpoint = `/api/documents/render?type=${encodeURIComponent(type)}&number=${encodeURIComponent(number)}&format=${format}`;
+      const token = localStorage.getItem('dse_access_token');
+      const url = endpoint.startsWith('http') ? endpoint : (BASE_URL + endpoint);
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!res.ok) {
+        let errorMsg = `Document render failed (${res.status})`;
+        try {
+          const err = await res.json();
+          if (err && (err.message || err.error)) errorMsg = err.message || err.error;
+        } catch (_) {}
+        throw new Error(errorMsg);
+      }
+      return await res.blob();
     }
   };
 

@@ -12,3 +12,6 @@ by chance id server remove the hostory.. always check current build .md file and
 any update in any .md file or any other file should be checked by the developer whether it is reflected in the build or not before reporting to user
 if user ask to build anything, it should be reflected in the build immediately and before reporting to user. no time gap between build and reporting
 by chance if i ask to change something on any page, always check that page end to end and check for any dependecy and if any changes made thn also verify the whole page and if any issue found thn fix it and report back to user
+date formate should be based on setting set up for all table data, datapicker, forms, reports etc if still not build for all screens make sure that generic function are build and available for all screens
+stick and hard coded rule, if you dont know or you dont understand the code or any funcationality behaviour , please ask but never assume anything and never make any changes in code until you completely understand it
+follow the coding standard and best practices strictly and always write clean, maintainable and well-documented code.

@@ -719,6 +719,15 @@ window.QuotationController = (function () {
     if (!no) return;
     try {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing Quotation view for ${no}...`);
+      if (window.ApiService && typeof window.ApiService.viewDocumentPdf === 'function') {
+        try {
+          await window.ApiService.viewDocumentPdf('QUOTATION', no);
+          return;
+        } catch (serverErr) {
+          console.warn('[QuotationController] Server PDF view failed, falling back to client generator:', serverErr);
+        }
+      }
+
       const quote = quotationsList.find(q => q.no === no) || (selectedQuote && selectedQuote.no === no ? selectedQuote : null);
       let lines = [];
       if (quote && quote.id) {
@@ -726,7 +735,9 @@ window.QuotationController = (function () {
           lines = await window.OperationsService.getQuotationLines(quote.id);
         } catch (_) {}
       }
-      if (quote) {
+      if (quote && window.DocumentPdfGenerator && typeof window.DocumentPdfGenerator.generateQuotationPdf === 'function') {
+        window.DocumentPdfGenerator.generateQuotationPdf(quote, lines, 'preview');
+      } else if (quote) {
         openQuotationPrintModal(quote, lines);
       } else {
         window.print();
@@ -741,7 +752,17 @@ window.QuotationController = (function () {
     if (!no) return;
     try {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Exporting quotation ${no} to Excel...`);
-      // Authoritative client SheetJS export with full line items (bypasses server canonical limitation)
+      if (window.ApiService && typeof window.ApiService.downloadDocumentExcel === 'function') {
+        try {
+          await window.ApiService.downloadDocumentExcel('QUOTATION', no);
+          if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} exported to Excel.`);
+          return;
+        } catch (serverErr) {
+          console.warn('[QuotationController] Server Excel export failed, falling back to client generator:', serverErr);
+        }
+      }
+
+      // Authoritative client SheetJS export with full line items (fallback)
       const quote = quotationsList.find(q => q.no === no) || (selectedQuote && selectedQuote.no === no ? selectedQuote : null);
       let lines = [];
       if (quote && quote.id) {
@@ -749,7 +770,10 @@ window.QuotationController = (function () {
           lines = await window.OperationsService.getQuotationLines(quote.id);
         } catch (_) { }
       }
-      if (window.XLSX && quote) {
+      if (quote && window.DocumentExcelGenerator && typeof window.DocumentExcelGenerator.generateQuotationWorkbook === 'function') {
+        window.DocumentExcelGenerator.generateQuotationWorkbook(quote, lines);
+        if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} exported to Excel.`);
+      } else if (window.XLSX && quote) {
         const wsData = [
           ['JASVI INDUSTRIES ERP - QUOTATION ESTIMATE'],
           ['Quotation #:', quote.no || no, 'Date:', formatDate(quote.date) || '', 'Status:', quote.status || 'DRAFT'],
@@ -797,11 +821,14 @@ window.QuotationController = (function () {
       if (window.AppDialogService) window.AppDialogService.toastWarning('No quotations found to export.');
       return;
     }
-    if (window.XLSX) {
-      const headers = ['Quotation #', 'Date', 'Customer', 'Valid Upto', 'Status', 'Follow Up', 'Converted To', 'Salesperson', 'Amount (₹)'];
-      const rows = quotationsList.map(q => [
-        q.no, formatDate(q.date), q.customer, formatDate(q.valid), q.status, formatDate(q.followUp), q.converted || '—', q.salesperson || '', q.amount || 0
-      ]);
+    const headers = ['Quotation #', 'Date', 'Customer', 'Valid Upto', 'Status', 'Follow Up', 'Converted To', 'Salesperson', 'Amount (₹)'];
+    const rows = quotationsList.map(q => [
+      q.no, formatDate(q.date), q.customer, formatDate(q.valid), q.status, formatDate(q.followUp), q.converted || '—', q.salesperson || '', q.amount || 0
+    ]);
+    if (window.DocumentExcelGenerator && typeof window.DocumentExcelGenerator.generateRegisterWorkbook === 'function') {
+      window.DocumentExcelGenerator.generateRegisterWorkbook(rows, 'Quotation Register', headers, 'Quotation_Register');
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Exported ${quotationsList.length} quotations to Excel.`);
+    } else if (window.XLSX) {
       const ws = window.XLSX.utils.aoa_to_sheet([headers, ...rows]);
       const wb = window.XLSX.utils.book_new();
       window.XLSX.utils.book_append_sheet(wb, ws, 'Quotation Register');
@@ -820,26 +847,53 @@ window.QuotationController = (function () {
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending quotation email to ${email}...`);
 
     let attachmentBase64 = null;
-    const quote = quotationsList.find(q => q.no === no || q.id === id) || (selectedQuote && (selectedQuote.no === no || selectedQuote.id === id) ? selectedQuote : null);
-    let lines = [];
-    if (quote && quote.id) {
-      try {
-        lines = await window.OperationsService.getQuotationLines(quote.id);
-      } catch (_) {}
+    try {
+      if (window.ApiService && typeof window.ApiService.fetchDocumentBlob === 'function') {
+        const blob = await window.ApiService.fetchDocumentBlob('QUOTATION', no, 'PDF');
+        attachmentBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result;
+            const b64 = dataUrl.split(',')[1];
+            resolve(b64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (serverBlobErr) {
+      console.warn('[QuotationController] Server PDF fetch for email failed, trying client generator:', serverBlobErr);
     }
-    if (quote && window.jspdf) {
-      try {
-        const doc = buildQuotationJsPdf(quote, lines);
-        if (doc) {
-          const dataUri = doc.output('datauristring');
-          attachmentBase64 = dataUri.split(',')[1];
+
+    if (!attachmentBase64) {
+      const quote = quotationsList.find(q => q.no === no || q.id === id) || (selectedQuote && (selectedQuote.no === no || selectedQuote.id === id) ? selectedQuote : null);
+      let lines = [];
+      if (quote && quote.id) {
+        try {
+          lines = await window.OperationsService.getQuotationLines(quote.id);
+        } catch (_) {}
+      }
+      if (quote && window.DocumentPdfGenerator && typeof window.DocumentPdfGenerator.generateQuotationPdf === 'function') {
+        try {
+          attachmentBase64 = window.DocumentPdfGenerator.generateQuotationPdf(quote, lines, 'base64');
+        } catch (e) {
+          console.warn('Could not generate client quotation attachment PDF:', e);
         }
-      } catch (e) {
-        console.warn('Could not generate quotation attachment PDF:', e);
+      } else if (quote && window.jspdf) {
+        try {
+          const doc = buildQuotationJsPdf(quote, lines);
+          if (doc) {
+            const dataUri = doc.output('datauristring');
+            attachmentBase64 = dataUri.split(',')[1];
+          }
+        } catch (e) {
+          console.warn('Could not generate quotation attachment PDF:', e);
+        }
       }
     }
 
     window.OperationsService.sendAuthorityEmail({
+      recipient: email,
       recipientEmail: email,
       subject: `Quotation ${no} - Jasvi Industries`,
       body: `Dear Customer,\n\nPlease find attached Quotation ${no} from Jasvi Industries.\n\nThank you for giving us the opportunity to quote.\n\nBest regards,\nJasvi Industries ERP Studio`,

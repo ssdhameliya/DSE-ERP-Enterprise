@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.11",
-  desktopVersion: "10.0.38",
-  webBuild: 11,
-  webVersion: "10.0.38.11",
-  tag: "web-v10.0.38.11",
-  releaseDate: "2026-10-21T22:25:00+05:30",
+  version: "10.0.39.01",
+  desktopVersion: "10.0.39",
+  webBuild: 1,
+  webVersion: "10.0.39.01",
+  tag: "web-v10.0.39.01",
+  releaseDate: "2026-10-21T23:25:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.11 DatePicker In-Field Desktop Parity Formatting & Label Cleanup"
+  summary: "10.0.39.01 Server-Based Canonical Document Parity for Quotations, Returns & Notes"
 };
 
 // Automatic UI Version Injection

@@ -1,16 +1,17 @@
 {
-  "desktopVersion": "10.0.38",
-  "webBuild": 11,
-  "webVersion": "10.0.38.11",
-  "tag": "web-v10.0.38.11",
-  "releaseDate": "2026-10-21T22:25:00+05:30",
+  "desktopVersion": "10.0.39",
+  "webBuild": 1,
+  "webVersion": "10.0.39.01",
+  "tag": "web-v10.0.39.01",
+  "releaseDate": "2026-10-21T23:25:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.11 DatePicker In-Field Desktop Parity Formatting & Label Cleanup",
+  "summary": "10.0.39.01 Server-Based Canonical Document Parity for Quotations, Returns & Notes",
   "highlights": [
-    "1. In-Field Formatted Date Display: Formats dates directly inside the datepicker box (e.g. '21 Apr 2026') matching JavaFX Desktop DatePicker StringConverter.",
-    "2. Label Header Cleanup: Completely eliminated top [dd/MM/yyyy] format badges above date inputs for clean, uncluttered headers.",
-    "3. Duplicate Calendar Icon Elimination: Enhanced LabelIconEnhancer to detect existing emoji text and prevent double calendar icons (📅 📅 From Date).",
-    "4. Reactive Property Hooking: Intercepted input.value setter to synchronize in-field date display in real time during preset filtering (Today, 30 Days, This FY).",
-    "5. 100% ISO Compatibility: Retained standard ISO YYYY-MM-DD underlying value for zero regression on backend Spring Boot APIs and controller queries."
+    "1. Server-First Document Rendering Parity: Quotation, Sales Return, Purchase Return, and Credit/Debit Notes now call /api/documents/render for 100% desktop-identical PDF and Excel generation.",
+    "2. 2-Way Generation Flow: PDF Studio custom template check (Way 1) with seamless fallback to standard ProfessionalDocumentRenderer & ExcelTemplateRenderer (Way 2).",
+    "3. Email Dispatch with Generated PDF Attachment: Encodes rendered PDF blob to Base64 and dispatches via OperationsService with recipient email and attachmentBase64.",
+    "4. WhatsApp Action Support: Added WhatsApp document sharing flow to Sales & Purchase Return registers and slide drawers.",
+    "5. Sales Return Register Export Parity: Added Excel export button to view-sales-returns header matching Purchase Return register.",
+    "6. Resilient Client Fallbacks: DocumentPdfGenerator.js and DocumentExcelGenerator.js provide styled offline/client generation matching desktop starter workbook."
   ]
 }
