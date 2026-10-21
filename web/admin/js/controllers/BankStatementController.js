@@ -1745,10 +1745,47 @@ window.BankStatementController = (function() {
   }
 
   function onDeleteConfirmInput(val) {
+    const isMatch = val.trim().toUpperCase() === 'DELETE';
     const btnDelete = document.getElementById('msdc-btn-delete');
-    if (btnDelete) {
-      btnDelete.disabled = val.trim().toUpperCase() !== 'DELETE';
+    const confirmInput = document.getElementById('msdc-confirm-input');
+
+    if (confirmInput) {
+      if (isMatch) {
+        confirmInput.style.borderColor = '#22c55e';
+        confirmInput.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.2)';
+      } else {
+        confirmInput.style.borderColor = val.length > 0 ? '#f87171' : '';
+        confirmInput.style.boxShadow = '';
+      }
     }
+
+    if (btnDelete) {
+      btnDelete.disabled = !isMatch;
+      btnDelete.style.opacity = isMatch ? '1' : '0.5';
+      btnDelete.style.cursor = isMatch ? 'pointer' : 'not-allowed';
+    }
+  }
+
+  function handleDeleteKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      tryExecuteBatchDelete();
+    }
+  }
+
+  function tryExecuteBatchDelete() {
+    const confirmInput = document.getElementById('msdc-confirm-input');
+    const val = (confirmInput?.value || '').trim().toUpperCase();
+    if (val !== 'DELETE') {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) {
+        window.AppDialogService.toastWarning('Please type DELETE to confirm permanent deletion.');
+      } else {
+        alert('Please type DELETE to confirm permanent deletion.');
+      }
+      confirmInput?.focus();
+      return;
+    }
+    executeBatchDelete();
   }
 
   async function executeBatchDelete() {
@@ -2249,6 +2286,8 @@ window.BankStatementController = (function() {
     deleteStatement,
     proceedToDeleteStepTwo,
     onDeleteConfirmInput,
+    handleDeleteKeydown,
+    tryExecuteBatchDelete,
     executeBatchDelete,
 
     closeModal,

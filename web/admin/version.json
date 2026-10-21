@@ -1,16 +1,17 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 9,
-  "webVersion": "10.0.38.09",
-  "tag": "web-v10.0.38.09",
-  "releaseDate": "2026-10-21T21:40:00+05:30",
+  "webBuild": 10,
+  "webVersion": "10.0.38.10",
+  "tag": "web-v10.0.38.10",
+  "releaseDate": "2026-10-21T22:15:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.09 Post-Login Screen Unmasking and Synchronous Auth Dismissal Engine",
+  "summary": "10.0.38.10 Enterprise Light Theme Audit & Desktop Feature Parity Release",
   "highlights": [
-    "1. Synchronous Auth Overlay Dismissal: Removed async/network blocking from login completion, immediately unmasking #app-container and hiding #auth-overlay upon credential validation.",
-    "2. Deterministic CSS Visibility State: Enforced html:not(.auth-required) rules in app.css and index.html ensuring display: none !important for auth-overlay and visibility: visible !important for app-container.",
-    "3. Zero-Delay Role Fallback: Ensured login-role selector automatically falls back to ADMIN if left unselected, preventing role-binding deadlocks.",
-    "4. MutationObserver Mutation Filtering: Optimized DatePickerFormatter observer to only fire when date inputs are actually added to DOM, preventing unnecessary reflows.",
-    "5. Full Workspace Integration: Retains all 10.0.38.06 light mode enhancements, responsive KPI ribbon styling, 345px Master Data categories, and GSTR-1 navigation."
+    "1. GSTR-1 Subpanel Strict Display Isolation: Enforced CSS display: none !important vs display: block !important across Table 4 (B2B), Table 7 (B2CS), Table 9B (CDNR), Table 12 (HSN), and Table 13 (Docs) eliminating stale table overlap.",
+    "2. GSTR-1 CDNR Credit/Debit Note Mapping: Integrated OperationsService.getCreditNotes() and getDebitNotes() to populate Table 9B with real data and fallback parity.",
+    "3. Smart Operations PO Navigation Parity: Fixed '+ Create PO' button in AutomationCenterController to route to view-purchase-creation with pre-populated item code and quantity instead of blank screen.",
+    "4. Reports & BI Exception Elimination: Added TableUiEnhancer.enhance(target) alias resolving TypeError in ReportsController and enabling dynamic auto-adjusting headers.",
+    "5. Bank Statement Two-Step Delete Parity: Enhanced Delete Confirmation modal with interactive validation, Enter key support, click feedback, and light theme contrast fixes.",
+    "6. Comprehensive Light Theme Hardening: Resolved all 17 defects from user audit across Dashboard Reminders, My Profile, User Permission Matrix, Quotation Editor, Filter Toolbars, and KPI ribbons."
   ]
 }

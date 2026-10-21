@@ -471,15 +471,29 @@ window.AutomationCenterController = (function() {
       }
     },
 
-    createPoForItem(itemCode, qty) {
-      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
-        window.NavigationRouter.selectNav('view-purchase-order');
-        if (window.AppDialogService) {
+    async createPoForItem(itemCode, qty) {
+      if (window.PurchaseController && window.PurchaseController.openPurchaseEditor) {
+        await window.PurchaseController.openPurchaseEditor(null, false, false);
+      } else if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+        window.NavigationRouter.selectNav('view-purchase-creation');
+      }
+
+      setTimeout(() => {
+        const itemInput = document.getElementById('pe-item-search');
+        const qtyInput = document.getElementById('pe-line-qty');
+        if (itemInput) {
+          itemInput.value = itemCode || '';
+          if (window.PurchaseController && window.PurchaseController.searchEditorItems) {
+            window.PurchaseController.searchEditorItems(itemCode || '');
+          }
+        }
+        if (qtyInput && qty) {
+          qtyInput.value = qty;
+        }
+        if (window.AppDialogService && window.AppDialogService.toastInfo) {
           window.AppDialogService.toastInfo(`Draft Purchase Order pre-populated for item ${itemCode} (Suggested Qty: ${qty || 10})`);
         }
-      } else {
-        alert(`Navigating to Purchase Order creation for item ${itemCode} with suggested replenishment quantity ${qty}`);
-      }
+      }, 250);
     },
 
     renderRulesTable() {

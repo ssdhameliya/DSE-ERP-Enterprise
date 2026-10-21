@@ -336,6 +336,18 @@ window.TableUiEnhancer = (function() {
 
   return {
     /**
+     * Universal enhance method: delegates to enhanceTable if a table element,
+     * or enhanceAll if a container or document.
+     */
+    enhance(target) {
+      if (!target) return;
+      if (target.nodeType === 1 && target.tagName === 'TABLE') {
+        return this.enhanceTable(target);
+      }
+      return this.enhanceAll(target);
+    },
+
+    /**
      * Enhances a single table instance
      */
     enhanceTable(table) {

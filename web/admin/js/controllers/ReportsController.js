@@ -1196,8 +1196,14 @@ window.ReportsController = (function() {
         }
       }
 
-      if (window.TableUiEnhancer && window.TableUiEnhancer.enhance) {
-        window.TableUiEnhancer.enhance(document.getElementById('viewer-table'));
+      const viewerTable = document.getElementById('viewer-table');
+      if (viewerTable) {
+        if (window.TableUiEnhancer) {
+          window.TableUiEnhancer.enhance(viewerTable);
+        }
+        if (window.DynamicTableLayoutManager) {
+          window.DynamicTableLayoutManager.requestLayout(viewerTable);
+        }
       }
     },
 
@@ -1690,8 +1696,14 @@ window.ReportsController = (function() {
           </td>
         </tr>
       `).join('');
-      if (window.TableUiEnhancer) {
-        window.TableUiEnhancer.enhance(document.getElementById('saved-reports-table'));
+      const savedTable = document.getElementById('saved-reports-table');
+      if (savedTable) {
+        if (window.TableUiEnhancer) {
+          window.TableUiEnhancer.enhance(savedTable);
+        }
+        if (window.DynamicTableLayoutManager) {
+          window.DynamicTableLayoutManager.requestLayout(savedTable);
+        }
       }
     },
 
@@ -2000,8 +2012,14 @@ window.ReportsController = (function() {
           </tr>
         `;
       }).join('');
-      if (window.TableUiEnhancer) {
-        window.TableUiEnhancer.enhance(document.getElementById('rep-sch-table'));
+      const schTable = document.getElementById('rep-sch-table');
+      if (schTable) {
+        if (window.TableUiEnhancer) {
+          window.TableUiEnhancer.enhance(schTable);
+        }
+        if (window.DynamicTableLayoutManager) {
+          window.DynamicTableLayoutManager.requestLayout(schTable);
+        }
       }
     },
 

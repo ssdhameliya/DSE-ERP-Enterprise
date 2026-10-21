@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.38.09",
+  version: "10.0.38.10",
   desktopVersion: "10.0.38",
-  webBuild: 9,
-  webVersion: "10.0.38.09",
-  tag: "web-v10.0.38.09",
-  releaseDate: "2026-10-21T21:40:00+05:30",
+  webBuild: 10,
+  webVersion: "10.0.38.10",
+  tag: "web-v10.0.38.10",
+  releaseDate: "2026-10-21T22:15:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.38.09 Post-Login Screen Unmasking and Synchronous Auth Dismissal Engine"
+  summary: "10.0.38.10 Enterprise Light Theme Audit & Desktop Feature Parity Release"
 };
 
 // Automatic UI Version Injection

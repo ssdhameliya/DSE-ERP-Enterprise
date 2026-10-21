@@ -32,7 +32,7 @@
       visibility: visible !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.38.09a">
+  <link rel="stylesheet" href="css/app.css?v=10.0.38.10a">
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -214,7 +214,7 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.38.09</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.38.10</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v10.0.38</div>
         </div>
@@ -560,7 +560,7 @@
           <div class="brand-title">JASVI <span>INDUSTRIES</span></div>
         </div>
         <span id="env-badge" style="display: none;"></span>
-        <span id="header-app-version-badge" style="display: none;">v10.0.38.09</span>
+        <span id="header-app-version-badge" style="display: none;">v10.0.38.10</span>
         <div
           style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title"
@@ -670,7 +670,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.38.09</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.38.10</span></div>
           </div>
         </div>
       </div>
@@ -15568,22 +15568,22 @@ Outstanding Balance: {BalanceAmount}
           onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">&times;</button>
       </div>
       <div class="modal-body" style="padding:20px;">
-        <div id="msdc-batch-label" style="font-size:0.85rem; font-weight:700; color:#ffffff; margin-bottom:12px;"></div>
+        <div id="msdc-batch-label" style="font-size:0.85rem; font-weight:700; color:var(--text-main, #0f172a); margin-bottom:12px;"></div>
 
         <!-- Phase 1: Impact Metrics Preview -->
         <div id="msdc-phase-1">
           <div
             style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:8px; padding:14px; margin-bottom:16px;">
-            <div style="font-weight:700; font-size:0.82rem; color:#f87171; margin-bottom:8px;">Pre-Reversal Impact
+            <div style="font-weight:700; font-size:0.82rem; color:#ef4444; margin-bottom:8px;">Pre-Reversal Impact
               Analysis:</div>
             <div id="msdc-impact-metrics"
-              style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem; color:#e2e8f0; margin-bottom:10px;">
-              <div>• Total Transactions: <strong id="msdc-metric-total">0</strong></div>
-              <div>• Matched / Linked: <strong id="msdc-metric-matched">0</strong></div>
-              <div>• Expense Entries: <strong id="msdc-metric-expenses">0</strong></div>
-              <div>• Ignored Items: <strong id="msdc-metric-ignored">0</strong></div>
+              style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem; color:var(--text-main, #1e293b); margin-bottom:10px;">
+              <div>• Total Transactions: <strong id="msdc-metric-total" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>• Matched / Linked: <strong id="msdc-metric-matched" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>• Expense Entries: <strong id="msdc-metric-expenses" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>• Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
             </div>
-            <div style="font-size:0.75rem; color:#fca5a5; line-height:1.4;">
+            <div style="font-size:0.75rem; color:#dc2626; line-height:1.4;">
               ⚠️ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
               fails, nothing will be deleted.
             </div>
@@ -15600,21 +15600,22 @@ Outstanding Balance: {BalanceAmount}
         <!-- Phase 2: Final Confirmation (Type DELETE) -->
         <div id="msdc-phase-2" style="display:none;">
           <div style="margin-bottom:14px;">
-            <div style="font-size:0.85rem; font-weight:700; color:#ffffff; margin-bottom:4px;">Final Confirmation</div>
+            <div style="font-size:0.85rem; font-weight:700; color:var(--text-main, #0f172a); margin-bottom:4px;">Final Confirmation</div>
             <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">Permanently delete this Bank
               Statement import.</div>
-            <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#f87171;">Type DELETE to
+            <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#ef4444;">Type DELETE to
               confirm:</label>
             <input type="text" id="msdc-confirm-input" class="form-input" placeholder="DELETE"
               style="font-family:monospace; font-weight:700; font-size:0.9rem;"
-              oninput="window.BankStatementController.onDeleteConfirmInput(this.value)">
+              oninput="window.BankStatementController.onDeleteConfirmInput(this.value)"
+              onkeydown="window.BankStatementController.handleDeleteKeydown(event)">
           </div>
           <div class="modal-footer"
             style="padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">Cancel</button>
             <button type="button" id="msdc-btn-delete" class="btn btn-danger" disabled
-              onclick="window.BankStatementController.executeBatchDelete()">Delete Statement</button>
+              onclick="window.BankStatementController.tryExecuteBatchDelete()">Delete Statement</button>
           </div>
         </div>
       </div>
@@ -17191,73 +17192,73 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.38.09a"></script>
+  <script src="js/version.js?v=10.0.38.10a"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.38.09a"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.38.09a"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.38.09a"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.09a"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.09a"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.38.09a"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.09a"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.09a"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.38.09a"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.09a"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.09a"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.09a"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.09a"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.38.09a"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.38.09a"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.38.09a"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.38.09a"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.38.09a"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.38.09a"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.38.10a"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.38.10a"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.38.10a"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.38.10a"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.38.10a"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.38.10a"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.38.10a"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.38.10a"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.38.10a"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.38.10a"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.38.10a"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.38.10a"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.38.10a"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.38.10a"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.38.10a"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.38.10a"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.38.10a"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.38.10a"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.38.10a"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.38.09a"></script>
-  <script src="js/services/ApiService.js?v=10.0.38.09a"></script>
-  <script src="js/services/AuthService.js?v=10.0.38.09a"></script>
-  <script src="js/services/NotificationService.js?v=10.0.38.09a"></script>
-  <script src="js/services/MasterService.js?v=10.0.38.09a"></script>
-  <script src="js/services/OperationsService.js?v=10.0.38.09a"></script>
-  <script src="js/services/ReportService.js?v=10.0.38.09a"></script>
-  <script src="js/services/ReconService.js?v=10.0.38.09a"></script>
-  <script src="js/services/AccountingService.js?v=10.0.38.09a"></script>
-  <script src="js/services/ImportService.js?v=10.0.38.09a"></script>
+  <script src="js/services/BrandingService.js?v=10.0.38.10a"></script>
+  <script src="js/services/ApiService.js?v=10.0.38.10a"></script>
+  <script src="js/services/AuthService.js?v=10.0.38.10a"></script>
+  <script src="js/services/NotificationService.js?v=10.0.38.10a"></script>
+  <script src="js/services/MasterService.js?v=10.0.38.10a"></script>
+  <script src="js/services/OperationsService.js?v=10.0.38.10a"></script>
+  <script src="js/services/ReportService.js?v=10.0.38.10a"></script>
+  <script src="js/services/ReconService.js?v=10.0.38.10a"></script>
+  <script src="js/services/AccountingService.js?v=10.0.38.10a"></script>
+  <script src="js/services/ImportService.js?v=10.0.38.10a"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/GstController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.09a"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.09a"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/GstController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.38.10a"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.38.10a"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.38.09a"></script>
-  <script src="js/app.js?v=10.0.38.09a"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.38.10a"></script>
+  <script src="js/app.js?v=10.0.38.10a"></script>
 </body>
 
 </html>

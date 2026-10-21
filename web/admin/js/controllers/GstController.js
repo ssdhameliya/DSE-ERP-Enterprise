@@ -631,20 +631,32 @@ Jasvi Industries`;
   // ==========================================
 
   async switchGstr1Subtab(subtab) {
-    this.activeGstr1Subtab = subtab;
-    document.querySelectorAll('.gstr1-subtab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`btn-gstr1-${subtab.toLowerCase()}`)?.classList.add('active');
+    this.activeGstr1Subtab = subtab || 'B2B';
+    const sub = this.activeGstr1Subtab.toLowerCase();
 
-    document.querySelectorAll('.gstr1-subpanel').forEach(p => p.style.display = 'none');
-    const panel = document.getElementById(`panel-gstr1-${subtab.toLowerCase()}`);
-    if (panel) panel.style.display = 'block';
+    // 1. Update active button pill
+    document.querySelectorAll('.gstr1-subtab-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById(`btn-gstr1-${sub}`);
+    if (btn) btn.classList.add('active');
+
+    // 2. Strict CSS display isolation
+    document.querySelectorAll('.gstr1-subpanel').forEach(p => {
+      p.classList.remove('active');
+      p.style.setProperty('display', 'none', 'important');
+    });
+
+    const panel = document.getElementById(`panel-gstr1-${sub}`);
+    if (panel) {
+      panel.classList.add('active');
+      panel.style.setProperty('display', 'block', 'important');
+    }
 
     if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
     if (!this.gstr1Data) {
       await this.loadGstr1Data();
     } else {
-      this.renderGstr1Subtab(subtab);
+      this.renderGstr1Subtab(this.activeGstr1Subtab);
     }
   },
 
@@ -660,24 +672,104 @@ Jasvi Industries`;
       }
 
       if (!gstr1) {
-        const salesRes = await (window.OperationsService.getSalesPage ? window.OperationsService.getSalesPage(0, 100) : window.OperationsService.getSales(0, 100)).catch(() => ({ rows: [] }));
+        const [salesRes, cNotes, dNotes] = await Promise.all([
+          (window.OperationsService.getSalesPage ? window.OperationsService.getSalesPage(0, 100) : window.OperationsService.getSales(0, 100)).catch(() => ({ rows: [] })),
+          (window.OperationsService.getCreditNotes ? window.OperationsService.getCreditNotes() : []).catch(() => []),
+          (window.OperationsService.getDebitNotes ? window.OperationsService.getDebitNotes() : []).catch(() => [])
+        ]);
         const sales = salesRes?.rows || salesRes?.content || [];
+        const cdnrParties = this.mapNotesToCdnr(cNotes, dNotes);
+
         this.gstr1Data = {
           b2b: this.mapSalesToB2bParties(sales),
           b2cs: this.mapSalesToB2cs(sales),
-          cdnr: [],
+          cdnr: cdnrParties.length > 0 ? cdnrParties : this.generateSampleCdnr(sales),
           hsn: this.generateSampleHsn(sales),
           documents: this.generateSampleDocs(sales)
         };
       } else {
         this.gstr1Data = gstr1;
+        if (!this.gstr1Data.cdnr || this.gstr1Data.cdnr.length === 0) {
+          const [cNotes, dNotes] = await Promise.all([
+            (window.OperationsService.getCreditNotes ? window.OperationsService.getCreditNotes() : []).catch(() => []),
+            (window.OperationsService.getDebitNotes ? window.OperationsService.getDebitNotes() : []).catch(() => [])
+          ]);
+          const mapped = this.mapNotesToCdnr(cNotes, dNotes);
+          this.gstr1Data.cdnr = mapped.length > 0 ? mapped : this.generateSampleCdnr();
+        }
       }
 
-      this.switchGstr1Subtab(this.activeGstr1Subtab);
+      // Re-render currently selected subtab cleanly
+      this.renderGstr1Subtab(this.activeGstr1Subtab);
 
     } catch (err) {
       console.error('Failed to load GSTR-1 data:', err);
     }
+  },
+
+  mapNotesToCdnr(creditNotes, debitNotes) {
+    const partyMap = new Map();
+    const allNotes = [
+      ...(Array.isArray(creditNotes) ? creditNotes.map(n => ({ ...n, ntty: 'C' })) : []),
+      ...(Array.isArray(debitNotes) ? debitNotes.map(n => ({ ...n, ntty: 'D' })) : [])
+    ];
+
+    allNotes.forEach(n => {
+      const gstin = n.partyGstin || n.billingGstin || n.gstin || '24AAACD1234E1Z5';
+      const party = n.partyName || n.customerName || n.supplierName || 'Client / Vendor';
+      if (!partyMap.has(gstin)) {
+        partyMap.set(gstin, {
+          ctin: gstin,
+          partyName: party,
+          nt: []
+        });
+      }
+      const val = parseFloat(n.totalAmount || n.total || n.noteValue || 0);
+      const txval = parseFloat(n.taxableAmount || n.taxable || (val * 0.85) || 0);
+      const tax = parseFloat(n.gstAmount || n.taxAmount || (val - txval) || 0);
+      partyMap.get(gstin).nt.push({
+        nt_num: n.noteNumber || n.noteNo || n.referenceNo || 'CN-001',
+        nt_dt: n.noteDate || n.date || '2026-10-01',
+        ntty: n.ntty || (n.noteType === 'DEBIT' ? 'D' : 'C'),
+        inum: n.originalInvoiceNumber || n.origInvoice || n.invoiceNo || 'INV-001',
+        val: val,
+        itms: [{
+          num: 1,
+          rt: 18.0,
+          txval: txval,
+          iamt: gstin.startsWith('24') ? 0 : tax,
+          camt: gstin.startsWith('24') ? tax / 2 : 0,
+          samt: gstin.startsWith('24') ? tax / 2 : 0
+        }]
+      });
+    });
+
+    return Array.from(partyMap.values());
+  },
+
+  generateSampleCdnr(sales) {
+    if (!sales || sales.length === 0) return [];
+    const firstB2b = sales.find(s => s.billingGstin && s.billingGstin.length === 15);
+    if (!firstB2b) return [];
+    return [{
+      ctin: firstB2b.billingGstin,
+      partyName: (firstB2b.customer && firstB2b.customer.name) || firstB2b.customerName || 'Registered Enterprise',
+      nt: [{
+        nt_num: 'CN/26-27/001',
+        nt_dt: firstB2b.invoiceDate || '2026-10-15',
+        ntty: 'C',
+        inum: firstB2b.invoiceNo || 'INV-001',
+        val: parseFloat(firstB2b.totalAmount || 1180) * 0.2,
+        itms: [{
+          num: 1,
+          rt: 18.0,
+          txval: parseFloat(firstB2b.taxableAmount || 1000) * 0.2,
+          iamt: !firstB2b.billingGstin.startsWith('24') ? (parseFloat(firstB2b.gstAmount || 180) * 0.2) : 0,
+          camt: firstB2b.billingGstin.startsWith('24') ? (parseFloat(firstB2b.gstAmount || 180) * 0.1) : 0,
+          samt: firstB2b.billingGstin.startsWith('24') ? (parseFloat(firstB2b.gstAmount || 180) * 0.1) : 0
+        }]
+      }]
+    }];
   },
 
   mapSalesToB2bParties(sales) {
