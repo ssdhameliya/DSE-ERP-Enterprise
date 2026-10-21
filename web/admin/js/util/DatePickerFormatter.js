@@ -148,12 +148,30 @@ window.DatePickerFormatter = (function() {
     const target = document.getElementById('main-content-stage');
     if (!target) return;
 
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((mutations) => {
+      let hasDateInput = false;
+      for (let i = 0; i < mutations.length; i++) {
+        const m = mutations[i];
+        if (m.addedNodes && m.addedNodes.length > 0) {
+          for (let j = 0; j < m.addedNodes.length; j++) {
+            const n = m.addedNodes[j];
+            if (n.nodeType === 1) {
+              if ((n.matches && n.matches('input[type="date"]')) || (n.querySelector && n.querySelector('input[type="date"]'))) {
+                hasDateInput = true;
+                break;
+              }
+            }
+          }
+        }
+        if (hasDateInput) break;
+      }
+      if (!hasDateInput) return;
+
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         attachAll(target);
         debounceTimer = null;
-      }, 250);
+      }, 200);
     });
 
     observer.observe(target, { childList: true, subtree: true });

@@ -2062,6 +2062,12 @@
     html.auth-required #app-container {
       visibility: hidden !important;
     }
+    html:not(.auth-required) #auth-overlay {
+      display: none !important;
+    }
+    html:not(.auth-required) #app-container {
+      visibility: visible !important;
+    }
     #modal-authenticator-setup,
     #modal-mfa-help-info,
     #modal-mfa-help-action,

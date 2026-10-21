@@ -1,16 +1,16 @@
 {
   "desktopVersion": "10.0.38",
-  "webBuild": 8,
-  "webVersion": "10.0.38.08",
-  "tag": "web-v10.0.38.08",
-  "releaseDate": "2026-10-21T10:30:00+05:30",
+  "webBuild": 9,
+  "webVersion": "10.0.38.09",
+  "tag": "web-v10.0.38.09",
+  "releaseDate": "2026-10-21T21:40:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.38.08 Web Studio Login Stabilization and Non-Invasive DatePicker Synchronization Engine",
+  "summary": "10.0.38.09 Post-Login Screen Unmasking and Synchronous Auth Dismissal Engine",
   "highlights": [
-    "1. Login Page Freeze Resolution: Eliminated unthrottled body MutationObserver recursion and DOM node wrapping that choked the JavaScript event loop on the login screen.",
-    "2. Zero-Invasive DatePicker Architecture: Reverted prototype tampering (Object.defineProperty on HTMLInputElement) and DOM wrapping; native inputs remain untouched in their exact positions.",
-    "3. Restored Native Control Visibility: Removed transparent text masking in css/app.css, ensuring datepickers and form fields render clearly and legibly across all browsers.",
-    "4. Format & Tooltip Synchronization: Cleanly synchronizes format badges ([dd/MM/yyyy]) and informative tooltips strictly matching company.dateFormat setting.",
-    "5. 100% Backend & API Compatibility: Preserves standard ISO YYYY-MM-DD input values for flawless Spring Boot backend interoperability."
+    "1. Synchronous Auth Overlay Dismissal: Removed async/network blocking from login completion, immediately unmasking #app-container and hiding #auth-overlay upon credential validation.",
+    "2. Deterministic CSS Visibility State: Enforced html:not(.auth-required) rules in app.css and index.html ensuring display: none !important for auth-overlay and visibility: visible !important for app-container.",
+    "3. Zero-Delay Role Fallback: Ensured login-role selector automatically falls back to ADMIN if left unselected, preventing role-binding deadlocks.",
+    "4. MutationObserver Mutation Filtering: Optimized DatePickerFormatter observer to only fire when date inputs are actually added to DOM, preventing unnecessary reflows.",
+    "5. Full Workspace Integration: Retains all 10.0.38.06 light mode enhancements, responsive KPI ribbon styling, 345px Master Data categories, and GSTR-1 navigation."
   ]
 }

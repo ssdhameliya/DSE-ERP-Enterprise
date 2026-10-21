@@ -374,8 +374,16 @@ window.App = (function() {
 
     hideAuthOverlay() {
       document.documentElement.classList.remove('auth-required');
+      document.body.classList.remove('auth-required');
       const auth = document.getElementById('auth-overlay');
-      if (auth) auth.style.display = 'none';
+      if (auth) {
+        auth.style.display = 'none';
+        auth.classList.remove('active');
+      }
+      const appContainer = document.getElementById('app-container');
+      if (appContainer) {
+        appContainer.style.visibility = 'visible';
+      }
     },
 
     showAuthTab(tab) {
@@ -477,11 +485,13 @@ window.loadLoginRoles = async function() {
   try {
     const roles = await window.AuthService.getLoginRoles();
     if (Array.isArray(roles) && roles.length > 0) {
-      const current = roleSelect.value;
+      const current = roleSelect.value || 'ADMIN';
       const opts = roles.map(r => `<option value="${r.code}" ${r.code === current ? 'selected' : ''}>${r.displayName || r.code}</option>`).join('');
-      roleSelect.innerHTML = current ? opts : `<option value="" disabled selected>Select your role</option>` + opts;
+      roleSelect.innerHTML = opts;
       if (current && roles.some(r => r.code === current)) {
         roleSelect.value = current;
+      } else {
+        roleSelect.value = 'ADMIN';
       }
     }
   } catch (e) {
@@ -565,15 +575,37 @@ window.resetPendingLogin = function() {
 window.handlePostLoginSuccess = async function(user, remember, identity, selectedRole) {
   if (!user) return;
   const userRole = user.role || selectedRole || 'ADMIN';
-  if (remember) {
-    if (identity) localStorage.setItem('dse_saved_identity', identity);
-    localStorage.setItem('dse_saved_role', userRole);
-    localStorage.setItem('dse_remember_me', 'true');
-  } else {
-    localStorage.removeItem('dse_saved_identity');
-    localStorage.removeItem('dse_saved_role');
-    localStorage.removeItem('dse_remember_me');
-  }
+
+  // 1. Immediately dismiss auth overlay and unmask app container FIRST
+  try {
+    document.documentElement.classList.remove('auth-required');
+    document.body.classList.remove('auth-required');
+    const authEl = document.getElementById('auth-overlay');
+    if (authEl) {
+      authEl.style.display = 'none';
+      authEl.classList.remove('active');
+    }
+    const appEl = document.getElementById('app-container');
+    if (appEl) {
+      appEl.style.visibility = 'visible';
+    }
+    if (window.App && window.App.hideAuthOverlay) {
+      window.App.hideAuthOverlay();
+    }
+  } catch (_) {}
+
+  // 2. Persist remember-me credentials
+  try {
+    if (remember) {
+      if (identity) localStorage.setItem('dse_saved_identity', identity);
+      localStorage.setItem('dse_saved_role', userRole);
+      localStorage.setItem('dse_remember_me', 'true');
+    } else {
+      localStorage.removeItem('dse_saved_identity');
+      localStorage.removeItem('dse_saved_role');
+      localStorage.removeItem('dse_remember_me');
+    }
+  } catch (_) {}
 
   const roleSelect = document.getElementById('login-role');
   if (roleSelect && user.role) {
@@ -581,11 +613,10 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
   }
 
   pendingEnrollmentSetup = null;
-  applyUserToHeader(user);
-  if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-  window.App.hideAuthOverlay();
-  window.AppDialogService.closeAllModals();
-  window.AppDialogService.showToast(`Welcome back, ${user.fullName || user.username}!`, 'success');
+  try { applyUserToHeader(user); } catch (_) {}
+  try { if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess(); } catch (_) {}
+  try { if (window.AppDialogService) window.AppDialogService.closeAllModals(); } catch (_) {}
+  try { if (window.AppDialogService) window.AppDialogService.showToast(`Welcome back, ${user.fullName || user.username}!`, 'success'); } catch (_) {}
 
   // Trigger top shell counters polling and activate 30-second interval immediately post-login
   try {
