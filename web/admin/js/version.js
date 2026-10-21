@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.01",
+  version: "10.0.41.02",
   desktopVersion: "10.0.41",
-  webBuild: 1,
-  webVersion: "10.0.41.01",
-  tag: "web-v10.0.41.01",
-  releaseDate: "2026-10-22T01:25:00+05:30",
+  webBuild: 2,
+  webVersion: "10.0.41.02",
+  tag: "web-v10.0.41.02",
+  releaseDate: "2026-10-22T02:05:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.01 Document Date Formatting Parity, ConfigManager Global Fallback, and Multi-line Email Message Body Expansion"
+  summary: "10.0.41.02 Universal Zero-Flash Routing, Immediate Hash View Hydration, and Header/Tab State Parity Across All Screens"
 };
 
 // Automatic UI Version Injection

@@ -15,8 +15,26 @@
         if (localStorage.getItem('dse_theme') === 'light') {
           document.documentElement.classList.add('light-theme');
         }
-        if (!localStorage.getItem('dse_access_token')) {
+        var token = localStorage.getItem('dse_access_token');
+        if (!token) {
           document.documentElement.classList.add('auth-required');
+        } else {
+          var rawHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
+          var viewKey = rawHash || 'dashboard';
+          var viewId = viewKey.startsWith('view-') ? viewKey : ('view-' + viewKey);
+          if (viewKey === 'purchase' || viewKey === 'purchases') viewId = 'view-purchase-register';
+          if (viewKey === 'sales' || viewKey === 'sale') viewId = 'view-sales-register';
+          if (viewKey === 'items' || viewKey === 'item') viewId = 'view-item-master';
+          if (viewKey === 'customers' || viewKey === 'customer') viewId = 'view-customers';
+          if (viewKey === 'suppliers' || viewKey === 'supplier') viewId = 'view-suppliers';
+
+          var earlyStyle = document.createElement('style');
+          earlyStyle.id = 'early-route-style';
+          earlyStyle.textContent = 
+            '#' + viewId + ' { display: block !important; } ' +
+            '#' + viewId + '.fixed-viewport { display: flex !important; } ' +
+            '.module-view:not(#' + viewId + ') { display: none !important; }';
+          document.head.appendChild(earlyStyle);
         }
       } catch (_) {}
     })();
@@ -723,6 +741,61 @@
           var mr = document.getElementById('menu-user-role');
           if (mn) mn.textContent = name;
           if (mr) mr.textContent = role;
+
+          var viewMeta = {
+            'view-dashboard': { title: 'Dashboard', breadcrumb: 'Executive Command Center', icon: '📊' },
+            'view-sales-register': { title: 'Sales Register', breadcrumb: 'Sales & Distribution', icon: '🛒' },
+            'view-purchase-register': { title: 'Purchase Register', breadcrumb: 'Procurement & Inward Bills', icon: '📦' },
+            'view-bank-entry': { title: 'Bank Entry', breadcrumb: 'Receipt & Payment Vouchers', icon: '🏦' },
+            'view-expense-entry': { title: 'Expense Entry', breadcrumb: 'Factory & Operating Expenses', icon: '💸' },
+            'view-item-master': { title: 'Item Master', breadcrumb: 'Materials & SKU Catalog', icon: '🏷️' },
+            'view-masters': { title: 'Masters (Lookups)', breadcrumb: 'Categories & Unit Definitions', icon: '📚' },
+            'view-customers': { title: 'CRM / Customers', breadcrumb: 'Client Profiles & Credit Limits', icon: '👥' },
+            'view-suppliers': { title: 'HRM / Suppliers', breadcrumb: 'Vendor Profiles & Payment Registers', icon: '🏢' },
+            'view-quotations': { title: 'Quotations', breadcrumb: 'Proforma & Quotation Pipeline', icon: '📝' },
+            'view-sales-returns': { title: 'Sales Returns', breadcrumb: 'Customer Goods Inward', icon: '↩️' },
+            'view-credit-notes': { title: 'Credit Notes', breadcrumb: 'Accounts & Adjustments', icon: '💳' },
+            'view-debit-notes': { title: 'Debit Notes', breadcrumb: 'Supplier Debit Notes', icon: '🧾' },
+            'view-purchase-returns': { title: 'Purchase Returns', breadcrumb: 'Supplier Returns & Memos', icon: '🔄' },
+            'view-inventory': { title: 'Inventory Ledger', breadcrumb: 'Real-time Warehouse Stock & Valuation', icon: '🏭' },
+            'view-reports': { title: 'Reports & BI', breadcrumb: 'Executive Analytics & Drilldown', icon: '📊' },
+            'view-reminders': { title: 'Reminder Center', breadcrumb: 'Payment Follow-ups & Tasks', icon: '⏰' },
+            'view-settings': { title: 'Settings Studio', breadcrumb: 'Organization & System Config', icon: '⚙️' },
+            'view-general-ledger': { title: 'General Ledger', breadcrumb: 'Double-Entry Financial Accounts', icon: '💰' },
+            'view-financial-statements': { title: 'Financial Statements', breadcrumb: 'Balance Sheet & Profit/Loss', icon: '📈' },
+            'view-aging-analysis': { title: 'Aging Analysis', breadcrumb: 'Debtor / Creditor Overdue Aging', icon: '⏳' },
+            'view-gst-compliance': { title: 'GST Compliance', breadcrumb: 'GSTR-1, 3B & E-Way Generation', icon: '⚖️' },
+            'view-eway-bill': { title: 'E-Way Bill & E-Invoice', breadcrumb: 'Government Portal Gateway', icon: '🚚' },
+            'view-import': { title: 'Data Import', breadcrumb: 'Bulk Excel & CSV Ingestion', icon: '📥' },
+            'view-users': { title: 'User Access & RBAC', breadcrumb: 'Role Matrix & Security Governance', icon: '👤' },
+            'view-audit': { title: 'Global Audit Trail', breadcrumb: 'Tamper-Evident System Event Logs', icon: '📜' },
+            'view-communication': { title: 'Communication Center', breadcrumb: 'Email Logs & WhatsApp Gateways', icon: '💬' }
+          };
+          var curHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
+          var vKey = curHash || 'dashboard';
+          var targetVId = vKey.startsWith('view-') ? vKey : ('view-' + vKey);
+          if (vKey === 'purchase' || vKey === 'purchases') targetVId = 'view-purchase-register';
+          if (vKey === 'sales' || vKey === 'sale') targetVId = 'view-sales-register';
+          if (vKey === 'items' || vKey === 'item') targetVId = 'view-item-master';
+          if (vKey === 'customers' || vKey === 'customer') targetVId = 'view-customers';
+          if (vKey === 'suppliers' || vKey === 'supplier') targetVId = 'view-suppliers';
+
+          var m = viewMeta[targetVId] || { title: 'Executive Command Center', breadcrumb: 'ERP Operations', icon: '📄' };
+          var pt = document.getElementById('header-page-title');
+          var bc = document.getElementById('header-breadcrumb');
+          if (pt) pt.textContent = m.title;
+          if (bc) bc.textContent = m.breadcrumb;
+
+          var tc = document.getElementById('workspace-tabs-container');
+          if (tc) {
+            if (targetVId === 'view-dashboard') {
+              tc.innerHTML = '<div class="workspace-tab active"><span>📊</span><span>Dashboard</span></div>';
+            } else {
+              tc.innerHTML = 
+                '<div class="workspace-tab" onclick="window.NavigationRouter && window.NavigationRouter.selectNav(\'view-dashboard\')"><span>📊</span><span>Dashboard</span></div>' +
+                '<div class="workspace-tab active"><span>' + (m.icon || '📄') + '</span><span>' + m.title + '</span><span class="workspace-tab-close">&times;</span></div>';
+            }
+          }
         } catch (_) {}
       })();
     </script>
@@ -925,7 +998,7 @@
       <main class="app-stage" id="main-content-stage">
 
         <!-- VIEW 1: DASHBOARD (EXACT DESKTOP PARITY - IMAGE 1) -->
-        <div id="view-dashboard" class="module-view active">
+        <div id="view-dashboard" class="module-view">
           <!-- Page Header Banner -->
           <div class="view-header" style="margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
