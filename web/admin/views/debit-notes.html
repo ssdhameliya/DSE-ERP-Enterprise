@@ -1,0 +1,136 @@
+<div id="view-debit-notes" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#129534;</span> Supplier Debit Note Register</h1>
+              <p>Claims, purchase returns, and price adjustments issued against vendor bills with ITC reversal</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.CreditDebitNoteController.loadDebitNotes()">&#8635;
+                Refresh</button>
+              <button class="btn btn-primary" onclick="window.CreditDebitNoteController.openCreateDebitModal()">+ New
+                Debit Note</button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards matching desktop DebitNoteRegister.fxml -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128196;</span> Total Debit Notes</div>
+              <div class="kpi-value" id="dn-kpi-count">0</div>
+              <div class="kpi-sub">Total issued count</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128176;</span> Total Debit Amount</div>
+              <div class="kpi-value" id="dn-kpi-amount" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub">Active debit notes total</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9878;&#65039;</span> Tax Reversed (ITC)</div>
+              <div class="kpi-value" id="dn-kpi-tax" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-sub">GST input tax reversed</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128230;</span> Returned Items</div>
+              <div class="kpi-value" id="dn-kpi-stock" style="color:var(--green);">0</div>
+              <div class="kpi-sub">Notes with inventory reduction</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="dn-filter-search" class="filter-input"
+              placeholder="Search debit note #, supplier, bill ref..." style="width:280px;"
+              oninput="window.CreditDebitNoteController.filterDebitNotes()">
+            <select id="dn-filter-reason" class="form-select" style="width:200px;"
+              onchange="window.CreditDebitNoteController.filterDebitNotes()">
+              <option value="All Reasons">All Reasons</option>
+              <option value="Purchase Return">Purchase Return</option>
+              <option value="Rate Difference">Rate Difference</option>
+              <option value="Supplier Discount">Supplier Discount</option>
+              <option value="Correction">Correction</option>
+            </select>
+          </div>
+
+          <!-- Debit Notes Workspace with Inline Drawer Split (Desktop DebitNoteRegister.fxml Parity) -->
+          <div class="register-workspace" id="debit-notes-workspace"
+            style="display: flex; gap: 14px; width: 100%; align-items: stretch;">
+            <!-- Left: Table Panel -->
+            <div class="register-table-panel" id="debit-notes-table-panel"
+              style="flex: 1; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+              <div class="sales-table-scroll" style="flex: 1;">
+                <table class="sales-desktop-table" id="debit-notes-main-table">
+                  <thead>
+                    <tr>
+                      <th>Debit Note #</th>
+                      <th>Date</th>
+                      <th>Supplier</th>
+                      <th>Bill Ref</th>
+                      <th>Reason</th>
+                      <th style="text-align:right;">Taxable (&#8377;)</th>
+                      <th style="text-align:right;">Tax (&#8377;)</th>
+                      <th style="text-align:right;">Total (&#8377;)</th>
+                      <th>Status</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbl-debit-notes-body">
+                    <tr>
+                      <td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading debit
+                        notes...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop DebitNoteRegisterController Parity) -->
+            <div id="dn-detail-drawer" class="slide-detail-drawer register-inline-drawer"
+              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
+              <div class="drawer-header"
+                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
+                    id="dn-detail-no">Debit Note Details</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);">Accounts &amp; General Ledger Posting</div>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.closeDrawer(false)">&times;</button>
+              </div>
+              <div class="drawer-body"
+                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
+                    class="drawer-field-value" id="dn-detail-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span
+                    class="drawer-field-value" id="dn-detail-party"
+                    style="font-weight:700; color:var(--text-main);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span
+                    class="drawer-field-value" id="dn-detail-ref" style="color:var(--cyan);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Reason Code:</span><span
+                    class="drawer-field-value" id="dn-detail-reason">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Taxable Amount:</span><span
+                    class="drawer-field-value" id="dn-detail-taxable">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">CGST (50%):</span><span
+                    class="drawer-field-value" id="dn-detail-cgst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">SGST (50%):</span><span
+                    class="drawer-field-value" id="dn-detail-sgst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">IGST:</span><span
+                    class="drawer-field-value" id="dn-detail-igst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span
+                    class="drawer-field-value" id="dn-detail-total"
+                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Stock Deducted:</span><span
+                    class="drawer-field-value" id="dn-detail-stock">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span
+                    class="drawer-field-value" id="dn-detail-status">-</span></div>
+              </div>
+              <div class="drawer-footer"
+                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.downloadPdf(document.getElementById('dn-detail-no').innerText, false)">Print
+                  PDF</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.closeDrawer(false)">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

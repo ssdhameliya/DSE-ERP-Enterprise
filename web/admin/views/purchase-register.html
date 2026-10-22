@@ -1,0 +1,392 @@
+<div id="view-purchase-register" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128230;</span> Purchase Register</h1>
+              <p>Manage supplier purchases, payments and purchase communication</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.PurchaseController.loadPurchases()">&#8635;
+                Refresh</button>
+              <button class="btn btn-primary" onclick="window.PurchaseController.openPurchaseEditor()">+ Create
+                Purchase</button>
+            </div>
+          </div>
+
+          <!-- 5 KPI CARDS matching desktop PurchaseList.fxml -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128176;</span> Active Purchases</div>
+              <div class="kpi-value" id="pur-kpi-total" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub">Total active bill value</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128203;</span> Total Orders</div>
+              <div class="kpi-value" id="pur-kpi-orders" style="color:var(--cyan);">0</div>
+              <div class="kpi-sub">Active documents count</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#127970;</span> Total Suppliers</div>
+              <div class="kpi-value" id="pur-kpi-suppliers" style="color:var(--purple);">0</div>
+              <div class="kpi-sub">Active vendors on record</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#127991;&#65039;</span> Total Items</div>
+              <div class="kpi-value" id="pur-kpi-items">0</div>
+              <div class="kpi-sub">Total inward item quantity</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9989;</span> Total Paid</div>
+              <div class="kpi-value" id="pur-kpi-paid" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-sub">Settled disbursements</div>
+            </div>
+          </div>
+
+          <!-- 2-Row Filter Toolbar matching Sales Register & Desktop PurchaseList.fxml -->
+          <div class="sales-filter-box">
+            <div class="sales-filter-row-1" style="grid-template-columns: 1.5fr 1.2fr 1fr 1fr 1fr 1fr 1fr;">
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128269; Search</label>
+                <input type="text" id="pur-filter-search" class="form-input"
+                  placeholder="Search invoice, supplier, mobile..." oninput="window.PurchaseController.loadPurchases()"
+                  style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#127981; Supplier</label>
+                <select id="pur-filter-supplier" class="form-select"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All Suppliers</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; From Date</label>
+                <input type="date" id="pur-filter-from" class="form-input"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128197; To Date</label>
+                <input type="date" id="pur-filter-to" class="form-input"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128196; Document Status</label>
+                <select id="pur-filter-doc-status" class="form-select"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+                  <option value="REJECTED">REJECTED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#128179; Payment Status</label>
+                <select id="pur-filter-pay-status" class="form-select"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="PAYABLES">PAYABLES</option>
+                  <option value="PAID">PAID</option>
+                  <option value="PARTIAL">PARTIAL</option>
+                  <option value="UNPAID">UNPAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.72rem;">&#8634; Return Status</label>
+                <select id="pur-filter-ret-status" class="form-select"
+                  onchange="window.PurchaseController.loadPurchases()" style="height: 34px; font-size: 0.78rem;">
+                  <option value="">All</option>
+                  <option value="N/A">N/A</option>
+                  <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+                  <option value="PARTIALLY RETURNED">PARTIALLY RETURNED</option>
+                  <option value="FULLY RETURNED">FULLY RETURNED</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sales-filter-row-2">
+              <div class="date-preset-chips">
+                <button class="btn-preset-chip active" onclick="window.PurchaseController.showAllDates(this)">&#128197;
+                  All Date</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showToday(this)">&#128197;
+                  Today</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showYesterday(this)">&#128197;
+                  Yesterday</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showSevenDays(this)">&#128197; 7
+                  Days</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showThirtyDays(this)">&#128197; 30
+                  Days</button>
+                <button class="btn-preset-chip"
+                  onclick="window.PurchaseController.showThisFinancialYear(this)">&#128197; This FY</button>
+                <button class="btn-preset-chip" onclick="window.PurchaseController.showThisQuarter(this)">&#128197; This
+                  Quarter</button>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary"
+                  style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
+                  onclick="window.PurchaseController.exportPurchaseRegisterExcel()">ðŸ“¥ Export Excel</button>
+                <button class="btn btn-secondary"
+                  style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
+                  onclick="window.PurchaseController.exportPurchaseRegisterPdf()">ðŸ“„ Export PDF</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
+                  onclick="window.PurchaseController.resetFilters()">&#8635; Reset</button>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
+                  onclick="window.PurchaseController.loadPurchases()">&#8635; Refresh</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Purchase Register Table with 14 Desktop Columns (Matches Sales Register Parity) -->
+          <!-- Purchase Register Workspace with Inline Drawer Split (Desktop PurchaseList.fxml Parity) -->
+          <div class="register-workspace" id="purchase-register-workspace"
+            style="display: flex; gap: 14px; width: 100%; align-items: stretch;">
+            <!-- Left: Table & Toolbar Panel -->
+            <div class="register-table-panel" id="purchase-table-panel"
+              style="flex: 1; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+              <div class="sales-table-scroll" style="flex: 1;">
+                <table class="sales-desktop-table" id="purchases-main-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice No.</th>
+                      <th>Date</th>
+                      <th>Supplier</th>
+                      <th>Mobile</th>
+                      <th>GSTIN</th>
+                      <th style="text-align:right;">Amount (&#8377;)</th>
+                      <th style="text-align:right;">Paid (&#8377;)</th>
+                      <th style="text-align:right;">Pending (&#8377;)</th>
+                      <th>Payment Due</th>
+                      <th>Document Status</th>
+                      <th>Payment Status</th>
+                      <th>Return Status</th>
+                      <th>Email</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="purchases-table-tbody">
+                    <tr>
+                      <td colspan="14" style="text-align:center; padding:30px; color:var(--text-dim);">Loading
+                        purchases...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer matching desktop PurchaseList.fxml -->
+              <div class="app-footer-bar"
+                style="margin-top:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(10, 18, 34, 0.85); flex-wrap:wrap; gap:10px;">
+                <div class="footer-left">
+                  <span id="pur-pagination-info" style="font-size:0.76rem; color:var(--text-muted);">Showing 0 purchase
+                    bills</span>
+                </div>
+                <div class="footer-right" style="display:flex; align-items:center; gap:14px;">
+                  <div class="pagination-bar" id="pur-pagination-controls">
+                    <button type="button" class="btn-page" id="pur-btn-first"
+                      onclick="window.PurchaseController.goToPage('first')" title="First Page">&laquo;</button>
+                    <button type="button" class="btn-page" id="pur-btn-prev"
+                      onclick="window.PurchaseController.goToPage('prev')" title="Previous Page">&lsaquo;</button>
+                    <span class="page-indicator" id="pur-page-display">Page 1 of 1</span>
+                    <button type="button" class="btn-page" id="pur-btn-next"
+                      onclick="window.PurchaseController.goToPage('next')" title="Next Page">&rsaquo;</button>
+                    <button type="button" class="btn-page" id="pur-btn-last"
+                      onclick="window.PurchaseController.goToPage('last')" title="Last Page">&raquo;</button>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; font-size:0.76rem; color:var(--text-muted);">
+                    <span>Rows per page</span>
+                    <select id="pur-page-size" class="form-select"
+                      onchange="window.PurchaseController.changePageSize(this.value)"
+                      style="height:28px; font-size:0.75rem; padding:2px 6px;">
+                      <option value="10">10</option>
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop PurchaseListController Parity) -->
+            <div id="drawer-purchase-details" class="slide-detail-drawer register-inline-drawer"
+              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
+              <div class="drawer-header"
+                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
+                    id="pd-invoice-no">Purchase Details</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);" id="pd-supplier-name">Vendor Inward Record
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button type="button" class="btn btn-secondary btn-sm"
+                    style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
+                    onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('PURCHASE', window.PurchaseController.selectedInvoice?.id, document.getElementById('pd-invoice-no').innerText) : null">â—·
+                    Audit</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.PurchaseController.closeDrawer()">&times;</button>
+                </div>
+              </div>
+              <div class="drawer-body"
+                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+                <!-- Approval Alert Box -->
+                <div id="pd-approval-box"
+                  style="display:none; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); border-radius:6px; padding:10px; margin-bottom:12px;">
+                  <div style="font-weight:700; color:var(--red); font-size:0.85rem; margin-bottom:4px;">&#9888;&#65039;
+                    Admin Approval Required</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:8px;">This purchase is waiting
+                    for Admin approval. Stock has not been posted and payments are locked.</div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-success btn-sm" style="flex:1;"
+                      onclick="window.PurchaseController.approvePurchase(document.getElementById('pd-invoice-no').innerText)">Approve</button>
+                    <button class="btn btn-danger btn-sm" style="flex:1;"
+                      onclick="window.PurchaseController.rejectPurchasePrompt(document.getElementById('pd-invoice-no').innerText)">Reject</button>
+                  </div>
+                </div>
+
+                <div style="font-weight:700; font-size:0.82rem; color:var(--cyan); margin-bottom:6px;">Amount &amp; Tax
+                  Summary</div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Invoice Amount:</span><span
+                    class="drawer-field-value" id="pd-amount"
+                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Paid:</span><span
+                    class="drawer-field-value" id="pd-paid" style="color:var(--green); font-weight:600;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Pending Balance:</span><span
+                    class="drawer-field-value" id="pd-balance" style="color:var(--red); font-weight:600;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Invoice Date:</span><span
+                    class="drawer-field-value" id="pd-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Payment Due:</span><span
+                    class="drawer-field-value" id="pd-due-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Taxable Value:</span><span
+                    class="drawer-field-value" id="pd-taxable">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">GST Amount:</span><span
+                    class="drawer-field-value" id="pd-gst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">GST Type:</span><span
+                    class="drawer-field-value" id="pd-gst-type">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Payment Terms:</span><span
+                    class="drawer-field-value" id="pd-payment-terms">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Document Status:</span><span
+                    class="drawer-field-value" id="pd-doc-status">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Payment Status:</span><span
+                    class="drawer-field-value" id="pd-pay-status">-</span></div>
+
+                <!-- Section: Return & Refund Settlement Details (Desktop Parity) -->
+                <div id="pd-return-section"
+                  style="display:none; border: 1px solid rgba(56, 189, 248, 0.2); background: rgba(56, 189, 248, 0.05); border-radius: 6px; padding: 10px; margin-top: 4px;">
+                  <div
+                    style="font-size: 0.76rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 6px;"><span>ðŸ”„</span> Purchase Return
+                      Settlement</span>
+                    <span id="pd-ret-status-badge" class="pill-badge pill-neutral">ðŸ“„ N/A</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <div style="color: var(--text-dim); font-size: 0.7rem;">Returned Qty</div>
+                      <div style="font-weight: 700; color: var(--text-main);" id="pd-ret-qty">0.00</div>
+                    </div>
+                    <div>
+                      <div style="color: var(--text-dim); font-size: 0.7rem;">Approved Return</div>
+                      <div style="font-weight: 700; color: #38bdf8;" id="pd-ret-approved">&#8377; 0.00</div>
+                    </div>
+                    <div>
+                      <div style="color: var(--text-dim); font-size: 0.7rem;">Pending Refund</div>
+                      <div style="font-weight: 700; color: var(--yellow);" id="pd-ret-pending">&#8377; 0.00</div>
+                    </div>
+                    <div>
+                      <div style="color: var(--text-dim); font-size: 0.7rem;">Refund Status</div>
+                      <div style="font-weight: 600; color: var(--text-muted);" id="pd-ret-refund-status">-</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                <div style="font-weight:700; font-size:0.82rem; color:var(--cyan); margin-bottom:6px;">Supplier &amp;
+                  Delivery Address</div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Contact Person:</span><span
+                    class="drawer-field-value" id="pd-contact-person">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Phone:</span><span
+                    class="drawer-field-value" id="pd-phone">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Email:</span><span
+                    class="drawer-field-value" id="pd-email">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">GSTIN:</span><span
+                    class="drawer-field-value" id="pd-gstin" style="font-family:monospace;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Billing Address:</span><span
+                    class="drawer-field-value" id="pd-billing-address">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Delivery Address:</span><span
+                    class="drawer-field-value" id="pd-delivery-address">-</span></div>
+
+                <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                <div style="font-weight:700; font-size:0.82rem; color:var(--cyan); margin-bottom:6px;">Transport &amp;
+                  Notes</div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Transporter:</span><span
+                    class="drawer-field-value" id="pd-transporter">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Vehicle No:</span><span
+                    class="drawer-field-value" id="pd-vehicle">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Notes:</span><span
+                    class="drawer-field-value" id="pd-notes">-</span></div>
+
+                <!-- Attached Document Section -->
+                <div id="pd-attachment-section" style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 4px; display: none;">
+                  <div style="font-weight: 700; font-size: 0.82rem; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span>ðŸ“Ž</span> Attached Document
+                    </div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                      <span style="font-size: 1.1rem; color: #a855f7;">ðŸ“„</span>
+                      <span id="pd-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                <div style="font-weight:700; font-size:0.82rem; color:var(--cyan); margin-bottom:6px;">Line Items</div>
+                <div
+                  style="border:1px solid var(--border-subtle); border-radius:6px; max-height:160px; overflow-y:auto;">
+                  <table class="data-table" style="margin:0; width:100%; font-size:0.75rem;">
+                    <thead>
+                      <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
+                        <th>#</th>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th style="text-align:right;">Qty</th>
+                        <th style="text-align:right;">Rate</th>
+                        <th style="text-align:right;">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pd-lines-body">
+                      <tr>
+                        <td colspan="6" style="text-align:center; padding:15px; color:var(--text-muted);">No items.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="drawer-footer"
+                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);"
+                  onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">ðŸ–¨ï¸
+                  View / Download PDF</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">ðŸ“Š
+                  View / Download Excel</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">âœ‰ï¸
+                  Send Email</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">âœï¸
+                  Edit Purchase</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">ðŸ·ï¸
+                  Inward Barcode</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">âœ•
+                  Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

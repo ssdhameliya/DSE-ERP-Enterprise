@@ -1,0 +1,186 @@
+<div id="view-financial-statements" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128200;</span> Financial Statements (P&amp;L &amp; Balance Sheet)</h1>
+              <p>Audited Profit &amp; Loss account, Balance Sheet equilibrium, working capital, and key financial ratios
+              </p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="window.FinanceController.exportStatementsPdf()">
+                <span>&#128196;</span> Export PDF
+              </button>
+              <button class="btn btn-primary" onclick="window.FinanceController.loadFinancialStatements()">
+                <span>&#128260;</span> Recompute Live
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards: P&L Summary -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem;">GROSS REVENUE</span></div>
+              <div class="kpi-value" id="kpi-fs-revenue" style="font-size:1.25rem;">&#8377; 0.00</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Operating turnover</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--yellow);">COST OF
+                  GOODS SOLD</span></div>
+              <div class="kpi-value" id="kpi-fs-cogs" style="font-size:1.25rem; color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-meta" style="font-size:0.65rem;">Direct procurement costs</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--purple-accent); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label"
+                  style="font-size:0.68rem; color:var(--purple-accent);">GROSS PROFIT</span></div>
+              <div class="kpi-value" id="kpi-fs-gross-profit" style="font-size:1.25rem; color:var(--purple-accent);">
+                &#8377; 0.00</div>
+              <div class="kpi-meta" id="lbl-fs-gross-margin" style="font-size:0.65rem;">Gross Margin: 0.0%</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--accent); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size:0.68rem; color:var(--accent);">NET
+                  OPERATING PROFIT</span></div>
+              <div class="kpi-value" id="kpi-fs-net-profit" style="font-size:1.25rem; color:var(--accent);">&#8377; 0.00
+              </div>
+              <div class="kpi-meta" id="lbl-fs-net-margin" style="font-size:0.65rem;">Net Margin: 0.0%</div>
+            </div>
+          </div>
+
+          <!-- Balance Sheet Equilibrium Strip & Financial Health Ratios (Desktop Parity) -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+            <div class="data-panel" style="padding:16px;">
+              <h3
+                style="margin-top:0; margin-bottom:12px; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;">
+                <span>Balance Sheet Position</span>
+                <span id="lbl-fs-equilibrium" class="pill-badge pill-success">BALANCED</span>
+              </h3>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem;">
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Total Assets</div>
+                  <div id="lbl-fs-total-assets"
+                    style="font-size:1.1rem; font-weight:700; color:var(--cyan); margin-top:2px;">&#8377; 0.00</div>
+                </div>
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Total Liabilities &amp; Equity</div>
+                  <div id="lbl-fs-total-liab"
+                    style="font-size:1.1rem; font-weight:700; color:var(--purple-accent); margin-top:2px;">&#8377; 0.00
+                  </div>
+                </div>
+                <div
+                  style="grid-column: span 2; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:var(--text-muted); font-size:0.8rem;">Working Capital (Current Assets -
+                    Liabilities):</span>
+                  <span id="lbl-fs-working-capital"
+                    style="font-size:1.05rem; font-weight:700; color:var(--green);">&#8377; 0.00</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-panel" style="padding:16px;">
+              <h3 style="margin-top:0; margin-bottom:12px; font-size:0.95rem;">Financial Health Ratios</h3>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem;">
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Current Ratio (Target: &gt; 1.5)</div>
+                  <div id="lbl-fs-current-ratio"
+                    style="font-size:1.1rem; font-weight:700; color:var(--cyan); margin-top:2px;">1.80</div>
+                </div>
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Quick Ratio (Target: &gt; 1.0)</div>
+                  <div id="lbl-fs-quick-ratio"
+                    style="font-size:1.1rem; font-weight:700; color:var(--accent); margin-top:2px;">1.40</div>
+                </div>
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Days Sales Outstanding (DSO)</div>
+                  <div id="lbl-fs-dso" style="font-size:1.1rem; font-weight:700; color:var(--yellow); margin-top:2px;">
+                    38.5 days</div>
+                </div>
+                <div
+                  style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-subtle);">
+                  <div style="color:var(--text-muted); font-size:0.75rem;">Days Payable Outstanding (DPO)</div>
+                  <div id="lbl-fs-dpo"
+                    style="font-size:1.1rem; font-weight:700; color:var(--purple-accent); margin-top:2px;">29.0 days
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Navigation for Statements matching FinancialStatements.fxml -->
+          <div class="tabs-nav" style="display:flex; gap:6px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px;">
+            <button class="tab-btn active" id="tab-btn-fs-pnl" onclick="window.FinanceController.switchFsTab('pnl')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-main); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:8px;">
+              <span>&#128202;</span> Profit &amp; Loss Statement
+            </button>
+            <button class="tab-btn" id="tab-btn-fs-bs" onclick="window.FinanceController.switchFsTab('bs')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#9878;&#65039;</span> Balance Sheet
+            </button>
+            <button class="tab-btn" id="tab-btn-fs-ratios" onclick="window.FinanceController.switchFsTab('ratios')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#128200;</span> Executive Ratio Health
+            </button>
+          </div>
+
+          <!-- TAB 1: P&L STATEMENT -->
+          <div id="fs-panel-pnl" class="fs-tab-panel">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-pnl-table">
+                <thead>
+                  <tr>
+                    <th>Account Name / Classification</th>
+                    <th style="width:120px;">Account Code</th>
+                    <th style="width:180px;">Group</th>
+                    <th style="text-align:right; width:180px;">Amount (&#8377;)</th>
+                    <th style="text-align:right; width:130px;">Revenue %</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-pnl-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Profit &amp; Loss Statement...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: BALANCE SHEET -->
+          <div id="fs-panel-bs" class="fs-tab-panel" style="display:none;">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-bs-table">
+                <thead>
+                  <tr>
+                    <th>Assets / Liabilities &amp; Equity</th>
+                    <th style="width:120px;">Account Code</th>
+                    <th style="width:180px;">Category</th>
+                    <th style="text-align:right; width:200px;">Closing Balance (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-bs-tbody">
+                  <tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Balance Sheet items...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: EXECUTIVE RATIOS -->
+          <div id="fs-panel-ratios" class="fs-tab-panel" style="display:none;">
+            <div class="table-container standard-table-card">
+              <table class="table" id="fs-ratios-table">
+                <thead>
+                  <tr>
+                    <th>Classification</th>
+                    <th>Financial Metric / Ratio</th>
+                    <th style="text-align:right; width:160px;">Calculated Value</th>
+                    <th style="width:180px;">Industry Benchmark</th>
+                    <th style="text-align:center; width:160px;">Health Assessment</th>
+                  </tr>
+                </thead>
+                <tbody id="fs-ratios-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading Ratio Health matrix...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>

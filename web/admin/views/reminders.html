@@ -1,0 +1,196 @@
+<div id="view-reminders" class="module-view fixed-viewport">
+          <div class="view-header"
+            style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+            <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:1.6rem; color:var(--purple); font-weight:800;">â°</span>
+              <div>
+                <h1 style="margin:0; font-size:1.25rem; font-weight:700; color:#fff;">Reminder Center</h1>
+                <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Manage follow-ups, payment
+                  reminders and important business tasks.</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display:flex; gap:10px; align-items:center;">
+              <button class="btn btn-secondary" onclick="window.ReminderCenterController.refresh()"
+                style="height:34px; display:inline-flex; align-items:center; gap:6px;">
+                <span>âŸ³</span> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="window.ReminderCenterController.openAddModal()"
+                style="height:34px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                <span>+</span> Add Reminder
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 REMINDER KPIS (Desktop ReminderCenter.fxml lines 27-87 Parity) -->
+          <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--blue, #38bdf8); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-blue" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); flex-shrink: 0;">â°</span>
+                  <span>Open Reminders</span>
+                </div>
+                <span class="pill-badge pill-neutral metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Active</span>
+              </div>
+              <div id="rc-kpi-open" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: #60a5fa; margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Active items requiring attention</div>
+            </div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--red, #f87171); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-red" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(248, 113, 113, 0.2); box-shadow: 0 0 12px rgba(248, 113, 113, 0.25); flex-shrink: 0;">âš ï¸</span>
+                  <span>Overdue</span>
+                </div>
+                <span class="pill-badge pill-danger metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Alert</span>
+              </div>
+              <div id="rc-kpi-overdue" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--red, #f87171); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Past due and still incomplete</div>
+            </div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--green, #34d399); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-green" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(52, 211, 153, 0.2); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); flex-shrink: 0;">ðŸ“…</span>
+                  <span>Due Today</span>
+                </div>
+                <span class="pill-badge pill-success metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Today</span>
+              </div>
+              <div id="rc-kpi-due-today" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--green, #4ade80); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Scheduled for the current day</div>
+            </div>
+
+            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--purple, #a855f7); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
+              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
+                  <span class="kpi-icon-badge erp-kpi-theme-purple" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(167, 139, 250, 0.2); box-shadow: 0 0 12px rgba(167, 139, 250, 0.25); flex-shrink: 0;">ðŸ—“ï¸</span>
+                  <span>Next 7 Days</span>
+                </div>
+                <span class="pill-badge pill-purple metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Upcoming</span>
+              </div>
+              <div id="rc-kpi-upcoming" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--purple, #c084fc); margin: 4px 0;">0</div>
+              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Upcoming workload at a glance</div>
+            </div>
+          </div>
+
+          <!-- FILTERS TOOLBAR (Desktop ReminderCenter.fxml lines 90-100 Parity) -->
+          <div class="filter-bar"
+            style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:rgba(255,255,255,0.02); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+            <input type="text" id="rc-filter-search" class="filter-input"
+              placeholder="Search title, reference or notes..." style="flex:1; min-width:220px;"
+              oninput="window.ReminderCenterController.applyFilters()">
+            <select id="rc-filter-status" class="form-select" style="width:160px;"
+              onchange="window.ReminderCenterController.applyFilters()">
+              <option value="">All Statuses</option>
+              <option value="OPEN">OPEN</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="SNOOZED">SNOOZED</option>
+            </select>
+            <select id="rc-filter-priority" class="form-select" style="width:160px;"
+              onchange="window.ReminderCenterController.applyFilters()">
+              <option value="">All Priorities</option>
+              <option value="LOW">LOW</option>
+              <option value="NORMAL">NORMAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="URGENT">URGENT</option>
+            </select>
+            <select id="rc-filter-period" class="form-select" style="width:160px;"
+              onchange="window.ReminderCenterController.applyFilters()">
+              <option value="">All Dates</option>
+              <option value="OVERDUE">Overdue</option>
+              <option value="TODAY">Due Today</option>
+              <option value="7DAYS">Next 7 Days</option>
+              <option value="30DAYS">Next 30 Days</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm"
+              onclick="window.ReminderCenterController.clearFilters()">Clear</button>
+          </div>
+
+          <!-- REMINDERS WORKSPACE (Docked Inline Split matching ReminderCenter.fxml lines 103-197) -->
+          <div class="register-workspace" id="reminder-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>REMINDER</th>
+                    <th style="width:140px;">REFERENCE</th>
+                    <th style="width:120px;">DUE DATE</th>
+                    <th style="width:110px; text-align:center;">PRIORITY</th>
+                    <th style="width:120px; text-align:center;">STATUS</th>
+                    <th style="width:130px;">CREATED BY</th>
+                    <th style="width:170px; text-align:center;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="reminders-table-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading reminders...</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div
+                style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle);">
+                <div style="font-size:0.75rem; color:var(--text-muted);">Single-click a row to open or close details.
+                  Use Edit for changes.</div>
+                <div id="rc-result-count" style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Showing 0
+                  Records</div>
+              </div>
+            </div>
+
+            <!-- Inline Docked Reminder Detail Drawer (ReminderCenter.fxml lines 141-196 Parity) -->
+            <div id="reminder-detail-drawer" class="slide-detail-drawer register-inline-drawer"
+              style="display:none; width:380px; min-width:360px; max-width:430px;">
+              <div class="drawer-header"
+                style="display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; border-bottom:1px solid var(--border-subtle);">
+                <div>
+                  <h3 style="margin:0; font-size:1.05rem; color:#fff;" id="lblDetailTitle">Reminder Details</h3>
+                  <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Selected reminder information
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.closeReminderDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body" style="padding:16px; overflow-y:auto; flex:1;">
+                <div class="drawer-field-grid"
+                  style="display:grid; grid-template-columns:100px 1fr; gap:10px; margin-bottom:16px; font-size:0.8rem; align-items:center;">
+                  <div style="color:var(--text-muted); font-weight:600;">Reference</div>
+                  <div id="lblDetailReference" style="font-family:monospace; font-weight:700; color:var(--cyan);">-
+                  </div>
+
+                  <div style="color:var(--text-muted); font-weight:600;">Due Date</div>
+                  <div id="lblDetailDue" style="font-weight:600; color:var(--text-main);">-</div>
+
+                  <div style="color:var(--text-muted); font-weight:600;">Priority</div>
+                  <div id="lblDetailPriority"><span class="pill-badge pill-neutral">-</span></div>
+
+                  <div style="color:var(--text-muted); font-weight:600;">Status</div>
+                  <div id="lblDetailStatus"><span class="pill-badge pill-neutral">-</span></div>
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label
+                    style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">Notes</label>
+                  <div id="lblDetailNotes"
+                    style="min-height:90px; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:6px; border:1px solid var(--border-subtle); font-size:0.82rem; color:var(--text-main); line-height:1.5; white-space:pre-wrap;">
+                    No notes provided.</div>
+                </div>
+              </div>
+              <div class="drawer-footer"
+                style="padding:14px 16px; border-top:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.editSelected()"
+                    style="flex:1;">âœï¸ Edit</button>
+                  <button id="btn-complete-selected" class="btn btn-primary btn-sm"
+                    onclick="window.ReminderCenterController.completeSelected()" style="flex:1;">âœ… Complete</button>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.snoozeSelected()"
+                    style="flex:1;">â° Snooze</button>
+                  <button class="btn btn-danger btn-sm" onclick="window.ReminderCenterController.deleteSelected()"
+                    style="flex:1;">ðŸ—‘ï¸ Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: USER ACCESS & SECURITY -->

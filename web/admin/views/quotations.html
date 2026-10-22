@@ -1,0 +1,224 @@
+<div id="view-quotations" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128221;</span> Quotations &amp; Proforma Pipeline</h1>
+              <p>Client estimates, pricing proposals, live tracking, and one-click sales invoice conversion</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">ðŸ“Š Export Excel</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">ðŸ“„ Export PDF</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.resetFilters()">Reset</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New Quotation</button>
+            </div>
+          </div>
+
+          <!-- 5 KPI Cards matching QuotationController.java applyStats -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128202;</span> Pipeline Value</div>
+              <div class="kpi-value" id="quote-kpi-total-val">&#8377; 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-total-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9203;</span> Pending Quotes</div>
+              <div class="kpi-value" id="quote-kpi-pending-val" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-pending-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9989;</span> Accepted Value</div>
+              <div class="kpi-value" id="quote-kpi-accepted-val" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-sub" id="quote-kpi-accepted-count">0 quotations</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9888;&#65039;</span> Expired Value</div>
+              <div class="kpi-value" id="quote-kpi-expired-val" style="color:var(--red);">&#8377; 0.00</div>
+              <div class="kpi-sub">Passed valid-until date</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#127919;</span> Conversion Rate</div>
+              <div class="kpi-value" id="quote-kpi-conversion" style="color:var(--cyan);">0.0%</div>
+              <div class="kpi-sub">Accepted / Pipeline</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="quote-filter-search" class="filter-input"
+              placeholder="Search quotation, customer, source..." style="width:230px;"
+              oninput="window.QuotationController.loadQuotations(0)">
+            <input type="text" id="quote-filter-number" class="filter-input" placeholder="Quote #" style="width:110px;"
+              oninput="window.QuotationController.loadQuotations(0)">
+            <select id="quote-filter-customer" class="form-select" style="width:180px;"
+              onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All customers</option>
+            </select>
+            <select id="quote-filter-status" class="form-select" style="width:140px;"
+              onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Status</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="SENT">SENT</option>
+              <option value="ACCEPTED">ACCEPTED</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="EXPIRED">EXPIRED</option>
+            </select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">From:</span>
+              <input type="date" id="quote-filter-from" class="form-input form-input-sm" style="width:125px;"
+                onchange="window.QuotationController.loadQuotations(0)">
+              <span style="font-size:0.75rem; color:var(--text-muted);">To:</span>
+              <input type="date" id="quote-filter-to" class="form-input form-input-sm" style="width:125px;"
+                onchange="window.QuotationController.loadQuotations(0)">
+            </div>
+            <select id="quote-filter-salesperson" class="form-select" style="width:140px;"
+              onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Salespersons</option>
+            </select>
+            <select id="quote-filter-followup" class="form-select" style="width:130px;"
+              onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Follow-ups</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Today">Today</option>
+              <option value="Next 7 Days">Next 7 Days</option>
+            </select>
+            <select id="quote-filter-source" class="form-select" style="width:130px;"
+              onchange="window.QuotationController.loadQuotations(0)">
+              <option value="">All Sources</option>
+              <option value="Direct Inquiry">Direct Inquiry</option>
+              <option value="Email">Email</option>
+              <option value="Phone Call">Phone Call</option>
+              <option value="Website">Website</option>
+            </select>
+          </div>
+
+          <!-- Quotation Register Workspace with Inline Drawer Split (Desktop Quotations.fxml Parity) -->
+          <div class="register-workspace" id="quotations-register-workspace"
+            style="display: flex; gap: 14px; width: 100%; align-items: stretch;">
+            <!-- Left: Table & Toolbar Panel -->
+            <div class="register-table-panel" id="quotations-table-panel"
+              style="flex: 1; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+              <div class="sales-table-scroll" style="flex: 1;">
+                <table class="sales-desktop-table" id="quotations-main-table">
+                  <thead>
+                    <tr>
+                      <th>Quotation #</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Valid Upto</th>
+                      <th>Status</th>
+                      <th>Follow Up</th>
+                      <th>Converted To</th>
+                      <th>Salesperson</th>
+                      <th style="text-align:right;">Amount (&#8377;)</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbl-quotations-body">
+                    <tr>
+                      <td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading
+                        quotations...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+                <div class="footer-left">
+                  <span id="quote-pagination-info">Showing 0 quotations</span>
+                </div>
+                <div class="footer-right" style="display:flex; gap:6px;">
+                  <button class="btn btn-secondary btn-sm" id="quote-btn-prev"
+                    onclick="window.QuotationController.prevPage()" disabled>&larr; Previous</button>
+                  <button class="btn btn-secondary btn-sm" id="quote-btn-next"
+                    onclick="window.QuotationController.nextPage()" disabled>Next &rarr;</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop QuotationController Parity) -->
+            <div id="quote-detail-drawer" class="slide-detail-drawer register-inline-drawer"
+              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
+              <div class="drawer-header"
+                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
+                    id="qd-no">Quotation Details</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);">Proforma Proposal &amp; Terms</div>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button type="button" class="btn btn-secondary btn-sm"
+                    style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
+                    onclick="window.QuotationController.showAudit(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText)">â—·
+                    Audit</button>
+                  <button type="button" class="btn btn-secondary btn-sm"
+                    style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
+                    onclick="window.QuotationController.closeDrawer()">âœ– Close</button>
+                </div>
+              </div>
+              <div class="drawer-body"
+                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
+                    class="drawer-field-value" id="qd-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Customer:</span><span
+                    class="drawer-field-value" id="qd-customer"
+                    style="font-weight:700; color:var(--text-main);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Contact:</span><span
+                    class="drawer-field-value" id="qd-contact" style="white-space:pre-line;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Amount:</span><span
+                    class="drawer-field-value" id="qd-amount"
+                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Discount:</span><span
+                    class="drawer-field-value" id="qd-discount">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Valid Until:</span><span
+                    class="drawer-field-value" id="qd-valid">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Follow-up:</span><span
+                    class="drawer-field-value" id="qd-follow">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Converted To:</span><span
+                    class="drawer-field-value" id="qd-converted" style="color:var(--purple); font-weight:600;">-</span>
+                </div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span
+                    class="drawer-field-value" id="qd-status">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Source:</span><span
+                    class="drawer-field-value" id="qd-source">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Remarks:</span><span
+                    class="drawer-field-value" id="qd-remarks">-</span></div>
+                <!-- Attached Document Section -->
+                <div id="qd-attachment-section" style="display:none; border:1px solid rgba(168,85,247,0.25); background:rgba(168,85,247,0.05); border-radius:6px; padding:10px; margin-top:4px;">
+                  <div style="font-size:0.74rem; font-weight:700; color:#c084fc; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:flex; align-items:center; gap:6px;"><span>ðŸ“Ž</span> Attached Document</span>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                      <span style="font-size:1.1rem; color:#a855f7;">ðŸ“„</span>
+                      <span id="qd-attachment-name" style="font-size:0.75rem; color:var(--text-main); font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="">-</span>
+                    </div>
+                    <div style="display:flex; gap:4px; flex-shrink:0;">
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="drawer-footer"
+                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-success btn-sm" id="qd-btn-convert"
+                  onclick="window.QuotationController.convertToSale(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText, window.QuotationController.selectedQuote?.rowVersion || 0)">Convert
+                  to Sale</button>
+                <button class="btn btn-purple btn-sm" id="qd-btn-edit-sale"
+                  onclick="window.QuotationController.openInSaleCreator()"
+                  title="Open quotation in Sale Creator to customize line items before saving">Sale Creator</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.QuotationController.printPdf(document.getElementById('qd-no').innerText)">PDF</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.QuotationController.downloadExcel(document.getElementById('qd-no').innerText)">Excel</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.QuotationController.sendEmailPrompt(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText, window.QuotationController.selectedQuote?.email)">Email</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.QuotationController.sendWhatsappPrompt(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText, window.QuotationController.selectedQuote?.phone)">WhatsApp</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.QuotationController.closeDrawer()">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

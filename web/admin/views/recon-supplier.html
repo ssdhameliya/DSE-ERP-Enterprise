@@ -1,0 +1,134 @@
+<div id="view-recon-supplier" class="module-view">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#129309;</span> Recon Supplier Master</h1>
+              <p>Independent supplier master directory used exclusively by Purchase Recon</p>
+            </div>
+            <div class="view-actions">
+              <input type="text" id="rs-search" class="filter-input" placeholder="Search reference, name, GSTIN..."
+                oninput="window.PurchaseReconController.loadReconSuppliers()">
+              <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadReconSuppliers()">&#8635;
+                Refresh</button>
+              <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewSupplier()">+ New Recon
+                Supplier</button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards (ReconSupplier.fxml Parity) -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label">TOTAL SUPPLIERS</span><span
+                  class="kpi-badge">Directory</span></div>
+              <div class="kpi-value" id="rs-kpi-total">0</div>
+              <div class="kpi-meta">All recon suppliers</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--green);">ACTIVE</span><span
+                  class="kpi-badge" style="background:rgba(16,185,129,0.15); color:var(--green);">Live</span></div>
+              <div class="kpi-value" id="rs-kpi-active" style="color:var(--green);">0</div>
+              <div class="kpi-meta">Available for reconciliation</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--purple);">IMPORTED</span><span
+                  class="kpi-badge" style="background:rgba(168,85,247,0.15); color:var(--purple);">Auto</span></div>
+              <div class="kpi-value" id="rs-kpi-imported" style="color:var(--purple);">0</div>
+              <div class="kpi-meta">Created via GSTR-2B import</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-label" style="color:var(--yellow);">RECON RECORDS</span><span
+                  class="kpi-badge">Linked</span></div>
+              <div class="kpi-value" id="rs-kpi-recons" style="color:var(--yellow);">0</div>
+              <div class="kpi-meta">Total linked invoices</div>
+            </div>
+          </div>
+
+          <!-- Split Layout -->
+          <div class="register-workspace" id="recon-supplier-workspace">
+            <div class="register-table-panel" style="flex:1; min-width:0;">
+              <div class="data-panel" style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Reference</th>
+                      <th>Legal / Trade Name</th>
+                      <th>GSTIN</th>
+                      <th>Phone</th>
+                      <th style="text-align:right;">Recon Records</th>
+                      <th>Source</th>
+                      <th style="text-align:center;">Status</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recon-supplier-tbody">
+                    <tr>
+                      <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading recon
+                        suppliers...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Side Editor Panel (ReconSupplier.fxml Parity) -->
+            <div id="recon-supplier-editor-panel" class="slide-detail-drawer register-inline-drawer"
+              style="display:none; padding:18px;">
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+                <div>
+                  <h3 style="margin:0;" id="rs-editor-title">New Recon Supplier</h3>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">Independent supplier profile</span>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.PurchaseReconController.closeSupplierEditor()">&times; Close</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="form-group">
+                  <label class="form-label">Trade / Legal Name *</label>
+                  <input type="text" id="rs-editor-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">GSTIN (15 Digits)</label>
+                  <input type="text" id="rs-editor-gstin" class="form-input" placeholder="24AAAAA0000A1Z5"
+                    maxlength="15" style="text-transform:uppercase; font-family:monospace;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">PAN (10 Digits)</label>
+                  <input type="text" id="rs-editor-pan" class="form-input" placeholder="AAAAA0000A" maxlength="10"
+                    style="text-transform:uppercase; font-family:monospace;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Contact Person</label>
+                  <input type="text" id="rs-editor-contact" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  <input type="text" id="rs-editor-phone" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="rs-editor-email" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Status</label>
+                  <select id="rs-editor-status" class="form-select">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <textarea id="rs-editor-notes" class="form-input" rows="2"></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                  <button class="btn btn-secondary"
+                    onclick="window.PurchaseReconController.closeSupplierEditor()">Cancel</button>
+                  <button id="rs-btn-save" class="btn btn-primary"
+                    onclick="window.PurchaseReconController.saveSupplier()">Save Recon Supplier</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

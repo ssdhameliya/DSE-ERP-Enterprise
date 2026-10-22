@@ -1,0 +1,193 @@
+<div id="view-barcode" class="module-view">
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.6rem;">&#128207;</span>
+                <div>
+                  <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Barcode &amp; QR Label Studio</h1>
+                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Generate Code-128 barcodes, thermal adhesive stickers, and A4 multi-column sheets</p>
+                </div>
+              </div>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="txtScannerTest" class="form-input" placeholder="Scan USB Barcode Here to Test..."
+                style="width:250px; font-family:monospace;">
+              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printOrderDispatchLabel()">Order Dispatch Label</button>
+              <button class="btn btn-primary" onclick="window.BarcodeStudioController.printThermal()">Print Thermal Labels</button>
+              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printA4Sheet()">Print A4 Sheet</button>
+            </div>
+          </div>
+
+          <!-- 4 KPIS matching BarcodeStudio.fxml -->
+          <div class="standard-kpi-row" style="display:grid; grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div class="standard-kpi-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);">
+                <span style="font-size:1.1rem;">&#128230;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">CATALOG ITEMS</span>
+                  <span class="metric-trend-pill trend-neutral">Catalog</span>
+                </div>
+                <div id="bc-kpi-total-items" class="metric-value" style="color:var(--cyan);">0</div>
+                <div class="metric-note">Item master catalog</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-green">
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+                <span style="font-size:1.1rem;">&#10004;&#65039;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">BARCODE ENABLED</span>
+                  <span class="metric-trend-pill trend-positive">Active</span>
+                </div>
+                <div id="bc-kpi-mapped-items" class="metric-value" style="color:var(--green);">0</div>
+                <div class="metric-note">Ready for scan billing</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-orange">
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:#fb923c; border:1px solid rgba(249,115,22,0.3);">
+                <span style="font-size:1.1rem;">&#128196;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">LABEL FORMAT</span>
+                  <span class="metric-trend-pill trend-warning">Format</span>
+                </div>
+                <div id="bc-kpi-format" class="metric-value" style="color:var(--orange);">50 &times; 25 mm</div>
+                <div class="metric-note">Standard 2-inch thermal</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-purple">
+              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3);">
+                <span style="font-size:1.1rem;">&#128424;&#65039;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">SELECTED COPIES</span>
+                  <span class="metric-trend-pill trend-info">Queue</span>
+                </div>
+                <div id="bc-kpi-selected-copies" class="metric-value" style="color:var(--purple-accent);">1</div>
+                <div class="metric-note">Labels in print queue</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Register Workspace with Items Table & Inline Label Preview Drawer -->
+          <div class="register-workspace" id="bc-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+              <!-- Search Toolbar -->
+              <div class="filter-toolbar" style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="flex:1; position:relative;">
+                  <input type="text" id="bc-search-input" class="form-input"
+                    placeholder="&#128269; Search items by code, name, category, or barcode..."
+                    oninput="window.BarcodeStudioController.filterItems(this.value)">
+                </div>
+                <button class="btn btn-secondary" onclick="window.BarcodeStudioController.loadItems()">
+                  <span>&#128260;</span> Refresh
+                </button>
+              </div>
+
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:130px;">ITEM CODE</th>
+                    <th>ITEM DESCRIPTION</th>
+                    <th style="width:150px;">CATEGORY</th>
+                    <th style="width:160px; font-family:monospace;">BARCODE / EAN</th>
+                    <th style="width:130px; text-align:right;">SELLING PRICE (&#8377;)</th>
+                    <th style="width:90px; text-align:center;">STOCK</th>
+                    <th style="width:120px; text-align:center;">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="bc-items-table-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">
+                      <span class="loading-spinner"></span> Loading items for barcode labeling...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Inline Docked Label Preview & Customizer Drawer -->
+            <div id="bc-preview-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none; width:380px;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="bcd-title">Label Studio</h3>
+                  <span id="bcd-code" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.BarcodeStudioController.closeDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body" style="padding:14px;">
+                <!-- Live Sticker Preview -->
+                <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:14px; display:flex; justify-content:center; margin-bottom:14px;">
+                  <div class="barcode-sticker" id="preview-barcode-sticker"
+                    style="background:#fff; color:#000; padding:10px 12px; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,0.4); text-align:center; width:250px; font-family:'Plus Jakarta Sans', Arial, sans-serif;">
+                    <div id="lbl-bc-company" style="font-weight:700; font-size:11px; letter-spacing:0.5px;">JASVI INDUSTRIES</div>
+                    <div id="lbl-bc-title" style="font-weight:600; font-size:9.5px; margin:2px 0;">INDUSTRIAL FASTENER 12MM</div>
+                    <canvas id="barcode-canvas" class="barcode-canvas" style="margin:4px auto; display:block; max-width:100%; height:45px;"></canvas>
+                    <div id="lbl-bc-code" style="letter-spacing:2px; font-weight:bold; font-size:11px; font-family:monospace;">ITEM-001</div>
+                    <div style="display:flex; justify-content:space-between; width:100%; font-size:9px; padding:0 4px; margin-top:2px;">
+                      <span id="lbl-bc-hsn">HSN: 7318</span>
+                      <span id="lbl-bc-price" style="font-weight:700;">&#8377; 450.00</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Customizer Fields -->
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Barcode / SKU String</label>
+                  <input type="text" id="bc-code-input" class="form-input" value="ITEM-001"
+                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Product Title</label>
+                  <input type="text" id="bc-title-input" class="form-input" value="INDUSTRIAL FASTENER 12MM"
+                    oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.72rem;">HSN Code</label>
+                    <input type="text" id="bc-hsn-input" class="form-input" value="7318"
+                      oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.72rem;">Price (&#8377;)</label>
+                    <input type="text" id="bc-price-input" class="form-input" value="450.00"
+                      oninput="window.BarcodeStudioController.renderBarcodePreview()">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label" style="font-size:0.72rem;">Label Dimensions</label>
+                  <select id="bc-size-select" class="form-select" onchange="window.BarcodeStudioController.renderBarcodePreview()">
+                    <option value="50x25" selected>50mm &times; 25mm (Standard 2-Inch Thermal)</option>
+                    <option value="38x25">38mm &times; 25mm (Compact Roll)</option>
+                    <option value="100x50">100mm &times; 50mm (Shipping Dispatch Box)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                  <label class="form-label" style="font-size:0.72rem;">Number of Copies</label>
+                  <input type="number" id="bc-copies-input" class="form-input" value="1" min="1" max="500"
+                    onchange="document.getElementById('bc-kpi-selected-copies').innerText = this.value">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.75rem; margin-bottom:10px;">
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-company" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Company</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-title" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Title</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-price" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> Price</label>
+                  <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="bc-chk-hsn" checked onchange="window.BarcodeStudioController.renderBarcodePreview()"> HSN</label>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.BarcodeStudioController.printThermal()">
+                  &#128424;&#65039; Print Thermal
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.BarcodeStudioController.printA4Sheet()">
+                  &#128196; Print A4
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>

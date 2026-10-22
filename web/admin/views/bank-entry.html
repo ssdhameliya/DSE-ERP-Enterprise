@@ -1,0 +1,215 @@
+<div id="view-bank-entry" class="module-view fixed-viewport">
+          <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">â‚¹</span>
+              <div>
+                <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="bank-view-title">Bank
+                  Entry</h1>
+                <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);" id="bank-view-subtitle">Direct
+                  bank deposits, withdrawals and transfers</p>
+              </div>
+            </div>
+            <!-- Desktop Top-Right Mode Buttons (BankExpense.fxml Parity) -->
+            <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-primary" id="btnBankMode" onclick="window.FinanceController.loadBankMode()"
+                style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>ðŸ¦</span> Bank Entry
+              </button>
+              <button class="btn btn-secondary" id="btnExpenseMode" onclick="window.FinanceController.loadExpenseMode()"
+                style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <span>ðŸ’¸</span> Expense Entry
+              </button>
+              <button class="btn btn-secondary" id="btnBankRecon"
+                onclick="window.NavigationRouter.selectNav('view-bank-statement')"
+                style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <span>ðŸ“‘</span> Bank Reconciliation
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic 4 KPIs for Bank Entry (BankExpense.fxml Parity) -->
+          <div class="kpi-grid"
+            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;">
+            <div class="kpi-card"
+              style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label"
+                  style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Bank
+                  Balance</span>
+                <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-balance"
+                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">â‚¹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-balance-meta"
+                style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">Total net ledger balance</div>
+            </div>
+            <div class="kpi-card"
+              style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label"
+                  style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Deposits</span>
+                <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-inflow"
+                style="font-size: 1.2rem; font-weight: 800; color: var(--green);">â‚¹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-inflow-meta"
+                style="font-size: 0.7rem; color: var(--green); margin-top: 4px;">0 entries</div>
+            </div>
+            <div class="kpi-card"
+              style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label"
+                  style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Withdrawals</span>
+                <span class="pill-badge pill-warning"
+                  style="font-size: 0.65rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Outflow</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-outflow" style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">
+                â‚¹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-outflow-meta"
+                style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px;">0 entries</div>
+            </div>
+            <div class="kpi-card"
+              style="padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
+              <div class="kpi-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="kpi-label"
+                  style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Pending
+                  Reconcile</span>
+                <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
+              </div>
+              <div class="kpi-value" id="bank-kpi-net" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">
+                â‚¹ 0.00</div>
+              <div class="kpi-meta" id="bank-kpi-net-meta"
+                style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
+            </div>
+          </div>
+
+          <!-- Bank Entry Filter Toolbar (BankExpense.fxml Parity) -->
+          <div
+            style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px; position: relative;">
+              <input type="text" id="bank-search" class="filter-input" style="width: 100%; padding-left: 28px;"
+                placeholder="Search reference, narration, account..."
+                oninput="window.FinanceController.applyFinanceFilters()">
+              <span
+                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
+            </div>
+            <select id="bank-type-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()"
+              style="height: 34px; font-size: 0.78rem; min-width: 140px;">
+              <option value="ALL">All Types</option>
+              <option value="DEPOSIT">Deposit</option>
+              <option value="WITHDRAWAL">Withdrawal</option>
+              <option value="CONTRA">Contra Transfer</option>
+            </select>
+            <input type="date" id="bank-filter-from" class="form-input"
+              onchange="window.FinanceController.applyFinanceFilters()"
+              style="height: 34px; font-size: 0.78rem; width: 135px;" title="From Date">
+            <input type="date" id="bank-filter-to" class="form-input"
+              onchange="window.FinanceController.applyFinanceFilters()"
+              style="height: 34px; font-size: 0.78rem; width: 135px;" title="To Date">
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.resetFinanceFilters()"
+              style="height: 34px;">Reset</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.loadBankMode()"
+              style="height: 34px;">&#8635; Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="window.FinanceController.openNewBankEntryModal('DEPOSIT')"
+              style="height: 34px; font-weight: 700;">+ Add Entry</button>
+          </div>
+
+          <!-- Bank Entry Register Workspace (BankExpense.fxml Parity) -->
+          <div class="register-workspace" id="bank-entry-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description / Narration</th>
+                    <th>Bank Account</th>
+                    <th id="th-bank-mode">Mode</th>
+                    <th>Reference / UTR</th>
+                    <th style="text-align: right;">Amount (â‚¹)</th>
+                    <th>Match / Link</th>
+                    <th style="text-align: center; width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bank-entry-tbody">
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading bank
+                      entries...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Inline Docked Bank Entry Detail Drawer -->
+            <div id="bank-entry-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin: 0; font-size: 1rem;" id="bed-ref">Bank Entry</h3>
+                  <span id="bed-type" class="pill-badge pill-purple" style="font-size: 0.75rem;">RECEIPT</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()"
+                  style="padding: 2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">STATUS</span>
+                  <span id="bed-status" class="pill-badge pill-success">POSTED</span>
+                </div>
+                <div class="drawer-field-grid"
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <div
+                    style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Posting Date:</div>
+                    <div id="bed-date"
+                      style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
+                  </div>
+                  <div
+                    style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <div style="color: var(--text-muted); font-size: 0.68rem;">Payment Mode:</div>
+                    <div id="bed-mode"
+                      style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">NEFT</div>
+                  </div>
+                </div>
+                <div
+                  style="padding: 10px 12px; background: rgba(16,185,129,0.06); border-radius: 6px; border: 1px solid rgba(16,185,129,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.75rem; color: var(--green); font-weight: 700;">TRANSACTION AMOUNT:</span>
+                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">â‚¹ 0.00</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Bank Account:</span><span id="bed-account"
+                      style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Counterparty / Payee:</span><span id="bed-party"
+                      style="font-weight: 600;">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Reference / UTR:</span><span id="bed-utr"
+                      style="font-family: monospace; font-weight: 600; color: var(--cyan);">-</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
+                    <span style="color: var(--text-muted);">Narration / Remarks:</span>
+                    <span id="bed-narration"
+                      style="color: var(--text-dim); background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; font-size: 0.78rem;">-</span>
+                  </div>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">ðŸ“œ View In
+                  GL</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">ðŸ“‹ Audit
+                  Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">âœï¸ Edit
+                  Entry</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()"
+                  style="color: #f87171;">ðŸ—‘ï¸ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">ðŸ–¨ï¸ Print
+                  Voucher</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">âœ–
+                  Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

@@ -1,0 +1,135 @@
+<div id="view-profile" class="module-view" style="display:none;">
+          <!-- Profile Hero Section matching Profile.fxml line 5 -->
+          <div
+            style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <div id="prof-hero-avatar"
+                style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+                U
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                  <h1 id="prof-hero-name"
+                    style="font-size: 1.4rem; font-weight: 700; margin: 0; font-family: 'Space Grotesk', sans-serif;">My
+                    Profile</h1>
+                  <span id="prof-hero-role" class="badge badge-purple"
+                    style="font-size: 0.72rem; padding: 2px 8px;">ADMINISTRATOR</span>
+                  <span id="prof-hero-status" class="badge badge-green"
+                    style="font-size: 0.72rem; padding: 2px 8px;">Active</span>
+                </div>
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.82rem;">Manage your personal account
+                  details, access roles, and authentication security</p>
+              </div>
+            </div>
+            <div>
+              <button type="button" id="btn-prof-save" class="btn btn-primary"
+                onclick="window.ProfileController.saveProfile(event)"
+                style="height: 38px; padding: 0 18px; font-weight: 600;">
+                <span>ðŸ’¾</span> Save Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Content Grid matching Profile.fxml lines 6-8 -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <!-- Left: Personal Details Form -->
+            <div class="panel-card"
+              style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+              <div
+                style="font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>ðŸ‘¤</span> Personal Details
+              </div>
+              <form onsubmit="window.ProfileController.saveProfile(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Full Name *</label>
+                    <input type="text" id="prof-full-name" class="form-input" placeholder="e.g. Shailesh Dhameliya"
+                      required style="height: 38px;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Email Address *</label>
+                    <input type="email" id="prof-email" class="form-input" placeholder="name@jasviindustries.in"
+                      required style="height: 38px;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Department</label>
+                    <input type="text" id="prof-department" class="form-input" placeholder="e.g. Executive Operations"
+                      style="height: 38px;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Branch</label>
+                    <input type="text" id="prof-branch" class="form-input" placeholder="e.g. Surat Main HQ"
+                      style="height: 38px;">
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right: Account Overview -->
+            <div class="panel-card"
+              style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+              <div
+                style="font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>ðŸ“‹</span> Account Overview
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.82rem;">
+                <div>
+                  <span
+                    style="color: var(--text-dim); display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Username</span>
+                  <span id="prof-overview-username" style="font-weight: 600; color: var(--text-main);">-</span>
+                </div>
+                <div>
+                  <span
+                    style="color: var(--text-dim); display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Access
+                    Level</span>
+                  <span id="prof-overview-access" style="font-weight: 600; color: var(--cyan);">-</span>
+                </div>
+                <div>
+                  <span
+                    style="color: var(--text-dim); display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Last
+                    Login</span>
+                  <span id="prof-overview-last-login" style="font-weight: 600; color: var(--text-main);">-</span>
+                </div>
+                <div>
+                  <span
+                    style="color: var(--text-dim); display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">MFA
+                    Status</span>
+                  <span id="prof-overview-mfa" style="font-weight: 600;">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Change Password Card matching Profile.fxml line 8 -->
+          <div class="panel-card"
+            style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
+            <div
+              style="font-size: 1rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+              <span>ðŸ”‘</span> Change Password
+            </div>
+            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.8rem;">Confirm your current password,
+              then use at least 8 characters with a letter and a number.</p>
+            <form onsubmit="window.ProfileController.changePassword(event)"
+              style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+              <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Current Password *</label>
+                <input type="password" id="prof-current-pwd" class="form-input" placeholder="Current password" required
+                  style="height: 38px;">
+              </div>
+              <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">New Password *</label>
+                <input type="password" id="prof-new-pwd" class="form-input" placeholder="New password (8+ chars)"
+                  minlength="8" required style="height: 38px;">
+              </div>
+              <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.76rem; font-weight: 600;">Confirm New Password *</label>
+                <input type="password" id="prof-confirm-pwd" class="form-input" placeholder="Confirm new password"
+                  minlength="8" required style="height: 38px;">
+              </div>
+              <button type="submit" id="btn-prof-change-pwd" class="btn btn-secondary"
+                style="height: 38px; padding: 0 18px; font-weight: 600; white-space: nowrap;">
+                <span>ðŸ”’</span> Update Password
+              </button>
+            </form>
+          </div>
+        </div>

@@ -18,12 +18,12 @@ window.AuthService = (function() {
       if (userStr) {
         try { return JSON.parse(userStr); } catch (e) {}
       }
-      return { username: 'admin', fullName: 'Shailesh Dhameliya', role: 'ADMIN' };
+      return null;
     },
 
     getCurrentUsername() {
       const u = this.getCurrentUser();
-      return (u && (u.username || u.fullName || u.name)) || 'Admin';
+      return (u && (u.username || u.fullName || u.name)) || '';
     },
 
     getAccessToken() {
@@ -34,8 +34,43 @@ window.AuthService = (function() {
       return this.getAccessToken();
     },
 
+    isSessionExpired() {
+      const sessionStart = localStorage.getItem('dse_session_start');
+      if (!sessionStart) return false;
+      const elapsed = Date.now() - parseInt(sessionStart, 10);
+      const maxAge = 8 * 60 * 60 * 1000; // 8 hours TTL
+      return elapsed > maxAge;
+    },
+
     isAuthenticated() {
-      return !!localStorage.getItem('dse_access_token');
+      const token = localStorage.getItem('dse_access_token');
+      if (!token) return false;
+      if (this.isSessionExpired()) {
+        this.logout();
+        return false;
+      }
+      return true;
+    },
+
+    async validateSessionWithBackend() {
+      const token = this.getAccessToken();
+      if (!token || this.isSessionExpired()) {
+        await this.logout();
+        return false;
+      }
+      try {
+        const res = await window.ApiService.get('/api/auth/me');
+        if (res && (res.username || res.id)) {
+          localStorage.setItem('dse_user_info', JSON.stringify(res));
+          return true;
+        }
+      } catch (err) {
+        if (err && (err.status === 401 || err.status === 403)) {
+          await this.logout();
+          return false;
+        }
+      }
+      return true;
     },
 
     async getLoginRoles() {
@@ -105,6 +140,7 @@ window.AuthService = (function() {
       if (res.success && res.accessToken) {
         localStorage.setItem('dse_access_token', res.accessToken);
         localStorage.setItem('dse_user_info', JSON.stringify(res.user));
+        localStorage.setItem('dse_session_start', Date.now().toString());
         return { success: true, user: res.user };
       }
 
@@ -137,6 +173,7 @@ window.AuthService = (function() {
       if (res.success && res.accessToken) {
         localStorage.setItem('dse_access_token', res.accessToken);
         localStorage.setItem('dse_user_info', JSON.stringify(res.user || pendingUser));
+        localStorage.setItem('dse_session_start', Date.now().toString());
         pendingMfaChallenge = null;
         pendingUser = null;
         pendingRecoveryChallenge = null;
@@ -225,6 +262,7 @@ window.AuthService = (function() {
       } catch (e) {}
       localStorage.removeItem('dse_access_token');
       localStorage.removeItem('dse_user_info');
+      localStorage.removeItem('dse_session_start');
     }
   };
 })();

@@ -1,0 +1,809 @@
+<div id="view-reports" class="module-view">
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span id="rep-page-icon" style="font-size:1.6rem;">ðŸ“Š</span>
+                <div>
+                  <h1 id="report-view-title" style="margin:0; font-size:1.35rem; font-weight:700;">Executive Reports
+                    &amp; BI Analytics</h1>
+                  <p id="report-active-desc" style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">
+                    Real-time financial intelligence, comprehensive report catalog, saved report viewer, and automated
+                    delivery schedules</p>
+                </div>
+              </div>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.ReportsController.handleRefreshAction()"
+                title="Refresh Current Tab Data">â†» Refresh</button>
+              <div class="dropdown-wrap" style="position:relative; display:inline-block;">
+                <button class="btn btn-purple" onclick="window.ReportsController.toggleExportDropdown(event)"
+                  style="font-weight:600;">Export â–¼</button>
+                <div id="rep-export-menu" class="rep-export-dropdown-menu"
+                  style="display:none; position:absolute !important; right:0 !important; top:calc(100% + 4px) !important; z-index:10005 !important; background:#0b1324 !important; border:1px solid rgba(255,255,255,0.18) !important; border-radius:8px !important; box-shadow:0 10px 30px rgba(0,0,0,0.8) !important; min-width:200px !important; padding:6px 0 !important;">
+                  <div class="action-menu-item" onclick="window.ReportsController.exportReport('EXCEL')"><span
+                      style="margin-right:8px;">ðŸ“Š</span> Export to Excel (.xlsx)</div>
+                  <div class="action-menu-item" onclick="window.ReportsController.exportReport('PDF')"><span
+                      style="margin-right:8px;">ðŸ“„</span> Export to PDF</div>
+                  <div class="action-menu-item" onclick="window.ReportsController.exportReport('CSV')"><span
+                      style="margin-right:8px;">ðŸ“‘</span> Export to CSV</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4-TAB SWITCHER (Desktop ReportsController.java & ReportViewerController.java Parity) -->
+          <div class="register-tab-strip"
+            style="display:flex; gap:8px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px; padding-bottom:4px;">
+            <button class="register-tab-btn active" id="btn-rep-tab-dashboard"
+              onclick="window.ReportsController.switchMainTab('dashboard')"
+              style="padding:8px 18px; font-weight:700; border-radius:6px; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); cursor:pointer;">
+              ðŸ“ˆ Dashboard
+            </button>
+            <button class="register-tab-btn" id="btn-rep-tab-center"
+              onclick="window.ReportsController.switchMainTab('center')"
+              style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
+              ðŸ“‹ Report Center
+            </button>
+            <button class="register-tab-btn" id="btn-rep-tab-viewer"
+              onclick="window.ReportsController.switchMainTab('viewer')"
+              style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
+              ðŸ“Š Saved Reports / Viewer
+            </button>
+            <button class="register-tab-btn" id="btn-rep-tab-scheduler"
+              onclick="window.ReportsController.switchMainTab('scheduler')"
+              style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
+              â±ï¸ Scheduled Reports
+            </button>
+          </div>
+
+          <!-- TAB 1: REPORTS DASHBOARD (Image 1 Parity) -->
+          <div id="rep-tab-dashboard-view">
+            <!-- TOP FILTER BAR (Desktop ReportsController.java:84-100) -->
+            <div class="filter-toolbar"
+              style="display:grid; grid-template-columns: 140px 130px 130px 1.4fr 1.4fr 1.2fr auto; gap:8px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Period</label>
+                <select id="rep-dash-period" class="form-select"
+                  onchange="window.ReportsController.onDashboardPeriodChange(this.value)"
+                  style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                  <option value="Today">Today</option>
+                  <option value="Yesterday">Yesterday</option>
+                  <option value="This Week">This Week</option>
+                  <option value="Last Week">Last Week</option>
+                  <option value="This Month" selected>This Month</option>
+                  <option value="Last Month">Last Month</option>
+                  <option value="This Quarter">This Quarter</option>
+                  <option value="Last Quarter">Last Quarter</option>
+                  <option value="This Financial Year">This Financial Year</option>
+                  <option value="Last Financial Year">Last Financial Year</option>
+                  <option value="Last 7 Days">Last 7 Days</option>
+                  <option value="Last 30 Days">Last 30 Days</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">From
+                  Date</label>
+                <input type="date" id="rep-dash-from" class="form-input"
+                  style="width:100%; font-size:0.78rem; padding:5px 8px;">
+              </div>
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">To Date</label>
+                <input type="date" id="rep-dash-to" class="form-input"
+                  style="width:100%; font-size:0.78rem; padding:5px 8px;">
+              </div>
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Party</label>
+                <select id="rep-dash-party" class="form-select" style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                  <option value="">All Customers / Suppliers</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Item</label>
+                <select id="rep-dash-item" class="form-select" style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                  <option value="">All Items</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label"
+                  style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Salesperson</label>
+                <select id="rep-dash-salesperson" class="form-select"
+                  style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                  <option value="">All Sales Persons</option>
+                </select>
+              </div>
+              <div style="display:flex; gap:6px; align-items:flex-end;">
+                <button class="btn btn-secondary" onclick="window.ReportsController.resetDashboardFilters()"
+                  style="padding:6px 12px; font-size:0.78rem;" title="Reset Filters">Reset</button>
+                <button class="btn btn-purple" onclick="window.ReportsController.applyDashboardFilters()"
+                  style="padding:6px 14px; font-size:0.78rem; font-weight:700;">Apply Filters</button>
+              </div>
+            </div>
+
+            <!-- 6 KPI CARDS (Desktop Image 1 Parity) -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px;">
+              <div class="standard-kpi-card kpi-blue" style="cursor:pointer;" onclick="selectNav('view-sales-register')"
+                title="View Sales Register">
+                <div class="standard-kpi-icon">ðŸ“ˆ</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE SALES</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Sales</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-sales">â‚¹ 0.00</div>
+                  <div class="metric-note" style="color:var(--cyan); font-weight:600;">View Register &rarr;</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-indigo" style="cursor:pointer;"
+                onclick="selectNav('view-purchase-register')" title="View Purchase Register">
+                <div class="standard-kpi-icon">ðŸ“¦</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE PURCHASES</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Bills</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-purchases">â‚¹ 0.00</div>
+                  <div class="metric-note" style="color:var(--purple); font-weight:600;">View Bills &rarr;</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-green">
+                <div class="standard-kpi-icon">ðŸ’°</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">GROSS PROFIT</span>
+                    <span class="pill-badge pill-success metric-trend-pill">Margin</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-profit">â‚¹ 0.00</div>
+                  <div class="metric-note" style="color:var(--green); font-weight:600;">Margin Revenue</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-orange" style="cursor:pointer;" onclick="selectNav('view-reminders')"
+                title="View Debtors & Reminders">
+                <div class="standard-kpi-icon">â³</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">RECEIVABLES</span>
+                    <span class="pill-badge pill-warning metric-trend-pill">Pending</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-receivables">â‚¹ 0.00</div>
+                  <div class="metric-note" style="color:var(--yellow); font-weight:600;">Pending Debtors &rarr;</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-teal" style="cursor:pointer;" onclick="selectNav('view-item-master')"
+                title="View Inventory">
+                <div class="standard-kpi-icon">ðŸ“Š</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">STOCK VALUE</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Assets</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-stock">â‚¹ 0.00</div>
+                  <div class="metric-note" id="rep-kpi-low-stock" style="color:var(--red); font-weight:600;">0 low stock
+                    items</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-purple" style="cursor:pointer;" onclick="selectNav('view-customers')"
+                title="View Customers">
+                <div class="standard-kpi-icon">ðŸ‘¥</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">CUSTOMERS</span>
+                    <span class="pill-badge pill-purple metric-trend-pill">Active</span>
+                  </div>
+                  <div class="metric-value" id="rep-kpi-customers">0</div>
+                  <div class="metric-note" style="color:var(--cyan); font-weight:600;">Active Clients &rarr;</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIMARY ROW: RECENT SALES, RECENT PURCHASES & PAYMENT SNAPSHOT -->
+            <div style="display:grid; grid-template-columns: 2fr 2fr 1.1fr; gap:12px; margin-bottom:14px;">
+              <!-- Recent Sales Invoices -->
+              <div class="data-panel" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ›’ Recent Sales
+                    Invoices</h4>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ReportsController.openReportFromDashboard('SALES_REGISTER')"
+                    style="font-size:0.72rem; padding:3px 10px;">View Report</button>
+                </div>
+                <table class="data-table" style="font-size:0.78rem;">
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th style="text-align:right;">Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rep-tbl-sales">
+                    <tr>
+                      <td colspan="5" style="text-align:center; padding:16px; color:var(--text-dim);">Loading sales...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Recent Purchase Bills -->
+              <div class="data-panel" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ“¦ Recent Purchase
+                    Invoices</h4>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ReportsController.openReportFromDashboard('PURCHASE_REGISTER')"
+                    style="font-size:0.72rem; padding:3px 10px;">View Report</button>
+                </div>
+                <table class="data-table" style="font-size:0.78rem;">
+                  <thead>
+                    <tr>
+                      <th>Invoice No.</th>
+                      <th>Date</th>
+                      <th>Supplier</th>
+                      <th style="text-align:right;">Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rep-tbl-purchases">
+                    <tr>
+                      <td colspan="5" style="text-align:center; padding:16px; color:var(--text-dim);">Loading
+                        purchases...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Payment Snapshot -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ’³ Payment
+                  Snapshot</h4>
+                <div id="rep-payment-snapshot" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim); padding:10px 0;">Loading payment summary...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- INSIGHT ROW: TOP CUSTOMERS, TOP ITEMS, BUSINESS HEALTH & STOCK ATTENTION -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <!-- Top Customers -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--cyan);">ðŸ‘¥ Top Customers
+                </h4>
+                <div id="rep-top-customers" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim);">Loading customers...</div>
+                </div>
+              </div>
+
+              <!-- Top Items -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--yellow);">ðŸ·ï¸ Top Selling
+                  Items</h4>
+                <div id="rep-top-items" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
+                  <div style="color:var(--text-dim);">Loading items...</div>
+                </div>
+              </div>
+
+              <!-- Business Health -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--green);">âš–ï¸ Business Health
+                </h4>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.78rem;">
+                  <span>Gross Margin</span>
+                  <span id="rep-margin-val" style="font-weight:700; color:var(--green);">0.00%</span>
+                </div>
+                <div
+                  style="background:rgba(255,255,255,0.06); height:8px; border-radius:4px; overflow:hidden; margin-bottom:10px;">
+                  <div id="rep-margin-bar"
+                    style="background:var(--green); height:100%; width:0%; transition:width 0.4s ease;"></div>
+                </div>
+                <div id="rep-business-health-details"
+                  style="font-size:0.76rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
+                  <div>Sales Invoices: <span id="rep-sales-count"
+                      style="font-weight:600; color:var(--text-main);">0</span></div>
+                  <div>Average Sale: <span id="rep-sales-avg" style="font-weight:600; color:var(--text-main);">â‚¹
+                      0.00</span></div>
+                </div>
+              </div>
+
+              <!-- Stock Attention -->
+              <div class="data-panel" style="padding:14px;">
+                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--red);">âš ï¸ Stock Attention
+                </h4>
+                <div id="rep-stock-attention-details"
+                  style="font-size:0.76rem; color:var(--text-muted); display:flex; flex-direction:column; gap:5px;">
+                  <div>Total Items: <span id="rep-stock-total-items"
+                      style="font-weight:600; color:var(--text-main);">0</span></div>
+                  <div>Low Stock Items: <span id="rep-stock-low-count"
+                      style="font-weight:700; color:var(--yellow);">0</span></div>
+                  <div>Out of Stock: <span id="rep-stock-out-count" style="font-weight:700; color:var(--red);">0</span>
+                  </div>
+                  <div>Total Valuation: <span id="rep-stock-valuation-val" style="font-weight:700; color:var(--cyan);">â‚¹
+                      0.00</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: REPORT CENTER (Image 2 Parity) -->
+          <div id="rep-tab-center-view" style="display:none;">
+            <!-- Category Sub-Nav & Search -->
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+              <div id="rep-center-category-pills" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;">
+                <!-- Category Buttons: Favorites, Sales, Purchase, Returns, GST / Tax, Receivable, Payable, Inventory, Banking, Profitability -->
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="text" id="rep-center-search" class="form-input" placeholder="Search reports, e.g. GST..."
+                  oninput="window.ReportsController.onCenterSearchInput(this.value)"
+                  style="width:240px; font-size:0.8rem; padding:6px 12px;">
+                <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.showRecentExports()"
+                  style="font-size:0.75rem; white-space:nowrap;">Recent Exports</button>
+              </div>
+            </div>
+
+            <!-- Report Cards Grid (Image 2 Parity) -->
+            <div id="report-cards-grid"
+              style="display:grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap:12px; margin-bottom:18px;">
+              <!-- Dynamically populated report cards with semantic icon, title, star favorite toggle, description, and purple Open Report button -->
+            </div>
+          </div>
+
+          <!-- TAB 3: SAVED REPORTS / DYNAMIC REPORT VIEWER (Image 3 Parity) -->
+          <div id="rep-tab-viewer-view" style="display:none;">
+            <!-- Sub-view navigation bar: Saved Catalog vs Active Report Viewer -->
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; gap:6px;">
+                <button id="btn-rep-sub-viewer" class="btn btn-secondary btn-sm"
+                  onclick="window.ReportsController.switchViewerSubView('viewer')"
+                  style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:rgba(56,189,248,0.15); color:var(--cyan); border-color:rgba(56,189,248,0.3);">ðŸ“Š
+                  Dynamic Viewer</button>
+                <button id="btn-rep-sub-saved" class="btn btn-secondary btn-sm"
+                  onclick="window.ReportsController.switchViewerSubView('catalog')"
+                  style="font-size:0.78rem; font-weight:600; padding:6px 14px;">ðŸ“‹ Saved Reports Catalog</button>
+              </div>
+              <div id="viewer-saved-quick-bar" style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.75rem; color:var(--text-muted); margin:0;">Saved Views:</label>
+                <select id="viewer-saved-reports-dropdown" class="form-select"
+                  onchange="window.ReportsController.onSavedDropdownChange(this.value)"
+                  style="font-size:0.75rem; padding:4px 8px; width:220px;">
+                  <option value="">-- Load Saved Report --</option>
+                </select>
+                <button class="btn btn-purple btn-sm" onclick="window.ReportsController.saveCurrentReportConfig()"
+                  style="font-size:0.75rem; padding:4px 12px; white-space:nowrap;">ðŸ’¾ Save Report</button>
+              </div>
+            </div>
+
+            <!-- Sub-view 1: Saved Reports Catalog Table (Desktop Reports.fxml Tab 3 Parity) -->
+            <div id="rep-subview-catalog" style="display:none;">
+              <div class="data-panel" style="padding:14px; margin-bottom:14px;">
+                <div
+                  style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:400px;">
+                    <input type="text" id="rep-saved-search" class="form-input" placeholder="Search saved reports..."
+                      oninput="window.ReportsController.onSavedSearch(this.value)"
+                      style="width:100%; font-size:0.8rem; padding:6px 12px;">
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.loadSavedReports()"
+                      style="font-size:0.75rem; padding:4px 10px;">â†» Refresh</button>
+                    <button class="btn btn-purple btn-sm" onclick="window.ReportsController.switchMainTab('center')"
+                      style="font-size:0.75rem; padding:4px 12px;">+ Create from Report Center</button>
+                  </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                  <table class="data-table" id="saved-reports-table" style="font-size:0.78rem;">
+                    <thead>
+                      <tr>
+                        <th>Saved Report</th>
+                        <th>Base Report</th>
+                        <th>Date Preset</th>
+                        <th>Grouping</th>
+                        <th>Sorting</th>
+                        <th>Columns</th>
+                        <th>Schedule</th>
+                        <th style="text-align:right;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="saved-reports-tbody">
+                      <tr>
+                        <td colspan="8" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                            class="loading-spinner"></span> Loading saved reports...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-dim); margin-top:8px;">Saved Reports store configuration
+                  only. Opening one restores the filters and runs fresh server data.</div>
+              </div>
+            </div>
+
+            <!-- Sub-view 2: Dynamic Report Viewer -->
+            <div id="rep-subview-viewer" style="display:block;">
+              <!-- Top Advanced Collapsible Filters Panel -->
+              <div class="data-panel" style="padding:14px; margin-bottom:14px; background:rgba(15,23,42,0.95);">
+                <div
+                  style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="viewer-header-icon" style="font-size:1.1rem; color:var(--cyan);">ðŸ“„</span>
+                    <h3 id="viewer-report-title"
+                      style="margin:0; font-size:1rem; font-weight:700; color:var(--text-main);">Sales Register</h3>
+                    <span id="viewer-active-filters-summary" class="pill-badge pill-neutral"
+                      style="font-size:0.72rem;">Active filters: All</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn btn-secondary btn-sm" id="btn-viewer-toggle-collapse"
+                      onclick="window.ReportsController.toggleViewerFilterCollapse()"
+                      style="font-size:0.75rem; padding:3px 10px;">Collapse â–²</button>
+                  </div>
+                </div>
+
+                <div id="viewer-filter-grid" style="display:flex; flex-direction:column; gap:10px;">
+                  <!-- Row 1: Period, Party, Item, Salesperson, Status -->
+                  <div style="display:grid; grid-template-columns: 140px 1.4fr 1.4fr 1.2fr 1fr; gap:10px;">
+                    <div id="box-v-period">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Period</label>
+                      <select id="v-filter-period" class="form-select"
+                        onchange="window.ReportsController.onViewerPeriodChange(this.value)"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="Today">Today</option>
+                        <option value="Yesterday">Yesterday</option>
+                        <option value="This Week">This Week</option>
+                        <option value="Last Week">Last Week</option>
+                        <option value="This Month" selected>This Month</option>
+                        <option value="Last Month">Last Month</option>
+                        <option value="This Quarter">This Quarter</option>
+                        <option value="Last Quarter">Last Quarter</option>
+                        <option value="This Financial Year">This Financial Year</option>
+                        <option value="Last Financial Year">Last Financial Year</option>
+                        <option value="Last 7 Days">Last 7 Days</option>
+                        <option value="Last 30 Days">Last 30 Days</option>
+                        <option value="Custom">Custom</option>
+                      </select>
+                    </div>
+                    <div id="box-v-party">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Party</label>
+                      <select id="v-filter-party" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All Parties</option>
+                      </select>
+                    </div>
+                    <div id="box-v-item">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Item</label>
+                      <select id="v-filter-item" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All Items</option>
+                      </select>
+                    </div>
+                    <div id="box-v-salesperson">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Salesperson</label>
+                      <select id="v-filter-salesperson" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All Sales Persons</option>
+                      </select>
+                    </div>
+                    <div id="box-v-docstatus">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Status</label>
+                      <select id="v-filter-docstatus" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All Statuses</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Row 2: Payment, From Date, To Date, Return Status, % GST Rate -->
+                  <div style="display:grid; grid-template-columns: 140px 140px 140px 1.2fr 1fr; gap:10px;">
+                    <div id="box-v-payment">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Payment</label>
+                      <select id="v-filter-payment" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All</option>
+                        <option value="PAID">PAID</option>
+                        <option value="PARTIAL">PARTIAL</option>
+                        <option value="UNPAID">UNPAID / OVERDUE</option>
+                      </select>
+                    </div>
+                    <div id="box-v-from">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">From
+                        Date</label>
+                      <input type="date" id="v-filter-from" class="form-input"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                    </div>
+                    <div id="box-v-to">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">To
+                        Date</label>
+                      <input type="date" id="v-filter-to" class="form-input"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                    </div>
+                    <div id="box-v-returns">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">Return
+                        Status</label>
+                      <select id="v-filter-returns" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All</option>
+                        <option value="NO_RETURN">No Return</option>
+                        <option value="HAS_RETURN">Has Return</option>
+                      </select>
+                    </div>
+                    <div id="box-v-gstrate">
+                      <label class="form-label"
+                        style="font-size:0.72rem; color:var(--text-muted); margin-bottom:3px; display:block;">% GST
+                        Rate</label>
+                      <select id="v-filter-gstrate" class="form-select"
+                        style="width:100%; font-size:0.78rem; padding:5px 8px;">
+                        <option value="">All Rates</option>
+                        <option value="0">0%</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18">18%</option>
+                        <option value="28">28%</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Row 3: Min Amount, Max Amount & Action Buttons -->
+                  <div
+                    style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:4px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                      <div id="box-v-minamt" style="display:flex; align-items:center; gap:6px;">
+                        <label class="form-label"
+                          style="font-size:0.72rem; color:var(--text-muted); margin:0; white-space:nowrap;">Min
+                          Amount:</label>
+                        <input type="number" id="v-filter-minamt" class="form-input" placeholder="0.00"
+                          style="width:110px; font-size:0.78rem; padding:4px 8px;">
+                      </div>
+                      <div id="box-v-maxamt" style="display:flex; align-items:center; gap:6px;">
+                        <label class="form-label"
+                          style="font-size:0.72rem; color:var(--text-muted); margin:0; white-space:nowrap;">Max
+                          Amount:</label>
+                        <input type="number" id="v-filter-maxamt" class="form-input" placeholder="No limit"
+                          style="width:110px; font-size:0.78rem; padding:4px 8px;">
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                      <button class="btn btn-secondary" onclick="window.ReportsController.resetViewerFilters()"
+                        style="padding:5px 12px; font-size:0.78rem;">Reset</button>
+                      <button class="btn btn-purple" onclick="window.ReportsController.applyViewerFilters()"
+                        style="padding:5px 16px; font-size:0.78rem; font-weight:700;">Apply Filters</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Table Control Bar -->
+              <div class="filter-toolbar"
+                style="display:flex; gap:10px; align-items:center; margin-bottom:12px; background:var(--bg-surface); padding:8px 14px; border-radius:6px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+                <input type="text" id="viewer-search" class="form-input"
+                  placeholder="Search invoice / party / item / reference..."
+                  oninput="window.ReportsController.onViewerSearch(this.value)"
+                  style="flex:1; min-width:220px; font-size:0.8rem; padding:6px 12px;">
+                <div id="viewer-record-count"
+                  style="font-size:0.75rem; color:var(--text-muted); font-weight:600; white-space:nowrap;">Showing 0
+                  entries</div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-size:0.72rem; color:var(--text-muted); margin:0;">Group By:</label>
+                  <select id="viewer-groupby" class="form-select"
+                    onchange="window.ReportsController.onGroupingChanged(this.value)"
+                    style="font-size:0.75rem; padding:4px 8px; width:120px;">
+                    <option value="None">None</option>
+                    <option value="Party">Party</option>
+                    <option value="Item">Item</option>
+                    <option value="Status">Status</option>
+                    <option value="Date">Date</option>
+                  </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-size:0.72rem; color:var(--text-muted); margin:0;">Sort:</label>
+                  <select id="viewer-sortby" class="form-select"
+                    onchange="window.ReportsController.onSortingChanged(this.value)"
+                    style="font-size:0.75rem; padding:4px 8px; width:130px;">
+                    <option value="Date">Date</option>
+                    <option value="Number">Number</option>
+                    <option value="Party">Party</option>
+                    <option value="Amount">Amount</option>
+                  </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-size:0.72rem; color:var(--text-muted); margin:0;">Direction:</label>
+                  <select id="viewer-direction" class="form-select"
+                    onchange="window.ReportsController.onDirectionChanged(this.value)"
+                    style="font-size:0.75rem; padding:4px 8px; width:110px;">
+                    <option value="Descending">Descending</option>
+                    <option value="Ascending">Ascending</option>
+                  </select>
+                </div>
+                <button class="btn btn-purple" onclick="window.ReportsController.saveCurrentReportConfig()"
+                  style="font-size:0.75rem; padding:5px 12px; white-space:nowrap;">ðŸ’¾ Save Report</button>
+              </div>
+
+              <!-- Dynamic Report Data Table -->
+              <div class="data-panel" style="overflow-x:auto; margin-bottom:12px;">
+                <table class="data-table" id="viewer-table" style="font-size:0.78rem;">
+                  <thead id="viewer-thead">
+                    <tr>
+                      <th>Loading...</th>
+                    </tr>
+                  </thead>
+                  <tbody id="viewer-tbody">
+                    <tr>
+                      <td style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                          class="loading-spinner"></span> Loading dynamic report...</td>
+                    </tr>
+                  </tbody>
+                  <tfoot id="viewer-tfoot"></tfoot>
+                </table>
+              </div>
+
+              <!-- Bottom Navigation & Action Bar -->
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-surface); padding:8px 14px; border-radius:6px; border:1px solid var(--border-subtle); flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button class="btn btn-secondary btn-sm" id="btn-viewer-view-source"
+                    onclick="window.ReportsController.viewSelectedRowSource()"
+                    style="font-size:0.75rem; padding:4px 10px;"
+                    title="Deep-link into originating Sales, Purchase, or Bank record">ðŸ‘ï¸ View Source</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.printViewerReport()"
+                    style="font-size:0.75rem; padding:4px 10px;">ðŸ–¨ï¸ Print</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <label style="font-size:0.72rem; color:var(--text-muted); margin:0;">Rows per page:</label>
+                    <select id="viewer-rows-per-page" class="form-select"
+                      onchange="window.ReportsController.onRowsPerPageChanged(this.value)"
+                      style="font-size:0.75rem; padding:3px 6px; width:70px;">
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="250">250</option>
+                    </select>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.viewerFirstPage()"
+                      style="padding:2px 8px;">&laquo; First</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.viewerPrevPage()"
+                      style="padding:2px 8px;">&lsaquo; Prev</button>
+                    <span id="viewer-page-indicator"
+                      style="font-size:0.75rem; font-weight:600; color:var(--text-main); padding:0 6px;">Page 1 /
+                      1</span>
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.viewerNextPage()"
+                      style="padding:2px 8px;">Next &rsaquo;</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.viewerLastPage()"
+                      style="padding:2px 8px;">Last &raquo;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: SCHEDULED REPORTS (Image 4 Parity) -->
+          <div id="rep-tab-scheduler-view" style="display:none;">
+            <!-- Header info & + New Schedule Button -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--text-main);">Scheduled Reports</h3>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:var(--text-muted);">Server-side schedules built
+                  from Saved Reports with dynamic date presets and delivery history.</p>
+              </div>
+              <button class="btn btn-purple" onclick="window.ReportsController.openNewScheduleModal()"
+                style="font-weight:700;">+ New Schedule</button>
+            </div>
+
+            <!-- 4 KPI CARDS (Desktop Image 4 Parity) -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+              <div class="standard-kpi-card kpi-blue">
+                <div class="standard-kpi-icon">â°</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">ACTIVE SCHEDULES</span>
+                    <span class="pill-badge pill-success metric-trend-pill">Jobs</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-active">0</div>
+                  <div class="metric-note" style="color:var(--accent-green);">Enabled schedules</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-cyan">
+                <div class="standard-kpi-icon">ðŸš€</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">NEXT RUN</span>
+                    <span class="pill-badge pill-neutral metric-trend-pill">Queue</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-next" style="font-size:0.95rem;">None Scheduled</div>
+                  <div class="metric-note" id="rep-sch-kpi-next-name" style="color:var(--cyan);">-</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-purple">
+                <div class="standard-kpi-icon">ðŸ“…</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">REPORTS THIS MONTH</span>
+                    <span class="pill-badge pill-purple metric-trend-pill">Count</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-month">0</div>
+                  <div class="metric-note" style="color:var(--accent-purple);">Generated</div>
+                </div>
+              </div>
+              <div class="standard-kpi-card kpi-amber">
+                <div class="standard-kpi-icon">âš ï¸</div>
+                <div class="standard-kpi-body">
+                  <div class="standard-kpi-top">
+                    <span class="metric-label">FAILURES</span>
+                    <span class="pill-badge pill-danger metric-trend-pill">Alert</span>
+                  </div>
+                  <div class="metric-value" id="rep-sch-kpi-failures">0</div>
+                  <div class="metric-note" style="color:var(--accent-red);">Last 30 days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SCHEDULER FILTER TOOLBAR -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+              <input type="text" id="rep-sch-search" class="form-input" placeholder="Search schedules..."
+                oninput="window.ReportsController.filterSchedules()" style="flex:1;">
+              <select id="rep-sch-status-filter" class="form-select"
+                onchange="window.ReportsController.filterSchedules()" style="width:160px;">
+                <option value="">All Status</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="PAUSED">PAUSED</option>
+              </select>
+              <select id="rep-sch-format-filter" class="form-select"
+                onchange="window.ReportsController.filterSchedules()" style="width:140px;">
+                <option value="">All Formats</option>
+                <option value="PDF">PDF</option>
+                <option value="XLSX">XLSX</option>
+                <option value="PDF_XLSX">PDF + XLSX</option>
+                <option value="CSV">CSV</option>
+              </select>
+              <button class="btn btn-secondary" onclick="window.ReportsController.loadSchedules()">â†» Refresh</button>
+            </div>
+
+            <!-- SCHEDULES TABLE -->
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table" id="rep-sch-table" style="font-size:0.8rem;">
+                <thead>
+                  <tr>
+                    <th>Schedule</th>
+                    <th>Saved Report</th>
+                    <th>Frequency</th>
+                    <th>Time</th>
+                    <th>Format</th>
+                    <th>Delivery</th>
+                    <th>Next Run</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-sch-tbody">
+                  <tr>
+                    <td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading scheduled reports...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:10px; font-size:0.75rem; color:var(--text-dim);">
+              &#9432; Schedules run securely on the ERP server, calculate dynamic date presets at execution time,
+              deliver automated files to configured recipients, and log delivery history.
+            </p>
+          </div>
+        </div>

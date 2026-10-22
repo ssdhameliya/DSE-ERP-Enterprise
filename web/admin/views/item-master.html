@@ -1,0 +1,228 @@
+<div id="view-item-master" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
+              <div
+                style="width:40px; height:40px; border-radius:8px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                &#128188;</div>
+              <div>
+                <h1 style="margin:0; font-size:1.4rem; font-weight:700;">Items Master</h1>
+                <p style="margin:2px 0 0; color:var(--text-muted); font-size:0.8rem;">Manage product codes, tax, pricing
+                  and reorder settings</p>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="window.ItemMasterController.openNewItemModal()"
+                style="font-weight:700;">+ New Item</button>
+            </div>
+          </div>
+
+          <!-- KPI Cards Desktop Parity -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;">
+            <div class="standard-kpi-card kpi-blue" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ“¦</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL ITEMS</span>
+                  <span class="metric-trend-pill trend-neutral">Active</span>
+                </div>
+                <div class="metric-value" id="item-kpi-total">0</div>
+                <div class="metric-note">Total items active</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-purple" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ·ï¸</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">CATEGORIES</span>
+                  <span class="metric-trend-pill trend-info">Tracked</span>
+                </div>
+                <div class="metric-value" id="item-kpi-categories">0</div>
+                <div class="metric-note">Categories tracked</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-orange" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">âš ï¸</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">LOW STOCK</span>
+                  <span class="metric-trend-pill trend-warning">Alert</span>
+                </div>
+                <div class="metric-value" id="item-kpi-low-stock" style="color:var(--orange);">0</div>
+                <div class="metric-note">Low stock alerts</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-green" style="display:flex; align-items:center; gap:14px;">
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ’°</div>
+              <div class="standard-kpi-body" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL VALUATION</span>
+                  <span class="metric-trend-pill trend-positive">Rupees</span>
+                </div>
+                <div class="metric-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
+                <div class="metric-note">Stock assets valuation</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ENTITY TOOLBAR (ItemMaster.fxml Parity) -->
+          <div class="entity-toolbar"
+            style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+            <input type="text" id="item-search" class="form-input"
+              placeholder="Search item code, name, category or brand..." style="flex:1;"
+              oninput="window.ItemMasterController.filterItems(this.value)">
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.editSelectedItem()">&#9998;
+              Edit</button>
+            <button class="btn btn-danger" onclick="window.ItemMasterController.deleteSelectedItem()">&#128465; Delete
+              Item</button>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.loadItems()">&#8634; Refresh</button>
+            <div style="width:1px; height:24px; background:var(--border-subtle); margin:0 4px;"></div>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.importItemsExcel()">&#128229; Import
+              Excel</button>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.exportItems()">&#128202; Export
+              Excel</button>
+          </div>
+
+          <!-- Item Master Register Workspace (ItemMaster.fxml Parity) -->
+          <div class="register-workspace" id="item-master-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+              <table class="data-table clean-desktop-table" id="item-master-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px; text-align:center;"><input type="checkbox"
+                        onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Unit</th>
+                    <th>HSN/SAC</th>
+                    <th style="text-align:right;">% GST</th>
+                    <th style="text-align:right;">% Discount</th>
+                    <th style="text-align:right;">Purchase Price</th>
+                    <th style="text-align:right;">Selling Price</th>
+                    <th style="text-align:right;">In Stock</th>
+                    <th style="text-align:right;">Min Stock</th>
+                    <th>Remarks</th>
+                    <th style="text-align:center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="items-table-tbody">
+                  <tr>
+                    <td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item
+                      catalog...</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Multi-Select Bulk Footer matching ItemMaster.fxml -->
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border-top:1px solid var(--border-subtle); border-radius:0 0 8px 8px; font-size:0.85rem; margin-top:-1px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <span id="item-selected-count" style="font-weight:600; color:var(--cyan);">0 selected</span>
+                  <button id="item-btn-delete-selected" class="btn btn-danger btn-sm"
+                    onclick="window.ItemMasterController.deleteSelectedItems()" disabled
+                    style="padding:4px 12px; font-size:0.8rem;">Delete Selected (0)</button>
+                </div>
+                <div>
+                  <span id="item-record-count" style="color:var(--text-muted); font-size:0.8rem;">Showing 0
+                    Records</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inline Docked Item Detail Drawer (ItemMasterController.java Parity) -->
+            <div id="item-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="id-code">Item Details</h3>
+                  <span id="id-desc" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.closeItemDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">CATEGORY</span>
+                  <span id="id-category" class="pill-badge pill-neutral">General</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">STOCK STATUS</span>
+                  <span id="id-status-badge" class="pill-badge pill-success">IN STOCK</span>
+                </div>
+                <div class="drawer-field-grid"
+                  style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Unit of Measure:</div>
+                    <div id="id-unit"
+                      style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">PCS</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">HSN / SAC:</div>
+                    <div id="id-hsn"
+                      style="font-weight:700; color:var(--cyan); font-family:monospace; font-size:0.85rem; margin-top:2px;">
+                      -</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">GST Rate:</div>
+                    <div id="id-gst"
+                      style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">18.0%</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Default Discount:</div>
+                    <div id="id-discount"
+                      style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">0.0%</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Purchase Price:</div>
+                    <div id="id-purchase-price"
+                      style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">&#8377; 0.00
+                    </div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Selling Price:</div>
+                    <div id="id-selling-price"
+                      style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">&#8377; 0.00
+                    </div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">In Stock:</div>
+                    <div id="id-stock" style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">
+                      0.00</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Minimum Stock:</div>
+                    <div id="id-min-stock"
+                      style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">0.00</div>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem; margin-bottom:12px;">
+                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Rack
+                      Location:</span><span id="id-location" style="font-weight:600;">-</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Brand
+                      / Material:</span><span id="id-brand-material" style="font-weight:600;">-</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span
+                      style="color:var(--text-muted);">Remarks:</span><span id="id-remarks"
+                      style="color:var(--text-dim); text-align:right; max-width:200px;">None</span></div>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm"
+                  onclick="window.ItemMasterController.editDrawerItem()">&#9999;&#65039; Edit Item</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.printDrawerBarcode()">&#127991;&#65039; Barcode</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.drawerAuditTrail()">&#128220; Audit Trail</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.drawerCreateSale()">&#128722; New Sale</button>
+              </div>
+            </div>
+          </div>
+        </div>

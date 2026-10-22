@@ -41,8 +41,12 @@ window.MasterDataController = (function() {
     async loadMastersData() {
       const catListEl = document.getElementById('masters-category-list');
       const tbody = document.getElementById('masters-table-tbody');
-      if (catListEl) catListEl.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-dim);"><div class="spinner"></div> Loading categories...</div>';
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);"><div class="spinner"></div> Loading master lookup entries...</td></tr>';
+      if (catListEl && (!catListEl.children.length || catListEl.querySelector('.spinner') || catListEl.innerText.includes('Loading'))) {
+        catListEl.innerHTML = Array(6).fill(0).map(() => '<div class="category-skeleton-item"></div>').join('');
+      }
+      if (tbody && (!tbody.children.length || tbody.querySelector('.spinner') || tbody.innerText.includes('Loading'))) {
+        tbody.innerHTML = Array(5).fill(0).map(() => '<tr><td colspan="6" style="padding: 12px;"><div class="category-skeleton-item" style="height: 24px; margin: 0;"></div></td></tr>').join('');
+      }
 
       try {
         const cats = await window.MasterService.getCategories();
@@ -143,7 +147,9 @@ window.MasterDataController = (function() {
       if (titleEl) titleEl.innerText = `${catName} Lookups`;
 
       const tbody = document.getElementById('masters-table-tbody');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);"><div class="spinner"></div> Loading lookup records...</td></tr>';
+      if (tbody && (!tbody.children.length || tbody.querySelector('.spinner') || tbody.innerText.includes('Loading'))) {
+        tbody.innerHTML = Array(5).fill(0).map(() => '<tr><td colspan="6" style="padding: 12px;"><div class="category-skeleton-item" style="height: 24px; margin: 0;"></div></td></tr>').join('');
+      }
 
       try {
         let items = [];

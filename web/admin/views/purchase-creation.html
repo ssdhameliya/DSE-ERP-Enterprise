@@ -1,0 +1,310 @@
+<div id="view-purchase-creation" class="module-view" style="display:none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 id="pe-title"><span>&#128230;</span> Create Purchase Invoice</h1>
+              <p id="pe-subtitle">Create a supplier purchase with the same validation and calculation flow as Sales</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.PurchaseController.cancelEditor()">Cancel</button>
+              <button class="btn btn-primary" id="pe-btn-save" onclick="window.PurchaseController.savePurchase()">Save
+                Purchase</button>
+            </div>
+          </div>
+
+          <div id="pe-read-only-banner" class="read-only-banner" style="display: none; margin-bottom: 16px;">
+            <span class="read-only-icon">&#128274;</span>
+            <div class="read-only-content">
+              <h4>Read-Only Historical Document Inspection Mode</h4>
+              <p>You are viewing an approved purchase invoice. Field edits, fast-entry lines, and modifications are
+                strictly locked to preserve audit trail integrity.</p>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 340px; gap:16px; align-items:start;">
+            <!-- Left Main Column -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <!-- Card 1: Supplier & Purchase Details -->
+              <div class="editor-card">
+                <div class="editor-card-header">Supplier &amp; Purchase Details</div>
+                <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+                  <div class="form-group">
+                    <label class="form-label">Supplier *</label>
+                    <select id="pe-supplier-select" class="form-select"
+                      onchange="window.PurchaseController.onEditorSupplierChange()" required>
+                      <option value="">Select supplier... *</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Purchase No. *</label>
+                    <input type="text" id="pe-invoice-no" class="form-input" placeholder="Auto (or enter vendor bill #)"
+                      style="font-family:monospace; font-weight:700; color:var(--cyan);">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Purchase Date *</label>
+                    <input type="date" id="pe-invoice-date" class="form-input" required>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                  <div class="form-group">
+                    <label class="form-label">Billing Address *</label>
+                    <textarea id="pe-billing-address" class="form-input" rows="2"
+                      placeholder="Supplier billing address..."
+                      oninput="window.PurchaseController.onBillingAddressInput(this.value)"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                      <label class="form-label" style="margin:0;">Delivery Address *</label>
+                      <label
+                        style="font-size:0.75rem; color:var(--text-dim); display:flex; align-items:center; gap:4px; cursor:pointer;">
+                        <input type="checkbox" id="pe-same-as-billing" checked
+                          onchange="window.PurchaseController.onSameAsBillingToggle(this.checked)"> Same as Billing
+                      </label>
+                    </div>
+                    <textarea id="pe-delivery-address" class="form-input" rows="2"
+                      placeholder="Warehouse delivery address..." readonly></textarea>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                  <div class="form-group">
+                    <label class="form-label">Billing GSTIN</label>
+                    <input type="text" id="pe-billing-gstin" class="form-input" placeholder="Supplier GSTIN"
+                      oninput="window.PurchaseController.onBillingGstinInput(this.value)">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Delivery GSTIN</label>
+                    <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN" readonly>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap:12px;">
+                  <div class="form-group">
+                    <label class="form-label">Payment Terms</label>
+                    <select id="pe-payment-terms" class="form-select">
+                      <option value="Net 30">Net 30</option>
+                      <option value="Net 15">Net 15</option>
+                      <option value="Immediate">Immediate</option>
+                      <option value="Advance">Advance</option>
+                      <option value="Net 60">Net 60</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Additional Charges</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <div id="pe-charges-summary-display" class="charges-summary-pill"
+                        onclick="window.PurchaseController.openChargesDialog()"
+                        title="Click to manage additional charges">No additional charges</div>
+                      <input type="hidden" id="pe-charges-input" value="0.00">
+                      <button type="button" id="pe-btn-manage-charges" class="btn btn-secondary"
+                        style="padding: 0 10px; font-size: 0.72rem; height: 36px; white-space: nowrap;"
+                        onclick="window.PurchaseController.openChargesDialog()">&#9881; Manage</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">PO Date</label>
+                    <input type="date" id="pe-po-date" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">PO / Supplier Ref #</label>
+                    <input type="text" id="pe-order-no" class="form-input" placeholder="e.g. PO-2026-9901">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Purchase Line Items Entry Grid -->
+              <div class="editor-card">
+                <div class="editor-card-header">Purchase Items</div>
+                <div id="pe-item-entry-strip"
+                  style="display:grid; grid-template-columns: 2fr 90px 105px 90px 90px 110px; gap:8px; align-items:flex-end; margin-bottom:12px;">
+                  <div class="form-group" style="position:relative;">
+                    <label class="form-label">Search Item Master [F2 / Enter]</label>
+                    <input type="text" id="pe-item-search" class="form-input" placeholder="Search SKU, name, HSN..."
+                      oninput="window.PurchaseController.searchEditorItems(this.value)">
+                    <div id="pe-item-search-results"
+                      style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.6); max-height:220px; overflow-y:auto; z-index:1000;">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Qty</label>
+                    <input type="number" step="any" min="0.001" id="pe-line-qty" class="form-input" placeholder="1.00">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Rate (&#8377;)</label>
+                    <input type="number" step="0.01" id="pe-line-rate" class="form-input" placeholder="0.00">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Disc %</label>
+                    <input type="number" step="0.1" id="pe-line-disc" class="form-input" placeholder="0" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">GST %</label>
+                    <input type="number" step="0.1" id="pe-line-gst" class="form-input" placeholder="18" value="18">
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-secondary" onclick="window.PurchaseController.addEditorLine()"
+                      style="width:100%;">+ Add Item</button>
+                  </div>
+                </div>
+
+                <!-- Line Items Table -->
+                <div
+                  style="border:1px solid var(--border-subtle); border-radius:6px; overflow:hidden; max-height:260px; overflow-y:auto;">
+                  <table class="data-table" style="margin:0; width:100%;">
+                    <thead>
+                      <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>HSN</th>
+                        <th>Unit</th>
+                        <th style="text-align:right;">Qty</th>
+                        <th style="text-align:right;">Rate (&#8377;)</th>
+                        <th style="text-align:right;">Disc %</th>
+                        <th style="text-align:right;">Disc (&#8377;)</th>
+                        <th style="text-align:right;">GST %</th>
+                        <th style="text-align:right;">Taxable (&#8377;)</th>
+                        <th style="text-align:right;">GST (&#8377;)</th>
+                        <th style="text-align:right;">Total (&#8377;)</th>
+                        <th style="text-align:center;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pe-lines-body">
+                      <tr>
+                        <td colspan="14" style="text-align:center; padding:25px; color:var(--text-muted);">No items
+                          added yet. Search and add items above.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div
+                  style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.78rem; color:var(--text-dim);">
+                  <span id="pe-bottom-items">0 Item(s)</span>
+                  <span>Purchases decrement vendor ledger &amp; increment inventory upon approval</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Rail: Summary, Transport Details & Attachments -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <!-- Summary Card matching desktop Purchase.fxml -->
+              <div class="editor-card">
+                <div class="editor-card-header">Purchase Summary</div>
+                <div style="font-size:0.85rem;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-muted);">Sub Total:</span>
+                    <span style="font-weight:600;" id="pe-summary-subtotal">&#8377; 0.00</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-muted);">Total Discount:</span>
+                    <span style="font-weight:600; color:var(--green);" id="pe-summary-discount">&#8377; 0.00</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-muted);">Taxable Amount:</span>
+                    <span style="font-weight:700;" id="pe-summary-taxable">&#8377; 0.00</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-muted);">Additional Charges:</span>
+                    <span style="font-weight:600;" id="pe-summary-charges">&#8377; 0.00</span>
+                  </div>
+                  <div id="pe-row-cgst"
+                    style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--yellow);">
+                    <span>CGST:</span>
+                    <span style="font-weight:600;" id="pe-summary-cgst">&#8377; 0.00</span>
+                  </div>
+                  <div id="pe-row-sgst"
+                    style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--yellow);">
+                    <span>SGST:</span>
+                    <span style="font-weight:600;" id="pe-summary-sgst">&#8377; 0.00</span>
+                  </div>
+                  <div id="pe-row-igst"
+                    style="display:none; justify-content:space-between; margin-bottom:4px; color:var(--yellow);">
+                    <span>IGST:</span>
+                    <span style="font-weight:600;" id="pe-summary-igst">&#8377; 0.00</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--yellow);">
+                    <span>Total GST:</span>
+                    <span style="font-weight:700;" id="pe-summary-total-gst">&#8377; 0.00</span>
+                  </div>
+                  <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                  <div
+                    style="display:flex; justify-content:space-between; font-size:1.1rem; font-weight:800; color:var(--text-main);">
+                    <span>Total Amount:</span>
+                    <span style="color:var(--yellow);" id="pe-summary-grand-total">&#8377; 0.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transport & Tax Card matching desktop Purchase.fxml -->
+              <div class="editor-card">
+                <div class="editor-card-header">Tax &amp; Transport Details</div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label">GST Type *</label>
+                  <select id="pe-gst-type" class="form-select"
+                    onchange="window.PurchaseController.recalcEditorTotals()">
+                    <option value="GST">Intra-State GST (CGST 50% + SGST 50%)</option>
+                    <option value="IGST">Inter-State IGST (Full 100% IGST)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label">Transporter</label>
+                  <select id="pe-transporter" class="form-select"
+                    onchange="window.PurchaseController.onTransporterChange(this)">
+                    <option value="">Select transporter...</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label">Transporter GSTIN</label>
+                  <input type="text" id="pe-transporter-gstin" class="form-input" placeholder="Transporter GSTIN">
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="form-label">Vehicle Number</label>
+                  <input type="text" id="pe-vehicle-number" class="form-input" placeholder="e.g. GJ-05-XX-1234">
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                  <div class="form-group">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" id="pe-contact-person" class="form-input" placeholder="Driver / Agent">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Mobile</label>
+                    <input type="text" id="pe-contact-mobile" class="form-input" placeholder="Mobile #">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3: Notes & Attachment matching Settings Branding style -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128203; Notes &amp; Attachment</span>
+                </div>
+                <textarea id="pe-notes" class="form-input" placeholder="Inward inspection notes..."
+                  style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
+
+                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">ðŸ“Ž</span>
+                      <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
+                    </div>
+                    <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
+                  </div>
+                  <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Vendor bill copy, physical receipt scan, or GRN &bull; Max 10MB</div>
+
+                  <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
+                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">ðŸ“„</div>
+                    <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
+                    <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
+                  </div>
+                  <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
+                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>ðŸ‘ Preview</button>
+                    <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

@@ -1,0 +1,332 @@
+<div id="view-automation" class="module-view">
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
+              <div
+                style="width:40px; height:40px; border-radius:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; color:var(--yellow);">
+                &#9889;
+              </div>
+              <div>
+                <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Smart Operations &amp; Automation Center</h1>
+                <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Automated 3-way matching,
+                  dynamic stock reorder, and operational rule engine</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-primary" id="btn-auto-scan" onclick="window.AutomationCenterController.loadData()">
+                <span>&#128269;</span> Scan Inventory Reorder
+              </button>
+              <button class="btn btn-secondary" onclick="window.AutomationCenterController.loadData()">
+                <span>&#128260;</span> Refresh Engine
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 KPIS ROW (EXACT AutomationCenter.fxml DESKTOP PARITY) -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:16px;">
+            <div class="kpi-card" style="border-left:4px solid var(--cyan); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">ACTIVE RULES</span>
+                <span class="pill-badge pill-success" style="font-size:0.65rem; padding:1px 6px;">Live</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-active-rules"
+                style="font-size:1.35rem; color:var(--cyan); font-weight:700;">6</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Automations Enabled</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--green); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">3-WAY MATCH RATE</span>
+                <span class="pill-badge pill-success" style="font-size:0.65rem; padding:1px 6px;">Match</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-match-rate"
+                style="font-size:1.35rem; color:var(--green); font-weight:700;">100.0%</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">PO vs GRN vs Bill</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--red); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">DISCREPANT BILLS</span>
+                <span class="pill-badge pill-danger" style="font-size:0.65rem; padding:1px 6px;">Action</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-discrepant"
+                style="font-size:1.35rem; color:var(--red); font-weight:700;">0</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Pending Approval</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--yellow); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">REORDER ALERTS</span>
+                <span class="pill-badge pill-warning" style="font-size:0.65rem; padding:1px 6px;">Alert</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-reorders"
+                style="font-size:1.35rem; color:var(--yellow); font-weight:700;">0</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Below Minimum Stock</div>
+            </div>
+
+            <div class="kpi-card" style="border-left:4px solid var(--purple); padding:12px 14px;">
+              <div class="kpi-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="kpi-label" style="font-size:0.68rem;">REPLENISHMENT</span>
+                <span class="pill-badge pill-purple" style="font-size:0.65rem; padding:1px 6px;">Reorder</span>
+              </div>
+              <div class="kpi-value" id="auto-kpi-replenish-value"
+                style="font-size:1.35rem; color:var(--purple); font-weight:700;">â‚¹ 0.00</div>
+              <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Suggested Reorder Value</div>
+            </div>
+          </div>
+
+          <!-- TAB CONTROLS -->
+          <div
+            style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+            <button type="button" class="btn btn-secondary active" id="auto-tab-btn-match"
+              onclick="window.AutomationCenterController.switchTab('MATCH')">
+              <span>&#129309;</span> Smart 3-Way Match Verification
+            </button>
+            <button type="button" class="btn btn-secondary" id="auto-tab-btn-reorder"
+              onclick="window.AutomationCenterController.switchTab('REORDER')">
+              <span>&#128230;</span> Dynamic Stock Reorder Alerts
+            </button>
+            <button type="button" class="btn btn-secondary" id="auto-tab-btn-rules"
+              onclick="window.AutomationCenterController.switchTab('RULES')">
+              <span>&#9881;&#65039;</span> Configured Automation Rules
+            </button>
+          </div>
+
+          <!-- TAB 1: 3-WAY MATCH -->
+          <div id="auto-panel-match" style="display:block;">
+            <div class="data-panel" style="padding:14px;">
+              <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <input type="text" id="auto-match-search" class="form-input"
+                  placeholder="Search vendor bill, supplier, PO..."
+                  oninput="window.AutomationCenterController.filterMatches()" style="flex:1;">
+                <select id="auto-match-filter" class="form-select"
+                  onchange="window.AutomationCenterController.filterMatches()" style="width:200px;">
+                  <option value="ALL">All Statuses</option>
+                  <option value="MATCHED">MATCHED</option>
+                  <option value="REVIEW_REQUIRED">REVIEW_REQUIRED</option>
+                  <option value="SHORT_SHIPMENT">SHORT_SHIPMENT</option>
+                </select>
+                <button type="button" class="btn btn-secondary"
+                  onclick="window.AutomationCenterController.loadData()">Refresh</button>
+              </div>
+
+              <div class="register-workspace" id="auto-match-workspace">
+                <div class="register-table-panel data-panel" style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Vendor Bill No.</th>
+                        <th>PO Number</th>
+                        <th>Supplier Name</th>
+                        <th style="text-align:right;">PO Value (â‚¹)</th>
+                        <th style="text-align:right;">GRN Received (â‚¹)</th>
+                        <th style="text-align:right;">Billed Value (â‚¹)</th>
+                        <th style="text-align:right;">Variance (â‚¹)</th>
+                        <th style="text-align:center;">Match Status</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="auto-matches-tbody">
+                      <tr>
+                        <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading 3-way
+                          match records...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Match Detail Drawer (Docked Split) -->
+                <div id="auto-match-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+                  <div class="drawer-header">
+                    <div>
+                      <h3 style="margin:0; font-size:1rem;" id="amd-bill-no">3-Way Match Verification</h3>
+                      <span id="amd-supplier" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.closeMatchDrawer()"
+                      style="padding:2px 8px;">&times;</button>
+                  </div>
+                  <div class="drawer-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                      <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">MATCH STATUS</span>
+                      <span id="amd-status" class="pill-badge pill-success" style="font-size:0.75rem;">MATCHED</span>
+                    </div>
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Purchase Order Reference:</div>
+                      <div id="amd-po-no"
+                        style="font-weight:700; color:var(--cyan); font-family:monospace; font-size:0.85rem; margin-top:2px;">
+                        -</div>
+                    </div>
+                    <div class="drawer-field-grid"
+                      style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">PO Value:</div>
+                        <div id="amd-po-amt"
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
+                        </div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">GRN Received:</div>
+                        <div id="amd-grn-amt"
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
+                        </div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Billed Value:</div>
+                        <div id="amd-bill-amt"
+                          style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Variance:</div>
+                        <div id="amd-variance"
+                          style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button class="btn btn-primary btn-sm"
+                      onclick="window.AutomationCenterController.drawerOpenBill()">ðŸ“– Open Bill</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.drawerSupplierLedger()">ðŸ‘¤ Supplier</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.drawerAuditTimeline()">ðŸ“‹ Audit Log</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.closeMatchDrawer()">âœ– Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: REORDER ALERTS -->
+          <div id="auto-panel-reorder" style="display:none;">
+            <div class="data-panel" style="padding:14px;">
+              <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <input type="text" id="auto-reorder-search" class="form-input"
+                  placeholder="Search item code, description..."
+                  oninput="window.AutomationCenterController.filterReorders()" style="flex:1;">
+                <select id="auto-reorder-filter" class="form-select"
+                  onchange="window.AutomationCenterController.filterReorders()" style="width:200px;">
+                  <option value="ALL">All Stock Levels</option>
+                  <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
+                  <option value="LOW_STOCK">LOW_STOCK</option>
+                  <option value="HEALTHY">HEALTHY</option>
+                </select>
+                <button type="button" class="btn btn-secondary"
+                  onclick="window.AutomationCenterController.loadData()">Rescan Inventory</button>
+              </div>
+
+              <div class="register-workspace" id="auto-reorder-workspace">
+                <div class="register-table-panel data-panel" style="overflow-x:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Item Code</th>
+                        <th>Item Description</th>
+                        <th style="text-align:right;">Current Stock</th>
+                        <th style="text-align:right;">Min Stock</th>
+                        <th style="text-align:right;">Suggested Qty</th>
+                        <th style="text-align:center;">Unit</th>
+                        <th style="text-align:right;">Estimated Cost (â‚¹)</th>
+                        <th style="text-align:center;">Stock Status</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="auto-reorders-tbody">
+                      <tr>
+                        <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading
+                          reorder suggestions...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Reorder Detail Drawer (Docked Split) -->
+                <div id="auto-reorder-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+                  <div class="drawer-header">
+                    <div>
+                      <h3 style="margin:0; font-size:1rem;" id="ard-code">Safety Assessment</h3>
+                      <span id="ard-name" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.closeReorderDrawer()"
+                      style="padding:2px 8px;">&times;</button>
+                  </div>
+                  <div class="drawer-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                      <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">STOCK HEALTH</span>
+                      <span id="ard-status" class="pill-badge pill-warning" style="font-size:0.75rem;">LOW_STOCK</span>
+                    </div>
+                    <div class="drawer-field-grid"
+                      style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Current Stock:</div>
+                        <div id="ard-stock"
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">0</div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Minimum Stock:</div>
+                        <div id="ard-min"
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">0</div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Suggested Reorder:</div>
+                        <div id="ard-suggested"
+                          style="font-weight:700; color:var(--purple); font-size:0.85rem; margin-top:2px;">0</div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Estimated Cost:</div>
+                        <div id="ard-est-cost"
+                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button class="btn btn-primary btn-sm"
+                      onclick="window.AutomationCenterController.drawerCreatePo()">âž• Create PO</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.drawerOpenStockRegister()">ðŸ“¦ Stock Ledger</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.drawerItemMaster()">ðŸ·ï¸ Item Master</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.AutomationCenterController.closeReorderDrawer()">âœ– Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: CONFIGURED RULES -->
+          <div id="auto-panel-rules" style="display:none;">
+            <div class="data-panel" style="padding:14px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px;">Rule Identifier</th>
+                    <th>Automation Feature</th>
+                    <th style="width:140px; text-align:center;">Category</th>
+                    <th style="width:120px; text-align:center;">Current State</th>
+                    <th style="width:130px;">Control Mode</th>
+                    <th>Settings Path</th>
+                    <th style="width:140px; text-align:center;">Toggle</th>
+                  </tr>
+                </thead>
+                <tbody id="auto-rules-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Loading automation
+                      rules...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>

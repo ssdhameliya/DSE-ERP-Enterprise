@@ -1,0 +1,67 @@
+<div id="view-registration-approvals" class="module-view" style="display: none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128203;</span> Registration Approvals</h1>
+              <p>Approve only verified non-Admin registrations</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('users')">
+                <span>&larr;</span> Back to User Access
+              </button>
+              <button class="btn btn-secondary" onclick="window.UserAccessController.loadRegistrations()">
+                <span>&#128260;</span> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- 2 KPI Cards -->
+          <div class="kpi-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 14px 18px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.72rem;">PENDING APPROVAL</span></div>
+              <div class="kpi-value" id="reg-kpi-pending" style="font-size: 1.5rem; color: var(--yellow);">0</div>
+              <div class="kpi-meta" style="font-size: 0.68rem;">Awaiting administrator authorization</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 14px 18px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.72rem;">IDENTITY + MFA VERIFIED</span>
+              </div>
+              <div class="kpi-value" id="reg-kpi-verified" style="font-size: 1.5rem; color: var(--green);">0</div>
+              <div class="kpi-meta" style="font-size: 0.68rem;">Email and 2FA Authenticator verified</div>
+            </div>
+          </div>
+
+          <!-- Queue Table -->
+          <div class="data-panel" style="overflow-x:auto; margin-bottom: 14px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Requested Role</th>
+                  <th style="width: 100px; text-align: center;">Email</th>
+                  <th style="width: 130px; text-align: center;">Authenticator</th>
+                  <th>Requested</th>
+                  <th style="width: 110px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="reg-table-tbody">
+                <tr>
+                  <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading pending
+                    registrations...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bottom Decision Strip -->
+          <div class="reg-approval-bottom-bar">
+            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Assign final role:</span>
+            <select id="reg-assign-role" class="form-select form-input-sm" style="width: 200px;">
+              <option value="STAFF">Operations Staff</option>
+            </select>
+            <button class="btn btn-secondary" onclick="window.UserAccessController.rejectSelectedRegistration()"
+              style="color: #f87171; border-color: rgba(239,68,68,0.4);">Reject</button>
+            <button class="btn-purple" onclick="window.UserAccessController.approveSelectedRegistration()"
+              style="height:34px; padding:0 18px; font-weight:700; border-radius:6px; cursor:pointer;">Approve
+              User</button>
+          </div>
+        </div>

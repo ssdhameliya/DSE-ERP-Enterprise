@@ -1,0 +1,246 @@
+<div id="view-record-payment" class="module-view" style="display: none;">
+          <!-- Page Header Bar -->
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div
+                style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128179;
+              </div>
+              <div>
+                <h1 style="font-size: 1.35rem; font-weight: 800; font-family: 'Space Grotesk';">Invoice Payment</h1>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Record payment &bull; review history &bull;
+                  manage proof documents</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 10px;">
+              <button type="button" class="btn btn-secondary"
+                onclick="window.RecordPaymentController.emailInvoicePrompt()">&#9993; Email Invoice</button>
+              <button type="button" class="btn btn-secondary"
+                onclick="window.RecordPaymentController.printReceipt()">&#128424; Print</button>
+              <button type="button" class="btn btn-secondary"
+                onclick="window.RecordPaymentController.backToRegister()">&#128281; Back to Register</button>
+            </div>
+          </div>
+
+          <!-- Top Overview Strip Card -->
+          <div class="editor-card" style="margin-bottom: 16px; background: rgba(15, 23, 42, 0.9);">
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; align-items: center;">
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Invoice No</div>
+                <div id="rp-inv-no"
+                  style="font-size: 1.1rem; font-weight: 800; font-family: 'Space Grotesk'; color: var(--cyan);">-</div>
+              </div>
+              <div>
+                <div id="rp-party-label" style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">
+                  Customer</div>
+                <div id="rp-party-name" style="font-size: 0.92rem; font-weight: 700; color: var(--text-main);">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Invoice Date</div>
+                <div id="rp-inv-date" style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Due Date</div>
+                <div id="rp-due-date" style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Total Amount</div>
+                <div id="rp-top-total"
+                  style="font-size: 1.1rem; font-weight: 800; font-family: 'Space Grotesk'; color: var(--yellow);">
+                  &#8377; 0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Status</div>
+                <div id="rp-status-badge"><span class="pill-badge pill-warning">PENDING</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2-Column Grid: Left (Record New Payment) + Right (Invoice Summary & Proof) -->
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- Left Panel: Record New Payment Form -->
+            <div class="editor-card" id="rp-entry-card">
+              <div class="editor-card-header">
+                <span id="rp-form-title">&#128179; Record New Payment</span>
+              </div>
+              <form id="rp-payment-form" onsubmit="window.RecordPaymentController.savePayment(event); return false;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label">Payment Date *</label>
+                    <input type="date" id="rp-pay-date" class="form-input" required>
+                  </div>
+                  <div>
+                    <label class="form-label">Payment Mode *</label>
+                    <select id="rp-pay-mode" class="form-select" required>
+                      <option value="">Loading modes from master lookup...</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label" id="rp-label-ref">Reference / Cheque No</label>
+                    <input type="text" id="rp-pay-ref" class="form-input" placeholder="e.g. UTR / Cheque #">
+                  </div>
+                  <div>
+                    <label class="form-label" id="rp-label-from">Received From *</label>
+                    <input type="text" id="rp-pay-from" class="form-input" placeholder="Payer / Party name" required>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <label class="form-label" id="rp-label-bank">Bank Account *</label>
+                    <select id="rp-bank-account" class="form-select" required>
+                      <option value="">Loading bank accounts from master lookup...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" id="rp-label-amount">Amount Received (&#8377;) *</label>
+                    <input type="number" step="0.01" min="0.01" id="rp-pay-amount" class="form-input"
+                      oninput="window.RecordPaymentController.onAmountChange(this.value)" placeholder="0.00" required
+                      style="font-weight: 700; color: #34d399;">
+                  </div>
+                </div>
+
+                <!-- Allocation Radios -->
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 20px; font-size: 0.8rem;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="rp-allocation" id="rp-alloc-full" checked
+                      onchange="window.RecordPaymentController.onAllocationChange('FULL')">
+                    <span>Full Payment (Clear Balance)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="rp-allocation" id="rp-alloc-partial"
+                      onchange="window.RecordPaymentController.onAllocationChange('PARTIAL')">
+                    <span>Partial Payment</span>
+                  </label>
+                </div>
+
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-subtle); margin-bottom: 12px; font-size: 0.78rem;">
+                  <span style="color: var(--text-muted);">Balance After This Payment:</span>
+                  <span id="rp-bal-after"
+                    style="font-weight: 800; font-family: 'Space Grotesk'; color: var(--cyan);">&#8377; 0.00</span>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                  <label class="form-label">Notes / Remarks</label>
+                  <textarea id="rp-pay-notes" class="form-input" rows="2"
+                    placeholder="Optional payment remarks, bank details or clearance notes..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                  <button type="button" class="btn btn-secondary"
+                    onclick="window.RecordPaymentController.resetForm()">Reset Form</button>
+                  <button type="button" id="rp-btn-save" class="btn btn-primary"
+                    onclick="window.RecordPaymentController.savePayment(event)"
+                    style="padding: 6px 18px; font-weight: 700;">&#128190; Save Payment</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right Panel: Summary & Attachment Cards -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Invoice Summary Card -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128202; Invoice Summary</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Total Invoice Amount</span><span id="rp-sum-total"
+                      style="font-weight: 700; color: var(--text-main);">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Total Paid Amount</span><span id="rp-sum-paid"
+                      style="font-weight: 700; color: #34d399;">&#8377; 0.00</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span
+                      style="color: var(--text-muted);">Outstanding Balance</span><span id="rp-sum-balance"
+                      style="font-weight: 700; color: #f87171;">&#8377; 0.00</span></div>
+                  <div style="height: 1px; background: var(--border-subtle); margin: 4px 0;"></div>
+                  <div>
+                    <div
+                      style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-muted); margin-bottom: 4px;">
+                      <span>Payment Progress</span>
+                      <span id="rp-progress-pct" style="font-weight: 700; color: var(--cyan);">100% Paid</span>
+                    </div>
+                    <div
+                      style="width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+                      <div id="rp-progress-bar"
+                        style="width: 100%; height: 100%; background: #34d399; transition: width 0.3s;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attach Receipt / Bank Proof Card -->
+              <div class="editor-card">
+                <div class="editor-card-header">
+                  <span>&#128206; Attach Receipt / Bank Proof</span>
+                </div>
+                <div class="proof-drop-zone" id="rp-dropzone"
+                  onclick="document.getElementById('rp-proof-file-input').click()"
+                  style="border: 2px dashed rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 18px; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); margin-bottom: 10px;">
+                  <div style="font-size: 1.8rem; margin-bottom: 4px;">&#9729;&#65039;</div>
+                  <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 2px;">Drag
+                    &amp; drop bank proof here, or click to browse</div>
+                  <div style="font-size: 0.72rem; color: var(--text-dim);">Supports PDF, PNG, JPG up to 10MB</div>
+                  <input type="file" id="rp-proof-file-input" style="display: none;"
+                    onchange="window.RecordPaymentController.onProofFileSelected(this)">
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-dim);">
+                  <span id="rp-proof-name"
+                    style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;"
+                    title="No file attached">No file attached</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      onclick="document.getElementById('rp-proof-file-input').click()">+ Add</button>
+                    <button type="button" id="rp-btn-preview-proof" class="btn btn-secondary btn-sm" disabled
+                      onclick="window.RecordPaymentController.previewProof()">&#128065; Preview</button>
+                    <button type="button" id="rp-btn-remove-proof" class="btn btn-danger btn-sm" disabled
+                      onclick="window.RecordPaymentController.removeProof()">&#128465; Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Payment History Table -->
+          <div class="editor-card" style="padding: 0; overflow: hidden;">
+            <div
+              style="padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="rp-history-title"
+                  style="font-size: 0.86rem; font-weight: 700; color: var(--text-main); font-family: 'Space Grotesk';">&#9201;
+                  Payment History</span>
+                <span id="rp-history-badge" class="pill-badge pill-purple"
+                  style="font-size: 0.72rem; font-weight: 700; padding: 2px 8px;">0 Payments</span>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm"
+                onclick="window.RecordPaymentController.refreshPayments()">&#8635; Refresh History</button>
+            </div>
+            <div class="sales-table-scroll">
+              <table class="sales-desktop-table">
+                <thead>
+                  <tr id="rp-history-header-tr">
+                    <th>Payment Mode</th>
+                    <th># Reference No.</th>
+                    <th id="rp-history-party-th">Received From</th>
+                    <th style="text-align: right;">Amount (&#8377;)</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th style="text-align: center; width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rp-history-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading payment
+                      history...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>

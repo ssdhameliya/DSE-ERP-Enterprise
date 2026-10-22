@@ -1,0 +1,332 @@
+<div id="view-general-ledger" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128176;</span> Double-Entry General Ledger</h1>
+              <p>Audited ledger accounts, journal entries, balanced debit/credit transactions, and running balances</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:10px;">
+              <button class="btn btn-primary" onclick="window.FinanceController.openNewJournalDialog()">
+                <span>&#10133;</span> New Journal Voucher
+              </button>
+              <button class="btn btn-secondary" onclick="window.FinanceController.exportLedgerStatement()">
+                <span>&#128196;</span> Export Statement
+              </button>
+              <button class="btn btn-secondary" onclick="window.FinanceController.loadGeneralLedger()">
+                <span>&#128260;</span> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 KPI Summary Cards matching Desktop GeneralLedger.fxml -->
+          <div class="standard-kpi-row"
+            style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div class="standard-kpi-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);">
+                <span style="font-size:1.1rem;">&#128188;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL ASSETS</span>
+                  <span class="metric-trend-pill trend-positive">Assets</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-assets" style="color:var(--cyan);">&#8377; 0.00</div>
+                <div class="metric-note">Bank + Debtors + Stock</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-orange">
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:#fb923c; border:1px solid rgba(249,115,22,0.3);">
+                <span style="font-size:1.1rem;">&#9888;&#65039;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL LIABILITIES</span>
+                  <span class="metric-trend-pill trend-warning">Due</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-liabilities" style="color:var(--orange);">&#8377; 0.00</div>
+                <div class="metric-note">Payables + GST Due</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-green">
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3);">
+                <span style="font-size:1.1rem;">&#128200;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">OPERATING REVENUE</span>
+                  <span class="metric-trend-pill trend-positive">Sales</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-revenue" style="color:var(--green);">&#8377; 0.00</div>
+                <div class="metric-note">Net Sales Turnover</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-red">
+              <div class="standard-kpi-icon" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                <span style="font-size:1.1rem;">&#128722;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">TOTAL EXPENSES</span>
+                  <span class="metric-trend-pill trend-negative">Cost</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-expenses" style="color:var(--red);">&#8377; 0.00</div>
+                <div class="metric-note">Purchases + Overhead</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-teal">
+              <div class="standard-kpi-icon" style="background:rgba(20,184,166,0.15); color:#2dd4bf; border:1px solid rgba(20,184,166,0.3);">
+                <span style="font-size:1.1rem;">&#128176;</span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="metric-label">NET PROFIT / LOSS</span>
+                  <span class="metric-trend-pill trend-info">Net</span>
+                </div>
+                <div class="metric-value" id="gl-kpi-net" style="color:var(--cyan);">&#8377; 0.00</div>
+                <div class="metric-note">Net Operating Margin</div>
+              </div>
+            </div>
+          </div>
+          <!-- Compatibility hidden elements for legacy hooks -->
+          <div style="display:none;">
+            <span id="gl-kpi-debits">&#8377; 0.00</span>
+            <span id="gl-kpi-credits">&#8377; 0.00</span>
+            <span id="gl-kpi-count">0</span>
+          </div>
+
+          <!-- 3-Tab Navigation Bar matching Desktop GeneralLedger.fxml -->
+          <div class="tabs-nav" style="display:flex; gap:6px; border-bottom:1px solid var(--border-subtle); margin-bottom:14px;">
+            <button class="tab-btn active" id="tab-btn-gl-journals" onclick="window.FinanceController.switchGlTab('journals')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-main); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:8px;">
+              <span>&#128211;</span> Journal Vouchers
+            </button>
+            <button class="tab-btn" id="tab-btn-gl-accounts" onclick="window.FinanceController.switchGlTab('accounts')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#128195;</span> Chart of Accounts
+            </button>
+            <button class="tab-btn" id="tab-btn-gl-trial" onclick="window.FinanceController.switchGlTab('trial')"
+              style="padding:10px 18px; border:none; background:none; color:var(--text-muted); font-weight:600; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:8px;">
+              <span>&#9878;&#65039;</span> Trial Balance
+            </button>
+          </div>
+
+          <!-- TAB 1: JOURNAL VOUCHERS -->
+          <div id="gl-panel-journals" class="gl-tab-panel">
+            <!-- Filter Toolbar matching GeneralLedger.fxml -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:220px; position:relative;">
+                <input type="text" id="gl-search-input" class="form-input"
+                  placeholder="&#128269; Search voucher no, narration, reference..."
+                  oninput="window.FinanceController.filterJournals()">
+              </div>
+              <div style="width:160px;">
+                <select id="gl-type-filter" class="form-select" onchange="window.FinanceController.filterJournals()">
+                  <option value="All Types">All Types</option>
+                  <option value="SALES">SALES</option>
+                  <option value="PURCHASE">PURCHASE</option>
+                  <option value="RECEIPT">RECEIPT</option>
+                  <option value="PAYMENT">PAYMENT</option>
+                </select>
+              </div>
+              <div style="width:170px;">
+                <select id="gl-account-select" class="form-select" onchange="window.FinanceController.filterJournals()">
+                  <option value="">All Categories</option>
+                  <option value="ASSET">ASSET</option>
+                  <option value="LIABILITY">LIABILITY</option>
+                  <option value="REVENUE">REVENUE</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                </select>
+              </div>
+              <div style="width:140px;">
+                <input type="date" id="gl-from-date" class="form-input"
+                  onchange="window.FinanceController.filterJournals()">
+              </div>
+              <div style="width:140px;">
+                <input type="date" id="gl-to-date" class="form-input"
+                  onchange="window.FinanceController.filterJournals()">
+              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.resetGlFilters()">Reset Filters</button>
+            </div>
+
+            <!-- General Ledger Register Workspace (GeneralLedger.fxml Parity) -->
+            <div class="register-workspace" id="gl-workspace">
+              <div class="register-table-panel data-panel" style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:130px;">VOUCHER NO.</th>
+                      <th style="width:110px;">DATE</th>
+                      <th style="width:90px;">TYPE</th>
+                      <th style="width:120px;">REF DOCUMENT</th>
+                      <th>NARRATION</th>
+                      <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
+                      <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
+                      <th style="width:90px; text-align:center;">STATUS</th>
+                      <th style="width:100px; text-align:center;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ledger-table-tbody">
+                    <tr>
+                      <td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                          class="loading-spinner"></span> Loading General Ledger journals...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Inline Docked GL Entry Detail Drawer -->
+              <div id="gl-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+                <div class="drawer-header">
+                  <div>
+                    <h3 style="margin:0; font-size:1rem;" id="gld-voucher">Posting Details</h3>
+                    <span id="gld-date" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()"
+                    style="padding:2px 8px;">&times;</button>
+                </div>
+                <div class="drawer-body">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ENTRY TYPE</span>
+                    <span id="gld-type" class="pill-badge pill-neutral">JOURNAL</span>
+                  </div>
+                  <div class="drawer-field-grid"
+                    style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Debit:</div>
+                      <div id="gld-debit"
+                        style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">&#8377; 0.00
+                      </div>
+                    </div>
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Credit:</div>
+                      <div id="gld-credit"
+                        style="font-weight:700; color:var(--green); font-size:0.85rem; margin-top:2px;">&#8377; 0.00</div>
+                    </div>
+                  </div>
+                  <div
+                    style="padding:10px 12px; background:rgba(56,189,248,0.06); border-radius:6px; border:1px solid rgba(56,189,248,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; color:var(--cyan); font-weight:700;">AUDIT CHECK:</span>
+                    <span id="gld-running-bal" style="font-weight:800; color:var(--green); font-size:0.85rem;">BALANCED (Dr = Cr)</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
+                    <div style="display:flex; justify-content:space-between;"><span
+                        style="color:var(--text-muted);">Dr. Account:</span><span id="gld-account"
+                        style="font-weight:600;">-</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span
+                        style="color:var(--text-muted);">Cr. Account:</span><span id="gld-cr-account"
+                        style="font-weight:600; color:var(--text-muted);">-</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Ref
+                        Document:</span><span id="gld-ref"
+                        style="font-family:monospace; font-weight:600; color:var(--cyan);">-</span></div>
+                    <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+                      <span style="color:var(--text-muted);">Narration / Particulars:</span>
+                      <span id="gld-narration"
+                        style="color:var(--text-dim); background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:4px; font-size:0.78rem;">-</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                  <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerGlOpenSource()">&#128269;
+                    Open Source</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.FinanceController.drawerGlExportLine()">&#128196; Line Audit</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeGlDrawer()">&#10006;
+                    Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: CHART OF ACCOUNTS -->
+          <div id="gl-panel-accounts" class="gl-tab-panel" style="display:none;">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px; position:relative;">
+                <input type="text" id="coa-search-input" class="form-input"
+                  placeholder="&#128269; Search account code, name, category..."
+                  oninput="window.FinanceController.filterAccounts()">
+              </div>
+              <div style="width:200px;">
+                <select id="coa-category-filter" class="form-select" onchange="window.FinanceController.filterAccounts()">
+                  <option value="All Categories">All Categories</option>
+                  <option value="ASSET">ASSET</option>
+                  <option value="LIABILITY">LIABILITY</option>
+                  <option value="REVENUE">REVENUE</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.resetCoaFilters()">Reset Filters</button>
+            </div>
+
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px;">A/C CODE</th>
+                    <th>ACCOUNT NAME</th>
+                    <th style="width:130px;">CATEGORY</th>
+                    <th style="width:160px;">SUBTYPE</th>
+                    <th style="width:140px; text-align:right;">OPENING (&#8377;)</th>
+                    <th style="width:140px; text-align:right;">BALANCE (&#8377;)</th>
+                    <th style="width:100px; text-align:center;">ACTIVE</th>
+                  </tr>
+                </thead>
+                <tbody id="coa-table-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading Chart of Accounts...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: TRIAL BALANCE -->
+          <div id="gl-panel-trial" class="gl-tab-panel" style="display:none;">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar"
+              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px; position:relative;">
+                <input type="text" id="tb-search-input" class="form-input"
+                  placeholder="&#128269; Search account head, code, type..."
+                  oninput="window.FinanceController.filterTrialBalance()">
+              </div>
+              <button class="btn btn-secondary" onclick="window.FinanceController.exportTrialBalance()">
+                <span>&#128196;</span> Export Statement
+              </button>
+            </div>
+
+            <div class="data-panel" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:100px;">CODE</th>
+                    <th>ACCOUNT HEAD</th>
+                    <th style="width:130px;">TYPE</th>
+                    <th style="width:130px; text-align:right;">OPENING (&#8377;)</th>
+                    <th style="width:130px; text-align:right;">DEBIT (&#8377;)</th>
+                    <th style="width:130px; text-align:right;">CREDIT (&#8377;)</th>
+                    <th style="width:140px; text-align:right;">CLOSING (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody id="trial-balance-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading Trial Balance...</td>
+                  </tr>
+                </tbody>
+                <tfoot id="trial-balance-tfoot" style="background:rgba(255,255,255,0.03); font-weight:700; border-top:2px solid var(--border-subtle);">
+                  <tr>
+                    <td colspan="4" style="text-align:right; color:var(--text-muted); font-size:0.85rem;">TOTALS &amp; AUDIT CHECK:</td>
+                    <td id="tb-total-debit" style="text-align:right; color:var(--yellow); font-size:0.9rem;">&#8377; 0.00</td>
+                    <td id="tb-total-credit" style="text-align:right; color:var(--green); font-size:0.9rem;">&#8377; 0.00</td>
+                    <td id="tb-status-check" style="text-align:right;"><span class="pill-badge pill-success" style="font-size:0.75rem;">BALANCED</span></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>

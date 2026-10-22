@@ -1,0 +1,291 @@
+<div id="view-dashboard" class="module-view">
+          <!-- Page Header Banner -->
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div
+                style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128202;
+              </div>
+              <div>
+                <h1 style="font-size: 1.4rem; font-weight: 800; font-family: 'Space Grotesk';">Dashboard</h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Overview of your business at a glance</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 10px;">
+              <button id="dashboard-period-btn" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 600;"
+                onclick="window.DashboardController.cyclePeriod()">&#128197; This Month &#9662;</button>
+              <button class="btn btn-secondary" style="font-size: 0.78rem;"
+                onclick="window.DashboardController.refresh()">&#8635; Refresh</button>
+            </div>
+          </div>
+
+          <!-- Top 6 KPI Cards (Desktop Parity 58px Ribbon) -->
+          <div class="dash-kpi-row-6 compact-kpi-ribbon" style="display: flex; gap: 8px; margin-bottom: 14px; width: 100%;">
+            <!-- 1. Active Sales -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-emerald" onclick="selectNav('view-sales-register')"
+              title="Active Sales: ₹ 0.00 (+3.4%)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #10b981;">🛒</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Active Sales</span>
+                  <span class="kpi-pill-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">+3.4%</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-sales-amount" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
+              </div>
+            </div>
+            <!-- 2. Active Purchases -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-indigo" onclick="selectNav('view-purchase-register')"
+              title="Active Purchases: ₹ 0.00 (Active)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #6366f1;">📦</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Active Purchases</span>
+                  <span class="kpi-pill-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Active</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-pur-amount" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
+              </div>
+            </div>
+            <!-- 3. Receivables -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-amber" onclick="window.navigateToReceivableSales()"
+              title="Receivables: ₹ 0.00 (Pending)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #f59e0b;">⏳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Receivables</span>
+                  <span class="kpi-pill-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Pending</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-receivables" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
+              </div>
+            </div>
+            <!-- 4. Payables -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-crimson" onclick="window.navigateToPayablePurchases()"
+              title="Payables: ₹ 0.00 (Payable)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #ef4444;">💳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Payables</span>
+                  <span class="kpi-pill-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Payable</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-payables" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
+              </div>
+            </div>
+            <!-- 5. Cash Position -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-teal" onclick="selectNav('view-bank-entry')"
+              title="Cash Position: ₹ 0.00 (Net Cash)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(20, 184, 166, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #14b8a6;">💰</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Cash Position</span>
+                  <span class="kpi-pill-badge" style="background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Net Cash</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-cash-position" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
+              </div>
+            </div>
+            <!-- 6. Low Stock -->
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-amber" onclick="selectNav('view-item-master')"
+              title="Low Stock: 0 (Healthy)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #f59e0b;">⚠️</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Low Stock</span>
+                  <span class="kpi-pill-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Healthy</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-low-stock" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Directory Cards with View All -> (Image 1) -->
+          <div class="dash-dir-row-4">
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128101;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-cust-count">0</div>
+                  <div class="dash-dir-label">Customer directory</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-customers')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#127991;&#65039;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-item-count">0</div>
+                  <div class="dash-dir-label">Inventory catalog</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-item-master')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128722;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-sales-count">0</div>
+                  <div class="dash-dir-label">Sales register</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-sales-register')">View All &rarr;</span>
+            </div>
+            <div class="dash-dir-card">
+              <div class="dash-dir-left">
+                <span class="dash-dir-icon">&#128230;</span>
+                <div>
+                  <div class="dash-dir-num" id="dash-dir-pur-count">0</div>
+                  <div class="dash-dir-label">Purchase register</div>
+                </div>
+              </div>
+              <span class="dash-dir-link" onclick="selectNav('view-purchase-register')">View All &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Middle Row: Quick Actions (8 Purple Buttons) + Reminders (Image 1) -->
+          <div class="dash-middle-grid">
+            <div class="quick-actions-panel">
+              <div class="panel-header-title">
+                <span>&#9776; Quick Actions</span>
+              </div>
+              <div class="quick-actions-grid">
+                <button class="btn-quick-action" onclick="window.SalesController.openSaleEditorTab()">
+                  <span>&#128722;</span> <span>New Sale F9</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewPurchaseModal()">
+                  <span>&#128230;</span> <span>Create Purchase</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewCustomerModal()">
+                  <span>&#128101;</span> <span>New Customer</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewQuotationModal()">
+                  <span>&#128221;</span> <span>New Quotation F3</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewItemModal()">
+                  <span>&#127991;&#65039;</span> <span>Add Item Master</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewSupplierModal()">
+                  <span>&#127981;</span> <span>New Supplier</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewBankEntryModal()">
+                  <span>&#127974;</span> <span>Bank Entry F7</span>
+                </button>
+                <button class="btn-quick-action" onclick="window.openNewExpenseEntryModal()">
+                  <span>&#128184;</span> <span>Expense Entry F8</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Card: Reminders Center (Image 1) -->
+            <div class="reminders-panel">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div
+                    style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); font-family: 'Space Grotesk';">
+                    &#9200; Reminders</div>
+                  <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;"
+                    onclick="selectNav('view-reminders')">View All</span>
+                </div>
+                <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); font-family: 'Space Grotesk';"
+                  id="dash-reminders-count">0</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">No overdue reminders
+                </div>
+                <div style="font-size: 0.74rem; color: var(--text-dim); line-height: 1.4;">Open Reminder Center to
+                  review, complete or snooze business follow-ups.</div>
+              </div>
+              <button class="btn-quick-action" style="width: 100%; margin-top: 14px;"
+                onclick="selectNav('view-reminders')">
+                <span>&#128276;</span> <span>Open Reminder Center</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom 3 Panels: Top Customers, Receivables Ageing, Recent Activities (Image 1) -->
+          <div class="dash-bottom-grid-3">
+            <!-- 1. Top Customers -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#128101; Top Customers</span>
+                <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;"
+                  onclick="selectNav('view-customers')">View All</span>
+              </div>
+              <div id="dash-top-customers-list" style="margin-top: 10px;">
+                <div style="padding: 12px; text-align: center; color: var(--text-dim); font-size: 0.78rem;">Loading
+                  customer receivables...</div>
+              </div>
+            </div>
+
+            <!-- 2. Receivables Ageing -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#128193; Receivables Ageing</span>
+                <span style="font-size: 0.74rem; color: var(--cyan); cursor: pointer;"
+                  onclick="window.navigateToAgingAnalysis()">View Register</span>
+              </div>
+              <div style="margin-top: 10px;">
+                <div class="dash-list-row"><span style="color:var(--text-muted);">Overdue (&gt; 30 Days)</span><span
+                    style="font-weight:700; color:#f87171;" id="dash-ageing-overdue">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">21 - 30 Days</span><span
+                    style="font-weight:700;" id="dash-ageing-21-30">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">11 - 20 Days</span><span
+                    style="font-weight:700;" id="dash-ageing-11-20">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">1 - 10 Days</span><span
+                    style="font-weight:700;" id="dash-ageing-1-10">&#8377; 0.00</span></div>
+                <div class="dash-list-row"><span style="color:var(--text-muted);">Not Due</span><span
+                    style="font-weight:700; color:#34d399;" id="dash-ageing-not-due">&#8377; 0.00</span></div>
+              </div>
+            </div>
+
+            <!-- 3. Recent Activities -->
+            <div class="dash-bottom-panel">
+              <div class="panel-top">
+                <span class="panel-header-title" style="margin-bottom:0;">&#8635; Recent Activities</span>
+                <span class="dash-kpi-badge green">Live</span>
+              </div>
+              <div id="dash-recent-activities-list" style="margin-top: 10px; font-size: 0.78rem;">
+                <div style="padding: 12px; text-align: center; color: var(--text-dim); font-size: 0.78rem;">Loading
+                  recent activity log...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          (function () {
+            try {
+              var raw = localStorage.getItem('dse_dashboard_cache_This Month') || localStorage.getItem('dse_dashboard_cache');
+              if (!raw) return;
+              var d = JSON.parse(raw);
+              if (d.snapshot) {
+                var s = d.snapshot;
+                var fmt = function (v) { return '\u20B9 ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var sa = document.getElementById('dash-kpi-sales-amount'); if (sa) sa.textContent = fmt(s.salesValue);
+                var sc = document.getElementById('dash-kpi-sales-count'); if (sc) sc.textContent = s.invoices || 0;
+                var pa = document.getElementById('dash-kpi-pur-amount'); if (pa) pa.textContent = fmt(s.purchaseValue);
+                var pc = document.getElementById('dash-kpi-pur-count'); if (pc) pc.textContent = s.purchases || 0;
+                var ra = document.getElementById('dash-kpi-receivables'); if (ra) ra.textContent = fmt(s.receivables);
+                var rc = document.getElementById('dash-kpi-receivables-count'); if (rc) rc.textContent = s.openReceivables || 0;
+                var pya = document.getElementById('dash-kpi-payables'); if (pya) pya.textContent = fmt(s.payables);
+                var pyc = document.getElementById('dash-kpi-payables-count'); if (pyc) pyc.textContent = s.openPayables || 0;
+                var ca = document.getElementById('dash-kpi-cash-position'); if (ca) ca.textContent = fmt(s.cash);
+                var ls = document.getElementById('dash-kpi-low-stock'); if (ls) ls.textContent = s.lowStock || 0;
+                var dsc = document.getElementById('dash-dir-sales-count'); if (dsc) dsc.textContent = s.invoices || 0;
+                var dpc = document.getElementById('dash-dir-pur-count'); if (dpc) dpc.textContent = s.purchases || 0;
+                var dcc = document.getElementById('dash-dir-cust-count'); if (dcc) dcc.textContent = s.customers || 0;
+                var dic = document.getElementById('dash-dir-item-count'); if (dic) dic.textContent = s.products || 0;
+                var rem = document.getElementById('dash-reminders-count'); if (rem) rem.textContent = s.openReminders || 0;
+              }
+              if (d.topCustomersHtml) {
+                var tc = document.getElementById('dash-top-customers-list'); if (tc) tc.innerHTML = d.topCustomersHtml;
+              }
+              if (d.ageing) {
+                var a = d.ageing;
+                var fmt2 = function (v) { return '\u20B9 ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var eo = document.getElementById('dash-ageing-overdue'); if (eo) eo.textContent = fmt2(a.overdue30);
+                var e21 = document.getElementById('dash-ageing-21-30'); if (e21) e21.textContent = fmt2(a.b21_30);
+                var e11 = document.getElementById('dash-ageing-11-20'); if (e11) e11.textContent = fmt2(a.b11_20);
+                var e1 = document.getElementById('dash-ageing-1-10'); if (e1) e1.textContent = fmt2(a.b1_10);
+                var end = document.getElementById('dash-ageing-not-due'); if (end) end.textContent = fmt2(a.notDue);
+              }
+              if (d.recentActivitiesHtml) {
+                var rac = document.getElementById('dash-recent-activities-list'); if (rac) rac.innerHTML = d.recentActivitiesHtml;
+              }
+            } catch (_) {}
+          })();
+        </script>

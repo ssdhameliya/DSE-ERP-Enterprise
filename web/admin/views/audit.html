@@ -1,0 +1,115 @@
+<div id="view-audit" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128220;</span> Global Audit Trail</h1>
+              <p>Cryptographically sequenced mutation log, user authentications, and record diffs</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.UserAccessController.loadAudit()">
+                <span>&#128260;</span> Refresh Log
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 KPIs matching GlobalAudit.fxml -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL AUDIT EVENTS</span>
+              </div>
+              <div class="kpi-value" id="audit-kpi-total" style="font-size: 1.25rem;">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">System transactions recorded</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">BUSINESS CHANGES</span></div>
+              <div class="kpi-value" id="audit-kpi-changes" style="font-size: 1.25rem; color: var(--purple);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Sales, purchases, masters</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">FINANCIAL EVENTS</span></div>
+              <div class="kpi-value" id="audit-kpi-financial" style="font-size: 1.25rem; color: var(--green);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">GL postings, reconciliations</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">DOCUMENT EVENTS</span></div>
+              <div class="kpi-value" id="audit-kpi-documents" style="font-size: 1.25rem; color: var(--yellow);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Invoices, returns, notes</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid #38bdf8; padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">COMMUNICATIONS</span></div>
+              <div class="kpi-value" id="audit-kpi-communications" style="font-size: 1.25rem; color: #38bdf8;">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Email &amp; WhatsApp dispatches</div>
+            </div>
+          </div>
+
+          <!-- Global Audit Filter Strip -->
+          <div class="filter-toolbar-strip"
+            style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); align-items:center;">
+            <select id="audit-filter-module" class="form-select form-input-sm" style="width:130px;">
+              <option value="">All Modules</option>
+              <option value="SALES">Sales</option>
+              <option value="PURCHASE">Purchase</option>
+              <option value="INVENTORY">Inventory</option>
+              <option value="FINANCE">Finance</option>
+              <option value="AUTH">Auth / Security</option>
+              <option value="GST">GST Compliance</option>
+              <option value="MASTER">Masters</option>
+            </select>
+            <select id="audit-filter-action" class="form-select form-input-sm" style="width:130px;">
+              <option value="">All Actions</option>
+              <option value="CREATE">Create</option>
+              <option value="UPDATE">Update</option>
+              <option value="DELETE">Delete</option>
+              <option value="CANCEL">Cancel</option>
+              <option value="APPROVE">Approve</option>
+              <option value="POST">Post</option>
+            </select>
+            <input type="text" id="audit-filter-user" class="form-input form-input-sm" style="width:130px;"
+              placeholder="Filter by User...">
+            <input type="text" id="audit-filter-ref" class="form-input form-input-sm" style="width:140px;"
+              placeholder="Reference No...">
+            <input type="text" id="audit-filter-q" class="form-input form-input-sm" style="flex:1; min-width:160px;"
+              placeholder="Search event detail text...">
+            <button class="btn btn-primary" style="padding:4px 12px; font-size:0.75rem;"
+              onclick="window.UserAccessController.applyAuditFilters()">Apply Filters</button>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;"
+              onclick="window.UserAccessController.clearAuditFilters()">Clear</button>
+          </div>
+
+          <!-- Audit Table -->
+          <div class="data-panel">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Date &amp; Time</th>
+                  <th style="width: 100px;">Module</th>
+                  <th style="width: 100px;">Record Type</th>
+                  <th style="width: 120px;">Reference #</th>
+                  <th style="width: 90px;">Action</th>
+                  <th>Event Detail</th>
+                  <th style="width: 110px;">Changed Field</th>
+                  <th style="width: 120px;">Old Value</th>
+                  <th style="width: 120px;">New Value</th>
+                  <th style="width: 100px;">Performed By</th>
+                  <th style="text-align: right; width: 90px;">Diff</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-tbody">
+                <tr>
+                  <td colspan="11" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading audit
+                    events...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:8px 12px; background:rgba(0,0,0,0.2); border-radius:6px;">
+            <button class="btn btn-secondary" style="padding:3px 10px; font-size:0.75rem;"
+              onclick="window.UserAccessController.prevAuditPage()">&larr; Previous</button>
+            <span id="audit-page-info" style="font-size:0.8rem; color:var(--text-muted);">Page 1 of 1 (0 records)</span>
+            <button class="btn btn-secondary" style="padding:3px 10px; font-size:0.75rem;"
+              onclick="window.UserAccessController.nextAuditPage()">Next &rarr;</button>
+          </div>
+        </div>

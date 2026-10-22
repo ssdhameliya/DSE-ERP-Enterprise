@@ -348,7 +348,9 @@ window.App = (function() {
 
       // Authentication check on startup
       if (!window.AuthService.isAuthenticated()) {
-        this.showAuthOverlay();
+        const rawAuthHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
+        const initialAuthTab = (rawAuthHash === 'register' || rawAuthHash === 'forgot' || rawAuthHash === 'mfa') ? rawAuthHash : 'login';
+        this.showAuthOverlay(initialAuthTab);
       } else {
         // Initialize active controller data with real backend based on requested view
         const activeView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : 'view-dashboard';
@@ -387,11 +389,14 @@ window.App = (function() {
       const auth = document.getElementById('auth-overlay');
       if (auth) {
         auth.style.display = 'flex';
-        if (preferredTab) {
-          this.showAuthTab(preferredTab);
-        } else {
-          this.showAuthTab('login');
+        let tab = preferredTab;
+        if (!tab && window.location.hash) {
+          const raw = window.location.hash.split('?')[0].replace(/^#\/?/, '');
+          if (['login', 'register', 'forgot', 'mfa'].includes(raw)) {
+            tab = raw;
+          }
         }
+        this.showAuthTab(tab || 'login');
       }
     },
 
@@ -410,6 +415,20 @@ window.App = (function() {
     },
 
     showAuthTab(tab) {
+      // Maintain URL hash and Frame 0 HTML classes for instant refresh stability
+      if (!window.AuthService || !window.AuthService.isAuthenticated()) {
+        if (window.location.hash !== '#' + tab) {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', '#' + tab);
+          } else {
+            window.location.hash = '#' + tab;
+          }
+        }
+        document.documentElement.classList.remove('auth-register', 'auth-forgot');
+        if (tab === 'register') document.documentElement.classList.add('auth-register');
+        if (tab === 'forgot') document.documentElement.classList.add('auth-forgot');
+      }
+
       const tabLogin = document.getElementById('tab-login-btn');
       const tabReg = document.getElementById('tab-register-btn');
       const tabForgot = document.getElementById('tab-forgot-btn');
@@ -1619,7 +1638,7 @@ window.hideProfileDropdown = function() {
 
 window.openMyProfileModal = function() {
   hideProfileDropdown();
-  const u = window.AuthService.getCurrentUser() || { username: 'admin', fullName: 'Shailesh Dhameliya', role: 'ADMIN' };
+  const u = (window.AuthService && window.AuthService.getCurrentUser()) || { username: 'Guest', fullName: 'Guest User', role: 'GUEST' };
   document.getElementById('profile-full-name').innerText = u.fullName || u.username;
   document.getElementById('profile-role-badge').innerText = (u.role || 'USER').toUpperCase();
   document.getElementById('profile-username').innerText = u.username || 'admin';

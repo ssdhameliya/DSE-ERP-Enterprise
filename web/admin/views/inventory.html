@@ -1,0 +1,208 @@
+<div id="view-inventory" class="module-view fixed-viewport">
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.6rem;">&#127981;</span>
+                <div>
+                  <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Stock Register</h1>
+                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Track inventory levels,
+                    reservations, valuation and stock movement</p>
+                </div>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="window.ItemMasterController.openStockAdjustment()">+ Stock
+                Adjustment</button>
+            </div>
+          </div>
+
+          <!-- 5 STANDARD KPI CARDS (Inventory.fxml Parity) -->
+          <div class="kpi-grid" style="grid-template-columns:repeat(5, 1fr); margin-bottom:16px; gap:12px;">
+            <div class="standard-kpi-card kpi-blue">
+              <div class="standard-kpi-icon">ðŸ“¦</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">TOTAL ITEMS</span>
+                  <span class="pill-badge pill-neutral metric-trend-pill">Catalog</span>
+                </div>
+                <div id="lbl-inv-total-items" class="metric-value">0</div>
+                <div class="metric-note">Inventory records</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-green">
+              <div class="standard-kpi-icon">âœ…</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">IN STOCK</span>
+                  <span class="pill-badge pill-success metric-trend-pill">Healthy</span>
+                </div>
+                <div id="lbl-inv-in-stock" class="metric-value">0</div>
+                <div class="metric-note">Healthy stock levels</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-orange">
+              <div class="standard-kpi-icon">âš ï¸</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">LOW STOCK</span>
+                  <span class="pill-badge pill-warning metric-trend-pill">Warning</span>
+                </div>
+                <div id="lbl-inv-low-stock" class="metric-value">0</div>
+                <div class="metric-note">Needs attention</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-red">
+              <div class="standard-kpi-icon">âŒ</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">OUT OF STOCK</span>
+                  <span class="pill-badge pill-negative metric-trend-pill">Depleted</span>
+                </div>
+                <div id="lbl-inv-out-stock" class="metric-value">0</div>
+                <div class="metric-note">Unavailable items</div>
+              </div>
+            </div>
+            <div class="standard-kpi-card kpi-purple">
+              <div class="standard-kpi-icon">ðŸ’°</div>
+              <div class="standard-kpi-body">
+                <div class="standard-kpi-top">
+                  <span class="metric-label">STOCK VALUE</span>
+                  <span class="pill-badge pill-neutral metric-trend-pill">Valuation</span>
+                </div>
+                <div id="lbl-inv-stock-value" class="metric-value">&#8377; 0.00</div>
+                <div class="metric-note">Current purchase valuation</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILTER TOOLBAR (Inventory.fxml Parity) -->
+          <div class="filter-toolbar"
+            style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-surface); padding:10px 14px; border-radius:6px; border:1px solid var(--border-subtle);">
+            <input type="text" id="inv-search-input" class="form-input"
+              placeholder="Search item code, name, HSN or location..." style="flex:1;"
+              oninput="window.ItemMasterController.filterInventory()">
+            <select id="inv-category-filter" class="form-select" style="width:180px;"
+              onchange="window.ItemMasterController.filterInventory()">
+              <option value="">All Categories</option>
+            </select>
+            <select id="inv-status-filter" class="form-select" style="width:160px;"
+              onchange="window.ItemMasterController.filterInventory()">
+              <option value="">All Status</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.loadInventory()">&#8634;
+              Refresh</button>
+            <button class="btn btn-secondary" onclick="window.ItemMasterController.exportInventoryExcel()">&#128202;
+              Export Excel</button>
+          </div>
+
+          <!-- INVENTORY DATA TABLE WITH DOCKED SPLIT (Inventory.fxml Parity) -->
+          <div class="register-workspace" id="inventory-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto;">
+              <table class="data-table clean-desktop-table" id="inventory-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px;">Item Code</th>
+                    <th>Item Name</th>
+                    <th style="width:110px;">Category</th>
+                    <th style="width:90px;">HSN/SAC</th>
+                    <th style="width:70px;">Unit</th>
+                    <th style="width:70px;">% GST</th>
+                    <th style="text-align:right; width:90px;">In Stock</th>
+                    <th style="text-align:right; width:90px;">Available</th>
+                    <th style="text-align:right; width:90px;">Min Stock</th>
+                    <th style="text-align:right; width:120px;">Value</th>
+                    <th style="text-align:center; width:110px;">Status</th>
+                    <th style="text-align:center; width:110px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-tbody">
+                  <tr>
+                    <td colspan="12" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                        class="loading-spinner"></span> Loading inventory...</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--border-subtle);">
+                <span style="font-size:0.75rem; color:var(--text-dim);">Real-time inventory calculated using weighted
+                  moving average purchase cost.</span>
+                <span id="lbl-inv-record-count" class="badge badge-neutral">Showing 0 Records</span>
+              </div>
+            </div>
+
+            <!-- Inline Docked Inventory Detail Drawer (InventoryController.java Parity) -->
+            <div id="inventory-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="inv-d-code">Stock Details</h3>
+                  <span id="inv-d-name" style="font-size:0.75rem; color:var(--text-muted);">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.ItemMasterController.closeInventoryDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">CATEGORY</span>
+                  <span id="inv-d-category" class="pill-badge pill-neutral">General</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">STOCK HEALTH</span>
+                  <span id="inv-d-status" class="pill-badge pill-success">IN STOCK</span>
+                </div>
+                <div class="drawer-field-grid"
+                  style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">In Stock:</div>
+                    <div id="inv-d-stock"
+                      style="font-weight:700; color:var(--green); font-size:0.95rem; margin-top:2px;">0.00</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Available:</div>
+                    <div id="inv-d-avail"
+                      style="font-weight:700; color:var(--cyan); font-size:0.95rem; margin-top:2px;">0.00</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Min Stock:</div>
+                    <div id="inv-d-min" style="font-weight:700; color:var(--red); font-size:0.95rem; margin-top:2px;">
+                      0.00</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">HSN / SAC:</div>
+                    <div id="inv-d-hsn"
+                      style="font-weight:700; color:var(--text-main); font-family:monospace; font-size:0.95rem; margin-top:2px;">
+                      -</div>
+                  </div>
+                </div>
+                <div
+                  style="padding:10px 12px; background:rgba(16,185,129,0.06); border-radius:6px; border:1px solid rgba(16,185,129,0.3); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.75rem; color:var(--green); font-weight:700;">TOTAL VALUATION:</span>
+                  <span id="inv-d-valuation" style="font-weight:800; color:var(--green); font-size:1.05rem;">&#8377;
+                    0.00</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; font-size:0.8rem;">
+                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Rack
+                      Location:</span><span id="inv-d-location" style="font-weight:600;">-</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">GST
+                      Rate:</span><span id="inv-d-gst" style="font-weight:600;">18%</span></div>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm"
+                  onclick="window.ItemMasterController.drawerAdjustStock()">&#9878;&#65039; Stock Adjust</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.drawerStockHistory()">&#128220; Movement</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.drawerEditFromInv()">&#9999;&#65039; Edit Item</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ItemMasterController.closeInventoryDrawer()">&#10006; Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

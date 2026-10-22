@@ -202,6 +202,11 @@ window.KpiCardEnhancer = (function() {
     if (card.dataset.erpKpiCompactEnhanced === 'true') return;
     card.dataset.erpKpiCompactEnhanced = 'true';
 
+    if (card.classList.contains('compact-kpi-card') && card.querySelector('.kpi-content-box')) {
+      // Already has native compact ribbon structure; preserve markup to avoid layout jump on refresh
+      return;
+    }
+
     // 1. Find Title / Label across all screen variations (Bank Statement, User Access, Registers, Dashboards)
     const labelEl = card.querySelector(
       '.kpi-label, .dash-kpi-title, .dash-kpi-label, .bank-recon-kpi-caption, .metric-title, .metric-label, .kpi-caption, .caption, h3, h4, h5, .title'

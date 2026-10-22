@@ -1,0 +1,1433 @@
+<div id="view-settings" class="module-view">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 style="display:flex; align-items:center; gap:10px;">
+                <span class="settings-page-icon-box"
+                  style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.3); border-radius:8px; font-size:1.1rem; color:#c084fc;">&#9881;&#65039;</span>
+                Settings
+              </h1>
+              <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Company configuration, payments,
+                invoices, notifications and email delivery</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
+              <button type="button" class="btn btn-secondary" id="btn-header-test-email"
+                onclick="window.SettingsController.testEmail()"
+                style="display:none; height:38px; padding:0 16px; font-weight:600; border-radius:6px;">
+                <span>&#9993;&#65039;</span> Test Email
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-save-settings-active"
+                onclick="window.SettingsController.saveActiveSettings(event)"
+                style="background:#a855f7; border-color:#9333ea; height:38px; padding:0 20px; font-weight:700; border-radius:6px; box-shadow:0 2px 10px rgba(168,85,247,0.35);">
+                <span>&#128190;</span> Save Company
+              </button>
+            </div>
+          </div>
+
+          <!-- 7-SECTION TAB NAVIGATION (Desktop Section Enum Parity) -->
+          <div class="settings-tab-nav" style="margin-bottom:18px;">
+            <button type="button" class="settings-tab-btn active" data-section="COMPANY"
+              onclick="window.SettingsController.switchSection('COMPANY')">
+              <span>&#127970;</span> Company &amp; Billing
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="PAYMENT"
+              onclick="window.SettingsController.switchSection('PAYMENT')">
+              <span>&#128179;</span> Payment &amp; Bank
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="INVOICE"
+              onclick="window.SettingsController.switchSection('INVOICE')">
+              <span>&#128196;</span> Invoice &amp; Delivery
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="NOTIFICATIONS"
+              onclick="window.SettingsController.switchSection('NOTIFICATIONS')">
+              <span>&#128276;</span> Notifications
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="EMAIL"
+              onclick="window.SettingsController.switchSection('EMAIL')">
+              <span>&#9993;&#65039;</span> Email Delivery
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="SECURITY"
+              onclick="window.SettingsController.switchSection('SECURITY')">
+              <span>&#128274;</span> Security &amp; Session
+            </button>
+            <button type="button" class="settings-tab-btn" data-section="MODULES"
+              onclick="window.SettingsController.switchSection('MODULES')">
+              <span>&#129513;</span> Module Management
+            </button>
+          </div>
+
+          <!-- PANEL HOST: 7 SHARED ENTERPRISE PANELS -->
+          <div class="settings-panel-host">
+
+            <!-- 1. SCREEN 1: COMPANY & BILLING PANEL (Settings.fxml & CompanySettingsPanel.fxml Parity) -->
+            <div id="settings-panel-company" class="settings-subpanel" data-section="COMPANY">
+              <div class="data-panel settings-card-panel"
+                style="padding:22px 24px; margin-bottom:18px; border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#38bdf8; font-size:1.15rem;">&#128196;</span>
+                  <h2
+                    style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin:0; font-family:'Space Grotesk',sans-serif;">
+                    Company &amp; Billing</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">Business identity, primary contact
+                  details and document branding</div>
+
+                <!-- 4-Column Row 1: Company Name, Phone, Company Email, GSTIN -->
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#127970;</span> Company Name
+                    </label>
+                    <input type="text" id="setting-company-name" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="Jashvi Engineers">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#128222;</span> Phone
+                    </label>
+                    <input type="text" id="setting-company-phone" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="9099939193">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#9993;&#65039;</span> Company Email
+                    </label>
+                    <input type="email" id="setting-company-email" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="ssdhameliya@gmail.com">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#fbbf24;">&#127963;&#65039;</span> GSTIN
+                    </label>
+                    <input type="text" id="setting-company-gstin" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="123456789012345">
+                  </div>
+                </div>
+
+                <!-- 4-Column Row 2: PAN, Business Type, Industry, Financial Year Start -->
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom:16px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">&#129706;</span> PAN
+                    </label>
+                    <input type="text" id="setting-company-pan" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="BEEPD4900N">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#fbbf24;">&#127991;&#65039;</span> Business Type
+                    </label>
+                    <select id="setting-business-type" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="MANUFACTURING" selected>MANUFACTURING</option>
+                      <option value="TRADING">TRADING</option>
+                      <option value="SERVICES">SERVICES</option>
+                      <option value="PROPRIETORSHIP">PROPRIETORSHIP</option>
+                      <option value="PARTNERSHIP">PARTNERSHIP</option>
+                      <option value="PRIVATE_LIMITED">PRIVATE LIMITED</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#fbbf24;">&#127981;</span> Industry
+                    </label>
+                    <select id="setting-industry" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="ENGINEERING" selected>ENGINEERING</option>
+                      <option value="CERAMICS">CERAMICS &amp; TILES</option>
+                      <option value="TEXTILES">TEXTILES</option>
+                      <option value="CHEMICALS">CHEMICALS</option>
+                      <option value="AUTOMOTIVE">AUTOMOTIVE</option>
+                      <option value="OTHER">OTHER</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128197;</span> Financial Year Start
+                    </label>
+                    <input type="date" id="setting-fy-start" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="2026-04-01">
+                  </div>
+                </div>
+
+                <!-- Row 3: Application Display Name, Application Tagline, Startup Message -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-bottom:20px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.74rem; font-weight:600; color:#94a3b8;">Application
+                      Display Name</label>
+                    <input type="text" id="setting-app-name" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="Jashvi Engineers">
+                    <div style="font-size:0.68rem; color:#64748b; margin-top:3px;">Uses Company Name automatically
+                      across the customer-facing application.</div>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#a78bfa;">&#10077;&#10077;</span> Application Tagline
+                    </label>
+                    <input type="text" id="setting-app-tagline" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="Enterprise Production &amp; Distribution">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#a78bfa;">&#10077;&#10077;</span> Startup Message
+                    </label>
+                    <input type="text" id="setting-app-starting-text" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="Welcome to Jasvi Industries Creation">
+                    <div style="font-size:0.68rem; color:#64748b; margin-top:3px;">Used on splash and sign-in screens;
+                      document branding remains independent.</div>
+                  </div>
+                </div>
+
+                <!-- Application Branding Sub-Section -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:18px 20px;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                    <span style="color:#c084fc; font-size:1.05rem;">&#127912;</span>
+                    <h3
+                      style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                      Application Branding</h3>
+                  </div>
+                  <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:14px;">Used consistently on Splash, Login,
+                    Forgot Password, Registration and Email / OTP setup screens.</div>
+
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <!-- Left Card: Application Banner -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:14px 16px;">
+                      <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                        <span style="color:#c084fc;">&#128444;&#65039;</span>
+                        <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Application Banner</div>
+                      </div>
+                      <div style="font-size:0.7rem; color:#64748b; margin-bottom:10px;">Wide application artwork &bull;
+                        Recommended 1600 &times; 320</div>
+
+                      <div
+                        style="min-height:90px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; margin-bottom:8px;">
+                        <img id="preview-app-banner" src=""
+                          style="max-height:80px; max-width:100%; display:none; object-fit:contain;" alt="App Banner">
+                        <div id="placeholder-app-banner"
+                          style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#64748b; font-size:0.75rem;">
+                          <span style="font-size:1.2rem;">&minus;</span>
+                          <span>No application banner selected</span>
+                        </div>
+                      </div>
+                      <div id="status-app-banner" style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">No image
+                        selected</div>
+                      <input type="file" id="file-app-banner" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadBrandingAsset('application.banner', this, 'preview-app-banner', 'placeholder-app-banner', 'status-app-banner')">
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary"
+                          onclick="document.getElementById('file-app-banner').click()"
+                          style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+
+                          Add / Replace</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.previewBrandingAsset('application.banner', 'preview-app-banner')"
+                          style="padding:4px 14px; font-size:0.75rem;">&#128065; Preview</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.clearBrandingAsset('application.banner', 'preview-app-banner', 'placeholder-app-banner', 'status-app-banner')"
+                          style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;">Remove</button>
+                      </div>
+                    </div>
+
+                    <!-- Right Card: Application Mark / Splash Logo -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:14px 16px;">
+                      <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                        <span style="color:#c084fc;">&#128444;&#65039;</span>
+                        <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Application Mark / Splash Logo
+                        </div>
+                      </div>
+                      <div style="font-size:0.7rem; color:#64748b; margin-bottom:10px;">Small square mark shown below
+                        the banner &bull; Recommended 512 &times; 512</div>
+
+                      <div
+                        style="min-height:90px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; margin-bottom:8px;">
+                        <img id="preview-app-mark" src=""
+                          style="max-height:80px; max-width:100%; display:none; object-fit:contain;" alt="App Mark">
+                        <div id="placeholder-app-mark"
+                          style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#64748b; font-size:0.75rem;">
+                          <span style="font-size:1.1rem;">&#9670;</span>
+                          <span>No application mark selected</span>
+                        </div>
+                      </div>
+                      <div id="status-app-mark" style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">No image
+                        selected</div>
+                      <input type="file" id="file-app-mark" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadBrandingAsset('application.mark', this, 'preview-app-mark', 'placeholder-app-mark', 'status-app-mark')">
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary"
+                          onclick="document.getElementById('file-app-mark').click()"
+                          style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+
+                          Add / Replace</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.previewBrandingAsset('application.mark', 'preview-app-mark')"
+                          style="padding:4px 14px; font-size:0.75rem;">&#128065; Preview</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.clearBrandingAsset('application.mark', 'preview-app-mark', 'placeholder-app-mark', 'status-app-mark')"
+                          style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. SCREEN 2: PAYMENT & BANK PANEL (PaymentSettingsPanel.fxml Parity) -->
+            <div id="settings-panel-payment" class="settings-subpanel" data-section="PAYMENT" style="display:none;">
+              <div class="data-panel"
+                style="padding:22px 24px; margin-bottom:18px; background:rgba(30,41,59,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#38bdf8; font-size:1.15rem;">&#127963;&#65039;</span>
+                  <h2
+                    style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                    Payment &amp; Bank</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">Details used on invoices, payment
+                  messages and UPI/GPay links</div>
+
+                <!-- 3-Column Row 1: UPI ID, Account Holder Name, Bank Name -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#128241;</span> UPI ID
+                    </label>
+                    <input type="text" id="setting-upi-id" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="jasviindustries@sbi">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128100;</span> Account Holder Name
+                    </label>
+                    <input type="text" id="setting-account-holder" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="JASVI INDUSTRIES">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">&#127963;&#65039;</span> Bank Name
+                    </label>
+                    <input type="text" id="setting-bank-name" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="STATE BANK OF INDIA">
+                  </div>
+                </div>
+
+                <!-- 3-Column Row 2: Account Number, IFSC Code, Branch -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128179;</span> Account Number
+                    </label>
+                    <input type="text" id="setting-account-number" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="20104492473">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128179;</span> IFSC Code
+                    </label>
+                    <input type="text" id="setting-ifsc" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="SBIN0017100">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#127878;</span> Branch
+                    </label>
+                    <input type="text" id="setting-branch" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="Nikol">
+                  </div>
+                </div>
+
+                <!-- Row 3: Account Type -->
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:14px; margin-bottom:20px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128179;</span> Account Type
+                    </label>
+                    <select id="setting-account-type" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="CURRENT" selected>CURRENT</option>
+                      <option value="SAVINGS">SAVINGS</option>
+                      <option value="OVERDRAFT">OVERDRAFT / CC</option>
+                    </select>
+                    <div style="font-size:0.68rem; color:#64748b; margin-top:3px;">Values come from Master Data &rarr;
+                      Account Type</div>
+                  </div>
+                </div>
+
+                <!-- Sub-section: Bank Reconciliation -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:16px 20px; margin-bottom:18px;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                    <span style="color:#fbbf24; font-size:1.05rem;">&#127963;&#65039;</span>
+                    <h3
+                      style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                      Bank Reconciliation</h3>
+                  </div>
+                  <div style="display:grid; grid-template-columns: 280px 1fr; gap:20px; align-items:flex-start;">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#fbbf24; display:flex; align-items:center; gap:6px;">
+                        <span>&#128176;</span> Round-off Tolerance (&#8377;)
+                      </label>
+                      <input type="number" id="setting-tolerance" class="form-input"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.85rem; font-weight:700;"
+                        value="5.00" min="0.00" max="5.00" step="0.5">
+                    </div>
+                    <div
+                      style="font-size:0.73rem; color:#94a3b8; line-height:1.45; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.05); border-radius:6px; padding:10px 14px;">
+                      When a user manually confirms the correct transaction, the application may close only the final
+                      residual within this absolute limit. The actual bank amount stays unchanged and the difference is
+                      recorded as an explicit round-off adjustment. Use 0.00 to disable; maximum 5.00.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-section: UPI Payment QR Code -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                    <span style="color:#38bdf8; font-size:1.05rem;">&#128241;</span>
+                    <h3
+                      style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                      UPI Payment QR Code</h3>
+                  </div>
+                  <div style="display:grid; grid-template-columns: 320px 1fr; gap:20px; align-items:flex-start;">
+                    <!-- Left: QR Code Preview Box -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
+                      <div
+                        style="min-height:90px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; margin-bottom:8px;">
+                        <img id="preview-upi-qr" src=""
+                          style="max-height:80px; max-width:100%; display:none; object-fit:contain;" alt="UPI QR">
+                        <div id="placeholder-upi-qr"
+                          style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#64748b; font-size:0.75rem;">
+                          <span style="font-size:1.2rem;">&#9638;</span>
+                          <span>No QR image selected</span>
+                        </div>
+                      </div>
+                      <div id="status-upi-qr" style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">No image
+                        selected</div>
+                      <input type="file" id="file-upi-qr" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadBrandingAsset('payment.upi.qr', this, 'preview-upi-qr', 'placeholder-upi-qr', 'status-upi-qr')">
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary"
+                          onclick="document.getElementById('file-upi-qr').click()"
+                          style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+
+                          Add / Replace</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.previewBrandingAsset('payment.upi.qr', 'preview-upi-qr')"
+                          style="padding:4px 14px; font-size:0.75rem;">&#128065; Preview</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.clearBrandingAsset('payment.upi.qr', 'preview-upi-qr', 'placeholder-upi-qr', 'status-upi-qr')"
+                          style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;">Remove</button>
+                      </div>
+                    </div>
+
+                    <!-- Right: Info Card -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:14px 18px;">
+                      <div
+                        style="display:flex; align-items:center; gap:6px; margin-bottom:6px; color:#38bdf8; font-size:0.8rem; font-weight:700;">
+                        <span>&#9638;</span>
+                        <span>How the payment QR is used</span>
+                      </div>
+                      <div style="font-size:0.73rem; color:#94a3b8; line-height:1.45;">
+                        The selected QR image is printed beside your bank details on sales invoices, quotations,
+                        receipts and return documents.<br><br>
+                        When no QR image is uploaded, the application may generate a QR code automatically from the
+                        configured UPI ID.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. SCREEN 3: INVOICE & DELIVERY PANEL (InvoiceSettingsPanel.fxml Parity) -->
+            <div id="settings-panel-invoice" class="settings-subpanel" data-section="INVOICE" style="display:none;">
+              <div class="data-panel"
+                style="padding:22px 24px; margin-bottom:18px; background:rgba(30,41,59,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#fbbf24; font-size:1.15rem;">&#128666;</span>
+                  <h2
+                    style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                    Invoice &amp; Delivery</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">Company address, invoice identity,
+                  regional formatting and delivery defaults</div>
+
+                <!-- Row 1 (2 Columns): Company Address, Default Ship-to Address -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#f87171;">&#128205;</span> Company Address
+                    </label>
+                    <textarea id="setting-company-address" class="form-input" rows="3"
+                      style="background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; line-height:1.45;">H 52 darshan Villa</textarea>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#f87171;">&#128666;</span> Default Ship-to Address
+                    </label>
+                    <textarea id="setting-ship-address" class="form-input" rows="3"
+                      style="background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; line-height:1.45;">H 52 darshan Villa</textarea>
+                  </div>
+                </div>
+
+                <!-- Row 2 (2 Columns): State / Place of Supply, Currency -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#128205;</span> State / Place of Supply
+                    </label>
+                    <input type="text" id="setting-company-state" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="GUJARAT (24)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#128181;</span> Currency
+                    </label>
+                    <select id="setting-currency" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="INR (â‚¹)" selected>INR (&#8377;)</option>
+                      <option value="USD ($)">USD ($)</option>
+                      <option value="EUR (â‚¬)">EUR (&#8364;)</option>
+                      <option value="GBP (Â£)">GBP (&#163;)</option>
+                      <option value="AED">AED (&#1583;.&#1573;)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 3 (2 Columns): Time Zone, Date Format -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128339;</span> Time Zone
+                    </label>
+                    <select id="setting-timezone" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="Asia/Kolkata (IST)" selected>Asia/Kolkata (IST)</option>
+                      <option value="Asia/Dubai">Asia/Dubai</option>
+                      <option value="UTC">UTC</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#c084fc;">&#128197;</span> Date Format
+                    </label>
+                    <select id="setting-date-format" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="dd MMM yyyy" selected>dd MMM yyyy</option>
+                      <option value="dd/MM/yyyy">dd/MM/yyyy</option>
+                      <option value="dd-MM-yyyy">dd-MM-yyyy</option>
+                      <option value="yyyy-MM-dd">yyyy-MM-dd</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 4 (2 Columns): Time Format, Website -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#128339;</span> Time Format / Timestamp
+                    </label>
+                    <select id="setting-time-format" class="form-select"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
+                      <option value="hh:mm a" selected>hh:mm a</option>
+                      <option value="hh:mm:ss a">hh:mm:ss a</option>
+                      <option value="HH:mm">HH:mm</option>
+                      <option value="HH:mm:ss">HH:mm:ss</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#38bdf8;">&#127760;</span> Website
+                    </label>
+                    <input type="url" id="setting-company-website" class="form-input"
+                      style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                      value="https://jasviindustries.in">
+                  </div>
+                </div>
+
+                <!-- Row 5: Business Tagline -->
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="form-label"
+                    style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                    <span style="color:#a78bfa;">&#10077;&#10077;</span> Business Tagline
+                  </label>
+                  <input type="text" id="setting-company-tagline" class="form-input"
+                    style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                    value="Excellence in Ceramic Manufacturing &amp; Enterprise Engineering">
+                </div>
+
+                <!-- Row 6: Invoice Terms -->
+                <div class="form-group" style="margin-bottom:20px;">
+                  <label class="form-label"
+                    style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                    <span style="color:#38bdf8;">&#128196;</span> Invoice Terms
+                  </label>
+                  <textarea id="setting-invoice-terms" class="form-input" rows="5"
+                    style="background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.8rem; line-height:1.5;">(1) All Prices are Nett-Godown.
+(2) Our responsibility ceases as soon as the goods leaves our godown.
+(3) Intrest @ 24% p.a. will be charged, if the payment not paid in due time.
+(4) Payments to be made by payees A/c Chque / DD / RTGS / NEFT Only.</textarea>
+                </div>
+
+                <!-- Sub-section: Branding, Logo & Signature -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:18px 20px;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                    <span style="color:#38bdf8; font-size:1.05rem;">&#127912;</span>
+                    <h3
+                      style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                      Branding, Logo &amp; Signature</h3>
+                  </div>
+                  <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:14px;">Manage the invoice logo and
+                    authorized signature used on generated business documents.</div>
+
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <!-- Left: Invoice Logo -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:14px 16px;">
+                      <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                        <span style="color:#c084fc;">&#128444;&#65039;</span>
+                        <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Invoice Logo</div>
+                      </div>
+                      <div style="font-size:0.7rem; color:#64748b; margin-bottom:10px;">Invoices, quotations, returns
+                        and generated PDFs &bull; Full invoice logo preserved (PNG preferred)</div>
+
+                      <div
+                        style="min-height:90px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; margin-bottom:8px;">
+                        <img id="preview-invoice-logo" src=""
+                          style="max-height:80px; max-width:100%; display:none; object-fit:contain;" alt="Invoice Logo">
+                        <div id="placeholder-invoice-logo"
+                          style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#64748b; font-size:0.75rem;">
+                          <span style="font-size:1.1rem;">&#128444;&#65039;</span>
+                          <span>No logo selected</span>
+                        </div>
+                      </div>
+                      <div id="status-invoice-logo" style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">No logo
+                        selected</div>
+                      <input type="file" id="file-invoice-logo" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadBrandingAsset('invoice.header.logo', this, 'preview-invoice-logo', 'placeholder-invoice-logo', 'status-invoice-logo')">
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary"
+                          onclick="document.getElementById('file-invoice-logo').click()"
+                          style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+
+                          Add / Replace</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.previewBrandingAsset('invoice.header.logo', 'preview-invoice-logo')"
+                          style="padding:4px 14px; font-size:0.75rem;">&#128065; Preview</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.clearBrandingAsset('invoice.header.logo', 'preview-invoice-logo', 'placeholder-invoice-logo', 'status-invoice-logo')"
+                          style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;">Remove</button>
+                      </div>
+                    </div>
+
+                    <!-- Right: Authorized Signature -->
+                    <div
+                      style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:14px 16px;">
+                      <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                        <span style="color:#c084fc;">&#9997;&#65039;</span>
+                        <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Authorized Signature</div>
+                      </div>
+                      <div style="font-size:0.7rem; color:#64748b; margin-bottom:10px;">Authorized sign-off on supported
+                        business documents &bull; Transparent PNG preferred</div>
+
+                      <div
+                        style="min-height:90px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; margin-bottom:8px;">
+                        <img id="preview-invoice-seal" src=""
+                          style="max-height:80px; max-width:100%; display:none; object-fit:contain;"
+                          alt="Digital Signature">
+                        <div id="placeholder-invoice-seal"
+                          style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#64748b; font-size:0.75rem;">
+                          <span style="font-size:1.1rem;">&#9997;&#65039;</span>
+                          <span>No signature selected</span>
+                        </div>
+                      </div>
+                      <div id="status-invoice-seal" style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">No
+                        image selected</div>
+                      <input type="file" id="file-invoice-seal" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadBrandingAsset('invoice.digital.seal', this, 'preview-invoice-seal', 'placeholder-invoice-seal', 'status-invoice-seal')">
+                      <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary"
+                          onclick="document.getElementById('file-invoice-seal').click()"
+                          style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+
+                          Add / Replace</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.previewBrandingAsset('invoice.digital.seal', 'preview-invoice-seal')"
+                          style="padding:4px 14px; font-size:0.75rem;">&#128065; Preview</button>
+                        <button type="button" class="btn btn-secondary"
+                          onclick="window.SettingsController.clearBrandingAsset('invoice.digital.seal', 'preview-invoice-seal', 'placeholder-invoice-seal', 'status-invoice-seal')"
+                          style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. NOTIFICATIONS PANEL (image18.png Parity) -->
+            <div id="settings-panel-notifications" class="settings-subpanel" data-section="NOTIFICATIONS" style="display:none;">
+              <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#c084fc; font-size:1.15rem;">&#128276;</span>
+                  <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Notifications</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8;">Manage notification-centre and desktop-toast preferences for your signed-in user.</div>
+              </div>
+
+              <!-- Main Inner Panel -->
+              <div class="data-panel" style="padding:20px 24px; background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <!-- Top 2 Master Cards -->
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                  <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:10px; padding:7px 16px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:240px;">
+                    <input type="checkbox" id="chkNotifications" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                    <span style="font-size:0.8rem; font-weight:600; color:#f8fafc;">Show application notifications</span>
+                  </label>
+                  <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:10px; padding:7px 16px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:240px;">
+                    <input type="checkbox" id="chkNotificationToasts" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                    <span style="font-size:0.8rem; font-weight:600; color:#f8fafc;">Show desktop toast messages</span>
+                  </label>
+                </div>
+
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:16px;">
+                  Choose which activity categories appear for your user. Critical errors and Security &amp; User Access records always remain in Notification Center.
+                </div>
+
+                <!-- 2 Symmetrical Columns of Pill Checkbox Cards -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px 48px; max-width:850px;">
+                  <!-- Left Column -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySales" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Sales and invoices</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyQuotations" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Quotations and follow-ups</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyPayments" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Payments and refunds</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyBanking" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Bank, expenses and reconciliation</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReminders" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Reminders</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyApproval" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Approvals</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyBackup" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Backup, restore &amp; safe rollback</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySystem" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Other system activity</span>
+                    </label>
+                  </div>
+
+                  <!-- Right Column -->
+                  <div style="display:flex; flex-direction:column; gap:9px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyPurchases" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Purchases and supplier invoices</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReturns" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Sales and purchase returns</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyInventory" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Inventory and low stock</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyReports" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Reports and scheduled reports</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyCommunication" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Email &amp; WhatsApp activity</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid #a855f7; border-radius:6px; background:rgba(168,85,247,0.18); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyImports" checked style="accent-color:#a855f7; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc; font-weight:600;">Data imports</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifyUpdates" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.8rem; color:#f8fafc;">Application updates</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid rgba(255,255,255,0.06); border-radius:6px; background:rgba(15,23,42,0.3); cursor:not-allowed; opacity:0.75; width:fit-content; min-width:260px;">
+                      <input type="checkbox" id="chkNotifySecurity" checked disabled style="width:15px; height:15px;">
+                      <span style="font-size:0.8rem; color:#94a3b8;">Security &amp; User Access (mandatory)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. SCREEN 4 & 5: EMAIL & COMMUNICATION PREFERENCES PANEL (EmailSettingsPanel.fxml Parity) -->
+            <div id="settings-panel-email" class="settings-subpanel" data-section="EMAIL" style="display:none;">
+              <div class="data-panel"
+                style="padding:22px 24px; margin-bottom:18px; background:rgba(30,41,59,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#c084fc; font-size:1.15rem;">#</span>
+                  <h2
+                    style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                    Email &amp; Communication Preferences</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:18px;">SMTP delivery configuration,
+                  corporate email signature, and document message templates</div>
+
+                <!-- Sub-section 1: Email Account (SMTP) -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:18px 20px; margin-bottom:18px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="color:#38bdf8; font-size:1.05rem;">&#127963;&#65039;</span>
+                      <h3
+                        style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                        Email Account (SMTP)</h3>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="window.SettingsController.showEmailGuidanceModal()"
+                        style="display:flex; align-items:center; gap:6px; font-size:0.72rem; padding:4px 10px; background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.3); color:#38bdf8;">
+                        <span>&#9432;</span> Information &amp; Guidance
+                      </button>
+                      <span style="font-size:0.7rem; color:#94a3b8;">Configuration is stored securely in your
+                        workspace</span>
+                    </div>
+                  </div>
+
+                  <!-- Row 1: Sending Email Address, Email App Password -->
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#4ade80;">&#9993;&#65039;</span> Sending Email Address
+                      </label>
+                      <input type="email" id="smtp-email" class="form-input"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                        value="ssdhameliya@gmail.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#f87171;">&#128273;</span> Email App Password
+                      </label>
+                      <div style="position:relative;">
+                        <input type="password" id="smtp-password" class="form-input"
+                          style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; padding-right:36px;"
+                          placeholder="Configured â€” leave blank to keep current password">
+                        <span onclick="window.SettingsController.togglePasswordVisibility('smtp-password')"
+                          style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94a3b8; font-size:0.9rem;"
+                          title="Show/Hide Password">&#128065;</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Row 2: SMTP Host, SMTP Port -->
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#38bdf8;">&#128187;</span> SMTP Host
+                      </label>
+                      <input type="text" id="smtp-host" class="form-input"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                        value="smtp.gmail.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#c084fc;">&#128268;</span> SMTP Port
+                      </label>
+                      <input type="number" id="smtp-port" class="form-input"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                        value="587">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-section 2: Company Email Signature -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:18px 20px; margin-bottom:18px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="color:#4ade80; font-size:1.05rem;">&#128206;</span>
+                      <h3
+                        style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                        Company Email Signature</h3>
+                    </div>
+                    <span style="font-size:0.7rem; color:#94a3b8;">Appended automatically whenever {Signature} token is
+                      present in message templates</span>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom:14px; margin-top:10px;">
+                    <label class="form-label"
+                      style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                      <span style="color:#4ade80;">&#9998;</span> Signature Block
+                    </label>
+                    <textarea id="smtp-signature" class="form-input" rows="4"
+                      style="background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; line-height:1.45;">Best regards,
+Jasvi Industries Accounts Team
+Morbi, Gujarat | Phone: +91 90999 39193</textarea>
+                  </div>
+
+                  <div
+                    style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:12px 16px;">
+                    <div>
+                      <div
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                        <span style="color:#4ade80;">&#9998;</span> Signature / Stamp Image (Optional)
+                      </div>
+                      <div id="status-email-sig-img" style="font-size:0.7rem; color:#64748b;">No signature image
+                        attached</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <div
+                        style="width:50px; height:34px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.15); border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                        <img id="preview-email-sig-img" src=""
+                          style="max-height:100%; max-width:100%; display:none; object-fit:contain;"
+                          alt="Signature Stamp">
+                      </div>
+                      <input type="file" id="file-email-sig-img" accept="image/*" style="display:none;"
+                        onchange="window.SettingsController.uploadSignatureImage(this)">
+                      <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('file-email-sig-img').click()"
+                        style="display:flex; align-items:center; gap:6px; font-size:0.75rem;">
+                        <span>&#128193;</span> Browse Image
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="window.SettingsController.clearSignatureImage()"
+                        style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:#f87171;">
+                        <span>&#10005;</span> Clear Image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-section 3: Document Message & Email Templates -->
+                <div
+                  style="background:rgba(15,23,42,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:18px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="color:#4ade80; font-size:1.05rem;">&#9993;&#65039;</span>
+                      <h3
+                        style="font-size:0.92rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">
+                        Document Message &amp; Email Templates</h3>
+                    </div>
+                    <span style="font-size:0.7rem; color:#94a3b8;">Customise subject line and body text for each
+                      business document</span>
+                  </div>
+
+                  <!-- Row 1: Document / Communication Type, Email Subject Template -->
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#c084fc;">&#128196;</span> Document / Communication Type
+                      </label>
+                      <select id="email-template-doc" class="form-select"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                        onchange="window.SettingsController.onTemplateDocChanged(this.value)">
+                        <option value="Sales Invoice (Email)" selected>Sales Invoice (Email)</option>
+                        <option value="Quotation (Email)">Quotation (Email)</option>
+                        <option value="Purchase Bill (Email)">Purchase Bill (Email)</option>
+                        <option value="Payment Receipt (Email)">Payment Receipt (Email)</option>
+                        <option value="Sales Return (Email)">Sales Return (Email)</option>
+                        <option value="Purchase Return (Email)">Purchase Return (Email)</option>
+                        <option value="Sales Invoice (WhatsApp)">Sales Invoice (WhatsApp)</option>
+                        <option value="Quotation (WhatsApp)">Quotation (WhatsApp)</option>
+                      </select>
+                    </div>
+                    <div class="form-group" id="box-email-subject" style="margin-bottom:0;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span style="color:#4ade80;">&#9993;&#65039;</span> Email Subject Template
+                      </label>
+                      <input type="text" id="email-template-subject" class="form-input"
+                        style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;"
+                        value="Sales Invoice {DocumentNo} from {CompanyName}">
+                    </div>
+                  </div>
+
+                  <!-- Row 2: Message Body Template & Tokens -->
+                  <div class="form-group" style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <label class="form-label"
+                        style="font-size:0.74rem; font-weight:600; color:#94a3b8; margin-bottom:0;">Message Body
+                        Template</label>
+                      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:0.7rem; color:#94a3b8; font-weight:600;">Insert Token:</span>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{CustomerName}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#38bdf8;">&#128100;</span> {CustomerName}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{DocumentNo}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#c084fc;">&#128196;</span> {DocumentNo}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{DocumentDate}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#c084fc;">&#128197;</span> {DocumentDate}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{TotalAmount}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#4ade80;">&#8377;</span> {TotalAmount}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{BalanceAmount}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#4ade80;">&#8377;</span> {BalanceAmount}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-xs"
+                          onclick="window.SettingsController.insertTemplateToken('{Signature}')"
+                          style="font-size:0.72rem; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                          <span style="color:#4ade80;">&#128206;</span> {Signature}
+                        </button>
+                      </div>
+                    </div>
+                    <textarea id="email-template-body" class="form-input" rows="6"
+                      style="background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; line-height:1.5;">Dear {CustomerName},
+
+Please find attached Sales Invoice {DocumentNo} dated {DocumentDate} for total amount {TotalAmount}.
+
+Outstanding Balance: {BalanceAmount}
+
+{Signature}</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. SECURITY PANEL (SecuritySettingsPanel.fxml Parity) -->
+            <div id="settings-panel-security" class="settings-subpanel" data-section="SECURITY" style="display:none;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+                <div class="data-panel" style="padding:18px;">
+                  <h3 style="font-size:0.88rem; color:var(--cyan); margin-top:0; margin-bottom:12px;">Authentication
+                    Governance &amp; Sessions</h3>
+                  <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label" style="font-size:0.75rem;">MFA / 2FA Enforcement Policy</label>
+                    <select id="sec-mfa-policy" class="form-select form-input-sm">
+                      <option value="ADMIN_CONTROLLED" selected>Admin Controlled (Administrator toggles per user)
+                      </option>
+                      <option value="REQUIRED">Required for All Users</option>
+                      <option value="DISABLED">Disabled Organization-wide</option>
+                    </select>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Inactivity Timeout (Minutes)</label>
+                      <input type="number" id="sec-session-timeout" class="form-input form-input-sm" value="60" min="5"
+                        max="120">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-size:0.75rem;">Session Warning (Minutes)</label>
+                      <input type="number" id="sec-session-warning" class="form-input form-input-sm" value="5" min="1"
+                        max="60">
+                    </div>
+                  </div>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+                    <input type="checkbox" id="sec-ui-diagnostics" checked> Enable Real-time UI Security Diagnostics
+                    Logging
+                  </label>
+                </div>
+
+                <div class="data-panel" style="padding:18px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="font-size:0.88rem; color:var(--cyan); margin:0;">Live Session Inactivity Monitor</h3>
+                    <span class="pill-badge pill-success" id="sec-monitor-badge"
+                      style="font-size:0.7rem; font-weight:700;">ACTIVE SESSION</span>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div
+                      style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                      <div
+                        style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">
+                        Active Account</div>
+                      <div id="sec-monitor-user"
+                        style="font-weight:700; color:var(--text-main); font-size:0.88rem; margin-top:2px;">
+                        Administrator</div>
+                      <div id="sec-monitor-role" style="font-size:0.72rem; color:var(--cyan); margin-top:2px;">ADMIN
+                        &bull; Active Session</div>
+                    </div>
+                    <div
+                      style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                      <div
+                        style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">
+                        Inactivity Idle Time</div>
+                      <div id="sec-monitor-idle"
+                        style="font-weight:700; color:var(--yellow); font-size:0.88rem; margin-top:2px; font-family:monospace;">
+                        0s idle</div>
+                      <div id="sec-monitor-limit" style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+                        Timeout: 60m &bull; Warn at 5m</div>
+                    </div>
+                  </div>
+
+                  <!-- Session Warning Progress Bar -->
+                  <div
+                    style="margin-bottom:14px; background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:6px; padding:10px;">
+                    <div
+                      style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.75rem;">
+                      <span style="color:var(--text-muted); font-weight:600;">Time Until Inactivity Warning:</span>
+                      <span id="sec-monitor-remaining"
+                        style="font-weight:700; color:var(--green); font-family:monospace;">55m 00s</span>
+                    </div>
+                    <div
+                      style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+                      <div id="sec-monitor-progress"
+                        style="height:100%; width:100%; background:var(--green); transition:width 1s linear;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Session Action Buttons -->
+                  <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      onclick="window.SessionFocusManager.showWarning()" style="font-size:0.74rem;">
+                      &#9203; Test Warning Dialog
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      onclick="window.SessionFocusManager.extendSession()" style="font-size:0.74rem;">
+                      &#9889; Renew Session Now
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      onclick="window.SessionFocusManager.logoutUser()" style="font-size:0.74rem; color:var(--red);">
+                      &#128682; Sign Out
+                    </button>
+                  </div>
+
+                  <div
+                    style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:10px; font-size:0.74rem; line-height:1.45; color:var(--text-muted);">
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                      <span style="color:var(--cyan); font-size:1rem;">&#8505;&#65039;</span>
+                      <div>
+                        <strong>Owned Dialog Standard:</strong> The inactivity timeout warning uses the same modal
+                        presentation standard as other ERP dialogs. Background data refreshes and polling do not count
+                        as user keyboard/mouse activity.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. MODULE ACTIVATION & FEATURE CONTROL PANEL (image19.png & image20.png Parity) -->
+            <div id="settings-panel-modules" class="settings-subpanel" data-section="MODULES" style="display:none;">
+              <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#c084fc; font-size:1.15rem;">&#9881;&#65039;</span>
+                  <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Module Activation &amp; Feature Control</h2>
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8;">Control ERP business modules, statutory engines, and smart operational automations. Deactivated modules are hidden from navigation and bypassed with zero overhead.</div>
+              </div>
+
+              <!-- 5 Full-Width Module Cards matching Desktop image19.png - image20.png -->
+              <div style="display:flex; flex-direction:column; gap:14px;">
+
+                <!-- Card 1: General Ledger & Double-Entry Accounting -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#38bdf8; font-size:0.95rem;">&#127963;&#65039;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#38bdf8; margin:0;">General Ledger &amp; Double-Entry Accounting</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Master Chart of Accounts, debit/credit journal vouchers, real-time Trial Balance, and Profit &amp; Loss.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-gl-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable GL Module</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-autopost" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Auto-post Journal Vouchers from Sales &amp; Purchases</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gl-trialbalance" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Maintain Live Trial Balance</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 2: GST Statutory Compliance & GSTR-2B Auto-Reconciliation -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#fbbf24; font-size:0.95rem;">&#127895;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#fbbf24; margin:0;">GST Statutory Compliance &amp; GSTR-2B Auto-Reconciliation</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Automated Place of Supply tax split, GSTR-1 government JSON exports, and GSTR-2B ITC fuzzy reconciliation.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-gst-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable GST Engine</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid #10b981; border-radius:6px; background:rgba(16,185,129,0.15); cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-auto2b" checked style="accent-color:#10b981; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc; font-weight:600;">Auto-Reconcile GSTR-2B Purchases</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-gst-posgating" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Strict Place of Supply Gating</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-tds-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">TDS / TCS Withholding (Sec 194Q &amp; 206C)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 3: Smart Operational Automations Suite -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#34d399; font-size:0.95rem;">&#9881;&#65039;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#34d399; margin:0;">Smart Operational Automations Suite</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Automate purchase bill verification against PO/GRN, dynamic stock replenishment, and smart FIFO payment matching.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-automations-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Automations</span>
+                    </label>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Smart 3-Way Purchase Matching (PO vs GRN vs Bill)</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-reorder-enabled" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Dynamic Safety Stock &amp; Auto-Reorder Alerts</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid #a855f7; border-radius:6px; background:rgba(168,85,247,0.18); cursor:pointer;">
+                      <input type="checkbox" id="mod-threeway-autodebit" checked style="accent-color:#a855f7; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc; font-weight:600;">Auto-generate draft debit notes for short shipments</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-credit-hardstop" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Customer Overdue Credit Hard Stop (Block Invoicing)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card 4: Executive 8:00 PM Daily Briefing -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#f8fafc; font-size:0.95rem;">&#128227;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#f8fafc; margin:0;">Executive 8:00 PM Daily Briefing</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Daily evening summary of sales, customer collections, vendor payments, bank balances, and overdue accounts.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-briefing-enabled" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Daily Briefing</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-briefing-wa" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">WhatsApp Channel</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-briefing-email" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Email Channel</span>
+                    </label>
+                    <div style="display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6);">
+                      <span style="font-size:0.75rem; color:#38bdf8; font-weight:600;">&#128222; Mobile No:</span>
+                      <input type="text" id="mod-briefing-phone" class="form-input form-input-sm" value="+91 90999 39193" style="width:140px; height:26px; font-size:0.75rem; background:transparent; border:none; color:#ffffff; font-weight:600;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 5: Multi-Warehouse, Batch/Expiry (FEFO) & Serial Registry -->
+                <div class="module-card-panel" style="background:rgba(15,23,42,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px 20px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="color:#2dd4bf; font-size:0.95rem;">&#128230;</span>
+                        <h3 style="font-size:0.85rem; font-weight:700; color:#2dd4bf; margin:0;">Multi-Warehouse, Batch/Expiry (FEFO) &amp; Serial Registry</h3>
+                      </div>
+                      <div style="font-size:0.74rem; color:#94a3b8;">Track stock across multiple storage depots, enforce First-Expired First-Out dispatches, and track equipment serial warranties.</div>
+                    </div>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="mod-batch-serial" checked style="accent-color:#38bdf8; width:15px; height:15px; cursor:pointer;">
+                      <span style="font-size:0.78rem; font-weight:700; color:#ffffff;">Enable Batch/Serial Tracking</span>
+                    </label>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-batch-fefo" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Enforce FEFO (First-Expired First-Out) picking</span>
+                    </label>
+                    <label class="notification-pill-card" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(15,23,42,0.6); cursor:pointer;">
+                      <input type="checkbox" id="mod-serial-mandatory" checked style="accent-color:#38bdf8; width:14px; height:14px; cursor:pointer;">
+                      <span style="font-size:0.75rem; color:#f8fafc;">Mandatory serial registration for warranty items</span>
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+      </main>
+    </div>
+
+    <!-- PERSISTENT DESKTOP FOOTER BAR (Desktop SharedApplicationFooter.java Parity) -->
+    <footer class="app-footer-bar" id="app-footer-bar">
+      <div class="footer-item footer-trust" id="footer-trust-badge">
+        <span class="trust-indicator-dot"></span>
+        <span class="trust-text">Secure &nbsp; Local &nbsp; Reliable</span>
+      </div>
+      <div class="footer-item footer-company" id="footer-company-name">
+        <span class="footer-icon">&#127970;</span> <span class="footer-val" id="footer-company-val"></span>
+      </div>
+      <div class="footer-item footer-phone" id="footer-phone">
+        <span class="footer-icon">&#128222;</span> <span class="footer-val" id="footer-phone-val"></span>
+      </div>
+      <div class="footer-item footer-email" id="footer-email">
+        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val" id="footer-email-val"></span>
+      </div>
+      <div class="footer-item footer-website" id="footer-website">
+        <span class="footer-icon">&#127760;</span> <span class="footer-val" id="footer-website-val"></span>
+      </div>
+      <div class="footer-item footer-clock" id="footer-live-clock">
+        <span class="footer-icon">&#128197;</span> <span class="footer-val" id="footer-clock-val"></span>
+      </div>
+    </footer>
+  </div>
+  <!-- Footer Dynamic Hydration: Desktop SharedApplicationFooter.java parity (zero fake placeholder text) -->
+  <script>
+    (function() {
+      try {
+        function _hydFooter(cfg) {
+          var co = document.getElementById('footer-company-val');
+          var ph = document.getElementById('footer-phone-val');
+          var em = document.getElementById('footer-email-val');
+          var wb = document.getElementById('footer-website-val');
+          var fw = document.getElementById('footer-website');
+          if (co) co.textContent = cfg.companyName || cfg.company_name || cfg.name || '';
+          if (ph) ph.textContent = cfg.mobile || cfg.phone || cfg.mobileNumber || '';
+          if (em) em.textContent = cfg.email || '';
+          var website = cfg.website || cfg.websiteUrl || '';
+          if (wb) wb.textContent = website;
+          /* Show footer-website only when a URL is present */
+          if (fw) fw.style.display = website ? '' : 'none';
+        }
+
+        function _hydFooterClock() {
+          var fc = document.getElementById('footer-clock-val');
+          if (!fc) return;
+          var now = new Date();
+          var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var d = days[now.getDay()];
+          var dt = d + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+          var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          h = h % 12 || 12;
+          var ts = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+          fc.textContent = dt + ' | ' + ts + ' | IST';
+        }
+
+        /* Try to hydrate footer from BrandingService or localStorage on DOMContentLoaded */
+        function _attemptFooterHydration() {
+          /* 1. Try BrandingService (loaded by app.js scripts) */
+          if (window.BrandingService && window.BrandingService.getCurrentBranding) {
+            try {
+              var br = window.BrandingService.getCurrentBranding();
+              if (br && (br.companyName || br.name)) { _hydFooter(br); return; }
+            } catch (_) {}
+          }
+          /* 2. Fallback: localStorage dse_branding */
+          var rawBrand = localStorage.getItem('dse_branding');
+          if (rawBrand) {
+            try { _hydFooter(JSON.parse(rawBrand)); } catch (_) {}
+          } else {
+            /* 3. Fallback: dse_company_settings */
+            var rawCfg = localStorage.getItem('dse_company_settings') || localStorage.getItem('dse_settings');
+            if (rawCfg) {
+              try { _hydFooter(JSON.parse(rawCfg)); } catch (_) {}
+            }
+          }
+        }
+
+        /* Start footer clock immediately */
+        _hydFooterClock();
+        setInterval(_hydFooterClock, 1000);
+
+        /* Hydrate company info after DOM ready */
+        if (document.readyState !== 'loading') {
+          _attemptFooterHydration();
+        } else {
+          document.addEventListener('DOMContentLoaded', _attemptFooterHydration);
+        }
+
+        /* Expose re-hydration function for BrandingService to call after API fetch */
+        window.refreshFooterCompanyProfile = function(cfg) { if (cfg) _hydFooter(cfg); };
+      } catch (_) {}
+    })();
+  </script>

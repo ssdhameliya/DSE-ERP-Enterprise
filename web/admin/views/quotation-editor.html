@@ -1,0 +1,182 @@
+<div id="view-quotation-editor" class="module-view" style="display:none;">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 id="qe-title"><span>&#128221;</span> Create Quotation</h1>
+              <p id="qe-subtitle">Sale-style quotation workspace with Master Data lookup and live GST calculations</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.QuotationController.cancelEditor()">Cancel</button>
+              <button class="btn btn-primary" id="btn-save-quotation"
+                onclick="window.QuotationController.saveQuotation()">Save Quotation</button>
+            </div>
+          </div>
+
+          <!-- Master Header Form Card -->
+          <div class="editor-card">
+            <div class="editor-card-header">General Information &amp; Terms</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Customer *</label>
+                <select id="qe-customer-select" class="form-select" required>
+                  <option value="">Select Customer *</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quotation Date *</label>
+                <input type="date" id="qe-date" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Valid Until *</label>
+                <input type="date" id="qe-valid" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Follow-Up Date</label>
+                <input type="date" id="qe-followup" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quotation Source</label>
+                <select id="qe-source-select" class="form-select">
+                  <option value="Direct Inquiry">Direct Inquiry</option>
+                  <option value="Email">Email</option>
+                  <option value="Phone Call">Phone Call</option>
+                  <option value="Website">Website</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Quotation Remarks / Terms</label>
+              <textarea id="qe-remarks" class="form-input" rows="2"
+                placeholder="Enter terms of delivery, payment, or warranty notes..."></textarea>
+            </div>
+
+            <!-- Settings Branding Style Quotation Attachment Card -->
+            <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-top:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="color:#c084fc;">ðŸ“Ž</span>
+                  <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Attachment Document</div>
+                </div>
+                <span id="qe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
+              </div>
+              <div style="font-size:0.7rem; color:#64748b; margin-bottom:8px;">Proposal specification, technical drawing, or customer RFQ scan &bull; Max 10MB</div>
+
+              <div id="qe-attachment-dropzone" style="min-height:75px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
+                <div id="qe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">ðŸ“„</div>
+                <div id="qe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
+                <div id="qe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, DOC, XLS, PNG, JPG</div>
+              </div>
+              <input type="file" id="qe-attachment-file-input" style="display:none;" onchange="window.QuotationController.handleAttachmentFileSelected(this)">
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="qe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('qe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+ Add / Replace</button>
+                <button type="button" id="qe-btn-attach-preview" class="btn btn-secondary" onclick="window.QuotationController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>ðŸ‘ Preview</button>
+                <button type="button" id="qe-btn-attach-remove" class="btn btn-secondary" onclick="window.QuotationController.removeEditorAttachment()" style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Items Editor Card -->
+          <div class="editor-card">
+            <div class="editor-card-header">Line Items Entry</div>
+
+            <!-- Quick Add Line Item Strip -->
+            <div
+              style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:12px; margin-bottom:14px; position:relative;">
+              <div
+                style="display:grid; grid-template-columns:2.5fr 0.8fr 1fr 0.8fr 0.8fr auto; gap:8px; align-items:flex-end;">
+                <div class="form-group" style="position:relative; margin-bottom:0;">
+                  <label class="form-label">Item Search (Code / Description)</label>
+                  <input type="text" id="qe-line-item-search" class="form-input"
+                    placeholder="Type to search SKU or item name..."
+                    oninput="window.QuotationController.onEditorItemSearchInput(this.value)" autocomplete="off">
+                  <div id="qe-item-suggestions"
+                    style="display:none; position:absolute; left:0; top:100%; right:0; z-index:999; background:#0b1324; border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.6); max-height:220px; overflow-y:auto;">
+                  </div>
+                  <input type="hidden" id="qe-line-code">
+                  <input type="hidden" id="qe-line-desc">
+                  <input type="hidden" id="qe-line-hsn">
+                  <input type="hidden" id="qe-line-unit">
+                  <input type="hidden" id="qe-line-category">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Qty</label>
+                  <input type="number" id="qe-line-qty" class="form-input" step="0.01" min="0.01" value="1"
+                    placeholder="Qty">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Rate (&#8377;)</label>
+                  <input type="number" id="qe-line-rate" class="form-input" step="0.01" min="0" value="0"
+                    placeholder="Rate">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Disc %</label>
+                  <input type="number" id="qe-line-discount" class="form-input" step="0.01" min="0" max="100" value="0"
+                    placeholder="Disc %">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">GST %</label>
+                  <input type="number" id="qe-line-gst" class="form-input" step="0.01" min="0" max="100" value="18"
+                    placeholder="GST %">
+                </div>
+                <div>
+                  <button type="button" class="btn btn-primary" onclick="window.QuotationController.addEditorLine()"
+                    style="height:36px;">+ Add Line</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table of Lines -->
+            <div style="overflow-x:auto;">
+              <table class="sales-desktop-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px; text-align:center;">#</th>
+                    <th>Item Code</th>
+                    <th>Description</th>
+                    <th>HSN</th>
+                    <th style="text-align:right;">Quantity</th>
+                    <th style="text-align:right;">Rate (&#8377;)</th>
+                    <th style="text-align:right;">Disc %</th>
+                    <th style="text-align:right;">GST %</th>
+                    <th style="text-align:right;">Total (&#8377;)</th>
+                    <th style="width:50px; text-align:center;">Del</th>
+                  </tr>
+                </thead>
+                <tbody id="qe-lines-table-body">
+                  <tr>
+                    <td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No items added
+                      yet. Use the search input above to add items.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Financial Summary Box -->
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+              <div
+                style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:8px; padding:12px 18px; width:340px; font-size:0.82rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <span style="color:var(--text-muted);">Subtotal (Gross):</span>
+                  <span style="font-weight:600;" id="qe-summary-subtotal">&#8377; 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--cyan);">
+                  <span>Total Discount:</span>
+                  <span style="font-weight:600;" id="qe-summary-discount">- &#8377; 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <span style="color:var(--text-muted);">Taxable Amount:</span>
+                  <span style="font-weight:600;" id="qe-summary-taxable">&#8377; 0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--yellow);">
+                  <span>GST Amount:</span>
+                  <span style="font-weight:600;" id="qe-summary-gst">&#8377; 0.00</span>
+                </div>
+                <div style="height:1px; background:var(--border-subtle); margin:8px 0;"></div>
+                <div
+                  style="display:flex; justify-content:space-between; font-size:1.05rem; font-weight:800; color:var(--text-main);">
+                  <span>Grand Total:</span>
+                  <span style="color:var(--yellow);" id="qe-summary-total">&#8377; 0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

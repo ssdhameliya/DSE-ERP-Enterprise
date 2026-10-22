@@ -1,0 +1,136 @@
+<div id="view-credit-notes" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128179;</span> Sales Credit Note Register</h1>
+              <p>Issued credit adjustments against customer invoices with automatic GST liability reversal</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.CreditDebitNoteController.loadCreditNotes()">&#8635;
+                Refresh</button>
+              <button class="btn btn-primary" onclick="window.CreditDebitNoteController.openCreateCreditModal()">+ New
+                Credit Note</button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards matching desktop CreditNoteRegister.fxml -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128196;</span> Total Credit Notes</div>
+              <div class="kpi-value" id="cn-kpi-count">0</div>
+              <div class="kpi-sub">Total issued count</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128176;</span> Total Credit Amount</div>
+              <div class="kpi-value" id="cn-kpi-amount" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub">Active credit notes total</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9878;&#65039;</span> Tax Reversed</div>
+              <div class="kpi-value" id="cn-kpi-tax" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-sub">GST output tax credited</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128230;</span> Restocked Inventory</div>
+              <div class="kpi-value" id="cn-kpi-stock" style="color:var(--green);">0</div>
+              <div class="kpi-sub">Notes with restock reversal</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="cn-filter-search" class="filter-input"
+              placeholder="Search credit note #, customer, invoice ref..." style="width:280px;"
+              oninput="window.CreditDebitNoteController.filterCreditNotes()">
+            <select id="cn-filter-reason" class="form-select" style="width:200px;"
+              onchange="window.CreditDebitNoteController.filterCreditNotes()">
+              <option value="All Reasons">All Reasons</option>
+              <option value="Sales Return">Sales Return</option>
+              <option value="Rate Difference">Rate Difference</option>
+              <option value="Post-Sale Discount">Post-Sale Discount</option>
+              <option value="Correction">Correction</option>
+            </select>
+          </div>
+
+          <!-- Credit Notes Workspace with Inline Drawer Split (Desktop CreditNoteRegister.fxml Parity) -->
+          <div class="register-workspace" id="credit-notes-workspace"
+            style="display: flex; gap: 14px; width: 100%; align-items: stretch;">
+            <!-- Left: Table Panel -->
+            <div class="register-table-panel" id="credit-notes-table-panel"
+              style="flex: 1; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+              <div class="sales-table-scroll" style="flex: 1;">
+                <table class="sales-desktop-table" id="credit-notes-main-table">
+                  <thead>
+                    <tr>
+                      <th>Credit Note #</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Invoice Ref</th>
+                      <th>Reason</th>
+                      <th style="text-align:right;">Taxable (&#8377;)</th>
+                      <th style="text-align:right;">Tax (&#8377;)</th>
+                      <th style="text-align:right;">Total (&#8377;)</th>
+                      <th>Status</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbl-credit-notes-body">
+                    <tr>
+                      <td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">Loading credit
+                        notes...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop CreditNoteRegisterController Parity) -->
+            <div id="cn-detail-drawer" class="slide-detail-drawer register-inline-drawer"
+              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
+              <div class="drawer-header"
+                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
+                    id="cn-detail-no">Credit Note Details</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);">Accounts &amp; General Ledger Posting</div>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.closeDrawer(true)">&times;</button>
+              </div>
+              <div class="drawer-body"
+                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
+                    class="drawer-field-value" id="cn-detail-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Customer:</span><span
+                    class="drawer-field-value" id="cn-detail-party"
+                    style="font-weight:700; color:var(--text-main);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Original Invoice:</span><span
+                    class="drawer-field-value" id="cn-detail-ref" style="color:var(--cyan);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Reason Code:</span><span
+                    class="drawer-field-value" id="cn-detail-reason">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Taxable Amount:</span><span
+                    class="drawer-field-value" id="cn-detail-taxable">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">CGST (50%):</span><span
+                    class="drawer-field-value" id="cn-detail-cgst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">SGST (50%):</span><span
+                    class="drawer-field-value" id="cn-detail-sgst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">IGST:</span><span
+                    class="drawer-field-value" id="cn-detail-igst">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span
+                    class="drawer-field-value" id="cn-detail-total"
+                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Stock Restocked:</span><span
+                    class="drawer-field-value" id="cn-detail-stock">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span
+                    class="drawer-field-value" id="cn-detail-status">-</span></div>
+              </div>
+              <div class="drawer-footer"
+                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.downloadPdf(document.getElementById('cn-detail-no').innerText, true)">Print
+                  PDF</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.CreditDebitNoteController.closeDrawer(true)">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

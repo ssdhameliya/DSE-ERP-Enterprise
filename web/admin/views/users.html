@@ -1,0 +1,205 @@
+<div id="view-users" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128100;</span> User Access &amp; Permissions</h1>
+              <p>Manage users, account security and access from one administration workspace</p>
+            </div>
+            <div class="view-header-actions" style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('registration-approvals')"
+                title="Review and approve pending registrations">
+                <span>&#128203;</span> Registration Approvals
+              </button>
+              <button class="btn btn-secondary" onclick="window.UserAccessController.openManageRoles()"
+                title="Manage Roles in Master Data">
+                <span>&#128737;&#65039;</span> Manage Roles
+              </button>
+              <button class="btn btn-secondary" onclick="window.NavigationRouter.navigate('permission-matrix')"
+                title="Configure module authorization matrix">
+                <span>&#9889;</span> Permission Matrix
+              </button>
+              <button class="btn-purple" onclick="window.UserAccessController.openAddUserModal()"
+                style="height:36px; padding:0 14px; font-weight:700; border-radius:6px; cursor:pointer;">
+                <span>+</span> Add New User
+              </button>
+              <button class="btn btn-secondary" onclick="window.UserAccessController.loadUsers()">
+                <span>&#128260;</span> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 Desktop KPIs matching UserAccess.fxml -->
+          <div class="kpi-grid"
+            style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
+            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL SYSTEM USERS</span>
+              </div>
+              <div class="kpi-value" id="user-kpi-total" style="font-size: 1.25rem;">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Accounts</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ACTIVE ACCOUNTS</span></div>
+              <div class="kpi-value" id="user-kpi-active" style="font-size: 1.25rem; color: var(--green);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Active</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ROLES</span></div>
+              <div class="kpi-value" id="user-kpi-roles" style="font-size: 1.25rem; color: var(--cyan);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Access</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid #ef4444; padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOCKED ACCOUNTS</span></div>
+              <div class="kpi-value" id="user-kpi-locked" style="font-size: 1.25rem; color: #f87171;">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Security</div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
+              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOGIN ACTIVITY</span></div>
+              <div class="kpi-value" id="user-kpi-mfa" style="font-size: 1.25rem; color: var(--yellow);">0</div>
+              <div class="kpi-meta" style="font-size: 0.65rem;">Today</div>
+            </div>
+          </div>
+
+          <!-- User Management Table Card Strip (Desktop Toolbar Parity) -->
+          <div class="user-table-toolbar">
+            <div class="user-table-toolbar-left">
+              <span style="font-size: 1.2rem;">&#9881;&#65039;</span>
+              <div>
+                <strong style="color: var(--text-main); font-size: 0.92rem;">User Management</strong>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Search, filter and manage ERP users</div>
+              </div>
+            </div>
+            <div class="user-table-toolbar-right">
+              <input type="text" id="user-search-input" class="form-input form-input-sm"
+                placeholder="Search user, email..." style="width: 170px;"
+                oninput="window.UserAccessController.filterUsers(this.value)">
+              <select id="user-filter-role" class="form-select form-input-sm" style="width: 130px;"
+                onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Roles</option>
+              </select>
+              <select id="user-filter-status" class="form-select form-input-sm" style="width: 120px;"
+                onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="LOCKED">Locked</option>
+              </select>
+              <select id="user-filter-branch" class="form-select form-input-sm" style="width: 130px;"
+                onchange="window.UserAccessController.onFilterChange()">
+                <option value="">All Branches</option>
+              </select>
+              <button class="btn btn-secondary btn-sm"
+                onclick="window.UserAccessController.loadUsers()">Refresh</button>
+            </div>
+          </div>
+
+          <!-- 10-Column Desktop Table -->
+          <div class="register-workspace" id="user-register-workspace">
+            <div class="register-table-panel data-panel" style="overflow-x:auto; border-radius:0;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="min-width: 150px;">User</th>
+                    <th style="min-width: 200px;">Email / Username</th>
+                    <th style="min-width: 110px;">Role</th>
+                    <th style="min-width: 110px;">Department</th>
+                    <th style="min-width: 120px;">Access</th>
+                    <th style="min-width: 110px;">Branch</th>
+                    <th style="min-width: 90px;">Status</th>
+                    <th style="min-width: 130px;">Last Login</th>
+                    <th style="min-width: 80px;">MFA</th>
+                    <th style="text-align: right; min-width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-tbody">
+                  <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading user
+                      accounts...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Inline Docked User Detail Drawer -->
+            <div id="user-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+              <div class="drawer-header">
+                <div>
+                  <h3 style="margin:0; font-size:1rem;" id="ud-full-name">User Account</h3>
+                  <span id="ud-username" style="font-size:0.75rem; color:var(--cyan); font-family:monospace;">-</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()"
+                  style="padding:2px 8px;">&times;</button>
+              </div>
+              <div class="drawer-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">ACCOUNT STATUS</span>
+                  <span id="ud-status-badge" class="pill-badge pill-success" style="font-size:0.75rem;">ACTIVE</span>
+                </div>
+                <div class="drawer-field-grid"
+                  style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Assigned Role:</div>
+                    <div id="ud-role" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">
+                      USER</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Access Level:</div>
+                    <div id="ud-access"
+                      style="font-weight:700; color:var(--purple); font-size:0.85rem; margin-top:2px;">STANDARD</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Department:</div>
+                    <div id="ud-dept"
+                      style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">GENERAL</div>
+                  </div>
+                  <div
+                    style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Branch:</div>
+                    <div id="ud-branch"
+                      style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">HEADQUARTERS
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                  <div style="color:var(--text-muted); font-size:0.68rem;">Email Address:</div>
+                  <div id="ud-email"
+                    style="font-weight:600; color:var(--text-main); font-size:0.85rem; margin-top:2px; word-break:break-all;">
+                    -</div>
+                </div>
+                <div
+                  style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                  <div style="color:var(--text-muted); font-size:0.68rem;">Last Sign-in:</div>
+                  <div id="ud-last-login"
+                    style="font-weight:600; color:var(--text-dim); font-size:0.8rem; margin-top:2px;">-</div>
+                </div>
+              </div>
+              <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="window.UserAccessController.drawerEditUser()">âœï¸ Edit
+                  Account</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetPassword()">ðŸ”‘
+                  Reset Password</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleLock()">ðŸ”’
+                  Toggle Lock</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.UserAccessController.drawerResetAuthenticator()">ðŸ›¡ï¸ Reset Auth</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerUserAudit()">ðŸ“‹
+                  Audit Trail</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()">âœ–
+                  Close</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Strip (Desktop Parity) -->
+          <div class="user-bottom-action-strip">
+            <button class="btn btn-secondary" onclick="window.UserAccessController.editSelectedUser()">Edit
+              Selected</button>
+            <button class="btn btn-secondary" onclick="window.UserAccessController.resetSelectedUserPassword()">Reset
+              Password</button>
+            <button class="btn-purple" onclick="window.UserAccessController.openAddUserModal()"
+              style="height:34px; padding:0 14px; font-weight:700; border-radius:6px; cursor:pointer;">+ Add New
+              User</button>
+          </div>
+        </div>

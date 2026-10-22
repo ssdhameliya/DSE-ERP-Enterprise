@@ -1,0 +1,385 @@
+<div id="view-import" class="module-view">
+          <div class="view-header" style="margin-bottom:14px;">
+            <div class="view-title-group">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.6rem;">&#128229;</span>
+                <div>
+                  <h1 style="margin:0; font-size:1.35rem; font-weight:700;">Data Import Studio</h1>
+                  <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Import ERP master and
+                    transaction data from Excel or bank CSV files</p>
+                </div>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary"
+                onclick="alert('Data Import Guide:\n1. Download the sample template\n2. Fill in your records\n3. Upload CSV/Excel\n4. Map columns & execute import')">&#128214;
+                Import Guide</button>
+            </div>
+          </div>
+
+          <!-- 4-STEP WIZARD PROGRESS BAR -->
+          <div
+            style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-surface); padding:12px 24px; border-radius:8px; border:1px solid var(--border-subtle); margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:10px; cursor:pointer;"
+              onclick="window.ImportController.goToStep(1)">
+              <div id="step1Badge" class="wizard-badge"
+                style="width:28px; height:28px; border-radius:50%; background:var(--cyan); color:#000; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;">
+                1</div>
+              <div>
+                <div style="font-weight:700; font-size:0.85rem;">Select Data</div>
+                <div style="font-size:0.72rem; color:var(--text-dim);">Choose what to import</div>
+              </div>
+            </div>
+            <div style="flex:1; height:2px; background:var(--border-subtle); margin:0 16px;"></div>
+            <div style="display:flex; align-items:center; gap:10px; cursor:pointer;"
+              onclick="window.ImportController.goToStep(2)">
+              <div id="step2Badge" class="wizard-badge"
+                style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); color:var(--text-dim); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;">
+                2</div>
+              <div>
+                <div style="font-weight:700; font-size:0.85rem;">Upload File</div>
+                <div style="font-size:0.72rem; color:var(--text-dim);">Select your import file</div>
+              </div>
+            </div>
+            <div style="flex:1; height:2px; background:var(--border-subtle); margin:0 16px;"></div>
+            <div style="display:flex; align-items:center; gap:10px; cursor:pointer;"
+              onclick="window.ImportController.goToStep(3)">
+              <div id="step3Badge" class="wizard-badge"
+                style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); color:var(--text-dim); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;">
+                3</div>
+              <div>
+                <div style="font-weight:700; font-size:0.85rem;">Map Columns</div>
+                <div style="font-size:0.72rem; color:var(--text-dim);">Match file columns to ERP fields</div>
+              </div>
+            </div>
+            <div style="flex:1; height:2px; background:var(--border-subtle); margin:0 16px;"></div>
+            <div style="display:flex; align-items:center; gap:10px; cursor:pointer;"
+              onclick="window.ImportController.goToStep(4)">
+              <div id="step4Badge" class="wizard-badge"
+                style="width:28px; height:28px; border-radius:50%; background:var(--bg-card); color:var(--text-dim); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;">
+                4</div>
+              <div>
+                <div style="font-weight:700; font-size:0.85rem;">Review &amp; Import</div>
+                <div style="font-size:0.72rem; color:var(--text-dim);">Validate and ingest data</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 1: SELECT DATA MODULE -->
+          <div id="import-stage-step-1" style="display:block;">
+            <div style="margin-bottom:14px;">
+              <h3 style="margin:0 0 4px 0; font-size:1.05rem;">What would you like to import?</h3>
+              <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">Select the category of data you want to
+                import into your ERP database</p>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px;">
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#127991;&#65039;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Item Master</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Product items, stock levels,
+                    pricing, units, and tax details.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Item Master')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Item Master')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128101;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Customers / CRM</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Customer profiles, GSTIN,
+                    credit limits, and billing addresses.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Customers / CRM')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Customers / CRM')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#127970;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Suppliers / HRM</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Vendor contacts, bank
+                    accounts, GSTIN, and payment terms.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Suppliers / HRM')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Suppliers / HRM')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128722;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Sales Register</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Sales tax invoices, line
+                    items, item quantities, and tax calculations.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Sales')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Sales')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128230;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Purchase Bills</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Supplier inward bills, items
+                    received, rates, and input tax credit.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Purchases')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Purchases')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128218;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Master Categories</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Lookup definitions, unit
+                    codes, item categories, and payment terms.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Master Categories & Values')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Master Categories & Values')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#128269;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Purchase Recon (2B)</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">GSTR-2B inward supplies for
+                    ITC matching and reconciliation.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Purchase Recon')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Purchase Recon')">Template</button>
+                </div>
+              </div>
+              <div class="data-panel"
+                style="padding:16px; border:1px solid var(--border-subtle); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="font-size:1.8rem; margin-bottom:8px;">&#127974;</div>
+                  <h4 style="margin:0 0 6px 0; font-size:1rem;">Bank Statement</h4>
+                  <p style="margin:0 0 16px 0; font-size:0.76rem; color:var(--text-dim);">Statement lines, bank
+                    deposits, withdrawals, and UTR references.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;"
+                    onclick="window.ImportController.selectModule('Bank Statement')">Select</button>
+                  <button class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.downloadTemplate('Bank Statement')">Template</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: UPLOAD FILE -->
+          <div id="import-stage-step-2" style="display:none;">
+            <div class="data-panel"
+              style="padding:24px; max-width:750px; margin:0 auto; border:1px solid var(--border-subtle); border-radius:8px;">
+              <h3 style="margin:0 0 4px 0; font-size:1.1rem;">Upload Spreadsheet for <span
+                  id="lbl-import-selected-module" style="color:var(--cyan);">Item Master</span></h3>
+              <p style="margin:0 0 20px 0; font-size:0.78rem; color:var(--text-muted);">Supports standard CSV files
+                (.csv) and Microsoft Excel (.xlsx)</p>
+
+              <div id="import-dropzone"
+                style="border:2px dashed var(--cyan); border-radius:8px; padding:36px; text-align:center; background:rgba(0,242,254,0.02); cursor:pointer;"
+                onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault()"
+                ondrop="window.ImportController.onFileDrop(event)">
+                <div style="font-size:2.4rem; margin-bottom:10px;">&#128196;</div>
+                <div style="font-weight:700; font-size:1rem; margin-bottom:4px;">Drag and drop your file here, or click
+                  to browse</div>
+                <div style="font-size:0.76rem; color:var(--text-dim);">UTF-8 encoded CSV or Excel workbook</div>
+                <input type="file" id="import-file-input" accept=".csv,.xlsx,.txt" style="display:none;"
+                  onchange="window.ImportController.onFileInputChange(event)">
+              </div>
+
+              <div
+                style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); padding:12px 16px; border-radius:6px;">
+                <div>
+                  <div id="lbl-import-file-name" style="font-weight:700; color:var(--text-bright);">No file selected
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-dim);"><span id="lbl-import-file-size">0 KB</span>
+                    &bull; <span id="lbl-import-file-rows" style="color:var(--accent-green); font-weight:600;">0 rows
+                      detected</span></div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm"
+                  onclick="window.ImportController.downloadTemplate()">Download Template</button>
+              </div>
+
+              <div style="margin-top:24px; display:flex; justify-content:space-between;">
+                <button class="btn btn-secondary" onclick="window.ImportController.goToStep(1)">&#8592; Back to
+                  Selection</button>
+                <button id="btn-import-proceed-mapping" class="btn btn-primary" disabled
+                  onclick="window.ImportController.proceedToMapping()">Proceed to Column Mapping &#8594;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: MAP COLUMNS -->
+          <div id="import-stage-step-3" style="display:none;">
+            <div class="data-panel" style="padding:20px; border:1px solid var(--border-subtle); border-radius:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <h3 style="margin:0 0 4px 0; font-size:1.1rem;">Map Spreadsheet Columns to ERP Fields</h3>
+                  <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">Ensure each required ERP database
+                    field has a corresponding column from your file</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="window.ImportController.renderMappingTable()">&#8634;
+                  Reset Auto-Match</button>
+              </div>
+
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:30%;">ERP FIELD</th>
+                    <th style="width:20%;">INTERNAL KEY</th>
+                    <th style="width:35%;">SPREADSHEET COLUMN</th>
+                    <th style="width:15%;">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="import-mapping-tbody">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+
+              <div style="margin-top:24px; display:flex; justify-content:space-between;">
+                <button class="btn btn-secondary" onclick="window.ImportController.goToStep(2)">&#8592; Back to
+                  Upload</button>
+                <button class="btn btn-primary" onclick="window.ImportController.proceedToValidation()">Review &amp;
+                  Validate Rows &#8594;</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: REVIEW & IMPORT -->
+          <div id="import-stage-step-4" style="display:none;">
+            <div class="data-panel" style="padding:20px; border:1px solid var(--border-subtle); border-radius:8px;">
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:16px;">
+                <div class="standard-kpi-card kpi-blue" style="padding:14px;">
+                  <div class="metric-label">TOTAL ROWS</div>
+                  <div id="lbl-import-total-count" class="metric-value" style="font-size:1.5rem;">0</div>
+                </div>
+                <div class="standard-kpi-card kpi-green" style="padding:14px;">
+                  <div class="metric-label">VALID ROWS</div>
+                  <div id="lbl-import-valid-count" class="metric-value"
+                    style="font-size:1.5rem; color:var(--accent-green);">0</div>
+                </div>
+                <div class="standard-kpi-card kpi-red" style="padding:14px;">
+                  <div class="metric-label">ERRORS / BLOCKED</div>
+                  <div id="lbl-import-invalid-count" class="metric-value"
+                    style="font-size:1.5rem; color:var(--accent-red);">0</div>
+                </div>
+              </div>
+
+              <!-- Top Review Controls & Tabs -->
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; gap:8px;">
+                  <button id="tab-import-preview" class="btn btn-primary btn-sm"
+                    onclick="window.ImportController.switchReviewTab('preview')">&#128196; Data Preview</button>
+                  <button id="tab-import-validation" class="btn btn-secondary btn-sm"
+                    onclick="window.ImportController.switchReviewTab('validation')">&#9989; Validation Results</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <label
+                    style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8rem; color:var(--text-main); font-weight:600;">
+                    <input type="checkbox" id="chkDryRun" onchange="window.ImportController.toggleDryRun(this.checked)"
+                      style="accent-color:var(--cyan); cursor:pointer;">
+                    Validate only (Dry run)
+                  </label>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <label class="form-label" style="margin:0; font-size:0.78rem;">Import Policy:</label>
+                    <select id="import-mode-select" class="form-select form-select-sm" style="width:180px;">
+                      <option value="UPSERT" selected>UPSERT (Create or Update)</option>
+                      <option value="INSERT_ONLY">INSERT ONLY (Skip Existing)</option>
+                      <option value="UPDATE_NON_BLANK">UPDATE NON-BLANK ONLY</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pane 1: Data Preview -->
+              <div id="pane-import-preview" style="display:block;">
+                <div
+                  style="overflow-x:auto; max-height:300px; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:20px;">
+                  <table class="data-table">
+                    <thead id="import-preview-thead"></thead>
+                    <tbody id="import-preview-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Pane 2: Validation Results -->
+              <div id="pane-import-validation" style="display:none;">
+                <div
+                  style="overflow-x:auto; max-height:300px; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:20px;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:100px; text-align:center;">Sheet / Rows</th>
+                        <th style="width:160px;">Record / Reference</th>
+                        <th style="width:130px;">Mandatory</th>
+                        <th style="width:130px;">Format</th>
+                        <th style="width:140px;">Master Match</th>
+                        <th style="min-width:160px;">Data / Duplicate Action</th>
+                        <th style="min-width:280px;">Result / Error</th>
+                      </tr>
+                    </thead>
+                    <tbody id="import-validation-tbody">
+                      <tr>
+                        <td colspan="7" style="text-align:center; padding:24px; color:var(--text-dim);">No validation
+                          issues found.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="import-completed-panel"
+                style="display:none; background:rgba(0,255,163,0.08); border:1px solid var(--accent-green); padding:16px; border-radius:6px; margin-bottom:20px;">
+                <h4 style="margin:0 0 4px 0; color:var(--accent-green);">&#127881; Import Completed Successfully!</h4>
+                <p id="lbl-import-complete-summary" style="margin:0; font-size:0.8rem;"></p>
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="btn-import-view-records"
+                    onclick="window.ImportController.viewImportedRecords()">&#128065; View Imported Records</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-import-download-report"
+                    onclick="window.ImportController.downloadResultReport()">&#128229; Download Audit Report
+                    (.xlsx)</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.ImportController.startAnotherImport()">Start
+                    Another Import</button>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn btn-secondary" onclick="window.ImportController.goToStep(3)">&#8592; Back to
+                  Mapping</button>
+                <button id="btn-execute-import" class="btn btn-primary"
+                  onclick="window.ImportController.runImport()">&#10003; Execute Import</button>
+              </div>
+            </div>
+          </div>
+        </div>

@@ -4727,6 +4727,41 @@
       pointer-events: auto !important;
     }
 
+    /* 10. Master Data Category Rail Strict Sizing & Skeleton Parity */
+    .master-categories-rail {
+      width: 345px !important;
+      min-width: 345px !important;
+      max-width: 345px !important;
+      flex: 0 0 345px !important;
+      flex-shrink: 0 !important;
+      box-sizing: border-box !important;
+    }
+
+    #masters-category-list {
+      min-height: 180px;
+      overflow-y: auto;
+    }
+
+    .category-skeleton-item {
+      height: 38px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: kpiShimmer 1.5s infinite;
+    }
+
+    body.light-theme .category-skeleton-item {
+      background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.07) 50%, rgba(0,0,0,0.03) 75%);
+      background-size: 200% 100%;
+    }
+
+    @keyframes kpiShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+
 
 
 

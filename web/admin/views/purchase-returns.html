@@ -1,0 +1,183 @@
+<div id="view-purchase-returns" class="module-view fixed-viewport">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1><span>&#128260;</span> Purchase Return Register</h1>
+              <p>Rejections sent back to suppliers with debit memo tracking and refund settlement</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.ReturnsController.resetFilters(false)">Reset</button>
+              <button class="btn btn-secondary"
+                onclick="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">&#8635; Refresh</button>
+              <button class="btn btn-secondary"
+                onclick="window.ReturnsController.exportExcel('PURCHASE RETURN')">&#128202; Export</button>
+              <button class="btn btn-primary"
+                onclick="window.ReturnsController.openCreateReturnModal(null, 'PURCHASE RETURN')">+ Record
+                Return</button>
+            </div>
+          </div>
+
+          <!-- 5 KPI Summary Cards matching PurchaseReturns desktop -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128176;</span> Total Returns</div>
+              <div class="kpi-value" id="pr-kpi-total">&#8377; 0.00</div>
+              <div class="kpi-sub">Total lifetime returns value</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128197;</span> This Month</div>
+              <div class="kpi-value" id="pr-kpi-month" style="color:var(--cyan);">&#8377; 0.00</div>
+              <div class="kpi-sub">Current calendar month returns</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9203;</span> Pending Approval</div>
+              <div class="kpi-value" id="pr-kpi-pending" style="color:var(--yellow);">&#8377; 0.00</div>
+              <div class="kpi-sub">Awaiting inspection &amp; debit note</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#9989;</span> Approved Returns</div>
+              <div class="kpi-value" id="pr-kpi-approved" style="color:var(--green);">&#8377; 0.00</div>
+              <div class="kpi-sub">Stock returned &amp; ledger adjusted</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><span>&#128184;</span> Refunded Total</div>
+              <div class="kpi-value" id="pr-kpi-refund" style="color:var(--purple);">&#8377; 0.00</div>
+              <div class="kpi-sub">Settled via supplier refund ledger</div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar Strip -->
+          <div class="filter-toolbar-strip">
+            <input type="text" id="pr-filter-search" class="filter-input"
+              placeholder="Search return #, bill ref, supplier..." style="width:240px;"
+              oninput="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+            <select id="pr-filter-supplier" class="form-select" style="width:190px;"
+              onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <option value="">All Suppliers</option>
+            </select>
+            <select id="pr-filter-status" class="form-select" style="width:180px;"
+              onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <option value="">All Status</option>
+              <option value="PENDING APPROVAL">PENDING APPROVAL</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">From:</span>
+              <input type="date" id="pr-filter-from" class="form-input form-input-sm" style="width:130px;"
+                onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+              <span style="font-size:0.75rem; color:var(--text-muted);">To:</span>
+              <input type="date" id="pr-filter-to" class="form-input form-input-sm" style="width:130px;"
+                onchange="window.ReturnsController.loadReturns('PURCHASE RETURN', 0)">
+            </div>
+          </div>
+
+          <!-- Purchase Returns Workspace with Inline Drawer Split (Desktop PurchaseReturns.fxml Parity) -->
+          <div class="register-workspace" id="purchase-returns-workspace"
+            style="display: flex; gap: 14px; width: 100%; align-items: stretch;">
+            <!-- Left: Table & Toolbar Panel -->
+            <div class="register-table-panel" id="purchase-returns-table-panel"
+              style="flex: 1; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+              <div class="sales-table-scroll" style="flex: 1;">
+                <table class="sales-desktop-table" id="purchase-returns-main-table">
+                  <thead>
+                    <tr>
+                      <th>Return #</th>
+                      <th>Date</th>
+                      <th>Bill Ref</th>
+                      <th>Supplier</th>
+                      <th style="text-align:right;">Amount (&#8377;)</th>
+                      <th style="text-align:right;">Refunded (&#8377;)</th>
+                      <th>Reason</th>
+                      <th>Status</th>
+                      <th>Refund Status</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbl-purchase-returns-body">
+                    <tr>
+                      <td colspan="10"
+                        style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;"><span
+                          style="font-size:1.4rem; display:block; margin-bottom:6px;">ðŸ”„</span>No purchase returns on
+                        record. Click "+ Create Purchase Return" to issue a debit memo.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="app-footer-bar" style="margin-top:12px; border-radius:6px;">
+                <div class="footer-left">
+                  <span id="pr-pagination-info">Showing 0 returns</span>
+                </div>
+                <div class="footer-right" style="display:flex; gap:6px;">
+                  <button class="btn btn-secondary btn-sm" id="pr-btn-prev"
+                    onclick="window.ReturnsController.prevPage()" disabled>&larr; Previous</button>
+                  <button class="btn btn-secondary btn-sm" id="pr-btn-next"
+                    onclick="window.ReturnsController.nextPage()" disabled>Next &rarr;</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop PurchaseReturnsController Parity) -->
+            <div id="pr-detail-drawer" class="slide-detail-drawer register-inline-drawer"
+              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
+              <div class="drawer-header"
+                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
+                    id="pr-detail-no">Purchase Return Details</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);">Supplier Return Record &amp; Line Audit</div>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ReturnsController.closeDrawer()">&times;</button>
+              </div>
+              <div class="drawer-body"
+                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
+                    class="drawer-field-value" id="pr-detail-date">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span
+                    class="drawer-field-value" id="pr-detail-party"
+                    style="font-weight:700; color:var(--text-main);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span
+                    class="drawer-field-value" id="pr-detail-invoice" style="color:var(--cyan);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span
+                    class="drawer-field-value" id="pr-detail-total"
+                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Refunded Amount:</span><span
+                    class="drawer-field-value" id="pr-detail-refund" style="color:var(--green);">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Return Reason:</span><span
+                    class="drawer-field-value" id="pr-detail-reason">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Approval Status:</span><span
+                    class="drawer-field-value" id="pr-detail-status">-</span></div>
+                <div class="drawer-field-row"><span class="drawer-field-label">Refund Status:</span><span
+                    class="drawer-field-value" id="pr-detail-refund-status">-</span></div>
+                <div
+                  style="margin-top:10px; margin-bottom:4px; font-weight:700; font-size:0.80rem; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em;">
+                  Return Line Items</div>
+                <div id="pr-detail-lines" style="max-height:220px; overflow-y:auto;"></div>
+              </div>
+              <div class="drawer-footer"
+                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-success btn-sm" id="pr-detail-btn-approve"
+                  onclick="window.ReturnsController.approveReturn(document.getElementById('pr-detail-no').innerText)"
+                  style="display:none;">Approve Return</button>
+                <button class="btn btn-danger btn-sm" id="pr-detail-btn-reject"
+                  onclick="window.ReturnsController.rejectReturnPrompt(document.getElementById('pr-detail-no').innerText)"
+                  style="display:none;">Reject</button>
+                <button class="btn btn-primary btn-sm" id="pr-detail-btn-refund"
+                  onclick="window.ReturnsController.openRefundModal(document.getElementById('pr-detail-no').innerText)">Record
+                  Refund</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ReturnsController.downloadPdf(document.getElementById('pr-detail-no').innerText)">PDF</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ReturnsController.downloadExcel(document.getElementById('pr-detail-no').innerText)">Excel</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ReturnsController.sendEmailPrompt(document.getElementById('pr-detail-no').innerText)">Email</button>
+                <button class="btn btn-secondary btn-sm"
+                  onclick="window.ReturnsController.sendWhatsappPrompt(document.getElementById('pr-detail-no').innerText)">WhatsApp</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>

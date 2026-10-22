@@ -1,0 +1,221 @@
+<div id="view-masters" class="module-view fixed-viewport">
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div
+                style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128218;
+              </div>
+              <div>
+                <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin: 0 0 2px;">Master Data Management
+                </h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Manage lookup categories, unit
+                  definitions, reference codes and master values</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="window.MasterDataController.loadMastersData()">&#8635;
+                Refresh</button>
+              <button class="btn btn-secondary" onclick="window.MasterDataController.exportLookup()">Export CSV</button>
+              <button class="btn btn-primary" onclick="window.MasterDataController.openAddLookupModal()">+ Add
+                Lookup</button>
+            </div>
+          </div>
+
+          <!-- Split Workspace matching Masterdata.fxml -->
+          <div style="display: flex; gap: 16px; align-items: flex-start; width: 100%;">
+            <!-- Left Panel: Lookup Categories Rail (Strictly locked 345px Desktop Parity) -->
+            <div class="data-panel master-categories-rail"
+              style="width: 345px; min-width: 345px; max-width: 345px; flex: 0 0 345px; flex-shrink: 0; padding: 14px; border-radius: 10px; max-height: calc(100vh - 220px); display: flex; flex-direction: column; box-sizing: border-box;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="font-weight: 700; font-size: 0.90rem; color: var(--text-main);">Lookup Categories</div>
+                <button class="btn btn-primary" style="height: 28px; padding: 0 10px; font-size: 0.72rem;"
+                  onclick="window.MasterDataController.openAddCategoryModal()">+ Add</button>
+              </div>
+
+              <input type="text" id="masters-category-search" class="filter-input" placeholder="Search Categories..."
+                oninput="window.MasterDataController.filterCategories(this.value)"
+                style="width: 100%; height: 34px; margin-bottom: 10px; font-size: 0.8rem;">
+
+              <div id="masters-category-list" style="flex: 1; max-height: calc(100vh - 360px); min-height: 180px; overflow-y: auto; padding-right: 4px;">
+                <div class="category-skeleton-item"></div>
+                <div class="category-skeleton-item"></div>
+                <div class="category-skeleton-item"></div>
+                <div class="category-skeleton-item"></div>
+                <div class="category-skeleton-item"></div>
+              </div>
+
+              <div
+                style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
+                <button id="btn-master-rename-cat" class="btn btn-secondary"
+                  style="flex: 1; height: 30px; font-size: 0.74rem;"
+                  onclick="window.MasterDataController.openRenameCategoryModal()">Rename</button>
+                <button id="btn-master-deact-cat" class="btn btn-secondary"
+                  style="flex: 1; height: 30px; font-size: 0.74rem; color: #f87171;"
+                  onclick="window.MasterDataController.deactivateCurrentCategory()">Deactivate</button>
+              </div>
+            </div>
+
+            <!-- Right Panel: KPIs and Lookup Table -->
+            <div style="flex: 1; min-width: 0;">
+              <!-- 4 KPIs matching Masterdata.fxml lines 80-127 (Native 58px Desktop Compact Ribbon) -->
+              <div class="compact-kpi-ribbon erp-kpi-single-row kpi-grid"
+                style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 14px; width: 100%; box-sizing: border-box; overflow: hidden;">
+                <div class="compact-kpi-card theme-amber" data-erp-kpi-compact-enhanced="true" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+                  <div class="kpi-icon-bubble">📁</div>
+                  <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                    <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                      <span class="kpi-title-text" title="CATEGORIES" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">CATEGORIES</span>
+                      <span class="kpi-pill-badge">Groups</span>
+                    </div>
+                    <div class="kpi-val-text" id="master-kpi-categories" title="0" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">0</div>
+                  </div>
+                </div>
+                <div class="compact-kpi-card theme-emerald" data-erp-kpi-compact-enhanced="true" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+                  <div class="kpi-icon-bubble">🔢</div>
+                  <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                    <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                      <span class="kpi-title-text" title="LOOKUP VALUES" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">LOOKUP VALUES</span>
+                      <span class="kpi-pill-badge">Active</span>
+                    </div>
+                    <div class="kpi-val-text" id="master-kpi-values" title="0" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">0</div>
+                  </div>
+                </div>
+                <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+                  <div class="kpi-icon-bubble">👁️</div>
+                  <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                    <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                      <span class="kpi-title-text" title="SELECTED" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">SELECTED</span>
+                      <span class="kpi-pill-badge">Current</span>
+                    </div>
+                    <div class="kpi-val-text" id="master-kpi-selected" title="-" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">-</div>
+                  </div>
+                </div>
+                <div class="compact-kpi-card theme-teal" data-erp-kpi-compact-enhanced="true" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+                  <div class="kpi-icon-bubble">⚙️</div>
+                  <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                    <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                      <span class="kpi-title-text" title="SYSTEM STATUS" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">SYSTEM STATUS</span>
+                      <span class="kpi-pill-badge">Online</span>
+                    </div>
+                    <div class="kpi-val-text" title="READY" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#34d399;font-weight:800;">READY</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Master Lookups Workspace (Docked Inline Split) -->
+              <div class="register-workspace" id="masters-register-workspace">
+                <div class="register-table-panel data-panel" style="padding: 16px; overflow-x:auto;">
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <h3 id="masters-selected-title"
+                        style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">Lookup Values</h3>
+                      <input type="text" id="masters-lookup-search" class="filter-input"
+                        placeholder="Search lookup records..."
+                        oninput="window.MasterDataController.applyLookupFilter(this.value)"
+                        style="width: 220px; height: 34px; font-size: 0.8rem;">
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <button id="btn-master-add-lookup" class="btn btn-primary"
+                        style="height: 34px; padding: 0 14px; font-size: 0.78rem;"
+                        onclick="window.MasterDataController.openAddLookupModal()">+ Add Value</button>
+                      <button id="btn-master-edit-lookup" class="btn btn-secondary"
+                        style="height: 34px; padding: 0 12px; font-size: 0.78rem;"
+                        onclick="window.MasterDataController.openEditSelectedLookup()" disabled>Edit Value</button>
+                      <button id="btn-master-toggle-lookup" class="btn btn-secondary"
+                        style="height: 34px; padding: 0 12px; font-size: 0.78rem;"
+                        onclick="window.MasterDataController.toggleSelectedLookupActive()" disabled>Deactivate</button>
+                      <button id="btn-master-refresh-lookup" class="btn btn-secondary"
+                        style="height: 34px; padding: 0 12px; font-size: 0.78rem;"
+                        onclick="window.MasterDataController.refreshCurrentCategory()">&#8635; Refresh</button>
+                    </div>
+                  </div>
+
+                  <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 140px;">Lookup Code</th>
+                          <th>Display Name</th>
+                          <th>Description / Attributes</th>
+                          <th style="width: 90px; text-align: center;">Sort Order</th>
+                          <th style="width: 110px; text-align: center;">Status</th>
+                          <th style="width: 110px; text-align: center;">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="masters-table-tbody">
+                        <tr><td colspan="6" style="padding: 12px;"><div class="category-skeleton-item" style="height: 24px; margin: 0;"></div></td></tr>
+                        <tr><td colspan="6" style="padding: 12px;"><div class="category-skeleton-item" style="height: 24px; margin: 0;"></div></td></tr>
+                        <tr><td colspan="6" style="padding: 12px;"><div class="category-skeleton-item" style="height: 24px; margin: 0;"></div></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-dim);">
+                    <span id="masters-entries-counter">Showing 0 entries</span>
+                    <span>Category values synced with database</span>
+                  </div>
+                </div>
+
+                <!-- Master Lookup Detail Drawer (Inline Docked) -->
+                <div id="master-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+                  <div class="drawer-header">
+                    <div>
+                      <h3 style="margin:0; font-size:1rem;" id="md-lookup-code">Lookup Detail</h3>
+                      <span id="md-category"
+                        style="font-size:0.75rem; color:var(--cyan); font-family:monospace;">-</span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.closeMasterDrawer()"
+                      style="padding:2px 8px;">&times;</button>
+                  </div>
+                  <div class="drawer-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                      <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">RECORD STATUS</span>
+                      <span id="md-status" class="pill-badge pill-success" style="font-size:0.75rem;">ACTIVE</span>
+                    </div>
+                    <div class="drawer-field-grid"
+                      style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Display Name:</div>
+                        <div id="md-name"
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
+                      </div>
+                      <div
+                        style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                        <div style="color:var(--text-muted); font-size:0.68rem;">Sort Order:</div>
+                        <div id="md-sort-order"
+                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">1</div>
+                      </div>
+                    </div>
+
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Category Group:</div>
+                      <div id="md-category-name"
+                        style="font-weight:700; color:var(--purple); font-size:0.85rem; margin-top:2px;">-</div>
+                    </div>
+
+                    <div
+                      style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                      <div style="color:var(--text-muted); font-size:0.68rem;">Description / Custom Attributes:</div>
+                      <div id="md-description"
+                        style="font-size:0.8rem; color:var(--text-main); margin-top:4px; line-height:1.4;">-</div>
+                    </div>
+                  </div>
+                  <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button class="btn btn-primary btn-sm" onclick="window.MasterDataController.drawerEditLookup()">âœï¸
+                      Edit Lookup</button>
+                    <button class="btn btn-secondary btn-sm"
+                      onclick="window.MasterDataController.drawerToggleStatus()">ðŸ”„ Toggle Active</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.drawerCopyCode()">ðŸ“‹
+                      Copy Code</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.closeMasterDrawer()">âœ–
+                      Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

@@ -1,0 +1,45 @@
+<div id="view-global-search" class="module-view">
+          <div class="view-header" style="margin-bottom: 14px;">
+            <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
+              <div
+                style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--cyan);">
+                &#128269;
+              </div>
+              <div>
+                <h1 style="font-size: 1.4rem; font-weight: 800; font-family: 'Space Grotesk';">Global Search</h1>
+                <p style="font-size: 0.8rem; color: var(--text-muted);" id="gs-summary-status">Search invoices, orders,
+                  parties, items, returns, payments, bank transactions, reminders, communications and master data.</p>
+              </div>
+            </div>
+            <div class="view-actions" style="display: flex; gap: 10px; align-items: center;">
+              <div style="position: relative; width: 340px;">
+                <input type="text" id="gs-query-input" class="form-input" style="padding-left: 32px; height: 36px;"
+                  placeholder="Search all ERP modules..." autocomplete="off"
+                  oninput="window.GlobalSearchController.search(this.value)"
+                  onkeydown="if(event.key==='Enter') window.GlobalSearchController.search(this.value)">
+                <span
+                  style="position: absolute; left: 10px; top: 9px; color: var(--text-dim); pointer-events: none;">&#128269;</span>
+              </div>
+              <button class="btn btn-secondary" style="height: 36px;"
+                onclick="window.GlobalSearchController.clear()">Clear</button>
+            </div>
+          </div>
+
+          <div class="search-workspace-layout">
+            <div class="search-module-rail" id="gs-module-rail">
+              <div class="search-module-item active" onclick="window.GlobalSearchController.setFilter('All Results')">
+                <span>All Results</span>
+                <span class="search-module-badge">0</span>
+              </div>
+            </div>
+            <div class="search-results-pane" id="gs-results-container">
+              <div class="search-group-card" style="padding: 36px; text-align: center; color: var(--text-dim);">
+                <div style="font-size: 2.2rem; margin-bottom: 10px;">&#128269;</div>
+                <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Search
+                  Jasvi Industries ERP</div>
+                <div style="font-size: 0.78rem;">Type an invoice number, party name, phone, item code, or transaction
+                  reference to search across all modules.</div>
+              </div>
+            </div>
+          </div>
+        </div>

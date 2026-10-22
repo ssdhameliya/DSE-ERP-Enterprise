@@ -115,7 +115,7 @@ window.NavigationRouter = (function() {
       return this.selectNav(viewId, triggerAddTab);
     },
 
-    selectNav(viewId, triggerAddTab = true, forceLifecycle = false) {
+    async selectNav(viewId, triggerAddTab = true, forceLifecycle = false) {
       if (isNavigating) return;
       if (!forceLifecycle && currentViewId === viewId && document.getElementById(viewId)?.classList.contains('active')) {
         return;
@@ -148,6 +148,11 @@ window.NavigationRouter = (function() {
         document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {
           btn.classList.remove('active');
         });
+
+        // If ViewLoader exists, ensure external view is loaded if needed
+        if (window.ViewLoader && typeof window.ViewLoader.loadView === 'function') {
+          await window.ViewLoader.loadView(viewId);
+        }
 
         const isSettingsSub = viewId.startsWith('view-settings-');
         const domViewId = isSettingsSub ? 'view-settings' : viewId;
@@ -574,6 +579,41 @@ window.NavigationRouter = (function() {
       }
     },
 
+    resolveViewId(hash) {
+      if (!hash) return 'view-dashboard';
+      const clean = hash.replace(/^#\/?/, '').split('?')[0];
+      if (!clean) return 'view-dashboard';
+      if (['login', 'register', 'forgot', 'mfa'].includes(clean)) return null;
+
+      const aliasMap = {
+        'purchase': 'view-purchase-register',
+        'purchases': 'view-purchase-register',
+        'sales': 'view-sales-register',
+        'sale': 'view-sales-register',
+        'items': 'view-item-master',
+        'item': 'view-item-master',
+        'customers': 'view-customers',
+        'customer': 'view-customers',
+        'suppliers': 'view-suppliers',
+        'supplier': 'view-suppliers',
+        'user-access': 'view-users',
+        'users': 'view-users',
+        'barcode-studio': 'view-barcode',
+        'barcode': 'view-barcode',
+        'global-audit': 'view-audit',
+        'audit': 'view-audit',
+        'masters': 'view-masters',
+        'master': 'view-masters',
+        'lookup': 'view-masters',
+        'lookups': 'view-masters',
+        'settings': 'view-settings'
+      };
+
+      if (aliasMap[clean]) return aliasMap[clean];
+      const cand = clean.startsWith('view-') ? clean : ('view-' + clean);
+      return cand;
+    },
+
     init() {
       // Remove early pre-paint route style so dynamic view navigation is not blocked by !important rules
       const earlyStyle = document.getElementById('early-route-style');
@@ -583,10 +623,9 @@ window.NavigationRouter = (function() {
 
       let initialView = 'view-dashboard';
       if (window.location.hash) {
-        const clean = window.location.hash.replace('#', '');
-        const cand = 'view-' + clean;
-        if (document.getElementById(cand)) {
-          initialView = cand;
+        const resolved = this.resolveViewId(window.location.hash);
+        if (resolved) {
+          initialView = resolved;
         }
       }
       this.selectNav(initialView);
@@ -596,18 +635,18 @@ window.NavigationRouter = (function() {
         if (e.state && e.state.viewId) {
           this.selectNav(e.state.viewId, false);
         } else if (window.location.hash) {
-          const viewId = 'view-' + window.location.hash.replace('#', '');
-          const target = document.getElementById(viewId);
-          if (target) this.selectNav(viewId, false);
+          const resolved = this.resolveViewId(window.location.hash);
+          if (resolved) this.selectNav(resolved, false);
         }
       });
 
       // Handle direct hash navigation
       window.addEventListener('hashchange', () => {
-        const hashClean = window.location.hash.replace('#', '');
-        const targetView = 'view-' + hashClean;
-        if (document.getElementById(targetView) && targetView !== currentViewId) {
-          this.selectNav(targetView, false);
+        if (window.location.hash) {
+          const resolved = this.resolveViewId(window.location.hash);
+          if (resolved && resolved !== currentViewId) {
+            this.selectNav(resolved, false);
+          }
         }
       });
 
