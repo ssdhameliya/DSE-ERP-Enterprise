@@ -110,17 +110,17 @@
           </div>
 
           <!-- TAB 1: JOURNAL VOUCHERS -->
-          <div id="gl-panel-journals" class="gl-tab-panel">
+          <div id="gl-panel-journals" class="gl-tab-panel" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; height: 100%;">
             <!-- Filter Toolbar matching GeneralLedger.fxml -->
-            <div class="filter-toolbar"
-              style="display:flex; gap:10px; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 14px; border-radius:8px; border:1px solid var(--border-subtle); flex-wrap:wrap;">
-              <div style="flex:1; min-width:220px; position:relative;">
-                <input type="text" id="gl-search-input" class="form-input"
+            <div class="filter-toolbar filter-toolbar-single-row"
+              style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); overflow-x: auto;">
+              <div style="flex: 1; min-width: 180px; position: relative;">
+                <input type="text" id="gl-search-input" class="form-input" style="width: 100%; height: 34px;"
                   placeholder="&#128269; Search voucher no, narration, reference..."
                   oninput="window.FinanceController.filterJournals()">
               </div>
-              <div style="width:160px;">
-                <select id="gl-type-filter" class="form-select" onchange="window.FinanceController.filterJournals()">
+              <div style="width: 140px; flex-shrink: 0;">
+                <select id="gl-type-filter" class="form-select" style="height: 34px; font-size: 0.78rem;" onchange="window.FinanceController.filterJournals()">
                   <option value="All Types">All Types</option>
                   <option value="SALES">SALES</option>
                   <option value="PURCHASE">PURCHASE</option>
@@ -128,8 +128,8 @@
                   <option value="PAYMENT">PAYMENT</option>
                 </select>
               </div>
-              <div style="width:170px;">
-                <select id="gl-account-select" class="form-select" onchange="window.FinanceController.filterJournals()">
+              <div style="width: 150px; flex-shrink: 0;">
+                <select id="gl-account-select" class="form-select" style="height: 34px; font-size: 0.78rem;" onchange="window.FinanceController.filterJournals()">
                   <option value="">All Categories</option>
                   <option value="ASSET">ASSET</option>
                   <option value="LIABILITY">LIABILITY</option>
@@ -137,45 +137,47 @@
                   <option value="EXPENSE">EXPENSE</option>
                 </select>
               </div>
-              <div style="width:140px;">
-                <input type="date" id="gl-from-date" class="form-input"
+              <div style="width: 130px; flex-shrink: 0;">
+                <input type="date" id="gl-from-date" class="form-input" style="height: 34px; font-size: 0.78rem;"
                   onchange="window.FinanceController.filterJournals()">
               </div>
-              <div style="width:140px;">
-                <input type="date" id="gl-to-date" class="form-input"
+              <div style="width: 130px; flex-shrink: 0;">
+                <input type="date" id="gl-to-date" class="form-input" style="height: 34px; font-size: 0.78rem;"
                   onchange="window.FinanceController.filterJournals()">
               </div>
-              <button class="btn btn-secondary" onclick="window.FinanceController.resetGlFilters()">Reset Filters</button>
+              <button class="btn btn-secondary" onclick="window.FinanceController.resetGlFilters()" style="height: 34px; white-space: nowrap; flex-shrink: 0;">Reset Filters</button>
             </div>
 
             <!-- General Ledger Register Workspace (GeneralLedger.fxml Parity) -->
-            <div class="register-workspace" id="gl-workspace">
-              <div class="register-table-panel data-panel" style="overflow-x:auto;">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th style="width:130px;">VOUCHER NO.</th>
-                      <th style="width:110px;">DATE</th>
-                      <th style="width:90px;">TYPE</th>
-                      <th style="width:120px;">REF DOCUMENT</th>
-                      <th>NARRATION</th>
-                      <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
-                      <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
-                      <th style="width:90px; text-align:center;">STATUS</th>
-                      <th style="width:100px; text-align:center;">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody id="ledger-table-tbody">
-                    <tr>
-                      <td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span
-                          class="loading-spinner"></span> Loading General Ledger journals...</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="register-workspace" id="gl-workspace" style="display: flex; gap: 14px; width: 100%; align-items: stretch; flex: 1 1 auto; min-height: 0; overflow: hidden;">
+              <div class="register-table-panel data-panel" style="flex: 1 1 auto; min-width: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+                <div class="sales-table-scroll table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:130px;">VOUCHER NO.</th>
+                        <th style="width:110px;">DATE</th>
+                        <th style="width:90px;">TYPE</th>
+                        <th style="width:120px;">REF DOCUMENT</th>
+                        <th>NARRATION</th>
+                        <th style="width:120px; text-align:right;">DEBIT (&#8377;)</th>
+                        <th style="width:120px; text-align:right;">CREDIT (&#8377;)</th>
+                        <th style="width:90px; text-align:center;">STATUS</th>
+                        <th style="width:100px; text-align:center;">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ledger-table-tbody">
+                      <tr>
+                        <td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                            class="loading-spinner"></span> Loading General Ledger journals...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <!-- Inline Docked GL Entry Detail Drawer -->
-              <div id="gl-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
+              <div id="gl-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none; width: 380px; flex-shrink: 0;">
                 <div class="drawer-header">
                   <div>
                     <h3 style="margin:0; font-size:1rem;" id="gld-voucher">Posting Details</h3>

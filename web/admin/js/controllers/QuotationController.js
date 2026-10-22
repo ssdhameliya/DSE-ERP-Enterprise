@@ -974,18 +974,24 @@ window.QuotationController = (function () {
     editingRowVersion = 0;
     editorLines = [];
 
-    // Switch to Quotation Editor Workspace View
-    window.NavigationRouter.selectNav('view-quotation-editor');
+    // Switch to Quotation Editor Workspace View and await view mount
+    if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+      await window.NavigationRouter.selectNav('view-quotation-editor');
+    }
 
     const titleEl = document.getElementById('qe-title');
     const subtitleEl = document.getElementById('qe-subtitle');
     if (titleEl) titleEl.innerText = quoteId ? 'Edit Quotation' : 'Create Quotation';
     if (subtitleEl) subtitleEl.innerText = quoteId ? 'Modify quotation items and pricing terms' : 'New Proforma quotation with live GST calculations';
 
-    document.getElementById('qe-date').value = formatLocalDate(new Date());
-    document.getElementById('qe-valid').value = formatLocalDate(new Date(Date.now() + 30 * 86400000));
-    document.getElementById('qe-followup').value = formatLocalDate(new Date(Date.now() + 7 * 86400000));
-    document.getElementById('qe-remarks').value = '';
+    const dateEl = document.getElementById('qe-date');
+    if (dateEl) dateEl.value = formatLocalDate(new Date());
+    const validEl = document.getElementById('qe-valid');
+    if (validEl) validEl.value = formatLocalDate(new Date(Date.now() + 30 * 86400000));
+    const followupEl = document.getElementById('qe-followup');
+    if (followupEl) followupEl.value = formatLocalDate(new Date(Date.now() + 7 * 86400000));
+    const remarksEl = document.getElementById('qe-remarks');
+    if (remarksEl) remarksEl.value = '';
 
     pendingAttachmentFile = null;
     existingAttachmentPath = null;
@@ -1000,15 +1006,39 @@ window.QuotationController = (function () {
 
   async function loadEditorBootstrap(quoteId) {
     try {
-      const data = await window.OperationsService.getQuotationBootstrap(quoteId);
-      cachedCustomers = data?.customers || [];
-      cachedSources = data?.sources || ['Direct Inquiry', 'Email', 'Phone Call', 'Tender', 'Referral', 'Website'];
+      let data = null;
+      try {
+        if (window.OperationsService && window.OperationsService.getQuotationBootstrap) {
+          data = await window.OperationsService.getQuotationBootstrap(quoteId);
+        }
+      } catch (e) {
+        console.warn('OperationsService.getQuotationBootstrap failed, falling back:', e);
+      }
+
+      cachedCustomers = (data && data.customers && data.customers.length > 0) ? data.customers : [];
+      if (cachedCustomers.length === 0 && window.MasterService && window.MasterService.getParties) {
+        try {
+          const custParties = await window.MasterService.getParties('CUSTOMER');
+          if (Array.isArray(custParties) && custParties.length > 0) {
+            cachedCustomers = custParties;
+          }
+        } catch (e) {
+          console.warn('MasterService.getParties fallback failed:', e);
+        }
+      }
+
+      cachedSources = (data && data.sources && data.sources.length > 0) ? data.sources : ['Direct Inquiry', 'Email', 'Phone Call', 'Tender', 'Referral', 'Website'];
 
       // Populate Customer Dropdown
       const custSelect = document.getElementById('qe-customer-select');
       if (custSelect) {
         custSelect.innerHTML = `<option value="">Select Customer *</option>` +
-          cachedCustomers.map(c => `<option value="${c.id}">${c.code ? c.code + ' - ' : ''}${c.name}</option>`).join('');
+          cachedCustomers.map(c => {
+            const val = c.id != null ? c.id : (c.partyId != null ? c.partyId : (c.code || c.partyCode || ''));
+            const code = c.code || c.partyCode;
+            const name = c.name || c.partyName || '';
+            return `<option value="${val}">${code ? code + ' - ' : ''}${name}</option>`;
+          }).join('');
       }
 
       // Populate Source Dropdown
@@ -1023,10 +1053,14 @@ window.QuotationController = (function () {
         editingRowVersion = q.rowVersion || 0;
         if (custSelect) custSelect.value = q.customerId;
         if (srcSelect && q.source) srcSelect.value = q.source;
-        if (q.date) document.getElementById('qe-date').value = q.date.substring(0, 10);
-        if (q.valid) document.getElementById('qe-valid').value = q.valid.substring(0, 10);
-        if (q.followUp) document.getElementById('qe-followup').value = q.followUp.substring(0, 10);
-        if (q.remarks) document.getElementById('qe-remarks').value = q.remarks;
+        const dEl = document.getElementById('qe-date');
+        if (dEl && q.date) dEl.value = q.date.substring(0, 10);
+        const vEl = document.getElementById('qe-valid');
+        if (vEl && q.valid) vEl.value = q.valid.substring(0, 10);
+        const fEl = document.getElementById('qe-followup');
+        if (fEl && q.followUp) fEl.value = q.followUp.substring(0, 10);
+        const rEl = document.getElementById('qe-remarks');
+        if (rEl && q.remarks) rEl.value = q.remarks;
 
         existingAttachmentPath = q.attachmentPath || q.attachment || null;
         if (existingAttachmentPath) {

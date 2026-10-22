@@ -463,4 +463,48 @@
               </div>
             </div>
           </div>
+
+          <!-- FLOATING ACTIONS CONTEXT MENU -->
+          <div id="sales-row-actions-menu" class="actions-dropdown-menu">
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('VIEW')">
+              <span class="actions-menu-icon">&#128065;</span> <span>View Sale</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('AUDIT')">
+              <span class="actions-menu-icon">&#128220;</span> <span>Audit Trail</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EDIT')">
+              <span class="actions-menu-icon">&#9999;</span> <span>Edit Sale</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('DUPLICATE')">
+              <span class="actions-menu-icon">&#128203;</span> <span>Duplicate Sale</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PRINT')">
+              <span class="actions-menu-icon">&#128438;</span> <span>View / Print Tax Invoice</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('BARCODE')">
+              <span class="actions-menu-icon">&#128207;</span> <span>Print Dispatch Barcode Label</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EXCEL')">
+              <span class="actions-menu-icon">&#128202;</span> <span>View / Download Excel</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EMAIL')">
+              <span class="actions-menu-icon">&#9993;</span> <span>Send Email</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('WHATSAPP')">
+              <span class="actions-menu-icon">&#128172;</span> <span>Send WhatsApp</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PAYMENT')">
+              <span class="actions-menu-icon">&#128179;</span> <span>View / Record Payments</span>
+            </div>
+            <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('RETURN')">
+              <span class="actions-menu-icon">&#8634;</span> <span>Create Sales Return</span>
+            </div>
+            <div class="actions-menu-divider"></div>
+            <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('CANCEL')">
+              <span class="actions-menu-icon">&#10006;</span> <span>Cancel Sale</span>
+            </div>
+            <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('DELETE')">
+              <span class="actions-menu-icon">&#128465;</span> <span>Delete Sale</span>
+            </div>
+          </div>
         </div>

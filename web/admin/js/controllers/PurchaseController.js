@@ -1667,13 +1667,96 @@ window.PurchaseController = (function() {
     }
   }
 
-  function openChargesDialog() {
+  async function openChargesDialog() {
     if (isReadOnlyView) {
       if (window.AppDialogService) window.AppDialogService.toastWarning('Charges cannot be modified on approved invoices in view mode.');
       return;
     }
+    // Desktop Parity: Load charge types from Master Lookup table
+    if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+      try {
+        let chargeLookups = await window.MasterService.getLookupsByCategoryCode('CHARGES').catch(() => []);
+        if (!chargeLookups || chargeLookups.length === 0) {
+          chargeLookups = await window.MasterService.getLookupsByCategoryCode('CHARGE').catch(() => []);
+        }
+        if (Array.isArray(chargeLookups) && chargeLookups.length > 0) {
+          const loaded = chargeLookups.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+          if (loaded.length > 0) availableChargeTypes = loaded;
+        }
+      } catch (_) {}
+    }
     if (window.SalesController && window.SalesController.openChargesDialogForPurchase) {
       window.SalesController.openChargesDialogForPurchase(editorCharges, availableChargeTypes);
+    }
+  }
+
+  // ==========================================
+  // STANDARDIZED ATTACHMENT METHODS (SETTINGS & QUOTATION PARITY)
+  // ==========================================
+  function handleAttachmentFileSelected(inputEl) {
+    if (inputEl.files && inputEl.files[0]) {
+      pendingAttachmentFile = inputEl.files[0];
+      attachmentRemovalPending = false;
+      refreshAttachmentUi(pendingAttachmentFile.name, pendingAttachmentFile.size);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${pendingAttachmentFile.name}`);
+    }
+  }
+
+  function previewEditorAttachment() {
+    if (pendingAttachmentFile) {
+      const url = URL.createObjectURL(pendingAttachmentFile);
+      window.open(url, '_blank');
+      return;
+    }
+    if (existingAttachmentPath && editingPurchase && editingPurchase.id) {
+      window.open(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, '_blank');
+      return;
+    }
+    if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
+  }
+
+  function removeEditorAttachment() {
+    pendingAttachmentFile = null;
+    attachmentRemovalPending = true;
+    const fileInput = document.getElementById('pe-attachment-file-input');
+    if (fileInput) fileInput.value = '';
+    refreshAttachmentUi(null);
+    if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
+  }
+
+  function refreshAttachmentUi(fileName, fileSize) {
+    const badge = document.getElementById('pe-attachment-badge');
+    const nameEl = document.getElementById('pe-attachment-name');
+    const sizeEl = document.getElementById('pe-attachment-size');
+    const btnPreview = document.getElementById('pe-btn-attach-preview');
+    const btnRemove = document.getElementById('pe-btn-attach-remove');
+
+    if (fileName) {
+      const displayName = typeof fileName === 'string' ? fileName.split('/').pop().split('\\').pop() : 'Attached Document';
+      if (badge) badge.style.display = 'inline-block';
+      if (nameEl) {
+        nameEl.innerText = displayName;
+        nameEl.style.color = '#c084fc';
+      }
+      if (sizeEl) {
+        if (fileSize && typeof fileSize === 'number') {
+          const kb = (fileSize / 1024).toFixed(1);
+          sizeEl.innerText = `${kb} KB`;
+        } else {
+          sizeEl.innerText = 'Document attached';
+        }
+      }
+      if (btnPreview) btnPreview.disabled = false;
+      if (btnRemove) btnRemove.disabled = false;
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (nameEl) {
+        nameEl.innerText = 'No document attached';
+        nameEl.style.color = '#cbd5e1';
+      }
+      if (sizeEl) sizeEl.innerText = 'PDF, DOC, XLS, PNG, JPG';
+      if (btnPreview) btnPreview.disabled = true;
+      if (btnRemove) btnRemove.disabled = true;
     }
   }
 
@@ -2300,6 +2383,8 @@ window.PurchaseController = (function() {
     handleAttachmentFileSelected,
     previewAttachment,
     removeAttachment,
+    previewEditorAttachment,
+    removeEditorAttachment,
     refreshAttachmentUi
   };
 })();

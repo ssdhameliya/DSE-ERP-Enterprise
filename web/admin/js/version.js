@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.06",
+  version: "10.0.41.07",
   desktopVersion: "10.0.41",
-  webBuild: 6,
-  webVersion: "10.0.41.06",
-  tag: "web-v10.0.41.06",
-  releaseDate: "2026-10-23T00:05:00+05:30",
+  webBuild: 7,
+  webVersion: "10.0.41.07",
+  tag: "web-v10.0.41.07",
+  releaseDate: "2026-10-23T01:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.06 Restoration of Desktop Rich UI Enhancements (KPI Icon Bubbles & Colorful Table Headers) with Synchronous Frame-0 Rendering"
+  summary: "10.0.41.07 Comprehensive 10-Issue Desktop Parity Fixes (KPI Refresh Layout, Master Charges & Bank Lookups, Sales Register Actions, Standardized Attachments, GL Freeze, Single-Row Filter Toolbars, Full-Height Table Expansion, Quotation F3 Bootstrapping, and Email Badge Acknowledgment)"
 };
 
 // Automatic UI Version Injection
@@ -32,7 +32,7 @@ window.DSE_VERSION = {
       desktopTag.textContent = `Desktop Baseline: v${v.desktopVersion}`;
     }
 
-    // 3. App Header Web Version Badge
+    // 3. App Header Web Version Badge (if present)
     const headerBadge = document.getElementById('header-app-version-badge');
     if (headerBadge) {
       headerBadge.textContent = `v${v.webVersion}`;

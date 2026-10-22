@@ -1680,17 +1680,47 @@
       margin-top: 3px;
     }
 
-    /* FILTER TOOLBAR STRIP */
-    .filter-toolbar-strip {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
+    /* FILTER TOOLBAR STRIP (DESKTOP SINGLE-ROW PARITY) */
+    .filter-toolbar-strip,
+    .filter-toolbar-single-row,
+    .filter-toolbar {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 8px !important;
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       padding: 8px 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: auto !important;
+    }
+
+    .filter-toolbar-single-row > div:first-child,
+    .filter-toolbar > div:first-child:has(input[type="text"]),
+    .filter-toolbar-strip > div:first-child:has(input[type="text"]) {
+      flex: 1 1 auto !important;
+      min-width: 180px !important;
+    }
+
+    .filter-toolbar-single-row .form-select,
+    .filter-toolbar .form-select,
+    .filter-toolbar-strip .form-select,
+    .filter-toolbar-single-row .form-input,
+    .filter-toolbar .form-input,
+    .filter-toolbar-strip .form-input {
+      width: auto !important;
+      flex: 0 0 auto !important;
+    }
+
+    .filter-toolbar-single-row .btn,
+    .filter-toolbar .btn,
+    .filter-toolbar-strip .btn {
+      flex: 0 0 auto !important;
+      white-space: nowrap !important;
     }
 
     /* REGISTER INLINE DOCKED DETAIL DRAWER (DESKTOP RegisterUiSupport SplitPane PARITY) */
@@ -3085,19 +3115,11 @@
       overflow: hidden !important;
     }
 
-    .compact-kpi-card,
-    .kpi-card,
-    .dash-kpi-card,
-    .bank-recon-kpi,
-    .user-kpi,
-    .metric-card,
-    .approved-card {
+    .compact-kpi-card {
       flex: 1 1 0 !important;
       min-width: 0 !important;
       max-width: 100% !important;
-      height: 58px !important;
-      min-height: 58px !important;
-      max-height: 58px !important;
+      min-height: 58px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: 9px;
@@ -3109,8 +3131,55 @@
       position: relative;
       cursor: pointer;
       transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s;
-      overflow: hidden !important;
       box-sizing: border-box !important;
+    }
+
+    .kpi-card,
+    .bank-recon-kpi,
+    .user-kpi,
+    .metric-card,
+    .approved-card {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      min-height: 64px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 8px 12px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 10px !important;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box !important;
+    }
+
+    .dash-kpi-card {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      background: rgba(15, 23, 42, 0.7) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 10px !important;
+      padding: 14px 16px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      position: relative !important;
+      min-height: 76px !important;
+      height: auto !important;
+      max-height: none !important;
+      box-sizing: border-box !important;
+      transition: all 0.2s !important;
+      cursor: pointer;
+    }
+    .dash-kpi-card:hover {
+      border-color: rgba(255, 255, 255, 0.16) !important;
+      background: rgba(15, 23, 42, 0.85) !important;
+      transform: translateY(-2px) !important;
     }
     .compact-kpi-card:hover,
     .kpi-card:hover {
@@ -4761,8 +4830,62 @@
       100% { background-position: -200% 0; }
     }
 
+    /* ==========================================================================
+       v10.0.41.07 FIXES: Unified Single-Row Filter Toolbar & Table Expansion
+       ========================================================================== */
+    .filter-toolbar-single-row,
+    .filter-toolbar {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 8px !important;
+      overflow-x: auto !important;
+    }
 
+    .filter-toolbar-single-row .form-input,
+    .filter-toolbar-single-row .form-select,
+    .filter-toolbar-single-row .filter-input,
+    .filter-toolbar .form-input,
+    .filter-toolbar .form-select {
+      width: auto !important;
+      max-width: 100% !important;
+      flex-shrink: 0 !important;
+    }
 
+    .filter-toolbar-single-row .btn,
+    .filter-toolbar .btn {
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
 
+    /* Ensure data panels and table workspaces stretch vertically down to footer */
+    .module-view.fixed-viewport .register-workspace,
+    .module-view.fixed-viewport .sales-register-workspace {
+      flex: 1 1 auto !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
 
+    .module-view.fixed-viewport .register-table-panel,
+    .module-view.fixed-viewport .data-panel {
+      flex: 1 1 auto !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
 
+    .module-view.fixed-viewport .register-table-panel > table,
+    .module-view.fixed-viewport .data-panel > table {
+      width: 100% !important;
+    }
+
+    .module-view.fixed-viewport .register-table-panel > div[style*="overflow"],
+    .module-view.fixed-viewport .table-responsive {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+    }

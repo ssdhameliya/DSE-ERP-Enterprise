@@ -57,17 +57,17 @@
           </div>
 
           <!-- Split Workspace Layout matching desktop -->
-          <div class="register-workspace" id="purchase-recon-workspace">
+          <div class="register-workspace" id="purchase-recon-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
             <!-- Register Table Panel -->
-            <div class="register-table-panel" style="flex:1; min-width:0;">
-              <div
-                style="background:var(--bg-card); padding:12px; border-radius:8px 8px 0 0; border:1px solid var(--border-subtle); border-bottom:none; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:700; font-size:0.95rem;">Purchase Recon Register</span>
-                <div style="display:flex; gap:8px;">
+            <div class="register-table-panel" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+              <div class="filter-toolbar filter-toolbar-single-row"
+                style="background:var(--bg-card); padding:10px 14px; border-radius:8px 8px 0 0; border:1px solid var(--border-subtle); border-bottom:none; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:12px; overflow-x:auto;">
+                <span style="font-weight:700; font-size:0.95rem; white-space:nowrap;">Purchase Recon Register</span>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:nowrap; flex-shrink:0;">
                   <input type="text" id="pr-search" class="filter-input"
-                    placeholder="Search PRC ref, supplier, invoice..." style="width:260px;"
+                    placeholder="Search PRC ref, supplier, invoice..." style="width:240px; height:34px; flex-shrink:0;"
                     oninput="window.PurchaseReconController.applyReconFilters()">
-                  <select id="pr-status-filter" class="form-select" style="width:140px;"
+                  <select id="pr-status-filter" class="form-select" style="width:140px; height:34px; flex-shrink:0;"
                     onchange="window.PurchaseReconController.applyReconFilters()">
                     <option value="">All Status</option>
                     <option value="OPEN">OPEN</option>
@@ -77,29 +77,31 @@
                   </select>
                 </div>
               </div>
-              <div class="data-panel" style="overflow-x:auto; border-radius:0;">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>System Ref</th>
-                      <th>Invoice Date</th>
-                      <th>Recon Supplier</th>
-                      <th>Supplier Invoice</th>
-                      <th style="text-align:right;">Invoice Value</th>
-                      <th>Linked Ref</th>
-                      <th style="text-align:right;">Balance</th>
-                      <th style="text-align:center;">Status</th>
-                      <th>Source</th>
-                      <th style="text-align:center;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="purchase-recon-tbody">
-                    <tr>
-                      <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading
-                        purchase recon records...</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="data-panel" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; border-radius: 0;">
+                <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>System Ref</th>
+                        <th>Invoice Date</th>
+                        <th>Recon Supplier</th>
+                        <th>Supplier Invoice</th>
+                        <th style="text-align:right;">Invoice Value</th>
+                        <th>Linked Ref</th>
+                        <th style="text-align:right;">Balance</th>
+                        <th style="text-align:center;">Status</th>
+                        <th>Source</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="purchase-recon-tbody">
+                      <tr>
+                        <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading
+                          purchase recon records...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <div
                 style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-top:none; border-radius:0 0 8px 8px; font-size:0.85rem;">

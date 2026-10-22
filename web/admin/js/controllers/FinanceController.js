@@ -1516,70 +1516,80 @@ window.FinanceController = {
   },
 
   onGlRowClick(index, event) {
-    if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-    const drawer = document.getElementById('gl-detail-drawer');
-    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
-    if (isDrawerOpen && this.selectedGlIndex === index) {
-      this.closeGlDrawer();
-      return;
+    try {
+      if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
+      const drawer = document.getElementById('gl-detail-drawer');
+      const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
+      if (isDrawerOpen && this.selectedGlIndex === index) {
+        this.closeGlDrawer();
+        return;
+      }
+      this.showGlDetails(index);
+    } catch (err) {
+      console.error('[FinanceController] onGlRowClick error:', err);
     }
-    this.showGlDetails(index);
   },
 
   showGlDetails(index) {
-    const v = this.journalEntriesCache[index];
-    if (!v) return;
-    this.selectedGlIndex = index;
+    try {
+      const v = this.journalEntriesCache ? this.journalEntriesCache[index] : null;
+      if (!v) return;
+      this.selectedGlIndex = index;
 
-    const rowEl = document.querySelector(`#ledger-table-tbody tr[data-gl-idx="${index}"]`);
-    if (window.RegisterUiSupport && rowEl) {
-      window.RegisterUiSupport.highlightRow('#ledger-table-tbody', rowEl);
-    }
+      const rowEl = document.querySelector(`#ledger-table-tbody tr[data-gl-idx="${index}"]`);
+      if (rowEl) {
+        document.querySelectorAll('#ledger-table-tbody tr.active-selected-row').forEach(r => {
+          if (r !== rowEl) r.classList.remove('active-selected-row');
+        });
+        rowEl.classList.add('active-selected-row');
+      }
 
-    const isDebit = (v.type === 'DEBIT' || v.voucherType === 'PAYMENT' || (v.debit && parseFloat(v.debit) > 0));
-    const amount = parseFloat(v.amount || v.debit || v.credit || 0);
-    const debitAmt = isDebit ? amount : 0;
-    const creditAmt = !isDebit ? amount : 0;
+      const isDebit = (v.type === 'DEBIT' || v.voucherType === 'PAYMENT' || (v.debit && parseFloat(v.debit) > 0));
+      const amount = parseFloat(v.amount || v.debit || v.credit || 0);
+      const debitAmt = isDebit ? amount : 0;
+      const creditAmt = !isDebit ? amount : 0;
 
-    const elVouch = document.getElementById('gld-voucher');
-    if (elVouch) elVouch.innerText = v.entryNumber || v.voucherNo || `JV-${index + 1}`;
-    const elDate = document.getElementById('gld-date');
-    if (elDate) elDate.innerText = this.formatDate(v.entryDate || v.voucherDate || v.date);
-    const elType = document.getElementById('gld-type');
-    if (elType) {
-      elType.innerText = v.entryType || v.voucherType || (isDebit ? 'DEBIT' : 'CREDIT');
-      elType.className = `pill-badge ${isDebit ? 'pill-warning' : 'pill-success'}`;
-    }
-    const elDebit = document.getElementById('gld-debit');
-    if (elDebit) elDebit.innerText = debitAmt > 0 ? this.formatMoney(debitAmt) : '₹ 0.00';
-    const elCredit = document.getElementById('gld-credit');
-    if (elCredit) elCredit.innerText = creditAmt > 0 ? this.formatMoney(creditAmt) : '₹ 0.00';
-    const elAcc = document.getElementById('gld-account');
-    if (elAcc) elAcc.innerText = v.drHead || v.accountName || 'Sundry Debtors';
-    const elCrAcc = document.getElementById('gld-cr-account');
-    if (elCrAcc) elCrAcc.innerText = v.crHead || v.contraAccount || 'Bank / Revenue';
-    const elRef = document.getElementById('gld-ref');
-    if (elRef) elRef.innerText = v.referenceNo || v.ref || '-';
-    const elNarr = document.getElementById('gld-narration');
-    if (elNarr) elNarr.innerText = v.narration || '-';
+      const elVouch = document.getElementById('gld-voucher');
+      if (elVouch) elVouch.innerText = v.entryNumber || v.voucherNo || `JV-${index + 1}`;
+      const elDate = document.getElementById('gld-date');
+      if (elDate) elDate.innerText = this.formatDate(v.entryDate || v.voucherDate || v.date);
+      const elType = document.getElementById('gld-type');
+      if (elType) {
+        elType.innerText = v.entryType || v.voucherType || (isDebit ? 'DEBIT' : 'CREDIT');
+        elType.className = `pill-badge ${isDebit ? 'pill-warning' : 'pill-success'}`;
+      }
+      const elDebit = document.getElementById('gld-debit');
+      if (elDebit) elDebit.innerText = debitAmt > 0 ? this.formatMoney(debitAmt) : '₹ 0.00';
+      const elCredit = document.getElementById('gld-credit');
+      if (elCredit) elCredit.innerText = creditAmt > 0 ? this.formatMoney(creditAmt) : '₹ 0.00';
+      const elAcc = document.getElementById('gld-account');
+      if (elAcc) elAcc.innerText = v.drHead || v.accountName || 'Sundry Debtors';
+      const elCrAcc = document.getElementById('gld-cr-account');
+      if (elCrAcc) elCrAcc.innerText = v.crHead || v.contraAccount || 'Bank / Revenue';
+      const elRef = document.getElementById('gld-ref');
+      if (elRef) elRef.innerText = v.referenceNo || v.ref || '-';
+      const elNarr = document.getElementById('gld-narration');
+      if (elNarr) elNarr.innerText = v.narration || '-';
 
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.showDrawer('gl-detail-drawer');
-    } else {
       const drawer = document.getElementById('gl-detail-drawer');
-      if (drawer) { drawer.classList.add('open'); drawer.style.display = 'flex'; }
+      if (drawer) {
+        drawer.classList.add('open');
+        drawer.style.display = 'flex';
+        drawer.removeAttribute('hidden');
+      }
+    } catch (err) {
+      console.error('[FinanceController] showGlDetails error:', err);
     }
   },
 
   closeGlDrawer() {
     this.selectedGlIndex = null;
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.hideDrawer('gl-detail-drawer', '#ledger-table-tbody');
-    } else {
-      const drawer = document.getElementById('gl-detail-drawer');
-      if (drawer) { drawer.classList.remove('open'); drawer.style.display = 'none'; }
-      document.querySelectorAll('#ledger-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    const drawer = document.getElementById('gl-detail-drawer');
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.style.display = 'none';
     }
+    document.querySelectorAll('#ledger-table-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
   },
 
   drawerGlOpenSource(idx) {

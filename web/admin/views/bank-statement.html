@@ -197,16 +197,16 @@
             </div>
 
             <!-- Row 3: From Date, To Date, Status, Direction, Progress Bar -->
-            <div
-              style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div class="filter-toolbar filter-toolbar-single-row"
+              style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex-shrink: 0;">
                 <input type="date" id="bs-from-date" class="form-input"
-                  style="width: 135px; height: 32px; font-size: 0.78rem;"
+                  style="width: 130px; height: 32px; font-size: 0.78rem; flex-shrink: 0;"
                   onchange="window.BankStatementController.applyFilters()" title="From Date">
                 <input type="date" id="bs-to-date" class="form-input"
-                  style="width: 135px; height: 32px; font-size: 0.78rem;"
+                  style="width: 130px; height: 32px; font-size: 0.78rem; flex-shrink: 0;"
                   onchange="window.BankStatementController.applyFilters()" title="To Date">
-                <select id="cmbStatus" class="form-select" style="width: 150px; height: 32px; font-size: 0.78rem;"
+                <select id="cmbStatus" class="form-select" style="width: 140px; height: 32px; font-size: 0.78rem; flex-shrink: 0;"
                   onchange="window.BankStatementController.applyFilters()">
                   <option value="">All Status</option>
                   <option value="UNMATCHED">UNMATCHED</option>
@@ -216,14 +216,14 @@
                   <option value="REVIEW">REVIEW</option>
                   <option value="IGNORED">IGNORED</option>
                 </select>
-                <select id="cmbDirection" class="form-select" style="width: 130px; height: 32px; font-size: 0.78rem;"
+                <select id="cmbDirection" class="form-select" style="width: 125px; height: 32px; font-size: 0.78rem; flex-shrink: 0;"
                   onchange="window.BankStatementController.applyFilters()">
                   <option value="ALL">All (Dr/Cr)</option>
                   <option value="CREDIT">Credits Only</option>
                   <option value="DEBIT">Debits Only</option>
                 </select>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Batch Progress:</span>
                 <div
                   style="width: 130px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
@@ -237,31 +237,33 @@
           </div>
 
           <!-- Bank Statement Register Workspace (BankStatement.fxml Parity) -->
-          <div class="register-workspace" id="statement-register-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x: auto; border-radius: 0;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th style="width: 36px; text-align: center;"></th>
-                    <th>Date</th>
-                    <th>Value Date</th>
-                    <th>Reference / Cheque</th>
-                    <th>Description / Narration</th>
-                    <th style="text-align: right;">Debit (₹)</th>
-                    <th style="text-align: right;">Credit (₹)</th>
-                    <th style="text-align: right;">Balance (₹)</th>
-                    <th style="text-align: center;">Status</th>
-                    <th>Match / Link</th>
-                    <th style="text-align: center; width: 100px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="bank-statement-tbody">
-                  <tr>
-                    <td colspan="11" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading bank
-                      statement transactions...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="statement-register-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="register-table-panel data-panel" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column; border-radius: 0;">
+              <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 36px; text-align: center;"></th>
+                      <th>Date</th>
+                      <th>Value Date</th>
+                      <th>Reference / Cheque</th>
+                      <th>Description / Narration</th>
+                      <th style="text-align: right;">Debit (₹)</th>
+                      <th style="text-align: right;">Credit (₹)</th>
+                      <th style="text-align: right;">Balance (₹)</th>
+                      <th style="text-align: center;">Status</th>
+                      <th>Match / Link</th>
+                      <th style="text-align: center; width: 100px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bank-statement-tbody">
+                    <tr>
+                      <td colspan="11" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading bank
+                        statement transactions...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Inline Docked Statement Detail Drawer -->

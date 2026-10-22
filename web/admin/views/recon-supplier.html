@@ -4,13 +4,15 @@
               <h1><span>&#129309;</span> Recon Supplier Master</h1>
               <p>Independent supplier master directory used exclusively by Purchase Recon</p>
             </div>
-            <div class="view-actions">
+            <div class="view-actions filter-toolbar filter-toolbar-single-row"
+              style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: center; overflow-x: auto;">
               <input type="text" id="rs-search" class="filter-input" placeholder="Search reference, name, GSTIN..."
+                style="width: 240px; height: 34px; flex-shrink: 0;"
                 oninput="window.PurchaseReconController.loadReconSuppliers()">
-              <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadReconSuppliers()">&#8635;
-                Refresh</button>
-              <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewSupplier()">+ New Recon
-                Supplier</button>
+              <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadReconSuppliers()"
+                style="height: 34px; white-space: nowrap; flex-shrink: 0;">&#8635; Refresh</button>
+              <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewSupplier()"
+                style="height: 34px; white-space: nowrap; flex-shrink: 0;">+ New Recon Supplier</button>
             </div>
           </div>
 
@@ -44,29 +46,31 @@
           </div>
 
           <!-- Split Layout -->
-          <div class="register-workspace" id="recon-supplier-workspace">
-            <div class="register-table-panel" style="flex:1; min-width:0;">
-              <div class="data-panel" style="overflow-x:auto;">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Reference</th>
-                      <th>Legal / Trade Name</th>
-                      <th>GSTIN</th>
-                      <th>Phone</th>
-                      <th style="text-align:right;">Recon Records</th>
-                      <th>Source</th>
-                      <th style="text-align:center;">Status</th>
-                      <th style="text-align:center;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recon-supplier-tbody">
-                    <tr>
-                      <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading recon
-                        suppliers...</td>
-                    </tr>
-                  </tbody>
-                </table>
+          <div class="register-workspace" id="recon-supplier-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="register-table-panel" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+              <div class="data-panel" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;">
+                <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Reference</th>
+                        <th>Legal / Trade Name</th>
+                        <th>GSTIN</th>
+                        <th>Phone</th>
+                        <th style="text-align:right;">Recon Records</th>
+                        <th>Source</th>
+                        <th style="text-align:center;">Status</th>
+                        <th style="text-align:center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recon-supplier-tbody">
+                      <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading recon
+                          suppliers...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 

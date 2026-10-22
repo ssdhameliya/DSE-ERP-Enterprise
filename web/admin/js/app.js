@@ -227,8 +227,14 @@ window.App = (function() {
       notifEl.classList.toggle('zero', (counts.notifications || 0) === 0);
     }
     if (mailEl) {
-      mailEl.innerText = counts.email || 0;
-      mailEl.classList.toggle('zero', (counts.email || 0) === 0);
+      let mailCount = counts.email || 0;
+      try {
+        if (localStorage.getItem('dse_email_read_ack') === 'true') {
+          mailCount = 0;
+        }
+      } catch (_) {}
+      mailEl.innerText = mailCount;
+      mailEl.classList.toggle('zero', mailCount === 0);
     }
     if (waEl) {
       waEl.innerText = counts.whatsapp || 0;

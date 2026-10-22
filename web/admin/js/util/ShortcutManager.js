@@ -15,7 +15,13 @@ window.ShortcutManager = {
       // 2. F3 -> New Quotation
       if (e.key === 'F3') {
         e.preventDefault();
-        if (window.NavigationRouter) window.NavigationRouter.selectNav('view-quotations');
+        if (typeof window.openNewQuotationModal === 'function') {
+          window.openNewQuotationModal();
+        } else if (window.QuotationController && window.QuotationController.openQuotationEditor) {
+          window.QuotationController.openQuotationEditor();
+        } else if (window.NavigationRouter) {
+          window.NavigationRouter.selectNav('view-quotations');
+        }
         return;
       }
 

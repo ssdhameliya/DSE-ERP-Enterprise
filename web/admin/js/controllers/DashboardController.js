@@ -247,7 +247,7 @@ window.DashboardController = {
 
     const sorted = Object.entries(customerTotals)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+      .slice(0, 8);
 
     if (sorted.length === 0) {
       listEl.innerHTML = `<div style="color: var(--text-dim); padding: 6px 0;">No customer sales posted yet.</div>`;
@@ -295,7 +295,7 @@ window.DashboardController = {
   renderRecentActivitiesFromDto(recentList) {
     const actListEl = document.getElementById('dash-recent-activities-list');
     if (!actListEl) return;
-    actListEl.innerHTML = recentList.slice(0, 5).map(item => `
+    actListEl.innerHTML = recentList.slice(0, 10).map(item => `
       <div class="dash-list-row" style="flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
         <div style="display:flex; justify-content:space-between; width:100%;">
           <span style="font-weight:600; color: var(--text-main);">${item.type || 'Transaction'}: ${item.number || ''}</span>
@@ -309,7 +309,7 @@ window.DashboardController = {
   renderRecentActivities(sales) {
     const actListEl = document.getElementById('dash-recent-activities-list');
     if (!actListEl) return;
-    const recent = (sales || []).slice(0, 5);
+    const recent = (sales || []).slice(0, 10);
     if (recent.length === 0) {
       actListEl.innerHTML = `<div style="color: var(--text-dim); padding: 8px 0;">No recent system events.</div>`;
       return;

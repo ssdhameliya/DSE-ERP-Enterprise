@@ -1665,12 +1665,27 @@ window.SalesController = {
   // =========================================================================
   // 7. ADDITIONAL CHARGES DIALOG
   // =========================================================================
-  openChargesDialog() {
+  async openChargesDialog() {
     if (this.viewMode) {
       window.AppDialogService.showToast('Charges cannot be modified on approved invoices in view mode.', 'warning');
       return;
     }
     this.activeChargesContext = 'SALES';
+
+    // Desktop Parity: Load charge types from Master Lookup table
+    if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
+      try {
+        let chargeLookups = await window.MasterService.getLookupsByCategoryCode('CHARGES').catch(() => []);
+        if (!chargeLookups || chargeLookups.length === 0) {
+          chargeLookups = await window.MasterService.getLookupsByCategoryCode('CHARGE').catch(() => []);
+        }
+        if (Array.isArray(chargeLookups) && chargeLookups.length > 0) {
+          const loaded = chargeLookups.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+          if (loaded.length > 0) this.availableChargeTypes = loaded;
+        }
+      } catch (_) {}
+    }
+
     this.draftCharges = (this.invoiceCharges || []).map(c => ({ ...c }));
     if (this.draftCharges.length === 0) {
       this.draftCharges.push({
@@ -1682,6 +1697,76 @@ window.SalesController = {
     }
     this.renderChargesDialogRows();
     window.AppDialogService.openModal('modal-manage-charges');
+  },
+
+  // =========================================================================
+  // 7.1 STANDARDIZED ATTACHMENT METHODS (SETTINGS & QUOTATION PARITY)
+  // =========================================================================
+  handleAttachmentFileSelected(inputEl) {
+    if (inputEl.files && inputEl.files[0]) {
+      this.pendingAttachmentFile = inputEl.files[0];
+      this.attachmentRemovalPending = false;
+      this.refreshAttachmentUi(this.pendingAttachmentFile.name, this.pendingAttachmentFile.size);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${this.pendingAttachmentFile.name}`);
+    }
+  },
+
+  previewEditorAttachment() {
+    if (this.pendingAttachmentFile) {
+      const url = URL.createObjectURL(this.pendingAttachmentFile);
+      window.open(url, '_blank');
+      return;
+    }
+    if (this.existingAttachmentPath && this.editingSaleId) {
+      window.open(`/api/support/documents/SALES/${this.editingSaleId}/attachment-file`, '_blank');
+      return;
+    }
+    if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
+  },
+
+  removeEditorAttachment() {
+    this.pendingAttachmentFile = null;
+    this.attachmentRemovalPending = true;
+    const fileInput = document.getElementById('ws-attachment-file-input');
+    if (fileInput) fileInput.value = '';
+    this.refreshAttachmentUi(null);
+    if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
+  },
+
+  refreshAttachmentUi(fileName, fileSize) {
+    const badge = document.getElementById('ws-attachment-badge');
+    const nameEl = document.getElementById('ws-attachment-name');
+    const sizeEl = document.getElementById('ws-attachment-size');
+    const btnPreview = document.getElementById('ws-btn-attach-preview');
+    const btnRemove = document.getElementById('ws-btn-attach-remove');
+
+    if (fileName) {
+      const displayName = typeof fileName === 'string' ? fileName.split('/').pop().split('\\').pop() : 'Attached Document';
+      if (badge) badge.style.display = 'inline-block';
+      if (nameEl) {
+        nameEl.innerText = displayName;
+        nameEl.style.color = '#c084fc';
+      }
+      if (sizeEl) {
+        if (fileSize && typeof fileSize === 'number') {
+          const kb = (fileSize / 1024).toFixed(1);
+          sizeEl.innerText = `${kb} KB`;
+        } else {
+          sizeEl.innerText = 'Document attached';
+        }
+      }
+      if (btnPreview) btnPreview.disabled = false;
+      if (btnRemove) btnRemove.disabled = false;
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (nameEl) {
+        nameEl.innerText = 'No document attached';
+        nameEl.style.color = '#cbd5e1';
+      }
+      if (sizeEl) sizeEl.innerText = 'PDF, DOC, XLS, PNG, JPG';
+      if (btnPreview) btnPreview.disabled = true;
+      if (btnRemove) btnRemove.disabled = true;
+    }
   },
 
   openChargesDialogForPurchase(purchaseCharges = [], availableTypes = []) {

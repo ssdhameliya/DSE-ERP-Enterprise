@@ -27,7 +27,25 @@ window.CommunicationController = (function() {
     }
   }
 
+  function clearEmailBadge() {
+    const mailEl = document.getElementById('badge-email');
+    if (mailEl) {
+      mailEl.innerText = '0';
+      mailEl.classList.add('zero');
+    }
+    try {
+      localStorage.setItem('dse_email_read_ack', 'true');
+      const cached = localStorage.getItem('dse_shell_counts');
+      if (cached) {
+        const counts = JSON.parse(cached);
+        counts.email = 0;
+        localStorage.setItem('dse_shell_counts', JSON.stringify(counts));
+      }
+    } catch (_) {}
+  }
+
   async function loadCommunications() {
+    clearEmailBadge();
     const tbody = document.getElementById('communication-tbody');
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading communication events...</td></tr>`;
@@ -175,6 +193,7 @@ window.CommunicationController = (function() {
 
   return {
     loadCommunications,
+    clearEmailBadge,
     filterCommunications,
     resend,
     openEmailSettings

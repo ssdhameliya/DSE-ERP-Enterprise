@@ -91,10 +91,10 @@
           </div>
 
           <!-- Expense Entry Filter Toolbar (BankExpense.fxml Parity) -->
-          <div
-            style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 220px; position: relative;">
-              <input type="text" id="exp-search" class="filter-input" style="width: 100%; padding-left: 28px;"
+          <div class="filter-toolbar filter-toolbar-single-row"
+            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: center; margin-bottom: 14px; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); overflow-x: auto;">
+            <div style="flex: 1; min-width: 180px; position: relative;">
+              <input type="text" id="exp-search" class="filter-input" style="width: 100%; height: 34px; padding-left: 28px;"
                 placeholder="Search voucher, payee, head, description..."
                 oninput="window.FinanceController.applyFinanceFilters()">
               <span
@@ -102,47 +102,49 @@
             </div>
             <select id="exp-category-filter" class="form-select"
               onchange="window.FinanceController.applyFinanceFilters()"
-              style="height: 34px; font-size: 0.78rem; min-width: 160px;">
+              style="height: 34px; font-size: 0.78rem; width: auto; min-width: 140px; flex-shrink: 0;">
               <option value="ALL">All Categories</option>
             </select>
             <input type="date" id="exp-filter-from" class="form-input"
               onchange="window.FinanceController.applyFinanceFilters()"
-              style="height: 34px; font-size: 0.78rem; width: 135px;" title="From Date">
+              style="height: 34px; font-size: 0.78rem; width: 130px; flex-shrink: 0;" title="From Date">
             <input type="date" id="exp-filter-to" class="form-input"
               onchange="window.FinanceController.applyFinanceFilters()"
-              style="height: 34px; font-size: 0.78rem; width: 135px;" title="To Date">
+              style="height: 34px; font-size: 0.78rem; width: 130px; flex-shrink: 0;" title="To Date">
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.resetFinanceFilters()"
-              style="height: 34px;">Reset</button>
+              style="height: 34px; white-space: nowrap; flex-shrink: 0;">Reset</button>
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.loadExpenseMode()"
-              style="height: 34px;">&#8635; Refresh</button>
+              style="height: 34px; white-space: nowrap; flex-shrink: 0;">&#8635; Refresh</button>
             <button class="btn btn-primary btn-sm" onclick="window.FinanceController.openNewExpenseEntryModal()"
-              style="height: 34px; font-weight: 700;">+ Add Expense</button>
+              style="height: 34px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">+ Add Expense</button>
           </div>
 
           <!-- Operating Expense Register Workspace (BankExpense.fxml Parity) -->
-          <div class="register-workspace" id="expense-entry-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x: auto;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Description / Voucher</th>
-                    <th>Payee / Paid To</th>
-                    <th>Mode</th>
-                    <th>Voucher #</th>
-                    <th style="text-align: right;">Amount (₹)</th>
-                    <th>Match / Link</th>
-                    <th style="text-align: center; width: 100px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="expense-entry-tbody">
-                  <tr>
-                    <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading
-                      expenses...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="expense-entry-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="register-table-panel data-panel" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column;">
+              <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Category</th>
+                      <th>Description / Voucher</th>
+                      <th>Payee / Paid To</th>
+                      <th>Mode</th>
+                      <th>Voucher #</th>
+                      <th style="text-align: right;">Amount (₹)</th>
+                      <th>Match / Link</th>
+                      <th style="text-align: center; width: 100px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expense-entry-tbody">
+                    <tr>
+                      <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading
+                        expenses...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Inline Docked Expense Detail Drawer -->

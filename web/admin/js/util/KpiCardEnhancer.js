@@ -202,8 +202,24 @@ window.KpiCardEnhancer = (function() {
     if (card.dataset.erpKpiCompactEnhanced === 'true') return;
     card.dataset.erpKpiCompactEnhanced = 'true';
 
+    // Desktop Executive Dashboard parity: preserve .dash-kpi-card markup, classes, IDs and proportions
+    if (card.classList.contains('dash-kpi-card') || card.closest('.dash-kpi-row-6') || card.querySelector('.dash-kpi-header')) {
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.justifyContent = 'space-between';
+      card.style.minHeight = '76px';
+      card.style.height = 'auto';
+      card.style.maxHeight = 'none';
+      return;
+    }
+
     if (card.classList.contains('compact-kpi-card') && card.querySelector('.kpi-content-box')) {
       // Already has native compact ribbon structure; preserve markup
+      return;
+    }
+
+    if (card.querySelector('.kpi-content-box') || card.querySelector('.kpi-row-top')) {
+      // Already has structured ribbon; preserve markup
       return;
     }
 
@@ -239,7 +255,7 @@ window.KpiCardEnhancer = (function() {
     // Determine semantic styling (icon, colors, glow)
     const sem = extractSemanticTheme(labelText, card);
 
-    // Apply compact card styles
+    // Apply compact card styles without destructively crushing height
     card.classList.add('compact-kpi-card', sem.theme);
     card.style.display = 'flex';
     card.style.flexDirection = 'row';
@@ -247,11 +263,10 @@ window.KpiCardEnhancer = (function() {
     card.style.flex = '1 1 0';
     card.style.minWidth = '0';
     card.style.maxWidth = '100%';
-    card.style.height = '58px';
     card.style.minHeight = '58px';
-    card.style.maxHeight = '58px';
+    card.style.height = 'auto';
+    card.style.maxHeight = 'none';
     card.style.boxSizing = 'border-box';
-    card.style.overflow = 'hidden';
     card.setAttribute('title', `${labelText}: ${valueText}${subText ? ' (' + subText + ')' : ''}`);
 
     // Construct micro badge pill
@@ -312,9 +327,29 @@ window.KpiCardEnhancer = (function() {
    */
   function rebalanceContainer(grid) {
     if (!grid) return;
+    const isDashRow = grid.classList.contains('dash-kpi-row-6') || grid.closest('#view-dashboard') || grid.closest('.dash-kpi-row-6');
     const cards = grid.querySelectorAll('.compact-kpi-card, .kpi-card, .dash-kpi-card, .standard-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
     const count = cards.length;
     if (count === 0) return;
+
+    if (isDashRow) {
+      grid.style.display = 'flex';
+      grid.style.flexDirection = 'row';
+      grid.style.flexWrap = 'nowrap';
+      grid.style.alignItems = 'stretch';
+      grid.style.gap = '10px';
+      grid.style.width = '100%';
+      grid.style.boxSizing = 'border-box';
+      cards.forEach(card => {
+        card.style.flex = '1 1 0';
+        card.style.minWidth = '0';
+        card.style.maxWidth = 'none';
+        card.style.minHeight = '76px';
+        card.style.height = 'auto';
+        card.style.maxHeight = 'none';
+      });
+      return;
+    }
 
     // Enforce Desktop single-row geometry
     grid.classList.add('compact-kpi-ribbon', 'erp-kpi-single-row');
@@ -349,9 +384,9 @@ window.KpiCardEnhancer = (function() {
       card.style.minWidth = '0';
       card.style.maxWidth = 'none';
       card.style.width = 'auto';
-      card.style.height = '58px';
       card.style.minHeight = '58px';
-      card.style.maxHeight = '58px';
+      card.style.height = 'auto';
+      card.style.maxHeight = 'none';
     });
   }
 

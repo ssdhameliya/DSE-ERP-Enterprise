@@ -58,28 +58,30 @@
           </div>
 
           <!-- Aging Register Split Workspace (AgingAnalysis.fxml Parity) -->
-          <div class="register-workspace" id="aging-register-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>PARTY / ACCOUNT NAME</th>
-                    <th style="width:140px; text-align:right;">TOTAL BALANCE (&#8377;)</th>
-                    <th style="width:120px; text-align:right;">0-30 DAYS (&#8377;)</th>
-                    <th style="width:120px; text-align:right;">31-60 DAYS (&#8377;)</th>
-                    <th style="width:120px; text-align:right;">61-90 DAYS (&#8377;)</th>
-                    <th style="width:130px; text-align:right;">90+ DAYS (&#8377;)</th>
-                    <th style="width:100px; text-align:center;">RISK STATUS</th>
-                    <th style="width:120px; text-align:center;">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody id="aging-table-tbody">
-                  <tr>
-                    <td colspan="8" style="text-align:center; padding:30px; color:var(--text-dim);"><span
-                        class="loading-spinner"></span> Loading Aging Register...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="aging-register-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="register-table-panel data-panel" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column;">
+              <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>PARTY / ACCOUNT NAME</th>
+                      <th style="width:140px; text-align:right;">TOTAL BALANCE (&#8377;)</th>
+                      <th style="width:120px; text-align:right;">0-30 DAYS (&#8377;)</th>
+                      <th style="width:120px; text-align:right;">31-60 DAYS (&#8377;)</th>
+                      <th style="width:120px; text-align:right;">61-90 DAYS (&#8377;)</th>
+                      <th style="width:130px; text-align:right;">90+ DAYS (&#8377;)</th>
+                      <th style="width:100px; text-align:center;">RISK STATUS</th>
+                      <th style="width:120px; text-align:center;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aging-table-tbody">
+                    <tr>
+                      <td colspan="8" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                          class="loading-spinner"></span> Loading Aging Register...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Inline Docked Aging Detail Drawer (AgingAnalysis.fxml Parity) -->
