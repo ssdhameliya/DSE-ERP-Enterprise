@@ -481,12 +481,6 @@
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px; }
 
-    /* TOAST */
-    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100020; display: flex; flex-direction: column; gap: 10px; }
-    .toast { background: #1e293b; border-left: 4px solid var(--cyan); color: #fff; padding: 12px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 0.85rem; }
-    .toast.success { border-left-color: var(--sem-complete); }
-    .toast.error { border-left-color: var(--sem-error); }
-
     /* BARCODE PRINT */
     .barcode-sticker { width: 240px; height: 140px; background: #fff; color: #000; border: 1px dashed #999; border-radius: 4px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-family: monospace; font-size: 10px; text-align: center; }
     .barcode-canvas { max-width: 220px; height: 50px; }
@@ -2992,8 +2986,12 @@
     .badge-info { background: rgba(56, 189, 248, 0.18) !important; color: #38bdf8 !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; }
     .badge-neutral { background: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; }
 
-    /* Cell money */
-    .cell-money-green { color: #34d399; font-weight: 700; }
+    /* Cell money semantic desktop parity */
+    .cell-money-green { color: #34d399 !important; font-weight: 700; }
+    .cell-money-yellow { color: #fbbf24 !important; font-weight: 700; }
+    .cell-money-red { color: #f87171 !important; font-weight: 700; }
+    .cell-money-cyan { color: #38bdf8 !important; font-weight: 700; }
+    .cell-money-white { color: #ffffff !important; font-weight: 700; }
 
     /* App Dialog Modal (matching Desktop AppDialogRenderer.java) */
     .app-dialog-overlay {
@@ -3022,6 +3020,7 @@
       align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
     }
     .app-dialog-icon-box.sem-blue { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .app-dialog-icon-box.sem-green { background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.35); }
     .app-dialog-icon-box.sem-red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); }
     .app-dialog-icon-box.sem-amber { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); }
     .app-dialog-header-text { flex: 1; }

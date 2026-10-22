@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.07">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.08">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -5722,8 +5722,6 @@
     </div>
   </div>
 
-  <div id="toast-container"></div>
-
   <!-- Central Semantic Dialog Modal matching desktop AppDialogRenderer.java -->
   <div id="modal-app-dialog" class="modal-overlay app-dialog-overlay" style="display: none;">
     <div class="app-dialog-card" role="dialog" aria-modal="true">
@@ -5744,6 +5742,50 @@
         <button type="button" class="btn btn-primary" id="app-dialog-btn-confirm"
           onclick="window.AppDialogService && window.AppDialogService.resolveDialog(true)">Continue</button>
       </div>
+    </div>
+  </div>
+
+  <!-- FLOATING ACTIONS CONTEXT MENU (SALES REGISTER) -->
+  <div id="sales-row-actions-menu" class="actions-dropdown-menu" style="display: none; position: fixed !important; z-index: 100025 !important;">
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('VIEW')">
+      <span class="actions-menu-icon">&#128065;</span> <span>View Sale</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('AUDIT')">
+      <span class="actions-menu-icon">&#128220;</span> <span>Audit Trail</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EDIT')">
+      <span class="actions-menu-icon">&#9999;</span> <span>Edit Sale</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('DUPLICATE')">
+      <span class="actions-menu-icon">&#128203;</span> <span>Duplicate Sale</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PRINT')">
+      <span class="actions-menu-icon">&#128438;</span> <span>View / Print Tax Invoice</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('BARCODE')">
+      <span class="actions-menu-icon">&#128207;</span> <span>Print Dispatch Barcode Label</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EXCEL')">
+      <span class="actions-menu-icon">&#128202;</span> <span>View / Download Excel</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EMAIL')">
+      <span class="actions-menu-icon">&#9993;</span> <span>Send Email</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('WHATSAPP')">
+      <span class="actions-menu-icon">&#128172;</span> <span>Send WhatsApp</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PAYMENT')">
+      <span class="actions-menu-icon">&#128179;</span> <span>View / Record Payments</span>
+    </div>
+    <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('RETURN')">
+      <span class="actions-menu-icon">&#8634;</span> <span>Create Sales Return</span>
+    </div>
+    <div class="actions-menu-divider"></div>
+    <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('CANCEL')">
+      <span class="actions-menu-icon">&#10006;</span> <span>Cancel Sale</span>
+    </div>
+    <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('DELETE')">
+      <span class="actions-menu-icon">&#128465;</span> <span>Delete Sale</span>
     </div>
   </div>
 
@@ -6269,76 +6311,76 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.07"></script>
+  <script src="js/version.js?v=10.0.41.08"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.07"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.07"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.07"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.07"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.07"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.07"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.07"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.07"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.07"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.07"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.07"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.07"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.07"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.07"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.07"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.07"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.07"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.07"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.07"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.07"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.07"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.08"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.08"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.08"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.08"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.08"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.08"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.08"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.08"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.08"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.08"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.08"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.08"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.08"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.08"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.08"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.08"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.08"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.08"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.08"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.08"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.08"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.07"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.07"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.07"></script>
-  <script src="js/services/ViewLoader.js?v=10.0.41.07"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.07"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.07"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.07"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.07"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.07"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.07"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.07"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.08"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.08"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.08"></script>
+  <script src="js/services/ViewLoader.js?v=10.0.41.08"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.08"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.08"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.08"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.08"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.08"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.08"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.08"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.07"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.07"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.08"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.08"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.07"></script>
-  <script src="js/app.js?v=10.0.41.07"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.08"></script>
+  <script src="js/app.js?v=10.0.41.08"></script>
 </body>
 
 </html>

@@ -1020,11 +1020,13 @@ window.SettingsController = (function() {
         return;
       }
 
+      const hasConfiguredPw = Boolean((cachedEmailSettings && cachedEmailSettings.passwordConfigured) || (password && password.trim()));
       const smtpPayload = {
         host,
         port,
         email,
-        appPassword: password
+        appPassword: password || '',
+        passwordConfigured: hasConfiguredPw
       };
 
       const docCategory = val('email-template-doc') || 'Sales Invoice (Email)';
@@ -1145,7 +1147,8 @@ window.SettingsController = (function() {
             host,
             port,
             email,
-            appPassword: password.trim()
+            appPassword: password.trim(),
+            passwordConfigured: true
           };
           await window.ApiService.put('/api/authority/email/settings', smtpPayload);
           setStage(1, 'success', `Host ${host}:${port} credentials updated`);

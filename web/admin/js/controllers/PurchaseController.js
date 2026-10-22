@@ -1582,6 +1582,12 @@ window.PurchaseController = (function() {
       }
     });
 
+    // Strict lock on Delivery Address and Delivery GSTIN when Same as Billing is checked
+    const chkSameAfter = document.getElementById('pe-same-as-billing');
+    if (chkSameAfter) {
+      onSameAsBillingToggle(chkSameAfter.checked);
+    }
+
     // Lock Attachment Controls in read-only view mode
     const btnAttachAdd = document.getElementById('pe-btn-attach-add');
     if (btnAttachAdd) btnAttachAdd.disabled = isReadOnlyView;
@@ -1809,6 +1815,9 @@ window.PurchaseController = (function() {
     }
     if (contact) contact.value = supp.contactPerson || '';
     if (mobile) mobile.value = supp.phone || '';
+
+    const chkSame = document.getElementById('pe-same-as-billing');
+    onSameAsBillingToggle(chkSame ? chkSame.checked : true);
 
     // Auto-detect Inter-state vs Intra-state GST from supplier GSTIN
     const supplierState = (supp.gstin || '').substring(0, 2);

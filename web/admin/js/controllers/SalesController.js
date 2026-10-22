@@ -520,42 +520,67 @@ window.SalesController = {
   // 3. ACTIONS MENU - COMPLETE 13 REAL ACTION OUTPUTS
   // =========================================================================
   toggleRowActionsMenu(btnEl, invNo, event) {
-    if (event) event.stopPropagation();
+    if (event) {
+      try { event.stopPropagation(); } catch (_) {}
+    }
     this.selectedInvoiceNo = invNo;
 
     const menu = document.getElementById('sales-row-actions-menu');
-    if (!menu) return;
+    if (!menu) {
+      console.warn('[SalesController] sales-row-actions-menu not found in DOM');
+      return;
+    }
 
-    if (menu.classList.contains('show') && menu.dataset.targetInvoice === invNo) {
+    // Ensure menu is in document.body so no parent overflow or transform can clip it
+    if (menu.parentElement !== document.body) {
+      document.body.appendChild(menu);
+    }
+
+    if (menu.classList.contains('show') && menu.dataset.targetInvoice === invNo && menu.style.display === 'block') {
       menu.classList.remove('show');
+      menu.style.display = 'none';
       return;
     }
 
     menu.dataset.targetInvoice = invNo;
     const rect = btnEl.getBoundingClientRect();
-    const menuWidth = 220;
+    const menuWidth = 240;
     let left = rect.right - menuWidth;
-    let top = rect.bottom + 4;
-
     if (left < 10) left = 10;
-    if (top + 400 > window.innerHeight) top = rect.top - 400;
+    if (left + menuWidth > window.innerWidth - 10) left = window.innerWidth - menuWidth - 10;
 
+    const menuHeight = menu.offsetHeight || 420;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    let top;
+    if (spaceBelow < menuHeight && rect.top > menuHeight) {
+      top = Math.max(10, rect.top - menuHeight - 4);
+    } else {
+      top = Math.max(10, Math.min(window.innerHeight - menuHeight - 10, rect.bottom + 4));
+    }
+
+    menu.style.position = 'fixed';
     menu.style.top = `${top}px`;
     menu.style.left = `${left}px`;
+    menu.style.display = 'block';
+    menu.style.zIndex = '100025';
     menu.classList.add('show');
 
     const closeHandler = (e) => {
       if (!menu.contains(e.target) && e.target !== btnEl) {
         menu.classList.remove('show');
+        menu.style.display = 'none';
         document.removeEventListener('click', closeHandler);
       }
     };
-    document.addEventListener('click', closeHandler);
+    setTimeout(() => document.addEventListener('click', closeHandler), 10);
   },
 
   async handleMenuAction(actionKey) {
     const menu = document.getElementById('sales-row-actions-menu');
-    if (menu) menu.classList.remove('show');
+    if (menu) {
+      menu.classList.remove('show');
+      menu.style.display = 'none';
+    }
 
     const invNo = this.selectedInvoiceNo;
     if (!invNo) return;
@@ -1150,6 +1175,12 @@ window.SalesController = {
         }
       });
 
+      // Strict lock on Delivery Address and Delivery GSTIN when Same as Billing is checked
+      const chkSameAfter = document.getElementById('ws-same-address');
+      if (chkSameAfter) {
+        this.toggleSameAddress(chkSameAfter.checked);
+      }
+
       // Strict lock on Additional Charges in read-only view
       const chargesDisp = document.getElementById('ws-charges-summary-display');
       if (chargesDisp) {
@@ -1216,6 +1247,9 @@ window.SalesController = {
     if (bGst) bGst.value = gstin;
     if (chkSame && chkSame.checked && dGst) dGst.value = gstin;
     if (pTerms) pTerms.value = terms;
+
+    this.toggleSameAddress(chkSame ? chkSame.checked : true);
+    this.suggestGstTypeFromGstin(gstin);
 
     this.suggestGstTypeFromGstin(gstin);
     this.calcWorkspaceTotals();

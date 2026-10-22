@@ -1,21 +1,18 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 7,
-  "webVersion": "10.0.41.07",
-  "tag": "web-v10.0.41.07",
-  "releaseDate": "2026-10-23T01:30:00+05:30",
+  "webBuild": 8,
+  "webVersion": "10.0.41.08",
+  "tag": "web-v10.0.41.08",
+  "releaseDate": "2026-10-23T02:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.07 Comprehensive 10-Issue Desktop Parity Fixes (KPI Refresh Layout, Master Charges & Bank Lookups, Sales Register Actions, Standardized Attachments, GL Freeze, Single-Row Filter Toolbars, Full-Height Table Expansion, Quotation F3 Bootstrapping, and Email Badge Acknowledgment)",
+  "summary": "10.0.41.08 Precision Fixes & Global Decision Dialogs (Actions Menu Restoration, Master Payment Lookups, Email Settings Jackson Serialization, 3-Button Standard Attachment Card, Contextual Monetary Amount Coloring, Delivery Address Interlocking, and Global Modal Dialogs)",
   "highlights": [
-    "1. KPI Refresh Parity: Removed 58px height clamping and innerHTML wiping from KpiCardEnhancer/app.css, maintaining exact Image 4 layout on reload across all modules.",
-    "2. Master Charges & Bank Details: Added Master lookup category 'CHARGES'/'CHARGE' to Sales & Purchase creation; updated Record Payment to look up category 'BANK' preventing 'Loading bank details...' hang.",
-    "3. Sales Register Actions: Integrated '#sales-row-actions-menu' into Sales Register view, restoring purple '::: Actions' dropdown button functionality.",
-    "4. Standardized Attachment Panels: Replaced attachment boxes in Sale & Purchase creation with standardized Add/Replace, Preview, and Delete design matching Settings & Quotation Editor.",
-    "5. Header Badge Cleanup: Removed redundant v10.0.41.06 badge from top header navigation, preserving single source of truth under Profile footer.",
-    "6. General Ledger Stability: Fixed GL row click freeze by isolating flex containers, bounded viewport heights, and preventing layout oscillation.",
-    "7. Full Vertical Expansion: Expanded data tables down to footer across all registers, and increased visible dashboard items to eliminate empty bottom space.",
-    "8. Email Badge Acknowledgment: Added reset logic in CommunicationController and localStorage acknowledgment in app.js so email counter clears upon viewing messages.",
-    "9. Single-Row Filter Toolbars: Applied '.filter-toolbar-single-row' with nowrap alignment to all 5 Bank & Expense submenus.",
-    "10. Quotation F3 Async Mount: Made openQuotationEditor properly await NavigationRouter view loading with defensive checks and MasterService customer fallback."
+    "1. Sales Register Actions Button: Fixed coordinate calculation and relocated '#sales-row-actions-menu' to application root with z-index 100025, completely restoring the purple '::: Actions' dropdown button.",
+    "2. Record Payment Lookups: Resolved view loading lifecycle and populated Payment Mode and Bank Account dropdowns purely from live Master Data lookup tables without mock arrays.",
+    "3. Corporate Email Settings: Added 'passwordConfigured' boolean to PUT /api/authority/email/settings payload, resolving Jackson null-to-primitive deserialization error while preserving date format integrity.",
+    "4. Standardized Attachment Card: Standardized 3-button layout (+ Add / Replace, Preview, Delete) in bottom-right Notes & Attachments card in Sale & Purchase creation, removing top redundant cards.",
+    "5. Universal Semantic Amount Coloring: Implemented contextual monetary styling across all registers and tables (Paid/Received = Green, Pending/Due = Yellow/Red, Total = Cyan).",
+    "6. Delivery Address Interlocking: Enforced strict readonly interlocking on Delivery Address and GSTIN inputs whenever 'Same as Billing Address' is checked on initial load and party selection.",
+    "7. Universal Decision Dialogs: Completely replaced all transient toast popups across the entire ERP with interactive modal dialogs (success, error, warning, info, exportSuccess) requiring explicit user confirmation."
   ]
 }

@@ -429,48 +429,223 @@ window.AppDialogService = (function() {
     },
 
     /**
-     * Toast notification manager matching desktop ToastManager
+     * Success alert modal matching Desktop AppDialogRenderer.java
+     * @returns {Promise<void>}
      */
-    showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      const icon = type === 'success' ? '✔' : type === 'error' ? '✖' : type === 'warning' ? '⚠️' : 'ℹ';
-      toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-message">${message}</span>`;
-      container.appendChild(toast);
-
-      if (window.AudioSynthesizer) {
-        if (type === 'success') window.AudioSynthesizer.playSuccess();
-        else if (type === 'error') window.AudioSynthesizer.playError();
+    success(title, heading, message, primaryAction = 'OK') {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Success';
+        heading = 'Operation Completed';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Success';
+          heading = 'Operation Completed';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = '';
+        }
       }
 
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
-        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+      if (typeof activeDialogResolver === 'function') {
+        const prev = activeDialogResolver;
+        activeDialogResolver = null;
+        try { prev(false); } catch (_) {}
+      }
+
+      const container = ensureDialogContainer();
+      attachDialogHandlers(container);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+
+      const iconBox = container.querySelector('#app-dialog-icon-box');
+      const titleEl = container.querySelector('#app-dialog-title');
+      const headingEl = container.querySelector('#app-dialog-heading');
+      const bodyEl = container.querySelector('#app-dialog-body');
+      const detailEl = container.querySelector('#app-dialog-detail');
+      const btnCancel = container.querySelector('#app-dialog-btn-cancel');
+      const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+
+      iconBox.innerText = '✔';
+      iconBox.className = 'app-dialog-icon-box sem-green';
+      titleEl.innerText = title || 'Success';
+      headingEl.innerText = heading || 'Operation Completed';
+      bodyEl.innerText = message || '';
+      detailEl.style.display = 'none';
+
+      btnCancel.style.display = 'none';
+      btnConfirm.innerText = primaryAction || 'OK';
+      btnConfirm.className = 'btn btn-primary';
+
+      container.style.display = 'flex';
+      container.style.zIndex = '100020';
+      container.classList.add('active');
+
+      setTimeout(() => btnConfirm.focus(), 80);
+
+      return new Promise((resolve) => {
+        activeDialogResolver = resolve;
+      });
+    },
+
+    /**
+     * Warning alert modal matching Desktop AppDialogRenderer.java
+     * @returns {Promise<void>}
+     */
+    warning(title, heading, message, primaryAction = 'OK') {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Warning';
+        heading = 'Please Note';
+      } else if (arguments.length === 2) {
+        if (typeof title === 'string' && (title.includes('\n') || title.length > 50)) {
+          const actualMsg = title;
+          title = heading || 'Warning';
+          heading = 'Please Note';
+          message = actualMsg;
+        } else {
+          message = heading;
+          heading = '';
+        }
+      }
+
+      if (typeof activeDialogResolver === 'function') {
+        const prev = activeDialogResolver;
+        activeDialogResolver = null;
+        try { prev(false); } catch (_) {}
+      }
+
+      const container = ensureDialogContainer();
+      attachDialogHandlers(container);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playError();
+
+      const iconBox = container.querySelector('#app-dialog-icon-box');
+      const titleEl = container.querySelector('#app-dialog-title');
+      const headingEl = container.querySelector('#app-dialog-heading');
+      const bodyEl = container.querySelector('#app-dialog-body');
+      const detailEl = container.querySelector('#app-dialog-detail');
+      const btnCancel = container.querySelector('#app-dialog-btn-cancel');
+      const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+
+      iconBox.innerText = '⚠️';
+      iconBox.className = 'app-dialog-icon-box sem-amber';
+      titleEl.innerText = title || 'Warning';
+      headingEl.innerText = heading || 'Please Note';
+      bodyEl.innerText = message || '';
+      detailEl.style.display = 'none';
+
+      btnCancel.style.display = 'none';
+      btnConfirm.innerText = primaryAction || 'OK';
+      btnConfirm.className = 'btn btn-warning';
+
+      container.style.display = 'flex';
+      container.style.zIndex = '100020';
+      container.classList.add('active');
+
+      setTimeout(() => btnConfirm.focus(), 80);
+
+      return new Promise((resolve) => {
+        activeDialogResolver = resolve;
+      });
+    },
+
+    /**
+     * Export / Download success modal dialog
+     * @returns {Promise<boolean>}
+     */
+    exportSuccess(title, heading, message, openCallback) {
+      if (typeof heading === 'function') {
+        openCallback = heading;
+        heading = 'File Download Ready';
+      }
+      if (typeof message === 'function') {
+        openCallback = message;
+        message = heading;
+        heading = 'File Ready';
+      }
+
+      if (typeof activeDialogResolver === 'function') {
+        const prev = activeDialogResolver;
+        activeDialogResolver = null;
+        try { prev(false); } catch (_) {}
+      }
+
+      const container = ensureDialogContainer();
+      attachDialogHandlers(container);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+
+      const iconBox = container.querySelector('#app-dialog-icon-box');
+      const titleEl = container.querySelector('#app-dialog-title');
+      const headingEl = container.querySelector('#app-dialog-heading');
+      const bodyEl = container.querySelector('#app-dialog-body');
+      const detailEl = container.querySelector('#app-dialog-detail');
+      const btnCancel = container.querySelector('#app-dialog-btn-cancel');
+      const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+
+      iconBox.innerText = '📥';
+      iconBox.className = 'app-dialog-icon-box sem-green';
+      titleEl.innerText = title || 'Export Complete';
+      headingEl.innerText = heading || 'File Download Ready';
+      bodyEl.innerText = message || 'Your document was generated and downloaded successfully.';
+      detailEl.style.display = 'none';
+
+      btnCancel.style.display = 'inline-flex';
+      btnCancel.innerText = 'Dismiss';
+      btnConfirm.innerText = '👁️ Open / Download';
+      btnConfirm.className = 'btn btn-primary';
+
+      container.style.display = 'flex';
+      container.style.zIndex = '100020';
+      container.classList.add('active');
+
+      setTimeout(() => btnConfirm.focus(), 80);
+
+      return new Promise((resolve) => {
+        activeDialogResolver = (confirmed) => {
+          if (confirmed && typeof openCallback === 'function') {
+            try { openCallback(); } catch (err) { console.warn('openCallback failed:', err); }
+          }
+          resolve(confirmed);
+        };
+      });
+    },
+
+    /**
+     * Global Decision Dialog Notification Dispatcher
+     * Replaces transient toast popups with interactive modal dialogs as mandated.
+     */
+    showToast(message, type = 'info') {
+      const msgStr = typeof message === 'string' ? message : (message ? (message.message || JSON.stringify(message)) : '');
+      if (type === 'success') {
+        return this.success('Success', 'Operation Completed', msgStr);
+      } else if (type === 'error') {
+        return this.error('Error', 'Action Failed', msgStr);
+      } else if (type === 'warning') {
+        return this.warning('Warning', 'Notice', msgStr);
+      } else {
+        return this.info('Information', 'System Notice', msgStr);
+      }
     },
 
     toast(message, type = 'info') {
-      this.showToast(message, type);
+      return this.showToast(message, type);
     },
 
     toastSuccess(message) {
-      this.showToast(message, 'success');
+      return this.showToast(message, 'success');
     },
 
     toastError(message) {
-      this.showToast(message, 'error');
+      return this.showToast(message, 'error');
     },
 
     toastWarning(message) {
-      this.showToast(message, 'warning');
+      return this.showToast(message, 'warning');
     },
 
     toastInfo(message) {
-      this.showToast(message, 'info');
+      return this.showToast(message, 'info');
     },
 
     /**

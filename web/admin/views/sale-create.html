@@ -81,7 +81,8 @@
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Delivery Address *</label>
                     <input type="text" id="ws-delivery-address" class="form-input"
-                      placeholder="Enter delivery address..." readonly style="height: 36px;">
+                      placeholder="Enter delivery address..." readonly
+                      style="height: 36px; background: rgba(255, 255, 255, 0.03); cursor: not-allowed; opacity: 0.85;">
                   </div>
                 </div>
 
@@ -95,7 +96,8 @@
                   <div>
                     <label class="form-label" style="font-size: 0.74rem;">Delivery GSTIN</label>
                     <input type="text" id="ws-delivery-gstin" class="form-input" placeholder="Delivery GSTIN..."
-                      maxlength="15" readonly style="height: 36px;">
+                      maxlength="15" readonly
+                      style="height: 36px; background: rgba(255, 255, 255, 0.03); cursor: not-allowed; opacity: 0.85;">
                   </div>
                 </div>
 
@@ -128,30 +130,6 @@
                     <label class="form-label" style="font-size: 0.74rem;">PO No.</label>
                     <input type="text" id="ws-po-no" class="form-input" placeholder="Enter PO order no. (optional)"
                       style="height: 36px;">
-                  </div>
-                </div>
-
-                <!-- Standardized Attachment Document Card (Settings & Quotation Parity) -->
-                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-top:12px;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">📎</span>
-                      <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Attachment Document</div>
-                    </div>
-                    <span id="ws-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
-                  </div>
-                  <div style="font-size:0.7rem; color:#64748b; margin-bottom:8px;">Proposal specification, purchase order, or invoice document &bull; Max 10MB</div>
-
-                  <div id="ws-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="ws-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
-                    <div id="ws-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
-                    <div id="ws-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, DOC, XLS, PNG, JPG</div>
-                  </div>
-                  <input type="file" id="ws-attachment-file-input" style="display:none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
-                  <div style="display:flex; gap:8px;">
-                    <button type="button" id="ws-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('ws-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>👁 Preview</button>
-                    <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeEditorAttachment()" style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>
               </div>
@@ -360,68 +338,32 @@
                   <textarea id="ws-invoice-notes" class="form-input" placeholder="Optional invoice note..."
                     style="height: 44px; min-height: 44px; font-size: 0.76rem; resize: none;"></textarea>
 
-                  <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                      <label class="form-label" style="font-size: 0.72rem; margin: 0;">Attached Document</label>
+                  <div style="margin-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                      <label class="form-label" style="font-size: 0.72rem; margin: 0; font-weight: 600;">Attached Document</label>
                       <span id="ws-attachment-badge" class="badge" style="font-size: 0.65rem; display: none; background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.4);">Attached</span>
                     </div>
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                      <div id="ws-attachment-name" style="height: 30px; font-size: 0.74rem; flex: 1; display: flex; align-items: center; padding: 0 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No document attached</div>
-                      <input type="file" id="ws-attachment-file-input" style="display: none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
-                      <button type="button" id="ws-btn-attach-add" class="btn btn-secondary" onclick="document.getElementById('ws-attachment-file-input').click()"
-                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap;" title="Attach Document">&#128206;</button>
-                      <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewWorkspaceAttachment()"
-                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap;" disabled title="Preview Document">&#128065;</button>
-                      <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeWorkspaceAttachment()"
-                        style="padding: 0 8px; height: 30px; font-size: 0.74rem; white-space: nowrap; color: #f87171;" disabled title="Remove Document">&#128465;</button>
+                    <div id="ws-attachment-dropzone" style="min-height: 48px; background: rgba(0,0,0,0.25); border: 1px dashed rgba(255,255,255,0.12); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 6px;">
+                      <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                        <span id="ws-attachment-icon" style="font-size: 1.1rem; color: #94a3b8;">📄</span>
+                        <div style="display: flex; flex-direction: column; overflow: hidden;">
+                          <div id="ws-attachment-name" style="font-size: 0.74rem; color: #cbd5e1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No document attached</div>
+                          <div id="ws-attachment-size" style="font-size: 0.65rem; color: #64748b;">Max 10MB (PDF, PNG, JPG)</div>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="file" id="ws-attachment-file-input" style="display: none;" onchange="window.SalesController.handleAttachmentFileSelected(this)">
+                    <div style="display: flex; gap: 6px;">
+                      <button type="button" id="ws-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('ws-attachment-file-input').click()"
+                        style="background: #a855f7; border-color: #9333ea; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; flex: 1; justify-content: center;">+ Add / Replace</button>
+                      <button type="button" id="ws-btn-attach-preview" class="btn btn-secondary" onclick="window.SalesController.previewEditorAttachment()"
+                        style="padding: 4px 10px; font-size: 0.72rem; justify-content: center;" disabled>👁 Preview</button>
+                      <button type="button" id="ws-btn-attach-remove" class="btn btn-secondary" onclick="window.SalesController.removeEditorAttachment()"
+                        style="padding: 4px 10px; font-size: 0.72rem; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.35); color: #f87171; justify-content: center;" disabled>🗑️ Delete</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- FLOATING ACTIONS CONTEXT MENU (IMAGE 3) -->
-        <div id="sales-row-actions-menu" class="actions-dropdown-menu">
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('VIEW')">
-            <span class="actions-menu-icon">&#128065;</span> <span>View Sale</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('AUDIT')">
-            <span class="actions-menu-icon">&#128220;</span> <span>Audit Trail</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EDIT')">
-            <span class="actions-menu-icon">&#9999;</span> <span>Edit Sale</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('DUPLICATE')">
-            <span class="actions-menu-icon">&#128203;</span> <span>Duplicate Sale</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PRINT')">
-            <span class="actions-menu-icon">&#128438;</span> <span>View / Print Tax Invoice</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('BARCODE')">
-            <span class="actions-menu-icon">&#128207;</span> <span>Print Dispatch Barcode Label</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EXCEL')">
-            <span class="actions-menu-icon">&#128202;</span> <span>View / Download Excel</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('EMAIL')">
-            <span class="actions-menu-icon">&#9993;</span> <span>Send Email</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('WHATSAPP')">
-            <span class="actions-menu-icon">&#128172;</span> <span>Send WhatsApp</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('PAYMENT')">
-            <span class="actions-menu-icon">&#128179;</span> <span>View / Record Payments</span>
-          </div>
-          <div class="actions-menu-item" onclick="window.SalesController.handleMenuAction('RETURN')">
-            <span class="actions-menu-icon">&#8634;</span> <span>Create Sales Return</span>
-          </div>
-          <div class="actions-menu-divider"></div>
-          <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('CANCEL')">
-            <span class="actions-menu-icon">&#10006;</span> <span>Cancel Sale</span>
-          </div>
-          <div class="actions-menu-item danger" onclick="window.SalesController.handleMenuAction('DELETE')">
-            <span class="actions-menu-icon">&#128465;</span> <span>Delete Sale</span>
           </div>
         </div>

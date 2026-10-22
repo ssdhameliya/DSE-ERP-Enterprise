@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.07",
+  version: "10.0.41.08",
   desktopVersion: "10.0.41",
-  webBuild: 7,
-  webVersion: "10.0.41.07",
-  tag: "web-v10.0.41.07",
-  releaseDate: "2026-10-23T01:30:00+05:30",
+  webBuild: 8,
+  webVersion: "10.0.41.08",
+  tag: "web-v10.0.41.08",
+  releaseDate: "2026-10-23T02:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.07 Comprehensive 10-Issue Desktop Parity Fixes (KPI Refresh Layout, Master Charges & Bank Lookups, Sales Register Actions, Standardized Attachments, GL Freeze, Single-Row Filter Toolbars, Full-Height Table Expansion, Quotation F3 Bootstrapping, and Email Badge Acknowledgment)"
+  summary: "10.0.41.08 Precision Fixes & Global Decision Dialogs (Actions Menu Restoration, Master Payment Lookups, Email Settings Jackson Serialization, 3-Button Standard Attachment Card, Contextual Monetary Amount Coloring, Delivery Address Interlocking, and Global Modal Dialogs)"
 };
 
 // Automatic UI Version Injection

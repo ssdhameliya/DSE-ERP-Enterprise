@@ -62,7 +62,8 @@
                       </label>
                     </div>
                     <textarea id="pe-delivery-address" class="form-input" rows="2"
-                      placeholder="Warehouse delivery address..." readonly></textarea>
+                      placeholder="Warehouse delivery address..." readonly
+                      style="background: rgba(255, 255, 255, 0.03); cursor: not-allowed; opacity: 0.85;"></textarea>
                   </div>
                 </div>
 
@@ -74,7 +75,8 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label">Delivery GSTIN</label>
-                    <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN" readonly>
+                    <input type="text" id="pe-delivery-gstin" class="form-input" placeholder="Warehouse GSTIN" readonly
+                      style="background: rgba(255, 255, 255, 0.03); cursor: not-allowed; opacity: 0.85;">
                   </div>
                 </div>
 
@@ -108,30 +110,6 @@
                   <div class="form-group">
                     <label class="form-label">PO / Supplier Ref #</label>
                     <input type="text" id="pe-order-no" class="form-input" placeholder="e.g. PO-2026-9901">
-                  </div>
-                </div>
-
-                <!-- Standardized Attachment Document Card (Settings & Quotation Parity) -->
-                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-top:12px;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">📎</span>
-                      <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Attachment Document</div>
-                    </div>
-                    <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
-                  </div>
-                  <div style="font-size:0.7rem; color:#64748b; margin-bottom:8px;">Proposal specification, vendor bill, or delivery challan scan &bull; Max 10MB</div>
-
-                  <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
-                    <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
-                    <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, DOC, XLS, PNG, JPG</div>
-                  </div>
-                  <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
-                  <div style="display:flex; gap:8px;">
-                    <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>👁 Preview</button>
-                    <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeEditorAttachment()" style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>
               </div>

@@ -135,7 +135,33 @@ window.RecordPaymentController = (function() {
         return;
       }
 
-      // 1. Dynamic UI Theme & Labels for SALE vs PURCHASE
+      // 1. Dismiss any open drawers and overlays
+      if (window.SalesController && typeof window.SalesController.closeInvoiceDrawer === 'function') {
+        window.SalesController.closeInvoiceDrawer();
+      }
+      ['sales-inline-drawer', 'drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('open'); el.style.display = 'none'; }
+      });
+      const ov = document.getElementById('side-drawer-overlay');
+      if (ov) ov.classList.remove('open');
+
+      // 2. Navigate to workspace FIRST to mount view-record-payment in DOM
+      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
+        await window.NavigationRouter.selectNav('view-record-payment');
+      } else {
+        document.querySelectorAll('.module-view').forEach(v => {
+          v.classList.remove('active');
+          v.style.display = 'none';
+        });
+        const v = document.getElementById('view-record-payment');
+        if (v) {
+          v.classList.add('active');
+          v.style.display = 'block';
+        }
+      }
+
+      // 3. Dynamic UI Theme & Labels for SALE vs PURCHASE
       const isPurchase = currentType === 'PURCHASE';
       const elPartyLabel = document.getElementById('rp-party-label');
       const elPartyName = document.getElementById('rp-party-name');
@@ -155,7 +181,7 @@ window.RecordPaymentController = (function() {
       if (elHistoryTitle) elHistoryTitle.innerText = isPurchase ? '⏱ Purchase Payment History' : '⏱ Payment History';
       if (elFormTitle) elFormTitle.innerText = isPurchase ? '💳 Record Supplier Payment' : '💳 Record New Payment';
 
-      // 2. Populate Overview Strip
+      // 4. Populate Overview Strip
       const elInvNo = document.getElementById('rp-inv-no');
       const elInvDate = document.getElementById('rp-inv-date');
       const elDueDate = document.getElementById('rp-due-date');
@@ -171,46 +197,20 @@ window.RecordPaymentController = (function() {
       if (elTopTotal) elTopTotal.innerText = formatMoney(invoiceTotal);
       if (elStatusBadge) elStatusBadge.innerHTML = getStatusBadge(status, extraDetails || { paymentStatus: status, dueDate, totalAmount: invoiceTotal, paidAmount: invoicePaid, balanceAmount: invoiceBalance });
 
-      // 3. Populate Summary Card
+      // 5. Populate Summary Card
       this.updateSummaryCard();
 
-      // 4. Load dynamic master lookups for Payment Mode and Bank Account
+      // 6. Load dynamic master lookups for Payment Mode and Bank Account
       await this.loadPaymentLookups();
 
-      // 5. Populate Form Defaults
+      // 7. Populate Form Defaults
       this.resetForm();
 
-      // 6. Reset Proof Attachment
+      // 8. Reset Proof Attachment
       this.resetProof();
 
-      // 7. Fully Paid Guard for Purchase Entry Card
+      // 9. Fully Paid Guard for Purchase Entry Card
       this.updatePaymentEntryAvailability();
-
-      // 8. Dismiss any open drawers and overlays
-      if (window.SalesController && typeof window.SalesController.closeInvoiceDrawer === 'function') {
-        window.SalesController.closeInvoiceDrawer();
-      }
-      ['sales-inline-drawer', 'drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.classList.remove('open'); el.style.display = 'none'; }
-      });
-      const ov = document.getElementById('side-drawer-overlay');
-      if (ov) ov.classList.remove('open');
-
-      // 9. Navigate to workspace
-      if (window.NavigationRouter && window.NavigationRouter.selectNav) {
-        window.NavigationRouter.selectNav('view-record-payment');
-      } else {
-        document.querySelectorAll('.module-view').forEach(v => {
-          v.classList.remove('active');
-          v.style.display = 'none';
-        });
-        const v = document.getElementById('view-record-payment');
-        if (v) {
-          v.classList.add('active');
-          v.style.display = 'block';
-        }
-      }
 
       // 10. Load Payment History from Server
       await this.refreshPayments();
@@ -498,45 +498,77 @@ window.RecordPaymentController = (function() {
 
       try {
         let modeList = [];
-        if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
-          const res = await window.MasterService.getLookupsByCategoryCode('PAYMENT_MODE').catch(() => []);
-          if (Array.isArray(res)) {
-            modeList = res.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+        if (window.MasterService) {
+          if (window.MasterService.getLookupsByCategoryCode) {
+            const res = await window.MasterService.getLookupsByCategoryCode('PAYMENT_MODE').catch(() => []);
+            if (Array.isArray(res) && res.length > 0) {
+              modeList = res.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+            }
+          }
+          if (modeList.length === 0 && window.MasterService.getLookups) {
+            let res = await window.MasterService.getLookups('PAYMENT_MODE').catch(() => []);
+            if (!res || !Array.isArray(res) || res.length === 0) {
+              res = await window.MasterService.getLookups('PAYMENT MODE').catch(() => []);
+            }
+            if (Array.isArray(res)) {
+              modeList = res.filter(l => l.active !== false && l.lookupValue).map(l => l.lookupValue.trim());
+            }
           }
         }
-        if (modeList.length === 0) {
-          modeList = ['Bank Transfer', 'Cash', 'Cheque', 'UPI', 'Card', 'Other'];
-        }
         if (modeSelect) {
-          modeSelect.innerHTML = modeList.map(m => `<option value="${m}" ${m === 'Bank Transfer' ? 'selected' : ''}>${m}</option>`).join('');
+          if (modeList.length > 0) {
+            const currentVal = modeSelect.value;
+            modeSelect.innerHTML = modeList.map(m => `<option value="${m}" ${m === currentVal || (!currentVal && m.toUpperCase().includes('BANK')) ? 'selected' : ''}>${m}</option>`).join('');
+          } else {
+            modeSelect.innerHTML = '<option value="">No payment modes configured in Master</option>';
+          }
           modeSelect.onchange = (e) => this.onPaymentModeChange(e.target.value);
         }
 
         let accountList = [];
-        if (window.MasterService && window.MasterService.getLookupsByCategoryCode) {
-          let res = await window.MasterService.getLookupsByCategoryCode('BANK').catch(() => []);
-          if (!res || !Array.isArray(res) || res.length === 0) {
-            res = await window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(() => []);
+        if (window.MasterService) {
+          if (window.MasterService.getLookupsByCategoryCode) {
+            let res = await window.MasterService.getLookupsByCategoryCode('BANK_ACCOUNT').catch(() => []);
+            if (!res || !Array.isArray(res) || res.length === 0) {
+              res = await window.MasterService.getLookupsByCategoryCode('BANK').catch(() => []);
+            }
+            if (Array.isArray(res)) {
+              res.forEach(l => {
+                if (l.active !== false && l.lookupValue) {
+                  const val = l.lookupValue.trim();
+                  const desc = l.description ? l.description.trim() : '';
+                  accountList.push(desc ? `${val} - ${desc}` : val);
+                }
+              });
+            }
           }
-          if (Array.isArray(res)) {
-            res.forEach(l => {
-              if (l.active !== false && l.lookupValue) {
-                const desc = l.description ? l.description.trim() : '';
-                accountList.push(desc ? `${l.lookupValue.trim()} - ${desc}` : l.lookupValue.trim());
-              }
-            });
+          if (accountList.length === 0 && window.MasterService.getLookups) {
+            let res = await window.MasterService.getLookups('BANK_ACCOUNT').catch(() => []);
+            if (!res || !Array.isArray(res) || res.length === 0) {
+              res = await window.MasterService.getLookups('BANK ACCOUNT').catch(() => []);
+            }
+            if (!res || !Array.isArray(res) || res.length === 0) {
+              res = await window.MasterService.getLookups('BANK').catch(() => []);
+            }
+            if (Array.isArray(res)) {
+              res.forEach(l => {
+                if (l.active !== false && l.lookupValue) {
+                  const val = l.lookupValue.trim();
+                  const desc = l.description ? l.description.trim() : '';
+                  accountList.push(desc ? `${val} - ${desc}` : val);
+                }
+              });
+            }
           }
-        }
-        if (accountList.length === 0) {
-          accountList = [
-            'Kotak Mahindra Bank - 0745362910',
-            'State Bank of India - 909999999',
-            'HDFC Bank - 50200012345678',
-            'ICICI Bank - 002405001234'
-          ];
         }
         if (bankSelect) {
-          bankSelect.innerHTML = accountList.map((a, i) => `<option value="${a}" ${i === 0 ? 'selected' : ''}>${a}</option>`).join('');
+          if (accountList.length > 0) {
+            const currentVal = bankSelect.value;
+            bankSelect.innerHTML = '<option value="">Select bank account...</option>' +
+              accountList.map(a => `<option value="${a}" ${a === currentVal ? 'selected' : ''}>${a}</option>`).join('');
+          } else {
+            bankSelect.innerHTML = '<option value="">No bank accounts configured in Master</option>';
+          }
         }
 
         this.onPaymentModeChange(modeSelect ? modeSelect.value : '');

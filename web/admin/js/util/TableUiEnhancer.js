@@ -140,7 +140,24 @@ window.TableUiEnhancer = (function() {
           // Preserve existing intentional text colors (e.g. red for pending, yellow for grand total)
           const hasExplicitColor = td.style.color || (td.getAttribute('style') || '').includes('color:');
           if (!hasExplicitColor) {
-            td.classList.add('cell-money-green');
+            const colIdx = Array.prototype.indexOf.call(row.children, td);
+            const th = table.querySelector(`thead th:nth-child(${colIdx + 1})`);
+            const hText = th ? (th.innerText || th.textContent || '').toLowerCase() : '';
+            const numVal = parseFloat(rawText.replace(/[^0-9.-]/g, '')) || 0;
+
+            if (hText.includes('paid') || hText.includes('received') || hText.includes('credit') || hText.includes('inflow') || hText.includes('settled')) {
+              td.classList.add('cell-money-green');
+            } else if (hText.includes('pending') || hText.includes('balance') || hText.includes('due') || hText.includes('outflow') || hText.includes('debit') || hText.includes('unpaid')) {
+              if (numVal > 0) {
+                td.classList.add('cell-money-yellow');
+              } else {
+                td.classList.add('cell-money-green');
+              }
+            } else if (hText.includes('total') || hText.includes('net') || hText.includes('grand') || hText.includes('subtotal')) {
+              td.classList.add('cell-money-cyan');
+            } else {
+              td.classList.add('cell-money-green');
+            }
           }
           td.style.textAlign = 'right';
           td.style.fontFamily = "'Space Grotesk', monospace";

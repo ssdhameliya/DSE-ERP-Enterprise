@@ -452,8 +452,13 @@ window.NavigationRouter = (function() {
           if (window.ReturnsController) window.ReturnsController.loadReturns('PURCHASE RETURN');
           break;
         case 'view-record-payment':
-          if (window.RecordPaymentController && window.RecordPaymentController.refreshPayments) {
-            window.RecordPaymentController.refreshPayments();
+          if (window.RecordPaymentController) {
+            if (typeof window.RecordPaymentController.loadPaymentLookups === 'function') {
+              window.RecordPaymentController.loadPaymentLookups();
+            }
+            if (typeof window.RecordPaymentController.refreshPayments === 'function') {
+              window.RecordPaymentController.refreshPayments();
+            }
           }
           break;
         case 'view-credit-notes':
@@ -569,6 +574,11 @@ window.NavigationRouter = (function() {
         case 'view-notifications':
         case 'view-notifications-center':
           if (window.NotificationCenterController) window.NotificationCenterController.loadNotifications();
+          break;
+        case 'view-record-payment':
+          if (window.RecordPaymentController && window.RecordPaymentController.loadPaymentLookups) {
+            window.RecordPaymentController.loadPaymentLookups();
+          }
           break;
       }
 
