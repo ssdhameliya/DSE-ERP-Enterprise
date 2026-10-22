@@ -350,12 +350,11 @@ window.App = (function() {
       if (!window.AuthService.isAuthenticated()) {
         this.showAuthOverlay();
       } else {
-        // Initialize initial controller data with real backend
-        await window.DashboardController.refresh();
-        await window.ItemMasterController.loadItems();
-        await window.ItemMasterController.loadInventory();
-        await window.PartyController.loadCustomers();
-        await window.PartyController.loadSuppliers();
+        // Initialize active controller data with real backend based on requested view
+        const activeView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : 'view-dashboard';
+        if (activeView === 'view-dashboard' && window.DashboardController) {
+          await window.DashboardController.refresh();
+        }
       }
     },
 
@@ -657,19 +656,37 @@ window.handlePostLoginSuccess = async function(user, remember, identity, selecte
   // Role-based landing navigation (with forceLifecycle = true so landing view always mounts)
   const normalizedRole = String(userRole || '').toUpperCase();
   if (window.NavigationRouter) {
-    let landingView = 'view-dashboard';
-    if (normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER') {
-      landingView = 'view-dashboard';
-    } else if (normalizedRole === 'SALES') {
-      landingView = 'view-sales-register';
-    } else if (normalizedRole === 'PURCHASE') {
-      landingView = 'view-purchase-register';
-    } else if (normalizedRole === 'STORE' || normalizedRole === 'STOREKEEPER' || normalizedRole === 'WAREHOUSE') {
-      landingView = 'view-item-master';
-    } else if (normalizedRole === 'ACCOUNTANT' || normalizedRole === 'FINANCE') {
-      landingView = 'view-general-ledger';
-    } else {
-      landingView = 'view-profile';
+    let landingView = null;
+    // Check if user requested a specific sub-route via URL hash
+    if (window.location.hash) {
+      const rawHash = window.location.hash.split('?')[0].replace(/^#\/?/, '');
+      if (rawHash) {
+        let cand = rawHash.startsWith('view-') ? rawHash : ('view-' + rawHash);
+        if (rawHash === 'purchase' || rawHash === 'purchases') cand = 'view-purchase-register';
+        if (rawHash === 'sales' || rawHash === 'sale') cand = 'view-sales-register';
+        if (rawHash === 'items' || rawHash === 'item') cand = 'view-item-master';
+        if (rawHash === 'customers' || rawHash === 'customer') cand = 'view-customers';
+        if (rawHash === 'suppliers' || rawHash === 'supplier') cand = 'view-suppliers';
+        if (document.getElementById(cand)) {
+          landingView = cand;
+        }
+      }
+    }
+
+    if (!landingView) {
+      if (normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER') {
+        landingView = 'view-dashboard';
+      } else if (normalizedRole === 'SALES') {
+        landingView = 'view-sales-register';
+      } else if (normalizedRole === 'PURCHASE') {
+        landingView = 'view-purchase-register';
+      } else if (normalizedRole === 'STORE' || normalizedRole === 'STOREKEEPER' || normalizedRole === 'WAREHOUSE') {
+        landingView = 'view-item-master';
+      } else if (normalizedRole === 'ACCOUNTANT' || normalizedRole === 'FINANCE') {
+        landingView = 'view-general-ledger';
+      } else {
+        landingView = 'view-profile';
+      }
     }
     window.NavigationRouter.selectNav(landingView, true, true);
   }

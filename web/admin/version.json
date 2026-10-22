@@ -1,17 +1,18 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 2,
-  "webVersion": "10.0.41.02",
-  "tag": "web-v10.0.41.02",
-  "releaseDate": "2026-10-22T09:00:00+05:30",
+  "webBuild": 3,
+  "webVersion": "10.0.41.03",
+  "tag": "web-v10.0.41.03",
+  "releaseDate": "2026-10-22T22:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.02 Universal Zero-FOUC Refresh Architecture: pre-paint route, branding, clock, badges, footer, and workspace-tab hydration",
+  "summary": "10.0.41.03 Dynamic Navigation Architecture & Zero-Collision Route Management: early-route cleanup, brand duplication fix, active-only demand load, hash preservation, and 58px ribbon pre-render",
   "highlights": [
-    "1. Universal Zero-Flash Routing: Synchronous pre-paint route resolution in <head> guarantees that refreshing on any screen (Purchase, Bank, Sales, Quotations, Items, etc.) renders the target view from frame 0 with zero dashboard flash.",
-    "2. Immediate Clock & Footer Hydration: Live clock starts in <head> before fonts or any script loads. Footer populates from localStorage on parse, never showing hardcoded placeholder dates or company names.",
-    "3. Badge Zero-State Desktop Parity: All 4 header action badges (Reminders, Notifications, Email, WhatsApp) start completely hidden (display:none) matching Desktop applyBadge(count > 0) contract.",
-    "4. Dynamic Company Branding: Header brand-title hydrates from localStorage[dse_branding] synchronously before Frame 0 paint - zero JASVI INDUSTRIES flash on any refresh.",
-    "5. Workspace Tabs & Page Title Pre-Hydration: Active module title, breadcrumb, and tab bar rendered before JS execution.",
-    "6. DOMContentLoaded Boot Acceleration: App.init() migrated from window.load to DOMContentLoaded for 50-100ms faster initialization."
+    "1. Seamless Client-Side Navigation: NavigationRouter removes early pre-paint route style upon boot, eliminating the !important CSS lockout that forced users to refresh between screen visits.",
+    "2. Header Brand Doubling Fix: Removed ::before CSS pseudo-element injection in head so company name hydrates exclusively via DOM textContent without text duplication.",
+    "3. Active-Route Demand-Driven Loading: App.init() replaces sequential 5-module preload with active-view-only lifecycle dispatch, eliminating startup UI freeze and bandwidth contention.",
+    "4. Post-Login Hash Route Preservation: handlePostLoginSuccess() inspects window.location.hash first, redirecting users to their targeted module instead of defaulting to Dashboard.",
+    "5. Currency Symbol Corruption Fix: Fixed snapshot cache restore script to use Unicode escape sequence \\u20B9, rendering clean Indian Rupee symbols across all dashboard cards.",
+    "6. Native 58px Ribbon KPI Pre-Render: Dashboard KPI cards pre-rendered using compact ribbon markup matching Desktop ResponsiveKpiLayoutManager, eliminating layout shift on initial paint.",
+    "7. Full Version Display Parity: Login version badge updated to Version 10.0.41.03, and header version badge made visible per prinical.md Rule 4."
   ]
 }

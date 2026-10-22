@@ -124,6 +124,12 @@ window.NavigationRouter = (function() {
       try {
         if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
 
+        // Remove early pre-paint route style so dynamic view navigation is not blocked by !important rules
+        const earlyStyle = document.getElementById('early-route-style');
+        if (earlyStyle) {
+          earlyStyle.remove();
+        }
+
         // Strictly hide all views and remove active class
         document.querySelectorAll('.module-view, .view-section').forEach(sec => {
           sec.classList.remove('active');
@@ -569,6 +575,12 @@ window.NavigationRouter = (function() {
     },
 
     init() {
+      // Remove early pre-paint route style so dynamic view navigation is not blocked by !important rules
+      const earlyStyle = document.getElementById('early-route-style');
+      if (earlyStyle) {
+        earlyStyle.remove();
+      }
+
       let initialView = 'view-dashboard';
       if (window.location.hash) {
         const clean = window.location.hash.replace('#', '');

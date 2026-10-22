@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19,21 +19,6 @@
         if (!token) {
           document.documentElement.classList.add('auth-required');
         } else {
-          /* --- Pre-paint synchronous branding hydration (Desktop BrandingService parity) --- */
-          var _br = localStorage.getItem('dse_branding');
-          if (_br) {
-            try {
-              var _bd = JSON.parse(_br);
-              var _cn = _bd.companyName || _bd.company_name || _bd.name || '';
-              if (_cn) {
-                var _bs = document.createElement('style');
-                _bs.id = 'early-brand-style';
-                _bs.textContent = '#header-brand-title::before{content:"' + _cn.replace(/"/g, '\\"').toUpperCase() + '";}';
-                document.head.appendChild(_bs);
-              }
-            } catch (_b) {}
-          }
-
           /* --- Immediate Route Resolution (Desktop Shell parity - Frame 0) --- */
           var rawHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
           var viewKey = rawHash || 'dashboard';
@@ -73,7 +58,7 @@
       visibility: visible !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.02">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.03">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -283,7 +268,7 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.01</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.03</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v10.0.41</div>
         </div>
@@ -629,7 +614,7 @@
           <div class="brand-title" id="header-brand-title"></div>
         </div>
         <span id="env-badge" style="display: none;"></span>
-        <span id="header-app-version-badge" style="display: none;">v10.0.41.02</span>
+        <span id="header-app-version-badge" style="display: inline-flex; align-items: center; background: rgba(56, 189, 248, 0.12); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">v10.0.41.03</span>
         <div
           style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title"
@@ -739,7 +724,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.02</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.03</span></div>
           </div>
         </div>
       </div>
@@ -1094,65 +1079,79 @@
             </div>
           </div>
 
-          <!-- Top 6 KPI Cards (Image 1) -->
-          <div class="dash-kpi-row-6">
+          <!-- Top 6 KPI Cards (Desktop Parity 58px Ribbon) -->
+          <div class="dash-kpi-row-6 compact-kpi-ribbon" style="display: flex; gap: 8px; margin-bottom: 14px; width: 100%;">
             <!-- 1. Active Sales -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-sales-register')"
-              title="View Sales Register">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128196; Active Sales</span>
-                <span class="dash-kpi-badge green">+3.4%</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-emerald" onclick="selectNav('view-sales-register')"
+              title="Active Sales: ₹ 0.00 (+3.4%)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #10b981;">🛒</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Active Sales</span>
+                  <span class="kpi-pill-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">+3.4%</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-sales-amount" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-sales-amount">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-sales-count">0</span> active sales invoices</div>
             </div>
             <!-- 2. Active Purchases -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-purchase-register')"
-              title="View Purchase Register">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128230; Active Purchases</span>
-                <span class="dash-kpi-badge grey">Active</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-indigo" onclick="selectNav('view-purchase-register')"
+              title="Active Purchases: ₹ 0.00 (Active)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #6366f1;">📦</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Active Purchases</span>
+                  <span class="kpi-pill-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Active</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-pur-amount" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-pur-amount">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-pur-count">0</span> active purchase invoices</div>
             </div>
             <!-- 3. Receivables -->
-            <div class="dash-kpi-card clickable-kpi" onclick="window.navigateToReceivableSales()"
-              title="View Receivable Sales Invoices">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128179; Receivables</span>
-                <span class="dash-kpi-badge amber">Pending</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-amber" onclick="window.navigateToReceivableSales()"
+              title="Receivables: ₹ 0.00 (Pending)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #f59e0b;">⏳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Receivables</span>
+                  <span class="kpi-pill-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Pending</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-receivables" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-receivables">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-receivables-count">0</span> open sales invoices</div>
             </div>
             <!-- 4. Payables -->
-            <div class="dash-kpi-card clickable-kpi" onclick="window.navigateToPayablePurchases()"
-              title="View Payable Purchase Bills">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128184; Payables</span>
-                <span class="dash-kpi-badge red">Payable</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-crimson" onclick="window.navigateToPayablePurchases()"
+              title="Payables: ₹ 0.00 (Payable)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #ef4444;">💳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Payables</span>
+                  <span class="kpi-pill-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Payable</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-payables" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-payables">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-payables-count">0</span> open purchase invoices</div>
             </div>
             <!-- 5. Cash Position -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-bank-entry')" title="View Bank Entry">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128176; Cash Position</span>
-                <span class="dash-kpi-badge green">Net Cash</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-teal" onclick="selectNav('view-bank-entry')"
+              title="Cash Position: ₹ 0.00 (Net Cash)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(20, 184, 166, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #14b8a6;">💰</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Cash Position</span>
+                  <span class="kpi-pill-badge" style="background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Net Cash</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-cash-position" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">₹ 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-cash-position">&#8377; 0.00</div>
-              <div class="dash-kpi-sub">Received less paid and expenses</div>
             </div>
             <!-- 6. Low Stock -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-item-master')" title="View Item Master">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#9888; Low Stock</span>
-                <span class="dash-kpi-badge amber">Alert</span>
+            <div class="dash-kpi-card compact-kpi-card clickable-kpi theme-amber" onclick="selectNav('view-item-master')"
+              title="Low Stock: 0 (Healthy)" style="flex-direction: row; align-items: center; flex: 1 1 0px; min-width: 0px; max-width: 100%; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; overflow: hidden; display: flex; padding: 0 12px; gap: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); cursor: pointer;">
+              <div class="kpi-icon-bubble" style="width: 36px; height: 36px; min-width: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #f59e0b;">⚠️</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;font-weight:600;color:var(--text-muted);">Low Stock</span>
+                  <span class="kpi-pill-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.65rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Healthy</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-low-stock" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem;font-weight:800;font-family:'Space Grotesk';color:var(--text-main);">0</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-low-stock">0</div>
-              <div class="dash-kpi-sub">Stock levels healthy</div>
             </div>
           </div>
 
@@ -1315,7 +1314,7 @@
               var d = JSON.parse(raw);
               if (d.snapshot) {
                 var s = d.snapshot;
-                var fmt = function (v) { return 'â‚¹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var fmt = function (v) { return '\u20B9 ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
                 var sa = document.getElementById('dash-kpi-sales-amount'); if (sa) sa.textContent = fmt(s.salesValue);
                 var sc = document.getElementById('dash-kpi-sales-count'); if (sc) sc.textContent = s.invoices || 0;
                 var pa = document.getElementById('dash-kpi-pur-amount'); if (pa) pa.textContent = fmt(s.purchaseValue);
@@ -1337,7 +1336,7 @@
               }
               if (d.ageing) {
                 var a = d.ageing;
-                var fmt2 = function (v) { return 'â‚¹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var fmt2 = function (v) { return '\u20B9 ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
                 var eo = document.getElementById('dash-ageing-overdue'); if (eo) eo.textContent = fmt2(a.overdue30);
                 var e21 = document.getElementById('dash-ageing-21-30'); if (e21) e21.textContent = fmt2(a.b21_30);
                 var e11 = document.getElementById('dash-ageing-11-20'); if (e11) e11.textContent = fmt2(a.b11_20);
@@ -17512,75 +17511,75 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.02"></script>
+  <script src="js/version.js?v=10.0.41.03"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.02"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.02"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.02"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.02"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.02"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.02"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.02"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.02"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.02"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.02"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.02"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.02"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.02"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.02"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.02"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.02"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.02"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.02"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.02"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.02"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.02"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.03"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.03"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.03"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.03"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.03"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.03"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.03"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.03"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.03"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.03"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.03"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.03"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.03"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.03"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.03"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.03"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.03"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.03"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.03"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.03"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.03"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.02"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.02"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.02"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.02"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.02"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.02"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.02"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.02"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.02"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.02"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.03"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.03"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.03"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.03"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.03"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.03"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.03"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.03"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.03"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.03"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.02"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.03"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.03"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.02"></script>
-  <script src="js/app.js?v=10.0.41.02"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.03"></script>
+  <script src="js/app.js?v=10.0.41.03"></script>
 </body>
 
 </html>
