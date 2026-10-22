@@ -1,7 +1,7 @@
 <div id="view-expense-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">â‚¹</span>
+              <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">₹</span>
               <div>
                 <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="exp-view-title">Expense
                   Entry</h1>
@@ -13,17 +13,17 @@
             <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
               <button class="btn btn-secondary" id="btnBankModeExp" onclick="window.FinanceController.loadBankMode()"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ¦</span> Bank Entry
+                <span>🏦</span> Bank Entry
               </button>
               <button class="btn btn-primary" id="btnExpenseModeExp"
                 onclick="window.FinanceController.loadExpenseMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ’¸</span> Expense Entry
+                <span>💸</span> Expense Entry
               </button>
               <button class="btn btn-secondary" id="btnBankReconExp"
                 onclick="window.NavigationRouter.selectNav('view-bank-statement')"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ“‘</span> Bank Reconciliation
+                <span>📑</span> Bank Reconciliation
               </button>
             </div>
           </div>
@@ -41,7 +41,7 @@
                 <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
               </div>
               <div class="kpi-value" id="exp-kpi-month" style="font-size: 1.2rem; font-weight: 800; color: var(--red);">
-                â‚¹ 0.00</div>
+                ₹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-month-meta"
                 style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">0 entries</div>
             </div>
@@ -55,7 +55,7 @@
                 <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
               </div>
               <div class="kpi-value" id="exp-kpi-total"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">â‚¹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-total-meta"
                 style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Year to date</div>
             </div>
@@ -84,7 +84,7 @@
                 <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
               </div>
               <div class="kpi-value" id="exp-kpi-cash" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">
-                â‚¹ 0.00</div>
+                ₹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-cash-meta"
                 style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
@@ -98,7 +98,7 @@
                 placeholder="Search voucher, payee, head, description..."
                 oninput="window.FinanceController.applyFinanceFilters()">
               <span
-                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
+                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
             </div>
             <select id="exp-category-filter" class="form-select"
               onchange="window.FinanceController.applyFinanceFilters()"
@@ -131,7 +131,7 @@
                     <th>Payee / Paid To</th>
                     <th>Mode</th>
                     <th>Voucher #</th>
-                    <th style="text-align: right;">Amount (â‚¹)</th>
+                    <th style="text-align: right;">Amount (₹)</th>
                     <th>Match / Link</th>
                     <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
@@ -179,7 +179,7 @@
                 <div
                   style="padding: 10px 12px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.75rem; color: var(--red); font-weight: 700;">DISBURSED AMOUNT:</span>
-                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">â‚¹ 0.00</span>
+                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">₹ 0.00</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                   <div style="display: flex; justify-content: space-between;"><span
@@ -199,17 +199,17 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">ðŸ“œ View
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">📜 View
                   In GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">ðŸ“‹
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">📋
                   Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">âœï¸ Edit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">✏️ Edit
                   Expense</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()"
-                  style="color: #f87171;">ðŸ—‘ï¸ Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">ðŸ–¨ï¸
+                  style="color: #f87171;">🗑️ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">🖨️
                   Print Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">âœ–
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">✖
                   Close</button>
               </div>
             </div>

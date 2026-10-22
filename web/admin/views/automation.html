@@ -70,7 +70,7 @@
                 <span class="pill-badge pill-purple" style="font-size:0.65rem; padding:1px 6px;">Reorder</span>
               </div>
               <div class="kpi-value" id="auto-kpi-replenish-value"
-                style="font-size:1.35rem; color:var(--purple); font-weight:700;">â‚¹ 0.00</div>
+                style="font-size:1.35rem; color:var(--purple); font-weight:700;">₹ 0.00</div>
               <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Suggested Reorder Value</div>
             </div>
           </div>
@@ -118,10 +118,10 @@
                         <th>Vendor Bill No.</th>
                         <th>PO Number</th>
                         <th>Supplier Name</th>
-                        <th style="text-align:right;">PO Value (â‚¹)</th>
-                        <th style="text-align:right;">GRN Received (â‚¹)</th>
-                        <th style="text-align:right;">Billed Value (â‚¹)</th>
-                        <th style="text-align:right;">Variance (â‚¹)</th>
+                        <th style="text-align:right;">PO Value (₹)</th>
+                        <th style="text-align:right;">GRN Received (₹)</th>
+                        <th style="text-align:right;">Billed Value (₹)</th>
+                        <th style="text-align:right;">Variance (₹)</th>
                         <th style="text-align:center;">Match Status</th>
                         <th style="text-align:center;">Actions</th>
                       </tr>
@@ -164,39 +164,39 @@
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">PO Value:</div>
                         <div id="amd-po-amt"
-                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">₹ 0.00
                         </div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">GRN Received:</div>
                         <div id="amd-grn-amt"
-                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">₹ 0.00
                         </div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Billed Value:</div>
                         <div id="amd-bill-amt"
-                          style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                          style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Variance:</div>
                         <div id="amd-variance"
-                          style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                          style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
                       </div>
                     </div>
                   </div>
                   <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     <button class="btn btn-primary btn-sm"
-                      onclick="window.AutomationCenterController.drawerOpenBill()">ðŸ“– Open Bill</button>
+                      onclick="window.AutomationCenterController.drawerOpenBill()">📖 Open Bill</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerSupplierLedger()">ðŸ‘¤ Supplier</button>
+                      onclick="window.AutomationCenterController.drawerSupplierLedger()">👤 Supplier</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerAuditTimeline()">ðŸ“‹ Audit Log</button>
+                      onclick="window.AutomationCenterController.drawerAuditTimeline()">📋 Audit Log</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.closeMatchDrawer()">âœ– Close</button>
+                      onclick="window.AutomationCenterController.closeMatchDrawer()">✖ Close</button>
                   </div>
                 </div>
               </div>
@@ -232,7 +232,7 @@
                         <th style="text-align:right;">Min Stock</th>
                         <th style="text-align:right;">Suggested Qty</th>
                         <th style="text-align:center;">Unit</th>
-                        <th style="text-align:right;">Estimated Cost (â‚¹)</th>
+                        <th style="text-align:right;">Estimated Cost (₹)</th>
                         <th style="text-align:center;">Stock Status</th>
                         <th style="text-align:center;">Actions</th>
                       </tr>
@@ -286,19 +286,19 @@
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Estimated Cost:</div>
                         <div id="ard-est-cost"
-                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
+                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
                       </div>
                     </div>
                   </div>
                   <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     <button class="btn btn-primary btn-sm"
-                      onclick="window.AutomationCenterController.drawerCreatePo()">âž• Create PO</button>
+                      onclick="window.AutomationCenterController.drawerCreatePo()">➕ Create PO</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerOpenStockRegister()">ðŸ“¦ Stock Ledger</button>
+                      onclick="window.AutomationCenterController.drawerOpenStockRegister()">📦 Stock Ledger</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerItemMaster()">ðŸ·ï¸ Item Master</button>
+                      onclick="window.AutomationCenterController.drawerItemMaster()">🏷️ Item Master</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.closeReorderDrawer()">âœ– Close</button>
+                      onclick="window.AutomationCenterController.closeReorderDrawer()">✖ Close</button>
                   </div>
                 </div>
               </div>

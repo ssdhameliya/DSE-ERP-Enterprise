@@ -84,20 +84,7 @@ window.TableUiEnhancer = (function() {
       th.dataset.erpHeaderEnhanced = 'true';
       th.classList.add(`erp-th-theme-${sem.colour}`);
 
-      const originalHtml = th.innerHTML.trim();
-      // Strip any existing icons or emojis from label so we never produce duplicate icons
-      const cleanLabel = originalHtml.replace(/<span class="erp-th-icon">[\s\S]*?<\/span>/gi, '')
-                                     .replace(/^[\p{Emoji}\u2000-\u3300\s]+/gu, '')
-                                     .trim() || sem.label;
-      // Only decorate if it does not already have an erp-th-badge
-      if (!th.querySelector('.erp-th-badge')) {
-        th.innerHTML = `
-          <div class="erp-th-badge erp-th-${sem.colour}">
-            <span class="erp-th-icon">${sem.icon}</span>
-            <span class="erp-th-label">${cleanLabel}</span>
-          </div>
-        `;
-      }
+      // Do NOT rewrite th.innerHTML into pill badges; preserve clean, stable table headers across refresh
     });
   }
 

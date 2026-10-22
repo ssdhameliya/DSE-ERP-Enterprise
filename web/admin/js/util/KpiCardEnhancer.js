@@ -202,8 +202,12 @@ window.KpiCardEnhancer = (function() {
     if (card.dataset.erpKpiCompactEnhanced === 'true') return;
     card.dataset.erpKpiCompactEnhanced = 'true';
 
-    if (card.classList.contains('compact-kpi-card') && card.querySelector('.kpi-content-box')) {
-      // Already has native compact ribbon structure; preserve markup to avoid layout jump on refresh
+    // Strict Desktop Parity Preservation:
+    // If card already has structured HTML (.kpi-label, .kpi-sub, .kpi-content-box, or .dash-kpi-val),
+    // NEVER overwrite innerHTML! Preserving developer markup prevents layout jumps between refresh and dynamic navigation.
+    if (card.querySelector('.kpi-label, .kpi-sub, .kpi-content-box, .dash-kpi-val, .metric-label')) {
+      card.style.flex = '1 1 0';
+      card.style.minWidth = '0';
       return;
     }
 

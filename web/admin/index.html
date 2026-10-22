@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.04">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.05">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -211,7 +211,7 @@
         if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Creation';
       } else if (tab === 'register') {
         if (cardTitle) cardTitle.innerText = 'Create New Account';
-        if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA â†’ Email OTP â†’ Authenticator â†’ Admin approval';
+        if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA &rarr; Email OTP &rarr; Authenticator &rarr; Admin approval';
         if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
         if (window.loadRegistrationRoles) window.loadRegistrationRoles();
       } else if (tab === 'forgot') {
@@ -291,7 +291,7 @@
         <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.04</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.05</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v10.0.41</div>
         </div>
@@ -637,7 +637,7 @@
           <div class="brand-title" id="header-brand-title"></div>
         </div>
         <span id="env-badge" style="display: none;"></span>
-        <span id="header-app-version-badge" style="display: inline-flex; align-items: center; background: rgba(56, 189, 248, 0.12); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">v10.0.41.04</span>
+        <span id="header-app-version-badge" style="display: inline-flex; align-items: center; background: rgba(56, 189, 248, 0.12); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">v10.0.41.05</span>
         <div
           style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title"
@@ -747,7 +747,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.04</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.05</span></div>
           </div>
         </div>
       </div>
@@ -766,10 +766,10 @@
           if (isLight) {
             if (document.body) document.body.classList.add('light-theme');
             var ti = document.getElementById('theme-icon'), tt = document.getElementById('theme-text');
-            if (ti) ti.textContent = 'â˜€ï¸';
+            if (ti) ti.textContent = '&#9728;&#65039;';
             if (tt) tt.textContent = 'Light';
             var li = document.getElementById('login-theme-icon'), lt = document.getElementById('login-theme-text');
-            if (li) li.textContent = 'ðŸŒ™';
+            if (li) li.textContent = '&#127769;';
             if (lt) lt.textContent = 'Dark Mode';
           }
           var rawUser = localStorage.getItem('dse_user_info') || localStorage.getItem('dse_user');
@@ -1201,9 +1201,8 @@
           }
         }
 
-        /* Start footer clock immediately */
+        /* Initial footer clock frame-0 seed (FormatUtil manages ticking once loaded) */
         _hydFooterClock();
-        setInterval(_hydFooterClock, 1000);
 
         /* Hydrate company info after DOM ready */
         if (document.readyState !== 'loading') {
@@ -2157,14 +2156,14 @@
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-sale-summary"
-        onclick="window.SalesController.switchDrawerTab('summary')">ðŸ“Œ Summary</button>
+        onclick="window.SalesController.switchDrawerTab('summary')">&#128207;Œ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-items"
-        onclick="window.SalesController.switchDrawerTab('items')">ðŸ“¦ Consignment Items</button>
+        onclick="window.SalesController.switchDrawerTab('items')">&#128207;¦ Consignment Items</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-payments"
-        onclick="window.SalesController.switchDrawerTab('payments')">ðŸ’³ Payments &amp; Allocations</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">â—·
+        onclick="window.SalesController.switchDrawerTab('payments')">&#128179; Payments &amp; Allocations</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">&#9671;
         Audit Trail</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">ðŸ“‘
+      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">&#128207;‘
         Documents &amp; Actions</button>
     </div>
 
@@ -2201,7 +2200,7 @@
               <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;">GSTIN: <span id="drawer-cust-gstin"
                   style="font-family: monospace;">-</span></div>
               <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Contact: <span
-                  id="drawer-cust-phone">-</span> â€¢ <span id="drawer-cust-email">-</span></div>
+                  id="drawer-cust-phone">-</span> &bull; <span id="drawer-cust-email">-</span></div>
             </div>
             <div>
               <div class="drawer-label">Billing Address</div>
@@ -2365,10 +2364,10 @@
               GST-compliant Tax Invoice formatted via canonical desktop engine.</p>
             <div style="display: flex; gap: 8px;">
               <button class="btn btn-primary"
-                onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">ðŸ‘ï¸
+                onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128065;&#65039;
                 View / Print PDF</button>
               <button class="btn btn-secondary"
-                onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">â¬‡ï¸
+                onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">&#11015;&#65039;
                 Download</button>
             </div>
           </div>
@@ -2378,7 +2377,7 @@
             <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate Code-128 dispatch label
               barcode for carton tracking and delivery logistics.</p>
             <button class="btn btn-secondary"
-              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">ðŸ“¦
+              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">&#128207;¦
               Print Dispatch Barcode</button>
           </div>
         </div>
@@ -2391,7 +2390,7 @@
             <input type="file" id="drawer-sale-attachment-input" style="display:none;"
               onchange="window.SalesController.handleAttachmentUpload(event)" />
             <button class="btn btn-secondary"
-              onclick="document.getElementById('drawer-sale-attachment-input').click()">ðŸ“Ž Attach File (PDF /
+              onclick="document.getElementById('drawer-sale-attachment-input').click()">&#128207;Ž Attach File (PDF /
               Images)</button>
           </div>
         </div>
@@ -2404,14 +2403,14 @@
         <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING APPROVAL:</span>
         <button class="btn btn-primary"
           style="background:var(--green); border-color:var(--green); font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.approveSelectedSale()">âœ” Approve</button>
+          onclick="window.SalesController.approveSelectedSale()">&#10004; Approve</button>
         <button class="btn btn-danger" style="font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.rejectSelectedSale()">âœ– Reject</button>
+          onclick="window.SalesController.rejectSelectedSale()">&#10006; Reject</button>
       </div>
       <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">â—· Full Audit</button>
+      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">&#9671; Full Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);"
-        onclick="window.SalesController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
+        onclick="window.SalesController.recordPaymentForCurrentDrawer()">&#128179; Record Payment</button>
       <button class="btn btn-primary"
         onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196;
         Print Tax Invoice</button>
@@ -2438,15 +2437,15 @@
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-pur-summary"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">ðŸ“Œ Summary</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">&#128207;Œ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-items"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">ðŸ“¦ Inward Items</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">&#128207;¦ Inward Items</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-payments"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">ðŸ’³ Outflow Payments</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">&#128179; Outflow Payments</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-audit"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">â—· Audit Trail</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">&#9671; Audit Trail</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-docs"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">ðŸ“‘ Documents &amp; Proof</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">&#128207;‘ Documents &amp; Proof</button>
     </div>
 
     <div class="drawer-body">
@@ -2593,10 +2592,10 @@
             voucher generated directly from the canonical desktop engine.</p>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-primary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">ðŸ‘ï¸
+              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128065;&#65039;
               View / Print Bill</button>
             <button class="btn btn-secondary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">â¬‡ï¸
+              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#11015;&#65039;
               Download</button>
           </div>
         </div>
@@ -2606,9 +2605,9 @@
     <!-- DRAWER ACTION FOOTER -->
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">â—· Audit</button>
+      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">&#9671; Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);"
-        onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
+        onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">&#128179; Record Payment</button>
       <button class="btn btn-primary"
         onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196;
         Print Inward Bill</button>
@@ -2622,7 +2621,7 @@
       <div class="modal-header">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem; color: var(--cyan);">â—·</span>
+            <span style="font-size: 1.2rem; color: var(--cyan);">&#9671;</span>
             <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;">Audit Trail &amp;
               Activity History</h3>
           </div>
@@ -2672,7 +2671,7 @@
       <div class="modal-header">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem; color: var(--green);">ðŸ’¸</span>
+            <span style="font-size: 1.2rem; color: var(--green);">&#128184;</span>
             <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;"
               id="rr-modal-title">Record Return Refund / Settlement</h3>
           </div>
@@ -2777,7 +2776,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
             <div class="form-group">
-              <label class="form-label" style="font-size:0.78rem;" id="rr-label-amount">Refund Amount (â‚¹) *</label>
+              <label class="form-label" style="font-size:0.78rem;" id="rr-label-amount">Refund Amount (&#8377;) *</label>
               <input type="number" id="rr-amount" class="form-input" step="0.01" min="0.01" required
                 oninput="window.ReturnsController.updateRefundPreview()"
                 style="font-size: 1.1rem; font-weight: 700; color: var(--green);" />
@@ -2804,7 +2803,7 @@
             <button type="button" class="btn btn-secondary"
               onclick="window.ReturnsController.resetRefundForm()">Reset</button>
             <button type="submit" id="btn-save-return-refund" class="btn btn-primary"
-              style="background: var(--green); border-color: var(--green);">ðŸ’¾ Save &amp; Record Refund</button>
+              style="background: var(--green); border-color: var(--green);">&#128190; Save &amp; Record Refund</button>
           </div>
         </form>
 
@@ -4532,7 +4531,7 @@
   <div id="modal-select-bank-account" class="modal-backdrop" style="display:none;">
     <div class="modal-card" style="max-width:480px;">
       <div class="modal-header">
-        <h3 style="margin:0;">ðŸ¦ Select Bank Account</h3>
+        <h3 style="margin:0;">&#127974; Select Bank Account</h3>
         <button class="modal-close"
           onclick="window.BankStatementController.closeModal('modal-select-bank-account')">&times;</button>
       </div>
@@ -4569,7 +4568,7 @@
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>ðŸ“‚</span> Bank Statement History
+            <span>&#128207;‚</span> Bank Statement History
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Browse previously imported statement batches, inspect reconciliation progress, or delete imports.
@@ -4642,7 +4641,7 @@
   <div id="modal-statement-delete-confirm" class="modal-backdrop" style="display:none;">
     <div class="modal-card" style="max-width:520px;">
       <div class="modal-header">
-        <h3 id="msdc-title" style="margin:0; color:#f87171;">ðŸ—‘ï¸ Delete Bank Statement?</h3>
+        <h3 id="msdc-title" style="margin:0; color:#f87171;">&#128465;&#65039; Delete Bank Statement?</h3>
         <button class="modal-close"
           onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">&times;</button>
       </div>
@@ -4657,13 +4656,13 @@
               Analysis:</div>
             <div id="msdc-impact-metrics"
               style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem; color:var(--text-main, #1e293b); margin-bottom:10px;">
-              <div>â€¢ Total Transactions: <strong id="msdc-metric-total" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>â€¢ Matched / Linked: <strong id="msdc-metric-matched" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>â€¢ Expense Entries: <strong id="msdc-metric-expenses" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>â€¢ Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>&bull; Total Transactions: <strong id="msdc-metric-total" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>&bull; Matched / Linked: <strong id="msdc-metric-matched" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>&bull; Expense Entries: <strong id="msdc-metric-expenses" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>&bull; Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
             </div>
             <div style="font-size:0.75rem; color:#dc2626; line-height:1.4;">
-              âš ï¸ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
+              &#9888;ï¸ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
               fails, nothing will be deleted.
             </div>
           </div>
@@ -4708,7 +4707,7 @@
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>â“˜</span> Match Transaction
+            <span>&#9745;</span> Match Transaction
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Review possible matches and allocate the complete bank transaction.
@@ -4727,27 +4726,27 @@
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">Bank Amount
             </div>
             <div class="kpi-value" id="mc-kpi-bank-amount"
-              style="font-size:1.05rem; font-weight:800; color:var(--cyan);">â‚¹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--cyan);">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--green);">Allocated</div>
             <div class="kpi-value" id="mc-kpi-allocated"
-              style="font-size:1.05rem; font-weight:800; color:var(--green);">â‚¹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--green);">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--yellow);">Round-off</div>
             <div class="kpi-value" id="mc-kpi-roundoff"
-              style="font-size:1.05rem; font-weight:800; color:var(--yellow);">â‚¹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--yellow);">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:#f87171;">
               Bank Remaining</div>
-            <div class="kpi-value" id="mc-kpi-remaining" style="font-size:1.05rem; font-weight:800; color:#f87171;">â‚¹
+            <div class="kpi-value" id="mc-kpi-remaining" style="font-size:1.05rem; font-weight:800; color:#f87171;">&#8377;
               0.00</div>
           </div>
           <div class="kpi-card"
@@ -4755,7 +4754,7 @@
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--cyan);">Doc Residual
             </div>
-            <div class="kpi-value" id="mc-kpi-residual" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">â‚¹
+            <div class="kpi-value" id="mc-kpi-residual" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">&#8377;
               0.00</div>
           </div>
           <div class="kpi-card"
@@ -4775,7 +4774,7 @@
           <div id="mc-banner-txn" style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">-</div>
           <div style="font-size:0.75rem; color:var(--text-dim); line-height:1.4;">
             Suggestions stay strict: exact amount + useful party + date. When you manually confirm, a final document
-            residual within the configured â‚¹1.00 round-off tolerance is settled explicitly without changing the actual
+            residual within the configured &#8377;1.00 round-off tolerance is settled explicitly without changing the actual
             bank amount. The total actual allocation must still equal the bank amount.
           </div>
         </div>
@@ -4796,10 +4795,10 @@
                 <th style="width:130px;">Document</th>
                 <th>Customer / Supplier</th>
                 <th style="width:95px;">Date</th>
-                <th style="text-align:right; width:110px;">Total (â‚¹)</th>
-                <th style="text-align:right; width:100px;">Paid (â‚¹)</th>
+                <th style="text-align:right; width:110px;">Total (&#8377;)</th>
+                <th style="text-align:right; width:100px;">Paid (&#8377;)</th>
                 <th style="text-align:right; width:110px;">Outstanding</th>
-                <th style="text-align:right; width:120px;">Allocation (â‚¹)</th>
+                <th style="text-align:right; width:120px;">Allocation (&#8377;)</th>
               </tr>
             </thead>
             <tbody id="mc-candidates-tbody">
@@ -4815,22 +4814,22 @@
         <div
           style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:12px; border-top:1px solid var(--border-subtle);">
           <div id="mc-footer-summary" style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">
-            0 selected â€¢ Bank allocated â‚¹ 0.00 â€¢ Round-off â‚¹ 0.00 â€¢ Bank remaining â‚¹ 0.00 â€¢ Document residual â‚¹ 0.00
+            0 selected &bull; Bank allocated &#8377; 0.00 &bull; Round-off &#8377; 0.00 &bull; Bank remaining &#8377; 0.00 &bull; Document residual &#8377; 0.00
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.refreshSuggestions()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>ðŸ”„</span> Refresh Suggestions
+              <span>&#128269;„</span> Refresh Suggestions
             </button>
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.closeModal('modal-match-candidate')">
-              <span>âŒ</span> Cancel
+              <span>&#10008;</span> Cancel
             </button>
             <button type="button" id="mc-btn-confirm" class="btn btn-primary"
               onclick="window.BankStatementController.confirmCurrentAllocations()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>âœ…</span> Confirm Match
+              <span>&#9989;</span> Confirm Match
             </button>
           </div>
         </div>
@@ -5337,15 +5336,15 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
               <button type="button" id="btn-fmode-deposit" class="btn btn-primary"
                 onclick="window.FinanceController.switchModalMode('BANK DEPOSIT')" style="font-weight: 700;">
-                ðŸ’° Bank Deposit
+                &#128176; Bank Deposit
               </button>
               <button type="button" id="btn-fmode-withdrawal" class="btn btn-secondary"
                 onclick="window.FinanceController.switchModalMode('BANK WITHDRAWAL')" style="font-weight: 700;">
-                ðŸ’³ Bank Withdrawal
+                &#128179; Bank Withdrawal
               </button>
               <button type="button" id="btn-fmode-expense" class="btn btn-secondary"
                 onclick="window.FinanceController.switchModalMode('EXPENSE')" style="font-weight: 700;">
-                ðŸ’¸ Operating Expense
+                &#128184; Operating Expense
               </button>
             </div>
           </div>
@@ -5383,7 +5382,7 @@
             <!-- Column 2: Financials & Settlement -->
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div class="form-group">
-                <label class="form-label">Amount (â‚¹) *</label>
+                <label class="form-label">Amount (&#8377;) *</label>
                 <input type="number" step="0.01" min="0.01" id="f-entry-amount" class="form-input" placeholder="0.00"
                   required style="font-weight: 700; font-size: 1.05rem; color: var(--cyan);">
               </div>
@@ -5438,7 +5437,7 @@
     <div class="modal-card" style="max-width: 900px; width: 95%;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.3rem;">â„¹ï¸</span>
+          <span style="font-size: 1.3rem;">&#8377;</span>
           <div>
             <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Information</h3>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">View all ERP transactions linked
@@ -5467,18 +5466,18 @@
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Linked</div>
             <div id="mla-bank-linked"
-              style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">â‚¹ 0.00</div>
+              style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Round-off</div>
             <div id="mla-round-off"
-              style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">â‚¹ 0.00</div>
+              style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Difference</div>
-            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">â‚¹ 0.00
+            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">&#8377; 0.00
             </div>
           </div>
         </div>
@@ -5507,10 +5506,10 @@
         <!-- Footer -->
         <div
           style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
-          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions â€¢ Use
+          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions &bull; Use
             View to open the existing linked workflow.</div>
           <button type="button" class="btn btn-secondary"
-            onclick="window.BankStatementController.closeModal('modal-linked-allocations')">âœ– Close</button>
+            onclick="window.BankStatementController.closeModal('modal-linked-allocations')">&#10006; Close</button>
         </div>
       </div>
     </div>
@@ -5521,7 +5520,7 @@
     <div class="modal-card" style="max-width: 680px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">ðŸ‘ï¸ Bank Statement Transaction Details</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">&#128065;&#65039; Bank Statement Transaction Details</h3>
           <div id="mstd-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Audit inspection
             &amp; ERP narration editor</div>
         </div>
@@ -5593,7 +5592,7 @@
           style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
           <button type="button" class="btn btn-secondary"
             onclick="window.BankStatementController.closeModal('modal-statement-txn-details')">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.saveTxnNotes()">ðŸ’¾ Save
+          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.saveTxnNotes()">&#128190; Save
             Notes</button>
         </div>
       </div>
@@ -5605,7 +5604,7 @@
     <div class="modal-card" style="max-width: 720px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">ðŸ“„ Imported Statement Source Evidence</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">&#128207;„ Imported Statement Source Evidence</h3>
           <div id="msse-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Original statement
             batch provenance &amp; SHA-256 fingerprint</div>
         </div>
@@ -5635,7 +5634,7 @@
             <input type="text" id="msse-checksum" class="form-input" readonly
               style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--cyan);">
             <button type="button" class="btn btn-secondary btn-sm"
-              onclick="window.BankStatementController.copyChecksum()" style="white-space: nowrap;">ðŸ“‹ Copy</button>
+              onclick="window.BankStatementController.copyChecksum()" style="white-space: nowrap;">&#128203; Copy</button>
           </div>
         </div>
 
@@ -5884,7 +5883,7 @@
       <div class="modal-header"
         style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.2rem; color:var(--purple);">â°</span>
+          <span style="font-size:1.2rem; color:var(--purple);">&#9200;</span>
           <h3 id="mre-modal-title" style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">Add
             Reminder</h3>
         </div>
@@ -5969,7 +5968,7 @@
       <div class="modal-header"
         style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.2rem; color:var(--yellow);">â°</span>
+          <span style="font-size:1.2rem; color:var(--yellow);">&#9200;</span>
           <h3 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">Snooze Reminder</h3>
         </div>
         <button class="modal-close" onclick="window.ReminderCenterController.closeSnoozeModal()"
@@ -6001,7 +6000,7 @@
   <div class="modal-overlay" id="session-timeout-modal" style="display: none; z-index: 1000000;">
     <div class="modal-box"
       style="max-width: 440px; width: 100%; text-align: center; border: 1px solid var(--purple-accent, #7c3aed); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
-      <div style="font-size: 2.8rem; margin-bottom: 8px;">â³</div>
+      <div style="font-size: 2.8rem; margin-bottom: 8px;">&#9203;</div>
       <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Session Inactivity
         Warning</h3>
       <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.4;">
@@ -6253,11 +6252,11 @@
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span id="universal-preview-icon" style="font-size:1.2rem;">ðŸ“„</span>
+          <span id="universal-preview-icon" style="font-size:1.2rem;">&#128207;„</span>
           <span id="universal-preview-title" style="font-size:0.95rem; font-weight:700; color:#ffffff;">Document Preview</span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-          <a id="universal-preview-download-btn" href="#" download="preview_document" class="btn btn-secondary btn-sm" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">â¬‡ï¸ Download</a>
+          <a id="universal-preview-download-btn" href="#" download="preview_document" class="btn btn-secondary btn-sm" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">&#11015;&#65039; Download</a>
           <button type="button" class="btn btn-secondary btn-sm" onclick="window.closeUniversalPreviewModal()" style="font-size:1.1rem; line-height:1; padding:2px 8px;">&times;</button>
         </div>
       </div>
@@ -6271,76 +6270,76 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.04"></script>
+  <script src="js/version.js?v=10.0.41.05"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.04"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.04"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.04"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.04"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.04"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.04"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.04"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.04"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.04"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.04"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.04"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.04"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.04"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.04"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.04"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.04"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.04"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.04"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.04"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.04"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.04"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.05"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.05"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.05"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.05"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.05"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.05"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.05"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.05"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.05"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.05"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.05"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.05"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.05"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.05"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.05"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.05"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.05"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.05"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.05"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.05"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.05"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.04"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.04"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.04"></script>
-  <script src="js/services/ViewLoader.js?v=10.0.41.04"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.04"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.04"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.04"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.04"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.04"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.04"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.04"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.05"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.05"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.05"></script>
+  <script src="js/services/ViewLoader.js?v=10.0.41.05"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.05"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.05"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.05"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.05"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.05"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.05"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.05"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.04"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.04"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.05"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.05"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.04"></script>
-  <script src="js/app.js?v=10.0.41.04"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.05"></script>
+  <script src="js/app.js?v=10.0.41.05"></script>
 </body>
 
 </html>

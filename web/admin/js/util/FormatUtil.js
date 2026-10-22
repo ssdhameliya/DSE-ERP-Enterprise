@@ -70,9 +70,11 @@
       }
       const footerClock = document.getElementById('footer-live-clock');
       if (footerClock) {
+        const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = daysFull[now.getDay()];
         const valSpan = footerClock.querySelector('.footer-val');
-        if (valSpan) valSpan.textContent = `${this.formatDate(now)} | ${this.formatTime(now, 'hh:mm:ss a')} | ${this.getTimeZoneAbbr()}`;
-        else footerClock.innerText = `📅 ${clockStr}`;
+        if (valSpan) valSpan.textContent = `${dayName}, ${this.formatDate(now)} | ${this.formatTime(now, 'hh:mm:ss a')} | ${this.getTimeZoneAbbr()}`;
+        else footerClock.innerText = `📅 ${dayName}, ${clockStr}`;
       }
       const authFooterClock = document.getElementById('auth-footer-clock');
       if (authFooterClock) authFooterClock.innerText = `📅 ${clockStr}`;

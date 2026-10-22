@@ -1,18 +1,16 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 4,
-  "webVersion": "10.0.41.04",
-  "tag": "web-v10.0.41.04",
-  "releaseDate": "2026-10-22T23:30:00+05:30",
+  "webBuild": 5,
+  "webVersion": "10.0.41.05",
+  "tag": "web-v10.0.41.05",
+  "releaseDate": "2026-10-22T23:55:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.04 Security Session Lockdown, Modular ViewLoader Architecture & Universal Refresh Layout Stability",
+  "summary": "10.0.41.05 Mojibake Eradication, Single-Timer Clock Synchronization & Non-Destructive DOM Stability",
   "highlights": [
-    "1. Strict Session Authentication Lockdown: Eliminated unauthenticated fallback to admin in AuthService and app.js. Added 8-hour session TTL with backend /api/auth/me token validation.",
-    "2. Modular ViewLoader Architecture (1 Screen = 1 Dedicated .html File): Implemented ViewLoader service to dynamically load dedicated view templates on demand with caching, matching Desktop FXML loader parity.",
-    "3. Universal Refresh Layout Stability: Pre-rendered native 58px compact ribbon KPI cards on Master Data screen, eliminating frame-0 visual deformation and squishing.",
-    "4. Master Data Categories Rail Width Locking: Strictly enforced 345px fixed geometry for .master-categories-rail with CSS !important rules and skeleton item placeholders.",
-    "5. Skeleton Loading System: Replaced collapsing spinner text with shimmer skeleton rows in MasterDataController for category rail and lookup tables.",
-    "6. Non-Destructive KPI Enhancement: Updated KpiCardEnhancer to preserve pre-rendered compact-kpi-card structure, preventing innerHTML destruction on page boot.",
-    "7. Immediate Synchronous Clock Parsing: Initialized clock display immediately after header tag in index.html to prevent blank clock on refresh."
+    "1. Complete Mojibake Eradication: Replaced corrupted encoding with safe numeric HTML entities across all 42 views and index.html.",
+    "2. Single-Timer Clock Synchronization: Removed competing interval in index.html; unified FormatUtil to provide steady, non-blinking footer timestamps.",
+    "3. Non-Destructive KPI Enhancement: Prevented KpiCardEnhancer from destroying card innerHTML and wiping out accounting subtitles.",
+    "4. Clean Table Header Parity: Prevented TableUiEnhancer from mutating table headers into colorful pill buttons.",
+    "5. Universal Frame-0 Refresh Parity: Ensures 100% identical layout and data presentation before and after refresh."
   ]
 }

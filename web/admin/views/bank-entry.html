@@ -1,7 +1,7 @@
 <div id="view-bank-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">â‚¹</span>
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">₹</span>
               <div>
                 <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="bank-view-title">Bank
                   Entry</h1>
@@ -13,16 +13,16 @@
             <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
               <button class="btn btn-primary" id="btnBankMode" onclick="window.FinanceController.loadBankMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ¦</span> Bank Entry
+                <span>🏦</span> Bank Entry
               </button>
               <button class="btn btn-secondary" id="btnExpenseMode" onclick="window.FinanceController.loadExpenseMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ’¸</span> Expense Entry
+                <span>💸</span> Expense Entry
               </button>
               <button class="btn btn-secondary" id="btnBankRecon"
                 onclick="window.NavigationRouter.selectNav('view-bank-statement')"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>ðŸ“‘</span> Bank Reconciliation
+                <span>📑</span> Bank Reconciliation
               </button>
             </div>
           </div>
@@ -40,7 +40,7 @@
                 <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
               </div>
               <div class="kpi-value" id="bank-kpi-balance"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">â‚¹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-balance-meta"
                 style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">Total net ledger balance</div>
             </div>
@@ -53,7 +53,7 @@
                 <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
               </div>
               <div class="kpi-value" id="bank-kpi-inflow"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--green);">â‚¹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--green);">₹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-inflow-meta"
                 style="font-size: 0.7rem; color: var(--green); margin-top: 4px;">0 entries</div>
             </div>
@@ -67,7 +67,7 @@
                   style="font-size: 0.65rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Outflow</span>
               </div>
               <div class="kpi-value" id="bank-kpi-outflow" style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">
-                â‚¹ 0.00</div>
+                ₹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-outflow-meta"
                 style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px;">0 entries</div>
             </div>
@@ -81,7 +81,7 @@
                 <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
               </div>
               <div class="kpi-value" id="bank-kpi-net" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">
-                â‚¹ 0.00</div>
+                ₹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-net-meta"
                 style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
@@ -95,7 +95,7 @@
                 placeholder="Search reference, narration, account..."
                 oninput="window.FinanceController.applyFinanceFilters()">
               <span
-                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
+                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
             </div>
             <select id="bank-type-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()"
               style="height: 34px; font-size: 0.78rem; min-width: 140px;">
@@ -130,7 +130,7 @@
                     <th>Bank Account</th>
                     <th id="th-bank-mode">Mode</th>
                     <th>Reference / UTR</th>
-                    <th style="text-align: right;">Amount (â‚¹)</th>
+                    <th style="text-align: right;">Amount (₹)</th>
                     <th>Match / Link</th>
                     <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
@@ -177,7 +177,7 @@
                 <div
                   style="padding: 10px 12px; background: rgba(16,185,129,0.06); border-radius: 6px; border: 1px solid rgba(16,185,129,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.75rem; color: var(--green); font-weight: 700;">TRANSACTION AMOUNT:</span>
-                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">â‚¹ 0.00</span>
+                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">₹ 0.00</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                   <div style="display: flex; justify-content: space-between;"><span
@@ -197,17 +197,17 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">ðŸ“œ View In
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">📜 View In
                   GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">ðŸ“‹ Audit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">📋 Audit
                   Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">âœï¸ Edit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">✏️ Edit
                   Entry</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()"
-                  style="color: #f87171;">ðŸ—‘ï¸ Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">ðŸ–¨ï¸ Print
+                  style="color: #f87171;">🗑️ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">🖨️ Print
                   Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">âœ–
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">✖
                   Close</button>
               </div>
             </div>

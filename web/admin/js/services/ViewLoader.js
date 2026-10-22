@@ -27,7 +27,7 @@ window.ViewLoader = (function() {
 
       // Asynchronously fetch dedicated view HTML file
       try {
-        const version = (window.AppVersion && window.AppVersion.webVersion) || '10.0.41.04';
+        const version = (window.AppVersion && window.AppVersion.webVersion) || '10.0.41.05';
         const res = await fetch(`./views/${cleanName}.html?v=${version}`);
         if (res.ok) {
           const html = await res.text();

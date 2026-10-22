@@ -285,7 +285,7 @@
                 <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                     <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">ðŸ“Ž</span>
+                      <span style="color:#c084fc;">📎</span>
                       <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
                     </div>
                     <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
@@ -293,14 +293,14 @@
                   <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Vendor bill copy, physical receipt scan, or GRN &bull; Max 10MB</div>
 
                   <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">ðŸ“„</div>
+                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
                     <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
                     <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
                   </div>
                   <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
                   <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>ðŸ‘ Preview</button>
+                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
                     <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>

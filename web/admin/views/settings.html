@@ -523,10 +523,10 @@
                     </label>
                     <select id="setting-currency" class="form-select"
                       style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
-                      <option value="INR (â‚¹)" selected>INR (&#8377;)</option>
+                      <option value="INR (₹)" selected>INR (&#8377;)</option>
                       <option value="USD ($)">USD ($)</option>
-                      <option value="EUR (â‚¬)">EUR (&#8364;)</option>
-                      <option value="GBP (Â£)">GBP (&#163;)</option>
+                      <option value="EUR (€)">EUR (&#8364;)</option>
+                      <option value="GBP (£)">GBP (&#163;)</option>
                       <option value="AED">AED (&#1583;.&#1573;)</option>
                     </select>
                   </div>
@@ -863,7 +863,7 @@
                       <div style="position:relative;">
                         <input type="password" id="smtp-password" class="form-input"
                           style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; padding-right:36px;"
-                          placeholder="Configured â€” leave blank to keep current password">
+                          placeholder="Configured — leave blank to keep current password">
                         <span onclick="window.SettingsController.togglePasswordVisibility('smtp-password')"
                           style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94a3b8; font-size:0.9rem;"
                           title="Show/Hide Password">&#128065;</span>
@@ -1343,91 +1343,23 @@ Outstanding Balance: {BalanceAmount}
         <span class="trust-text">Secure &nbsp; Local &nbsp; Reliable</span>
       </div>
       <div class="footer-item footer-company" id="footer-company-name">
-        <span class="footer-icon">&#127970;</span> <span class="footer-val" id="footer-company-val"></span>
+        <span class="footer-icon">&#127970;</span> <span class="footer-val">Jasvi Industries</span>
       </div>
       <div class="footer-item footer-phone" id="footer-phone">
-        <span class="footer-icon">&#128222;</span> <span class="footer-val" id="footer-phone-val"></span>
+        <span class="footer-icon">&#128222;</span> <span class="footer-val">9099939193</span>
       </div>
       <div class="footer-item footer-email" id="footer-email">
-        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val" id="footer-email-val"></span>
+        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val">info@jasviindustries.in</span>
       </div>
       <div class="footer-item footer-website" id="footer-website">
-        <span class="footer-icon">&#127760;</span> <span class="footer-val" id="footer-website-val"></span>
+        <a href="https://jasviindustries.in" target="_blank"
+          style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <span class="footer-icon">&#127760;</span> <span class="footer-val">https://jasviindustries.in</span>
+        </a>
       </div>
       <div class="footer-item footer-clock" id="footer-live-clock">
-        <span class="footer-icon">&#128197;</span> <span class="footer-val" id="footer-clock-val"></span>
+        <span class="footer-icon">&#128197;</span> <span class="footer-val">Sunday, 18 Oct 2026 | 10:02:00 PM |
+          IST</span>
       </div>
     </footer>
   </div>
-  <!-- Footer Dynamic Hydration: Desktop SharedApplicationFooter.java parity (zero fake placeholder text) -->
-  <script>
-    (function() {
-      try {
-        function _hydFooter(cfg) {
-          var co = document.getElementById('footer-company-val');
-          var ph = document.getElementById('footer-phone-val');
-          var em = document.getElementById('footer-email-val');
-          var wb = document.getElementById('footer-website-val');
-          var fw = document.getElementById('footer-website');
-          if (co) co.textContent = cfg.companyName || cfg.company_name || cfg.name || '';
-          if (ph) ph.textContent = cfg.mobile || cfg.phone || cfg.mobileNumber || '';
-          if (em) em.textContent = cfg.email || '';
-          var website = cfg.website || cfg.websiteUrl || '';
-          if (wb) wb.textContent = website;
-          /* Show footer-website only when a URL is present */
-          if (fw) fw.style.display = website ? '' : 'none';
-        }
-
-        function _hydFooterClock() {
-          var fc = document.getElementById('footer-clock-val');
-          if (!fc) return;
-          var now = new Date();
-          var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-          var d = days[now.getDay()];
-          var dt = d + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-          var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
-          var ampm = h >= 12 ? 'PM' : 'AM';
-          h = h % 12 || 12;
-          var ts = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
-          fc.textContent = dt + ' | ' + ts + ' | IST';
-        }
-
-        /* Try to hydrate footer from BrandingService or localStorage on DOMContentLoaded */
-        function _attemptFooterHydration() {
-          /* 1. Try BrandingService (loaded by app.js scripts) */
-          if (window.BrandingService && window.BrandingService.getCurrentBranding) {
-            try {
-              var br = window.BrandingService.getCurrentBranding();
-              if (br && (br.companyName || br.name)) { _hydFooter(br); return; }
-            } catch (_) {}
-          }
-          /* 2. Fallback: localStorage dse_branding */
-          var rawBrand = localStorage.getItem('dse_branding');
-          if (rawBrand) {
-            try { _hydFooter(JSON.parse(rawBrand)); } catch (_) {}
-          } else {
-            /* 3. Fallback: dse_company_settings */
-            var rawCfg = localStorage.getItem('dse_company_settings') || localStorage.getItem('dse_settings');
-            if (rawCfg) {
-              try { _hydFooter(JSON.parse(rawCfg)); } catch (_) {}
-            }
-          }
-        }
-
-        /* Start footer clock immediately */
-        _hydFooterClock();
-        setInterval(_hydFooterClock, 1000);
-
-        /* Hydrate company info after DOM ready */
-        if (document.readyState !== 'loading') {
-          _attemptFooterHydration();
-        } else {
-          document.addEventListener('DOMContentLoaded', _attemptFooterHydration);
-        }
-
-        /* Expose re-hydration function for BrandingService to call after API fetch */
-        window.refreshFooterCompanyProfile = function(cfg) { if (cfg) _hydFooter(cfg); };
-      } catch (_) {}
-    })();
-  </script>

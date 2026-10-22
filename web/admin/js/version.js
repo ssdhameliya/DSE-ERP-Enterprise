@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.04",
+  version: "10.0.41.05",
   desktopVersion: "10.0.41",
-  webBuild: 4,
-  webVersion: "10.0.41.04",
-  tag: "web-v10.0.41.04",
-  releaseDate: "2026-10-22T23:30:00+05:30",
+  webBuild: 5,
+  webVersion: "10.0.41.05",
+  tag: "web-v10.0.41.05",
+  releaseDate: "2026-10-22T23:55:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.04 Security Session Lockdown, Modular ViewLoader Architecture & Universal Refresh Layout Stability"
+  summary: "10.0.41.05 Mojibake Eradication, Single-Timer Clock Synchronization & Non-Destructive DOM Stability"
 };
 
 // Automatic UI Version Injection

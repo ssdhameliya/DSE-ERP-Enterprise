@@ -5,8 +5,8 @@
               <p>Client estimates, pricing proposals, live tracking, and one-click sales invoice conversion</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">ðŸ“Š Export Excel</button>
-              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">ðŸ“„ Export PDF</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">📊 Export Excel</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">📄 Export PDF</button>
               <button class="btn btn-secondary" onclick="window.QuotationController.resetFilters()">Reset</button>
               <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635; Refresh</button>
               <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New Quotation</button>
@@ -149,11 +149,11 @@
                 <div style="display: flex; gap: 6px; align-items: center;">
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.QuotationController.showAudit(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText)">â—·
+                    onclick="window.QuotationController.showAudit(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText)">◷
                     Audit</button>
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.QuotationController.closeDrawer()">âœ– Close</button>
+                    onclick="window.QuotationController.closeDrawer()">✖ Close</button>
                 </div>
               </div>
               <div class="drawer-body"
@@ -186,16 +186,16 @@
                 <!-- Attached Document Section -->
                 <div id="qd-attachment-section" style="display:none; border:1px solid rgba(168,85,247,0.25); background:rgba(168,85,247,0.05); border-radius:6px; padding:10px; margin-top:4px;">
                   <div style="font-size:0.74rem; font-weight:700; color:#c084fc; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-                    <span style="display:flex; align-items:center; gap:6px;"><span>ðŸ“Ž</span> Attached Document</span>
+                    <span style="display:flex; align-items:center; gap:6px;"><span>📎</span> Attached Document</span>
                   </div>
                   <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
                     <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-                      <span style="font-size:1.1rem; color:#a855f7;">ðŸ“„</span>
+                      <span style="font-size:1.1rem; color:#a855f7;">📄</span>
                       <span id="qd-attachment-name" style="font-size:0.75rem; color:var(--text-main); font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="">-</span>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">👁 Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">📥 Download</button>
                     </div>
                   </div>
                 </div>

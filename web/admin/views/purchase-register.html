@@ -123,10 +123,10 @@
               <div style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary"
                   style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
-                  onclick="window.PurchaseController.exportPurchaseRegisterExcel()">ðŸ“¥ Export Excel</button>
+                  onclick="window.PurchaseController.exportPurchaseRegisterExcel()">📥 Export Excel</button>
                 <button class="btn btn-secondary"
                   style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
-                  onclick="window.PurchaseController.exportPurchaseRegisterPdf()">ðŸ“„ Export PDF</button>
+                  onclick="window.PurchaseController.exportPurchaseRegisterPdf()">📄 Export PDF</button>
                 <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
                   onclick="window.PurchaseController.resetFilters()">&#8635; Reset</button>
                 <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
@@ -219,7 +219,7 @@
                 <div style="display: flex; gap: 6px; align-items: center;">
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('PURCHASE', window.PurchaseController.selectedInvoice?.id, document.getElementById('pd-invoice-no').innerText) : null">â—·
+                    onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('PURCHASE', window.PurchaseController.selectedInvoice?.id, document.getElementById('pd-invoice-no').innerText) : null">◷
                     Audit</button>
                   <button class="btn btn-secondary btn-sm"
                     onclick="window.PurchaseController.closeDrawer()">&times;</button>
@@ -273,9 +273,9 @@
                   style="display:none; border: 1px solid rgba(56, 189, 248, 0.2); background: rgba(56, 189, 248, 0.05); border-radius: 6px; padding: 10px; margin-top: 4px;">
                   <div
                     style="font-size: 0.76rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <span style="display: flex; align-items: center; gap: 6px;"><span>ðŸ”„</span> Purchase Return
+                    <span style="display: flex; align-items: center; gap: 6px;"><span>🔄</span> Purchase Return
                       Settlement</span>
-                    <span id="pd-ret-status-badge" class="pill-badge pill-neutral">ðŸ“„ N/A</span>
+                    <span id="pd-ret-status-badge" class="pill-badge pill-neutral">📄 N/A</span>
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
@@ -327,17 +327,17 @@
                 <div id="pd-attachment-section" style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 4px; display: none;">
                   <div style="font-weight: 700; font-size: 0.82rem; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                      <span>ðŸ“Ž</span> Attached Document
+                      <span>📎</span> Attached Document
                     </div>
                   </div>
                   <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-                      <span style="font-size: 1.1rem; color: #a855f7;">ðŸ“„</span>
+                      <span style="font-size: 1.1rem; color: #a855f7;">📄</span>
                       <span id="pd-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
                     </div>
                     <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">👁 Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">📥 Download</button>
                     </div>
                   </div>
                 </div>
@@ -368,23 +368,23 @@
               <div class="drawer-footer"
                 style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);"
-                  onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
+                  onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">ðŸ–¨ï¸
+                  onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">🖨️
                   View / Download PDF</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">ðŸ“Š
+                  onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">📊
                   View / Download Excel</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">âœ‰ï¸
+                  onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">✉️
                   Send Email</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">âœï¸
+                  onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">✏️
                   Edit Purchase</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">ðŸ·ï¸
+                  onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">🏷️
                   Inward Barcode</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">âœ•
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">✕
                   Close</button>
               </div>
             </div>
