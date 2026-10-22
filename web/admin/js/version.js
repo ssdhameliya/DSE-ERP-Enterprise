@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.05",
+  version: "10.0.41.06",
   desktopVersion: "10.0.41",
-  webBuild: 5,
-  webVersion: "10.0.41.05",
-  tag: "web-v10.0.41.05",
-  releaseDate: "2026-10-22T23:55:00+05:30",
+  webBuild: 6,
+  webVersion: "10.0.41.06",
+  tag: "web-v10.0.41.06",
+  releaseDate: "2026-10-23T00:05:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.05 Mojibake Eradication, Single-Timer Clock Synchronization & Non-Destructive DOM Stability"
+  summary: "10.0.41.06 Restoration of Desktop Rich UI Enhancements (KPI Icon Bubbles & Colorful Table Headers) with Synchronous Frame-0 Rendering"
 };
 
 // Automatic UI Version Injection

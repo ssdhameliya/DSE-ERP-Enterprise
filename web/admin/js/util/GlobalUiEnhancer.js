@@ -142,7 +142,8 @@ window.GlobalUiEnhancer = (function() {
     },
 
     enhance(container) {
-      scheduleEnhancement(container);
+      // Execute immediately and synchronously on the container so there is zero flash or layout jump
+      runEnhancements(container);
     }
   };
 })();

@@ -1,16 +1,15 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 5,
-  "webVersion": "10.0.41.05",
-  "tag": "web-v10.0.41.05",
-  "releaseDate": "2026-10-22T23:55:00+05:30",
+  "webBuild": 6,
+  "webVersion": "10.0.41.06",
+  "tag": "web-v10.0.41.06",
+  "releaseDate": "2026-10-23T00:05:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.05 Mojibake Eradication, Single-Timer Clock Synchronization & Non-Destructive DOM Stability",
+  "summary": "10.0.41.06 Restoration of Desktop Rich UI Enhancements (KPI Icon Bubbles & Colorful Table Headers) with Synchronous Frame-0 Rendering",
   "highlights": [
-    "1. Complete Mojibake Eradication: Replaced corrupted encoding with safe numeric HTML entities across all 42 views and index.html.",
-    "2. Single-Timer Clock Synchronization: Removed competing interval in index.html; unified FormatUtil to provide steady, non-blinking footer timestamps.",
-    "3. Non-Destructive KPI Enhancement: Prevented KpiCardEnhancer from destroying card innerHTML and wiping out accounting subtitles.",
-    "4. Clean Table Header Parity: Prevented TableUiEnhancer from mutating table headers into colorful pill buttons.",
-    "5. Universal Frame-0 Refresh Parity: Ensures 100% identical layout and data presentation before and after refresh."
+    "1. Restored Colorful KPI Icon Bubbles: Re-enabled KpiCardEnhancer semantic icon bubbles and badges matching Desktop Image 1.",
+    "2. Restored Colorful Table Header Pills: Re-enabled TableUiEnhancer semantic badges and icons for all table columns matching Desktop Image 1.",
+    "3. Synchronous Frame-0 Enhancement: Eliminated 120ms debounce lag in GlobalUiEnhancer.enhance() so all rich styling is applied synchronously at mount time before first paint.",
+    "4. Zero-Flicker Refresh Stability: Guarantees 100% visual identity between dynamic tab navigation and hard browser refresh."
   ]
 }
