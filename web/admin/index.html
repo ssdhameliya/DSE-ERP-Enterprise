@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,8 +15,42 @@
         if (localStorage.getItem('dse_theme') === 'light') {
           document.documentElement.classList.add('light-theme');
         }
-        if (!localStorage.getItem('dse_access_token')) {
+        var token = localStorage.getItem('dse_access_token');
+        if (!token) {
           document.documentElement.classList.add('auth-required');
+        } else {
+          /* --- Pre-paint synchronous branding hydration (Desktop BrandingService parity) --- */
+          var _br = localStorage.getItem('dse_branding');
+          if (_br) {
+            try {
+              var _bd = JSON.parse(_br);
+              var _cn = _bd.companyName || _bd.company_name || _bd.name || '';
+              if (_cn) {
+                var _bs = document.createElement('style');
+                _bs.id = 'early-brand-style';
+                _bs.textContent = '#header-brand-title::before{content:"' + _cn.replace(/"/g, '\\"').toUpperCase() + '";}';
+                document.head.appendChild(_bs);
+              }
+            } catch (_b) {}
+          }
+
+          /* --- Immediate Route Resolution (Desktop Shell parity - Frame 0) --- */
+          var rawHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
+          var viewKey = rawHash || 'dashboard';
+          var viewId = viewKey.startsWith('view-') ? viewKey : ('view-' + viewKey);
+          if (viewKey === 'purchase' || viewKey === 'purchases') viewId = 'view-purchase-register';
+          if (viewKey === 'sales' || viewKey === 'sale') viewId = 'view-sales-register';
+          if (viewKey === 'items' || viewKey === 'item') viewId = 'view-item-master';
+          if (viewKey === 'customers' || viewKey === 'customer') viewId = 'view-customers';
+          if (viewKey === 'suppliers' || viewKey === 'supplier') viewId = 'view-suppliers';
+
+          var earlyStyle = document.createElement('style');
+          earlyStyle.id = 'early-route-style';
+          earlyStyle.textContent =
+            '#' + viewId + ' { display: block !important; } ' +
+            '#' + viewId + '.fixed-viewport { display: flex !important; } ' +
+            '.module-view:not(#' + viewId + ') { display: none !important; }';
+          document.head.appendChild(earlyStyle);
         }
       } catch (_) {}
     })();
@@ -39,7 +73,33 @@
       visibility: visible !important;
     }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.01">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.02">
+  <script>
+    /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
+    (function() {
+      function _earlyClockTick() {
+        var el = document.getElementById('clock-display');
+        if (!el) return;
+        /* If FormatUtil is ready, let it handle the clock */
+        if (window.FormatUtil && window.FormatUtil.updateLiveClocks) {
+          window.FormatUtil.updateLiveClocks();
+          return;
+        }
+        var now = new Date();
+        var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        el.textContent = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+      }
+      /* Seed immediately, then keep ticking */
+      if (document.readyState !== 'loading') {
+        _earlyClockTick();
+      } else {
+        document.addEventListener('DOMContentLoaded', _earlyClockTick);
+      }
+      setInterval(_earlyClockTick, 1000);
+    })();
+  </script>
   <script>
     window.toggleNavGroup = function (groupId) {
       if (window.NavigationRouter && window.NavigationRouter.toggleNavGroup) {
@@ -143,7 +203,7 @@
         if (cardSub) cardSub.innerText = 'Role-aware secure access to Jasvi Creation';
       } else if (tab === 'register') {
         if (cardTitle) cardTitle.innerText = 'Create New Account';
-        if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA → Email OTP → Authenticator → Admin approval';
+        if (cardSub) cardSub.innerText = 'Non-Admin registration: CAPTCHA â†’ Email OTP â†’ Authenticator â†’ Admin approval';
         if (window.refreshRegistrationCaptcha) window.refreshRegistrationCaptcha();
         if (window.loadRegistrationRoles) window.loadRegistrationRoles();
       } else if (tab === 'forgot') {
@@ -565,11 +625,11 @@
         <button class="header-badge-btn" id="btn-sidebar-toggle" onclick="window.NavigationRouter.toggleSidebar()"
           title="Toggle Sidebar (Ctrl+B)">&#9776;</button>
         <div class="brand-group" onclick="selectNav('view-dashboard')">
-          <div class="brand-logo-icon">J</div>
-          <div class="brand-title">JASVI <span>INDUSTRIES</span></div>
+          <div class="brand-logo-icon" id="header-brand-logo">J</div>
+          <div class="brand-title" id="header-brand-title"></div>
         </div>
         <span id="env-badge" style="display: none;"></span>
-        <span id="header-app-version-badge" style="display: none;">v10.0.41.01</span>
+        <span id="header-app-version-badge" style="display: none;">v10.0.41.02</span>
         <div
           style="display:flex; flex-direction:column; margin-left: 10px; border-left: 1px solid var(--border-subtle); padding-left: 12px;">
           <div id="header-page-title"
@@ -593,7 +653,7 @@
         <!-- Live Clock Card with Pulsing Dot -->
         <div class="clock-card" id="shell-clock-card">
           <span class="clock-live-dot" title="Live Server Heartbeat Active"></span>
-          <span class="clock-display" id="clock-display">12:00:00 PM</span>
+          <span class="clock-display" id="clock-display"></span>
         </div>
 
         <!-- Desktop Quick Action: + New Sale F9 -->
@@ -612,24 +672,24 @@
         <!-- Notification & Activity Badges matching desktop Dashboard.fxml -->
         <div class="header-badge-wrap" onclick="selectNav('view-reminders')" title="Reminder Center">
           <button class="header-badge-btn">&#9200;</button>
-          <span class="header-badge-counter cyan" id="badge-reminders">0</span>
+          <span class="header-badge-counter cyan zero" id="badge-reminders"></span>
         </div>
 
         <div class="header-badge-wrap"
           onclick="if(window.NotificationCenterController) window.NotificationCenterController.openModal(); else openNotificationsModal();"
           title="Notification Center">
           <button class="header-badge-btn">&#128276;</button>
-          <span class="header-badge-counter" id="badge-notifications">0</span>
+          <span class="header-badge-counter zero" id="badge-notifications"></span>
         </div>
 
         <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="Email Center">
           <button class="header-badge-btn">&#9993;&#65039;</button>
-          <span class="header-badge-counter" id="badge-email">0</span>
+          <span class="header-badge-counter zero" id="badge-email"></span>
         </div>
 
         <div class="header-badge-wrap" onclick="selectNav('view-communication')" title="WhatsApp Activity">
           <button class="header-badge-btn">&#128172;</button>
-          <span class="header-badge-counter cyan" id="badge-whatsapp">0</span>
+          <span class="header-badge-counter cyan zero" id="badge-whatsapp"></span>
         </div>
 
         <!-- Synthesizer Audio Toggle -->
@@ -679,7 +739,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.01</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v10.0.41.02</span></div>
           </div>
         </div>
       </div>
@@ -691,10 +751,10 @@
           if (isLight) {
             if (document.body) document.body.classList.add('light-theme');
             var ti = document.getElementById('theme-icon'), tt = document.getElementById('theme-text');
-            if (ti) ti.textContent = '☀️';
+            if (ti) ti.textContent = 'â˜€ï¸';
             if (tt) tt.textContent = 'Light';
             var li = document.getElementById('login-theme-icon'), lt = document.getElementById('login-theme-text');
-            if (li) li.textContent = '🌙';
+            if (li) li.textContent = 'ðŸŒ™';
             if (lt) lt.textContent = 'Dark Mode';
           }
           var rawUser = localStorage.getItem('dse_user_info') || localStorage.getItem('dse_user');
@@ -723,6 +783,94 @@
           var mr = document.getElementById('menu-user-role');
           if (mn) mn.textContent = name;
           if (mr) mr.textContent = role;
+
+          /* --- Pre-paint branding (read from localStorage, zero hardcoded name) --- */
+          var brandEl = document.getElementById('header-brand-title');
+          var logoEl  = document.getElementById('header-brand-logo');
+          if (brandEl) {
+            var rawBrand = localStorage.getItem('dse_branding');
+            var companyName = '';
+            var logoLetter  = 'J';
+            if (rawBrand) {
+              try {
+                var bd = JSON.parse(rawBrand);
+                companyName = bd.companyName || bd.company_name || bd.name || '';
+                if (companyName) logoLetter = companyName.charAt(0).toUpperCase();
+              } catch (_b) {}
+            }
+            brandEl.textContent = companyName ? companyName.toUpperCase() : '';
+            if (!companyName) {
+              /* Fallback: read company settings store */
+              var rawCfg = localStorage.getItem('dse_company_settings') || localStorage.getItem('dse_settings');
+              if (rawCfg) {
+                try {
+                  var cfg = JSON.parse(rawCfg);
+                  companyName = cfg.companyName || cfg.company_name || cfg.name || '';
+                  if (companyName) {
+                    logoLetter = companyName.charAt(0).toUpperCase();
+                    brandEl.textContent = companyName.toUpperCase();
+                  }
+                } catch (_c) {}
+              }
+            }
+            if (logoEl) logoEl.textContent = logoLetter;
+          }
+
+          /* --- Immediate workspace-tabs & page-title hydration (zero blank-tab flash) --- */
+          var viewMeta = {
+            'view-dashboard':           { title: 'Dashboard',             breadcrumb: 'Executive Command Center',              icon: '&#128202;' },
+            'view-sales-register':      { title: 'Sales Register',        breadcrumb: 'Sales & Distribution',                  icon: '&#128196;' },
+            'view-purchase-register':   { title: 'Purchase Register',     breadcrumb: 'Procurement & Inward Bills',             icon: '&#128230;' },
+            'view-bank-entry':          { title: 'Bank Entry',            breadcrumb: 'Receipt & Payment Vouchers',            icon: '&#127974;' },
+            'view-expense-entry':       { title: 'Expense Entry',         breadcrumb: 'Factory & Operating Expenses',          icon: '&#128184;' },
+            'view-item-master':         { title: 'Item Master',           breadcrumb: 'Materials & SKU Catalog',               icon: '&#127991;' },
+            'view-masters':             { title: 'Masters (Lookups)',     breadcrumb: 'Categories & Unit Definitions',         icon: '&#128218;' },
+            'view-customers':           { title: 'CRM / Customers',       breadcrumb: 'Client Profiles & Credit Limits',       icon: '&#128101;' },
+            'view-suppliers':           { title: 'HRM / Suppliers',       breadcrumb: 'Vendor Profiles & Payment Registers',   icon: '&#127970;' },
+            'view-quotations':          { title: 'Quotations',            breadcrumb: 'Proforma & Quotation Pipeline',         icon: '&#128221;' },
+            'view-sales-returns':       { title: 'Sales Returns',         breadcrumb: 'Customer Goods Inward',                 icon: '&#8617;' },
+            'view-credit-notes':        { title: 'Credit Notes',          breadcrumb: 'Accounts & Adjustments',                icon: '&#128179;' },
+            'view-debit-notes':         { title: 'Debit Notes',           breadcrumb: 'Supplier Debit Notes',                  icon: '&#128200;' },
+            'view-purchase-returns':    { title: 'Purchase Returns',      breadcrumb: 'Supplier Returns & Memos',              icon: '&#8635;' },
+            'view-inventory':           { title: 'Inventory Ledger',      breadcrumb: 'Real-time Warehouse Stock & Valuation', icon: '&#127981;' },
+            'view-reports':             { title: 'Reports & BI',          breadcrumb: 'Executive Analytics & Drilldown',       icon: '&#128200;' },
+            'view-reminders':           { title: 'Reminder Center',       breadcrumb: 'Payment Follow-ups & Tasks',            icon: '&#9200;' },
+            'view-settings':            { title: 'Settings Studio',       breadcrumb: 'Organization & System Config',          icon: '&#9881;' },
+            'view-general-ledger':      { title: 'General Ledger',        breadcrumb: 'Double-Entry Financial Accounts',       icon: '&#128240;' },
+            'view-financial-statements':{ title: 'Financial Statements',  breadcrumb: 'Balance Sheet & Profit/Loss',           icon: '&#128202;' },
+            'view-aging-analysis':      { title: 'Aging Analysis',        breadcrumb: 'Debtor / Creditor Overdue Aging',       icon: '&#9203;' },
+            'view-gst-compliance':      { title: 'GST Compliance',        breadcrumb: 'GSTR-1, 3B & E-Way Generation',        icon: '&#9878;' },
+            'view-eway-bill':           { title: 'E-Way Bill & E-Invoice', breadcrumb: 'Government Portal Gateway',           icon: '&#128665;' },
+            'view-import':              { title: 'Data Import',           breadcrumb: 'Bulk Excel & CSV Ingestion',             icon: '&#128229;' },
+            'view-users':               { title: 'User Access & RBAC',    breadcrumb: 'Role Matrix & Security Governance',     icon: '&#128100;' },
+            'view-audit':               { title: 'Global Audit Trail',    breadcrumb: 'Tamper-Evident System Event Logs',      icon: '&#128220;' },
+            'view-communication':       { title: 'Communication Center',  breadcrumb: 'Email Logs & WhatsApp Gateways',        icon: '&#128172;' }
+          };
+          var curHash = window.location.hash ? window.location.hash.split('?')[0].replace(/^#\/?/, '') : '';
+          var vKey    = curHash || 'dashboard';
+          var targetVId = vKey.startsWith('view-') ? vKey : ('view-' + vKey);
+          if (vKey === 'purchase' || vKey === 'purchases') targetVId = 'view-purchase-register';
+          if (vKey === 'sales' || vKey === 'sale') targetVId = 'view-sales-register';
+          if (vKey === 'items' || vKey === 'item') targetVId = 'view-item-master';
+          if (vKey === 'customers' || vKey === 'customer') targetVId = 'view-customers';
+          if (vKey === 'suppliers' || vKey === 'supplier') targetVId = 'view-suppliers';
+
+          var m  = viewMeta[targetVId] || { title: 'Executive Command Center', breadcrumb: 'ERP Operations', icon: '&#128202;' };
+          var pt = document.getElementById('header-page-title');
+          var bc = document.getElementById('header-breadcrumb');
+          if (pt) pt.textContent = m.title;
+          if (bc) bc.textContent = m.breadcrumb;
+
+          var tc = document.getElementById('workspace-tabs-container');
+          if (tc) {
+            if (targetVId === 'view-dashboard') {
+              tc.innerHTML = '<div class="workspace-tab active"><span>&#128202;</span><span>Dashboard</span></div>';
+            } else {
+              tc.innerHTML =
+                '<div class="workspace-tab" onclick="window.NavigationRouter && window.NavigationRouter.selectNav(\'view-dashboard\')"><span>&#128202;</span><span>Dashboard</span></div>' +
+                '<div class="workspace-tab active"><span>' + m.icon + '</span><span>' + m.title + '</span><span class="workspace-tab-close">&times;</span></div>';
+            }
+          }
         } catch (_) {}
       })();
     </script>
@@ -925,7 +1073,7 @@
       <main class="app-stage" id="main-content-stage">
 
         <!-- VIEW 1: DASHBOARD (EXACT DESKTOP PARITY - IMAGE 1) -->
-        <div id="view-dashboard" class="module-view active">
+        <div id="view-dashboard" class="module-view">
           <!-- Page Header Banner -->
           <div class="view-header" style="margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 14px;">
@@ -1167,7 +1315,7 @@
               var d = JSON.parse(raw);
               if (d.snapshot) {
                 var s = d.snapshot;
-                var fmt = function (v) { return '₹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var fmt = function (v) { return 'â‚¹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
                 var sa = document.getElementById('dash-kpi-sales-amount'); if (sa) sa.textContent = fmt(s.salesValue);
                 var sc = document.getElementById('dash-kpi-sales-count'); if (sc) sc.textContent = s.invoices || 0;
                 var pa = document.getElementById('dash-kpi-pur-amount'); if (pa) pa.textContent = fmt(s.purchaseValue);
@@ -1189,7 +1337,7 @@
               }
               if (d.ageing) {
                 var a = d.ageing;
-                var fmt2 = function (v) { return '₹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
+                var fmt2 = function (v) { return 'â‚¹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }); };
                 var eo = document.getElementById('dash-ageing-overdue'); if (eo) eo.textContent = fmt2(a.overdue30);
                 var e21 = document.getElementById('dash-ageing-21-30'); if (e21) e21.textContent = fmt2(a.b21_30);
                 var e11 = document.getElementById('dash-ageing-11-20'); if (e11) e11.textContent = fmt2(a.b11_20);
@@ -1501,10 +1649,10 @@
                   <div style="display: flex; gap: 6px; align-items: center;">
                     <button type="button" class="btn btn-secondary"
                       style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                      onclick="window.SalesController.auditCurrentInvoice()">◷ Audit Trail</button>
+                      onclick="window.SalesController.auditCurrentInvoice()">â—· Audit Trail</button>
                     <button type="button" class="btn btn-secondary"
                       style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                      onclick="window.SalesController.closeInvoiceDrawer()">✖ Close</button>
+                      onclick="window.SalesController.closeInvoiceDrawer()">âœ– Close</button>
                   </div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: baseline;">
@@ -1576,9 +1724,9 @@
                   style="display:none; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; background: rgba(56, 189, 248, 0.05); border-radius: 6px; padding: 10px; border: 1px solid rgba(56, 189, 248, 0.2);">
                   <div
                     style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <span style="display: flex; align-items: center; gap: 6px;"><span>🔄</span> Return &amp;
+                    <span style="display: flex; align-items: center; gap: 6px;"><span>ðŸ”„</span> Return &amp;
                       Settlement</span>
-                    <span id="side-ret-status-badge" class="badge pill-badge pill-neutral">📄 N/A</span>
+                    <span id="side-ret-status-badge" class="badge pill-badge pill-neutral">ðŸ“„ N/A</span>
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
@@ -1662,17 +1810,17 @@
                 <div id="side-attachment-section" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; display: none;">
                   <div style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                      <span>📎</span> Attached Document
+                      <span>ðŸ“Ž</span> Attached Document
                     </div>
                   </div>
                   <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-                      <span style="font-size: 1.1rem; color: #a855f7;">📄</span>
+                      <span style="font-size: 1.1rem; color: #a855f7;">ðŸ“„</span>
                       <span id="side-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
                     </div>
                     <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.previewCurrentDrawerAttachment()">👁 Preview</button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="side-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.SalesController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
                     </div>
                   </div>
                 </div>
@@ -2471,7 +2619,7 @@
                     <tr>
                       <td colspan="10"
                         style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;"><span
-                          style="font-size:1.4rem; display:block; margin-bottom:6px;">🔄</span>No sales returns on
+                          style="font-size:1.4rem; display:block; margin-bottom:6px;">ðŸ”„</span>No sales returns on
                         record. Click "+ Create Sales Return" to issue a credit memo.</td>
                     </tr>
                   </tbody>
@@ -2701,8 +2849,8 @@
               <p>Client estimates, pricing proposals, live tracking, and one-click sales invoice conversion</p>
             </div>
             <div class="view-actions">
-              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">📊 Export Excel</button>
-              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">📄 Export PDF</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterExcel()">ðŸ“Š Export Excel</button>
+              <button class="btn btn-secondary" onclick="window.QuotationController.exportRegisterPdf()">ðŸ“„ Export PDF</button>
               <button class="btn btn-secondary" onclick="window.QuotationController.resetFilters()">Reset</button>
               <button class="btn btn-secondary" onclick="window.QuotationController.loadQuotations(0)">&#8635; Refresh</button>
               <button class="btn btn-primary" onclick="window.QuotationController.openQuotationEditor()">+ New Quotation</button>
@@ -2845,11 +2993,11 @@
                 <div style="display: flex; gap: 6px; align-items: center;">
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.QuotationController.showAudit(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText)">◷
+                    onclick="window.QuotationController.showAudit(window.QuotationController.selectedQuote?.id, document.getElementById('qd-no').innerText)">â—·
                     Audit</button>
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.QuotationController.closeDrawer()">✖ Close</button>
+                    onclick="window.QuotationController.closeDrawer()">âœ– Close</button>
                 </div>
               </div>
               <div class="drawer-body"
@@ -2882,16 +3030,16 @@
                 <!-- Attached Document Section -->
                 <div id="qd-attachment-section" style="display:none; border:1px solid rgba(168,85,247,0.25); background:rgba(168,85,247,0.05); border-radius:6px; padding:10px; margin-top:4px;">
                   <div style="font-size:0.74rem; font-weight:700; color:#c084fc; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-                    <span style="display:flex; align-items:center; gap:6px;"><span>📎</span> Attached Document</span>
+                    <span style="display:flex; align-items:center; gap:6px;"><span>ðŸ“Ž</span> Attached Document</span>
                   </div>
                   <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
                     <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-                      <span style="font-size:1.1rem; color:#a855f7;">📄</span>
+                      <span style="font-size:1.1rem; color:#a855f7;">ðŸ“„</span>
                       <span id="qd-attachment-name" style="font-size:0.75rem; color:var(--text-main); font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="">-</span>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">👁 Preview</button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-preview" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="qd-btn-attachment-download" style="font-size:0.7rem; padding:2px 7px; height:22px;" onclick="window.QuotationController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
                     </div>
                   </div>
                 </div>
@@ -2975,7 +3123,7 @@
             <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-top:12px;">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="color:#c084fc;">📎</span>
+                  <span style="color:#c084fc;">ðŸ“Ž</span>
                   <div style="font-size:0.82rem; font-weight:700; color:#ffffff;">Attachment Document</div>
                 </div>
                 <span id="qe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
@@ -2983,14 +3131,14 @@
               <div style="font-size:0.7rem; color:#64748b; margin-bottom:8px;">Proposal specification, technical drawing, or customer RFQ scan &bull; Max 10MB</div>
 
               <div id="qe-attachment-dropzone" style="min-height:75px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                <div id="qe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
+                <div id="qe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">ðŸ“„</div>
                 <div id="qe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
                 <div id="qe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, DOC, XLS, PNG, JPG</div>
               </div>
               <input type="file" id="qe-attachment-file-input" style="display:none;" onchange="window.QuotationController.handleAttachmentFileSelected(this)">
               <div style="display:flex; gap:8px;">
                 <button type="button" id="qe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('qe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 14px; font-size:0.75rem; font-weight:600;">+ Add / Replace</button>
-                <button type="button" id="qe-btn-attach-preview" class="btn btn-secondary" onclick="window.QuotationController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>👁 Preview</button>
+                <button type="button" id="qe-btn-attach-preview" class="btn btn-secondary" onclick="window.QuotationController.previewEditorAttachment()" style="padding:4px 14px; font-size:0.75rem;" disabled>ðŸ‘ Preview</button>
                 <button type="button" id="qe-btn-attach-remove" class="btn btn-secondary" onclick="window.QuotationController.removeEditorAttachment()" style="padding:4px 14px; font-size:0.75rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
               </div>
             </div>
@@ -3229,10 +3377,10 @@
               <div style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary"
                   style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
-                  onclick="window.PurchaseController.exportPurchaseRegisterExcel()">📥 Export Excel</button>
+                  onclick="window.PurchaseController.exportPurchaseRegisterExcel()">ðŸ“¥ Export Excel</button>
                 <button class="btn btn-secondary"
                   style="font-size: 0.75rem; padding: 4px 12px; display:inline-flex; align-items:center; gap:4px;"
-                  onclick="window.PurchaseController.exportPurchaseRegisterPdf()">📄 Export PDF</button>
+                  onclick="window.PurchaseController.exportPurchaseRegisterPdf()">ðŸ“„ Export PDF</button>
                 <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
                   onclick="window.PurchaseController.resetFilters()">&#8635; Reset</button>
                 <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 12px;"
@@ -3325,7 +3473,7 @@
                 <div style="display: flex; gap: 6px; align-items: center;">
                   <button type="button" class="btn btn-secondary btn-sm"
                     style="font-size: 0.72rem; padding: 2px 8px; height: 24px;"
-                    onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('PURCHASE', window.PurchaseController.selectedInvoice?.id, document.getElementById('pd-invoice-no').innerText) : null">◷
+                    onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('PURCHASE', window.PurchaseController.selectedInvoice?.id, document.getElementById('pd-invoice-no').innerText) : null">â—·
                     Audit</button>
                   <button class="btn btn-secondary btn-sm"
                     onclick="window.PurchaseController.closeDrawer()">&times;</button>
@@ -3379,9 +3527,9 @@
                   style="display:none; border: 1px solid rgba(56, 189, 248, 0.2); background: rgba(56, 189, 248, 0.05); border-radius: 6px; padding: 10px; margin-top: 4px;">
                   <div
                     style="font-size: 0.76rem; font-weight: 700; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <span style="display: flex; align-items: center; gap: 6px;"><span>🔄</span> Purchase Return
+                    <span style="display: flex; align-items: center; gap: 6px;"><span>ðŸ”„</span> Purchase Return
                       Settlement</span>
-                    <span id="pd-ret-status-badge" class="pill-badge pill-neutral">📄 N/A</span>
+                    <span id="pd-ret-status-badge" class="pill-badge pill-neutral">ðŸ“„ N/A</span>
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
@@ -3433,17 +3581,17 @@
                 <div id="pd-attachment-section" style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 4px; display: none;">
                   <div style="font-weight: 700; font-size: 0.82rem; color: var(--cyan); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                      <span>📎</span> Attached Document
+                      <span>ðŸ“Ž</span> Attached Document
                     </div>
                   </div>
                   <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-                      <span style="font-size: 1.1rem; color: #a855f7;">📄</span>
+                      <span style="font-size: 1.1rem; color: #a855f7;">ðŸ“„</span>
                       <span id="pd-attachment-name" style="font-size: 0.75rem; color: var(--text-main); font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="">-</span>
                     </div>
                     <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">👁 Preview</button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">📥 Download</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-preview" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">ðŸ‘ Preview</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="pd-btn-attachment-download" style="font-size: 0.7rem; padding: 2px 7px; height: 22px;" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">ðŸ“¥ Download</button>
                     </div>
                   </div>
                 </div>
@@ -3474,23 +3622,23 @@
               <div class="drawer-footer"
                 style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);"
-                  onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
+                  onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">🖨️
+                  onclick="window.PurchaseController.downloadPdf(document.getElementById('pd-invoice-no').innerText)">ðŸ–¨ï¸
                   View / Download PDF</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">📊
+                  onclick="window.PurchaseController.downloadExcel(document.getElementById('pd-invoice-no').innerText)">ðŸ“Š
                   View / Download Excel</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">✉️
+                  onclick="window.PurchaseController.sendEmailPrompt(document.getElementById('pd-invoice-no').innerText)">âœ‰ï¸
                   Send Email</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">✏️
+                  onclick="window.PurchaseController.openPurchaseEditor(document.getElementById('pd-invoice-no').innerText)">âœï¸
                   Edit Purchase</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">🏷️
+                  onclick="window.PurchaseController.printInwardBarcode(document.getElementById('pd-invoice-no').innerText)">ðŸ·ï¸
                   Inward Barcode</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">✕
+                <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.closeDrawer()">âœ•
                   Close</button>
               </div>
             </div>
@@ -3785,7 +3933,7 @@
                 <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                     <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">📎</span>
+                      <span style="color:#c084fc;">ðŸ“Ž</span>
                       <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
                     </div>
                     <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
@@ -3793,14 +3941,14 @@
                   <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Vendor bill copy, physical receipt scan, or GRN &bull; Max 10MB</div>
 
                   <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
+                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">ðŸ“„</div>
                     <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
                     <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
                   </div>
                   <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
                   <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
+                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>ðŸ‘ Preview</button>
                     <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
                   </div>
                 </div>
@@ -3910,7 +4058,7 @@
                     <tr>
                       <td colspan="10"
                         style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;"><span
-                          style="font-size:1.4rem; display:block; margin-bottom:6px;">🔄</span>No purchase returns on
+                          style="font-size:1.4rem; display:block; margin-bottom:6px;">ðŸ”„</span>No purchase returns on
                         record. Click "+ Create Purchase Return" to issue a debit memo.</td>
                     </tr>
                   </tbody>
@@ -4155,7 +4303,7 @@
           <div class="kpi-grid"
             style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;">
             <div class="standard-kpi-card kpi-blue" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">📦</div>
+              <div class="standard-kpi-icon" style="background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ“¦</div>
               <div class="standard-kpi-body" style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span class="metric-label">TOTAL ITEMS</span>
@@ -4166,7 +4314,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-purple" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">🏷️</div>
+              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ·ï¸</div>
               <div class="standard-kpi-body" style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span class="metric-label">CATEGORIES</span>
@@ -4177,7 +4325,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-orange" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">⚠️</div>
+              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">âš ï¸</div>
               <div class="standard-kpi-body" style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span class="metric-label">LOW STOCK</span>
@@ -4188,7 +4336,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-green" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">💰</div>
+              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">ðŸ’°</div>
               <div class="standard-kpi-body" style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span class="metric-label">TOTAL VALUATION</span>
@@ -4555,13 +4703,13 @@
                     </div>
                   </div>
                   <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                    <button class="btn btn-primary btn-sm" onclick="window.MasterDataController.drawerEditLookup()">✏️
+                    <button class="btn btn-primary btn-sm" onclick="window.MasterDataController.drawerEditLookup()">âœï¸
                       Edit Lookup</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.MasterDataController.drawerToggleStatus()">🔄 Toggle Active</button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.drawerCopyCode()">📋
+                      onclick="window.MasterDataController.drawerToggleStatus()">ðŸ”„ Toggle Active</button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.drawerCopyCode()">ðŸ“‹
                       Copy Code</button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.closeMasterDrawer()">✖
+                    <button class="btn btn-secondary btn-sm" onclick="window.MasterDataController.closeMasterDrawer()">âœ–
                       Close</button>
                   </div>
                 </div>
@@ -4574,7 +4722,7 @@
         <div id="view-bank-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">₹</span>
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">â‚¹</span>
               <div>
                 <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="bank-view-title">Bank
                   Entry</h1>
@@ -4586,16 +4734,16 @@
             <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
               <button class="btn btn-primary" id="btnBankMode" onclick="window.FinanceController.loadBankMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>🏦</span> Bank Entry
+                <span>ðŸ¦</span> Bank Entry
               </button>
               <button class="btn btn-secondary" id="btnExpenseMode" onclick="window.FinanceController.loadExpenseMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>💸</span> Expense Entry
+                <span>ðŸ’¸</span> Expense Entry
               </button>
               <button class="btn btn-secondary" id="btnBankRecon"
                 onclick="window.NavigationRouter.selectNav('view-bank-statement')"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>📑</span> Bank Reconciliation
+                <span>ðŸ“‘</span> Bank Reconciliation
               </button>
             </div>
           </div>
@@ -4613,7 +4761,7 @@
                 <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
               </div>
               <div class="kpi-value" id="bank-kpi-balance"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">â‚¹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-balance-meta"
                 style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">Total net ledger balance</div>
             </div>
@@ -4626,7 +4774,7 @@
                 <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
               </div>
               <div class="kpi-value" id="bank-kpi-inflow"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--green);">₹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--green);">â‚¹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-inflow-meta"
                 style="font-size: 0.7rem; color: var(--green); margin-top: 4px;">0 entries</div>
             </div>
@@ -4640,7 +4788,7 @@
                   style="font-size: 0.65rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Outflow</span>
               </div>
               <div class="kpi-value" id="bank-kpi-outflow" style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">
-                ₹ 0.00</div>
+                â‚¹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-outflow-meta"
                 style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px;">0 entries</div>
             </div>
@@ -4654,7 +4802,7 @@
                 <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
               </div>
               <div class="kpi-value" id="bank-kpi-net" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">
-                ₹ 0.00</div>
+                â‚¹ 0.00</div>
               <div class="kpi-meta" id="bank-kpi-net-meta"
                 style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
@@ -4668,7 +4816,7 @@
                 placeholder="Search reference, narration, account..."
                 oninput="window.FinanceController.applyFinanceFilters()">
               <span
-                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
             </div>
             <select id="bank-type-filter" class="form-select" onchange="window.FinanceController.applyFinanceFilters()"
               style="height: 34px; font-size: 0.78rem; min-width: 140px;">
@@ -4703,7 +4851,7 @@
                     <th>Bank Account</th>
                     <th id="th-bank-mode">Mode</th>
                     <th>Reference / UTR</th>
-                    <th style="text-align: right;">Amount (₹)</th>
+                    <th style="text-align: right;">Amount (â‚¹)</th>
                     <th>Match / Link</th>
                     <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
@@ -4750,7 +4898,7 @@
                 <div
                   style="padding: 10px 12px; background: rgba(16,185,129,0.06); border-radius: 6px; border: 1px solid rgba(16,185,129,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.75rem; color: var(--green); font-weight: 700;">TRANSACTION AMOUNT:</span>
-                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">₹ 0.00</span>
+                  <span id="bed-amount" style="font-weight: 800; color: var(--green); font-size: 1.05rem;">â‚¹ 0.00</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                   <div style="display: flex; justify-content: space-between;"><span
@@ -4770,17 +4918,17 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">📜 View In
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerBankLedger()">ðŸ“œ View In
                   GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">📋 Audit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankAudit()">ðŸ“‹ Audit
                   Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">✏️ Edit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankEdit()">âœï¸ Edit
                   Entry</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankDelete()"
-                  style="color: #f87171;">🗑️ Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">🖨️ Print
+                  style="color: #f87171;">ðŸ—‘ï¸ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerBankPrint()">ðŸ–¨ï¸ Print
                   Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">✖
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeBankDrawer()">âœ–
                   Close</button>
               </div>
             </div>
@@ -4791,7 +4939,7 @@
         <div id="view-expense-entry" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">₹</span>
+              <span style="font-size: 1.6rem; color: #fbbf24; font-weight: 800;">â‚¹</span>
               <div>
                 <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;" id="exp-view-title">Expense
                   Entry</h1>
@@ -4803,17 +4951,17 @@
             <div class="view-actions" style="display: flex; gap: 8px; align-items: center;">
               <button class="btn btn-secondary" id="btnBankModeExp" onclick="window.FinanceController.loadBankMode()"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>🏦</span> Bank Entry
+                <span>ðŸ¦</span> Bank Entry
               </button>
               <button class="btn btn-primary" id="btnExpenseModeExp"
                 onclick="window.FinanceController.loadExpenseMode()"
                 style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>💸</span> Expense Entry
+                <span>ðŸ’¸</span> Expense Entry
               </button>
               <button class="btn btn-secondary" id="btnBankReconExp"
                 onclick="window.NavigationRouter.selectNav('view-bank-statement')"
                 style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <span>📑</span> Bank Reconciliation
+                <span>ðŸ“‘</span> Bank Reconciliation
               </button>
             </div>
           </div>
@@ -4831,7 +4979,7 @@
                 <span class="pill-badge pill-neutral" style="font-size: 0.65rem;">Balance</span>
               </div>
               <div class="kpi-value" id="exp-kpi-month" style="font-size: 1.2rem; font-weight: 800; color: var(--red);">
-                ₹ 0.00</div>
+                â‚¹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-month-meta"
                 style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">0 entries</div>
             </div>
@@ -4845,7 +4993,7 @@
                 <span class="pill-badge pill-success" style="font-size: 0.65rem;">Inflow</span>
               </div>
               <div class="kpi-value" id="exp-kpi-total"
-                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹ 0.00</div>
+                style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">â‚¹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-total-meta"
                 style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Year to date</div>
             </div>
@@ -4874,7 +5022,7 @@
                 <span class="pill-badge pill-purple" style="font-size: 0.65rem;">Net</span>
               </div>
               <div class="kpi-value" id="exp-kpi-cash" style="font-size: 1.2rem; font-weight: 800; color: var(--cyan);">
-                ₹ 0.00</div>
+                â‚¹ 0.00</div>
               <div class="kpi-meta" id="exp-kpi-cash-meta"
                 style="font-size: 0.7rem; color: var(--cyan); margin-top: 4px;">0 entries</div>
             </div>
@@ -4888,7 +5036,7 @@
                 placeholder="Search voucher, payee, head, description..."
                 oninput="window.FinanceController.applyFinanceFilters()">
               <span
-                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+                style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
             </div>
             <select id="exp-category-filter" class="form-select"
               onchange="window.FinanceController.applyFinanceFilters()"
@@ -4921,7 +5069,7 @@
                     <th>Payee / Paid To</th>
                     <th>Mode</th>
                     <th>Voucher #</th>
-                    <th style="text-align: right;">Amount (₹)</th>
+                    <th style="text-align: right;">Amount (â‚¹)</th>
                     <th>Match / Link</th>
                     <th style="text-align: center; width: 100px;">Actions</th>
                   </tr>
@@ -4969,7 +5117,7 @@
                 <div
                   style="padding: 10px 12px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.75rem; color: var(--red); font-weight: 700;">DISBURSED AMOUNT:</span>
-                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">₹ 0.00</span>
+                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">â‚¹ 0.00</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                   <div style="display: flex; justify-content: space-between;"><span
@@ -4989,17 +5137,17 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">📜 View
+                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">ðŸ“œ View
                   In GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">📋
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">ðŸ“‹
                   Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">✏️ Edit
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">âœï¸ Edit
                   Expense</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()"
-                  style="color: #f87171;">🗑️ Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">🖨️
+                  style="color: #f87171;">ðŸ—‘ï¸ Delete</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">ðŸ–¨ï¸
                   Print Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">✖
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">âœ–
                   Close</button>
               </div>
             </div>
@@ -5010,7 +5158,7 @@
         <div id="view-bank-statement" class="module-view fixed-viewport">
           <div class="view-header" style="align-items: center; justify-content: space-between; margin-bottom: 14px;">
             <div class="view-title-group" style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">📑</span>
+              <span style="font-size: 1.6rem; color: var(--cyan); font-weight: 800;">ðŸ“‘</span>
               <div>
                 <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;">Bank Statement</h1>
                 <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);">Review and reconcile imported
@@ -5029,18 +5177,18 @@
               </div>
               <button class="btn btn-secondary" onclick="window.BankStatementController.toggleStatementHistory(true)"
                 style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
-                <span>📂</span> Browse Statements
+                <span>ðŸ“‚</span> Browse Statements
               </button>
               <button class="btn btn-danger" id="btnDeleteStatement"
                 onclick="window.BankStatementController.deleteStatement()"
                 style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
-                <span>🗑️</span> Delete Statement
+                <span>ðŸ—‘ï¸</span> Delete Statement
               </button>
               <input type="file" id="bank-csv-file-input" accept=".csv,.txt" style="display:none;"
                 onchange="window.BankStatementController.onCsvFileSelected(event)">
               <button class="btn btn-primary" onclick="window.BankStatementController.importStatement()"
                 style="height: 34px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <span>📥</span> Import Statement
+                <span>ðŸ“¥</span> Import Statement
               </button>
             </div>
           </div>
@@ -5125,7 +5273,7 @@
                 <span class="pill-badge pill-success" style="font-size: 0.58rem; padding: 1px 4px;">In</span>
               </div>
               <div class="kpi-value" id="kpiCredits" style="font-size: 1.05rem; font-weight: 800; color: var(--green);">
-                ₹ 0.00</div>
+                â‚¹ 0.00</div>
               <div class="kpi-meta" id="kpiCreditsMeta"
                 style="font-size: 0.62rem; color: var(--green); margin-top: 2px;">Money in</div>
             </div>
@@ -5138,7 +5286,7 @@
                   Debits</span>
                 <span class="pill-badge pill-danger" style="font-size: 0.58rem; padding: 1px 4px;">Out</span>
               </div>
-              <div class="kpi-value" id="kpiDebits" style="font-size: 1.05rem; font-weight: 800; color: #f87171;">₹ 0.00
+              <div class="kpi-value" id="kpiDebits" style="font-size: 1.05rem; font-weight: 800; color: #f87171;">â‚¹ 0.00
               </div>
               <div class="kpi-meta" id="kpiDebitsMeta" style="font-size: 0.62rem; color: #f87171; margin-top: 2px;">
                 Money out</div>
@@ -5169,7 +5317,7 @@
                   placeholder="Search narration, reference, cheque, amount..."
                   oninput="window.BankStatementController.applyFilters()">
                 <span
-                  style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+                  style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-dim); pointer-events: none;">ðŸ”</span>
               </div>
               <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.applyFilters()"
                 style="height: 34px;">Search</button>
@@ -5256,9 +5404,9 @@
                     <th>Value Date</th>
                     <th>Reference / Cheque</th>
                     <th>Description / Narration</th>
-                    <th style="text-align: right;">Debit (₹)</th>
-                    <th style="text-align: right;">Credit (₹)</th>
-                    <th style="text-align: right;">Balance (₹)</th>
+                    <th style="text-align: right;">Debit (â‚¹)</th>
+                    <th style="text-align: right;">Credit (â‚¹)</th>
+                    <th style="text-align: right;">Balance (â‚¹)</th>
                     <th style="text-align: center;">Status</th>
                     <th>Match / Link</th>
                     <th style="text-align: center; width: 100px;">Actions</th>
@@ -5314,7 +5462,7 @@
                 <div
                   style="padding: 10px 12px; background: rgba(56,189,248,0.06); border-radius: 6px; border: 1px solid rgba(56,189,248,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.75rem; color: var(--cyan); font-weight: 700;">CLOSING BALANCE:</span>
-                  <span id="bsd-balance" style="font-weight: 800; color: var(--cyan); font-size: 1.05rem;">₹ 0.00</span>
+                  <span id="bsd-balance" style="font-weight: 800; color: var(--cyan); font-size: 1.05rem;">â‚¹ 0.00</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                   <div style="display: flex; justify-content: space-between;"><span
@@ -5328,14 +5476,14 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.drawerMatch()">🔗 Match
+                <button class="btn btn-primary btn-sm" onclick="window.BankStatementController.drawerMatch()">ðŸ”— Match
                   ERP</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveExpense()">💸
+                <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.drawerMoveExpense()">ðŸ’¸
                   To Expense</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.BankStatementController.drawerMoveBankEntry()">🏦 Bank Entry</button>
+                  onclick="window.BankStatementController.drawerMoveBankEntry()">ðŸ¦ Bank Entry</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.BankStatementController.closeStatementDrawer()">✖ Close</button>
+                  onclick="window.BankStatementController.closeStatementDrawer()">âœ– Close</button>
               </div>
             </div>
           </div>
@@ -5370,9 +5518,9 @@
           <!-- Bottom Guidance Banner (BankStatement.fxml Parity) -->
           <div
             style="margin-top: 14px; padding: 10px 14px; background: rgba(56,189,248,0.04); border: 1px solid rgba(56,189,248,0.15); border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-            <span style="color: var(--cyan); font-weight: 700;">ⓘ</span>
+            <span style="color: var(--cyan); font-weight: 700;">â“˜</span>
             <span><strong>How Matching Works:</strong> Automatically links bank entries to sales invoices, vendor bills,
-              and expense vouchers based on reference heuristics, amount tolerance (±₹5.00), and date proximity.</span>
+              and expense vouchers based on reference heuristics, amount tolerance (Â±â‚¹5.00), and date proximity.</span>
           </div>
         </div>
 
@@ -6400,11 +6548,11 @@
               <div class="drawer-footer">
                 <button id="ad-btn-reminder" class="btn btn-primary btn-sm"
                   onclick="window.FinanceController.sendSelectedAgingReminder()" style="flex:1;">
-                  💬 Send Reminder
+                  ðŸ’¬ Send Reminder
                 </button>
                 <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.viewAgingLedger()"
                   style="flex:1;">
-                  📜 General Ledger
+                  ðŸ“œ General Ledger
                 </button>
               </div>
             </div>
@@ -6415,7 +6563,7 @@
         <div id="view-gst-compliance" class="module-view fixed-viewport">
           <div class="view-header">
             <div class="view-title-group">
-              <h1><span>⚖️</span> GST Compliance &amp; 2B Reconciliation Center</h1>
+              <h1><span>âš–ï¸</span> GST Compliance &amp; 2B Reconciliation Center</h1>
               <p>Automated GSTR-2B fuzzy ITC matching, GSTR-1 government schema export, and statutory tax set-off</p>
             </div>
             <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
@@ -6429,13 +6577,13 @@
               <input type="file" id="gst-2b-file-input" accept=".json" style="display:none;"
                 onchange="window.GstController.handle2bFileSelected(event)">
               <button class="btn btn-secondary" onclick="document.getElementById('gst-2b-file-input').click()">
-                <span>📥</span> Import GSTR-2B JSON
+                <span>ðŸ“¥</span> Import GSTR-2B JSON
               </button>
               <button class="btn btn-secondary" onclick="window.GstController.loadGstData()">
-                <span>🔄</span> Compute Period
+                <span>ðŸ”„</span> Compute Period
               </button>
               <button class="btn btn-primary" onclick="window.GstController.exportGstr1Json()">
-                <span>📤</span> Export GSTR-1 JSON
+                <span>ðŸ“¤</span> Export GSTR-1 JSON
               </button>
             </div>
           </div>
@@ -6482,13 +6630,13 @@
           <!-- Triple Main Tabs matching desktop GstComplianceCenter.fxml -->
           <div style="display:flex; border-bottom:1px solid var(--border-subtle); margin-bottom:14px; gap:8px;">
             <button id="gst-tab-btn-2b" class="tab-btn active" onclick="window.GstController.switchTab('GSTR2B')">
-              📥 GSTR-2B ITC Reconciliation
+              ðŸ“¥ GSTR-2B ITC Reconciliation
             </button>
             <button id="gst-tab-btn-3b" class="tab-btn" onclick="window.GstController.switchTab('GSTR3B')">
-              ⚖️ GSTR-3B Tax Set-Off Summary
+              âš–ï¸ GSTR-3B Tax Set-Off Summary
             </button>
             <button id="gst-tab-btn-1" class="tab-btn" onclick="window.GstController.switchTab('GSTR1')">
-              📤 GSTR-1 Statutory Return Center
+              ðŸ“¤ GSTR-1 Statutory Return Center
             </button>
           </div>
 
@@ -6584,13 +6732,13 @@
                   </div>
                 </div>
                 <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                  <button class="btn btn-primary btn-sm" onclick="window.GstController.openLinkedBill()">📖 Open
+                  <button class="btn btn-primary btn-sm" onclick="window.GstController.openLinkedBill()">ðŸ“– Open
                     Bill</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.notifySupplier()">💬
+                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.notifySupplier()">ðŸ’¬
                     Notice</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.auditSelected()">📋
+                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.auditSelected()">ðŸ“‹
                     Audit</button>
-                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.closeReconDrawer()">✖
+                  <button class="btn btn-secondary btn-sm" onclick="window.GstController.closeReconDrawer()">âœ–
                     Close</button>
                 </div>
               </div>
@@ -6602,7 +6750,7 @@
             <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
               <span style="font-weight:600; font-size:0.9rem; color:var(--text-main);">Section 49 / 49A / 49B Statutory
                 Credit Consumption &amp; Cash Liability</span>
-              <button class="btn btn-secondary btn-sm" onclick="window.GstController.loadGstr3bData()">🔄 Recalculate
+              <button class="btn btn-secondary btn-sm" onclick="window.GstController.loadGstr3bData()">ðŸ”„ Recalculate
                 3B</button>
             </div>
             <div class="data-panel" style="overflow-x:auto;">
@@ -6776,7 +6924,7 @@
               <div>
                 <h3 class="modal-title">Supplier ITC Compliance Notice (Rule 36(4))</h3>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">Statutory Notice Demand for ITC
-                  Verification — <span id="sn-party-name" style="color:var(--cyan); font-weight:700;">-</span></p>
+                  Verification â€” <span id="sn-party-name" style="color:var(--cyan); font-weight:700;">-</span></p>
               </div>
               <button class="modal-close-btn" onclick="window.GstController.closeSupplierNotice()">&times;</button>
             </div>
@@ -6789,12 +6937,12 @@
               </div>
             </div>
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.GstController.copyNoticeText()">📋 Copy
+              <button class="btn btn-secondary btn-sm" onclick="window.GstController.copyNoticeText()">ðŸ“‹ Copy
                 Text</button>
               <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" onclick="window.GstController.sendNoticeEmail()">✉️ Send
+                <button class="btn btn-secondary" onclick="window.GstController.sendNoticeEmail()">âœ‰ï¸ Send
                   Email</button>
-                <button class="btn btn-primary" onclick="window.GstController.sendNoticeWhatsapp()">💬 Open
+                <button class="btn btn-primary" onclick="window.GstController.sendNoticeWhatsapp()">ðŸ’¬ Open
                   WhatsApp</button>
                 <button class="btn btn-secondary" onclick="window.GstController.closeSupplierNotice()">Close</button>
               </div>
@@ -6980,7 +7128,7 @@
                 <span class="pill-badge pill-purple" style="font-size:0.65rem; padding:1px 6px;">Reorder</span>
               </div>
               <div class="kpi-value" id="auto-kpi-replenish-value"
-                style="font-size:1.35rem; color:var(--purple); font-weight:700;">₹ 0.00</div>
+                style="font-size:1.35rem; color:var(--purple); font-weight:700;">â‚¹ 0.00</div>
               <div class="kpi-meta" style="font-size:0.68rem; color:var(--text-dim);">Suggested Reorder Value</div>
             </div>
           </div>
@@ -7028,10 +7176,10 @@
                         <th>Vendor Bill No.</th>
                         <th>PO Number</th>
                         <th>Supplier Name</th>
-                        <th style="text-align:right;">PO Value (₹)</th>
-                        <th style="text-align:right;">GRN Received (₹)</th>
-                        <th style="text-align:right;">Billed Value (₹)</th>
-                        <th style="text-align:right;">Variance (₹)</th>
+                        <th style="text-align:right;">PO Value (â‚¹)</th>
+                        <th style="text-align:right;">GRN Received (â‚¹)</th>
+                        <th style="text-align:right;">Billed Value (â‚¹)</th>
+                        <th style="text-align:right;">Variance (â‚¹)</th>
                         <th style="text-align:center;">Match Status</th>
                         <th style="text-align:center;">Actions</th>
                       </tr>
@@ -7074,39 +7222,39 @@
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">PO Value:</div>
                         <div id="amd-po-amt"
-                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">₹ 0.00
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
                         </div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">GRN Received:</div>
                         <div id="amd-grn-amt"
-                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">₹ 0.00
+                          style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00
                         </div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Billed Value:</div>
                         <div id="amd-bill-amt"
-                          style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
+                          style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
                       </div>
                       <div
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Variance:</div>
                         <div id="amd-variance"
-                          style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
+                          style="font-weight:700; color:var(--red); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
                       </div>
                     </div>
                   </div>
                   <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     <button class="btn btn-primary btn-sm"
-                      onclick="window.AutomationCenterController.drawerOpenBill()">📖 Open Bill</button>
+                      onclick="window.AutomationCenterController.drawerOpenBill()">ðŸ“– Open Bill</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerSupplierLedger()">👤 Supplier</button>
+                      onclick="window.AutomationCenterController.drawerSupplierLedger()">ðŸ‘¤ Supplier</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerAuditTimeline()">📋 Audit Log</button>
+                      onclick="window.AutomationCenterController.drawerAuditTimeline()">ðŸ“‹ Audit Log</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.closeMatchDrawer()">✖ Close</button>
+                      onclick="window.AutomationCenterController.closeMatchDrawer()">âœ– Close</button>
                   </div>
                 </div>
               </div>
@@ -7142,7 +7290,7 @@
                         <th style="text-align:right;">Min Stock</th>
                         <th style="text-align:right;">Suggested Qty</th>
                         <th style="text-align:center;">Unit</th>
-                        <th style="text-align:right;">Estimated Cost (₹)</th>
+                        <th style="text-align:right;">Estimated Cost (â‚¹)</th>
                         <th style="text-align:center;">Stock Status</th>
                         <th style="text-align:center;">Actions</th>
                       </tr>
@@ -7196,19 +7344,19 @@
                         style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
                         <div style="color:var(--text-muted); font-size:0.68rem;">Estimated Cost:</div>
                         <div id="ard-est-cost"
-                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">₹ 0.00</div>
+                          style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">â‚¹ 0.00</div>
                       </div>
                     </div>
                   </div>
                   <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     <button class="btn btn-primary btn-sm"
-                      onclick="window.AutomationCenterController.drawerCreatePo()">➕ Create PO</button>
+                      onclick="window.AutomationCenterController.drawerCreatePo()">âž• Create PO</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerOpenStockRegister()">📦 Stock Ledger</button>
+                      onclick="window.AutomationCenterController.drawerOpenStockRegister()">ðŸ“¦ Stock Ledger</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.drawerItemMaster()">🏷️ Item Master</button>
+                      onclick="window.AutomationCenterController.drawerItemMaster()">ðŸ·ï¸ Item Master</button>
                     <button class="btn btn-secondary btn-sm"
-                      onclick="window.AutomationCenterController.closeReorderDrawer()">✖ Close</button>
+                      onclick="window.AutomationCenterController.closeReorderDrawer()">âœ– Close</button>
                   </div>
                 </div>
               </div>
@@ -7650,7 +7798,7 @@
           <!-- 5 STANDARD KPI CARDS (Inventory.fxml Parity) -->
           <div class="kpi-grid" style="grid-template-columns:repeat(5, 1fr); margin-bottom:16px; gap:12px;">
             <div class="standard-kpi-card kpi-blue">
-              <div class="standard-kpi-icon">📦</div>
+              <div class="standard-kpi-icon">ðŸ“¦</div>
               <div class="standard-kpi-body">
                 <div class="standard-kpi-top">
                   <span class="metric-label">TOTAL ITEMS</span>
@@ -7661,7 +7809,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-green">
-              <div class="standard-kpi-icon">✅</div>
+              <div class="standard-kpi-icon">âœ…</div>
               <div class="standard-kpi-body">
                 <div class="standard-kpi-top">
                   <span class="metric-label">IN STOCK</span>
@@ -7672,7 +7820,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-orange">
-              <div class="standard-kpi-icon">⚠️</div>
+              <div class="standard-kpi-icon">âš ï¸</div>
               <div class="standard-kpi-body">
                 <div class="standard-kpi-top">
                   <span class="metric-label">LOW STOCK</span>
@@ -7683,7 +7831,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-red">
-              <div class="standard-kpi-icon">❌</div>
+              <div class="standard-kpi-icon">âŒ</div>
               <div class="standard-kpi-body">
                 <div class="standard-kpi-top">
                   <span class="metric-label">OUT OF STOCK</span>
@@ -7694,7 +7842,7 @@
               </div>
             </div>
             <div class="standard-kpi-card kpi-purple">
-              <div class="standard-kpi-icon">💰</div>
+              <div class="standard-kpi-icon">ðŸ’°</div>
               <div class="standard-kpi-body">
                 <div class="standard-kpi-top">
                   <span class="metric-label">STOCK VALUE</span>
@@ -8205,25 +8353,25 @@
           </div>
         </div>
 
-        <!-- VIEW: CRM / CUSTOMER 360° (Customer360.fxml PARITY) -->
+        <!-- VIEW: CRM / CUSTOMER 360Â° (Customer360.fxml PARITY) -->
         <div id="view-customer-360" class="module-view" style="display:none;">
           <!-- Top Header Bar matching Customer360.fxml -->
           <div class="view-header" style="align-items:center; margin-bottom:14px;">
             <div class="view-title-group">
               <h1 id="c360-page-title" style="display:flex; align-items:center; gap:8px;">
-                <span>🌐</span> <span id="c360-screen-name">Customer 360°</span>
+                <span>ðŸŒ</span> <span id="c360-screen-name">Customer 360Â°</span>
               </h1>
               <p>One customer view across existing business records</p>
             </div>
             <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
-              <button class="btn btn-secondary" onclick="window.PartyController.backToCustomers()">← Back to
+              <button class="btn btn-secondary" onclick="window.PartyController.backToCustomers()">â† Back to
                 Customers</button>
-              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentCustomer360()">✏️ Edit
+              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentCustomer360()">âœï¸ Edit
                 Customer</button>
-              <button class="btn btn-purple" onclick="window.PartyController.newSaleForCustomer360()">🛒 New
+              <button class="btn btn-purple" onclick="window.PartyController.newSaleForCustomer360()">ðŸ›’ New
                 Sale</button>
               <button class="btn btn-secondary" id="c360-btn-refresh"
-                onclick="window.PartyController.refreshCustomer360()">⟳ Refresh</button>
+                onclick="window.PartyController.refreshCustomer360()">âŸ³ Refresh</button>
             </div>
           </div>
 
@@ -8233,7 +8381,7 @@
             <div
               style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
               <span
-                style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">👤
+                style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">ðŸ‘¤
                 Customer Details</span>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Status</span>
@@ -8320,19 +8468,19 @@
           <!-- 7-Tab Pane matching Customer360.fxml -->
           <div class="register-tab-strip" style="margin-bottom:14px;">
             <button class="register-tab-btn active" id="tab-c360-overview"
-              onclick="window.PartyController.select360Tab('overview')">📈 Overview</button>
+              onclick="window.PartyController.select360Tab('overview')">ðŸ“ˆ Overview</button>
             <button class="register-tab-btn" id="tab-c360-contacts"
-              onclick="window.PartyController.select360Tab('contacts')">👥 Contacts</button>
+              onclick="window.PartyController.select360Tab('contacts')">ðŸ‘¥ Contacts</button>
             <button class="register-tab-btn" id="tab-c360-quotations"
-              onclick="window.PartyController.select360Tab('quotations')">💬 Quotations</button>
+              onclick="window.PartyController.select360Tab('quotations')">ðŸ’¬ Quotations</button>
             <button class="register-tab-btn" id="tab-c360-invoices"
-              onclick="window.PartyController.select360Tab('invoices')">📄 Invoices</button>
+              onclick="window.PartyController.select360Tab('invoices')">ðŸ“„ Invoices</button>
             <button class="register-tab-btn" id="tab-c360-payments"
-              onclick="window.PartyController.select360Tab('payments')">💳 Payments</button>
+              onclick="window.PartyController.select360Tab('payments')">ðŸ’³ Payments</button>
             <button class="register-tab-btn" id="tab-c360-notes"
-              onclick="window.PartyController.select360Tab('notes')">📝 Notes</button>
+              onclick="window.PartyController.select360Tab('notes')">ðŸ“ Notes</button>
             <button class="register-tab-btn" id="tab-c360-documents"
-              onclick="window.PartyController.select360Tab('documents')">📎 Documents</button>
+              onclick="window.PartyController.select360Tab('documents')">ðŸ“Ž Documents</button>
           </div>
 
           <!-- TAB CONTENT: OVERVIEW -->
@@ -8345,7 +8493,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Quotations</span>
                   <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;"
-                    onclick="window.PartyController.select360Tab('quotations')">View All →</span>
+                    onclick="window.PartyController.select360Tab('quotations')">View All â†’</span>
                 </div>
                 <table class="data-table">
                   <thead>
@@ -8372,7 +8520,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Invoices</span>
                   <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;"
-                    onclick="window.PartyController.select360Tab('invoices')">View All →</span>
+                    onclick="window.PartyController.select360Tab('invoices')">View All â†’</span>
                 </div>
                 <table class="data-table">
                   <thead>
@@ -8485,7 +8633,7 @@
               </table>
             </div>
             <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click to open the existing
-              Sales Register. Customer 360° does not recalculate invoice totals.</div>
+              Sales Register. Customer 360Â° does not recalculate invoice totals.</div>
           </div>
 
           <!-- TAB CONTENT: PAYMENTS -->
@@ -8751,25 +8899,25 @@
           </div>
         </div>
 
-        <!-- VIEW: HRM / SUPPLIER 360° (Supplier360.fxml PARITY) -->
+        <!-- VIEW: HRM / SUPPLIER 360Â° (Supplier360.fxml PARITY) -->
         <div id="view-supplier-360" class="module-view" style="display:none;">
           <!-- Top Header Bar matching Supplier360.fxml -->
           <div class="view-header" style="align-items:center; margin-bottom:14px;">
             <div class="view-title-group">
               <h1 id="s360-page-title" style="display:flex; align-items:center; gap:8px;">
-                <span>🌐</span> <span id="s360-screen-name">Supplier 360°</span>
+                <span>ðŸŒ</span> <span id="s360-screen-name">Supplier 360Â°</span>
               </h1>
               <p>Complete supplier profile, purchases, payables, payments, contacts, notes and documents</p>
             </div>
             <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
-              <button class="btn btn-secondary" onclick="window.PartyController.backToSuppliers()">← Back to
+              <button class="btn btn-secondary" onclick="window.PartyController.backToSuppliers()">â† Back to
                 Suppliers</button>
-              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentSupplier360()">✏️ Edit
+              <button class="btn btn-secondary" onclick="window.PartyController.editCurrentSupplier360()">âœï¸ Edit
                 Supplier</button>
-              <button class="btn btn-purple" onclick="window.PartyController.newPurchaseForSupplier360()">🛒 New
+              <button class="btn btn-purple" onclick="window.PartyController.newPurchaseForSupplier360()">ðŸ›’ New
                 Purchase</button>
               <button class="btn btn-secondary" id="s360-btn-refresh"
-                onclick="window.PartyController.refreshSupplier360()">⟳ Refresh</button>
+                onclick="window.PartyController.refreshSupplier360()">âŸ³ Refresh</button>
             </div>
           </div>
 
@@ -8779,7 +8927,7 @@
             <div
               style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
               <span
-                style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">🏢
+                style="font-size:0.95rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">ðŸ¢
                 Supplier Details</span>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Status</span>
@@ -8866,17 +9014,17 @@
           <!-- 6-Tab Pane matching Supplier360.fxml -->
           <div class="register-tab-strip" style="margin-bottom:14px;">
             <button class="register-tab-btn active" id="tab-s360-overview"
-              onclick="window.PartyController.selectSupplier360Tab('overview')">📈 Overview</button>
+              onclick="window.PartyController.selectSupplier360Tab('overview')">ðŸ“ˆ Overview</button>
             <button class="register-tab-btn" id="tab-s360-contacts"
-              onclick="window.PartyController.selectSupplier360Tab('contacts')">👥 Contacts</button>
+              onclick="window.PartyController.selectSupplier360Tab('contacts')">ðŸ‘¥ Contacts</button>
             <button class="register-tab-btn" id="tab-s360-purchases"
-              onclick="window.PartyController.selectSupplier360Tab('purchases')">📦 Purchases</button>
+              onclick="window.PartyController.selectSupplier360Tab('purchases')">ðŸ“¦ Purchases</button>
             <button class="register-tab-btn" id="tab-s360-payments"
-              onclick="window.PartyController.selectSupplier360Tab('payments')">💳 Payments</button>
+              onclick="window.PartyController.selectSupplier360Tab('payments')">ðŸ’³ Payments</button>
             <button class="register-tab-btn" id="tab-s360-notes"
-              onclick="window.PartyController.selectSupplier360Tab('notes')">📝 Notes</button>
+              onclick="window.PartyController.selectSupplier360Tab('notes')">ðŸ“ Notes</button>
             <button class="register-tab-btn" id="tab-s360-documents"
-              onclick="window.PartyController.selectSupplier360Tab('documents')">📎 Documents</button>
+              onclick="window.PartyController.selectSupplier360Tab('documents')">ðŸ“Ž Documents</button>
           </div>
 
           <!-- TAB CONTENT: OVERVIEW -->
@@ -8889,7 +9037,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Purchases</span>
                   <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;"
-                    onclick="window.PartyController.selectSupplier360Tab('purchases')">View All →</span>
+                    onclick="window.PartyController.selectSupplier360Tab('purchases')">View All â†’</span>
                 </div>
                 <table class="data-table">
                   <thead>
@@ -8916,7 +9064,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">Recent Payments</span>
                   <span style="font-size:0.72rem; color:var(--cyan); cursor:pointer;"
-                    onclick="window.PartyController.selectSupplier360Tab('payments')">View All →</span>
+                    onclick="window.PartyController.selectSupplier360Tab('payments')">View All â†’</span>
                 </div>
                 <table class="data-table">
                   <thead>
@@ -8999,7 +9147,7 @@
               </table>
             </div>
             <div style="font-size:0.74rem; color:var(--text-muted); margin-top:8px;">Double-click to open the existing
-              Purchase register. Supplier 360° does not recalculate purchase totals.</div>
+              Purchase register. Supplier 360Â° does not recalculate purchase totals.</div>
           </div>
 
           <!-- TAB CONTENT: PAYMENTS -->
@@ -9099,7 +9247,7 @@
           <div class="view-header" style="margin-bottom:14px;">
             <div class="view-title-group">
               <div style="display:flex; align-items:center; gap:10px;">
-                <span id="rep-page-icon" style="font-size:1.6rem;">📊</span>
+                <span id="rep-page-icon" style="font-size:1.6rem;">ðŸ“Š</span>
                 <div>
                   <h1 id="report-view-title" style="margin:0; font-size:1.35rem; font-weight:700;">Executive Reports
                     &amp; BI Analytics</h1>
@@ -9111,18 +9259,18 @@
             </div>
             <div class="view-actions" style="display:flex; gap:8px;">
               <button class="btn btn-secondary" onclick="window.ReportsController.handleRefreshAction()"
-                title="Refresh Current Tab Data">↻ Refresh</button>
+                title="Refresh Current Tab Data">â†» Refresh</button>
               <div class="dropdown-wrap" style="position:relative; display:inline-block;">
                 <button class="btn btn-purple" onclick="window.ReportsController.toggleExportDropdown(event)"
-                  style="font-weight:600;">Export ▼</button>
+                  style="font-weight:600;">Export â–¼</button>
                 <div id="rep-export-menu" class="rep-export-dropdown-menu"
                   style="display:none; position:absolute !important; right:0 !important; top:calc(100% + 4px) !important; z-index:10005 !important; background:#0b1324 !important; border:1px solid rgba(255,255,255,0.18) !important; border-radius:8px !important; box-shadow:0 10px 30px rgba(0,0,0,0.8) !important; min-width:200px !important; padding:6px 0 !important;">
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('EXCEL')"><span
-                      style="margin-right:8px;">📊</span> Export to Excel (.xlsx)</div>
+                      style="margin-right:8px;">ðŸ“Š</span> Export to Excel (.xlsx)</div>
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('PDF')"><span
-                      style="margin-right:8px;">📄</span> Export to PDF</div>
+                      style="margin-right:8px;">ðŸ“„</span> Export to PDF</div>
                   <div class="action-menu-item" onclick="window.ReportsController.exportReport('CSV')"><span
-                      style="margin-right:8px;">📑</span> Export to CSV</div>
+                      style="margin-right:8px;">ðŸ“‘</span> Export to CSV</div>
                 </div>
               </div>
             </div>
@@ -9134,22 +9282,22 @@
             <button class="register-tab-btn active" id="btn-rep-tab-dashboard"
               onclick="window.ReportsController.switchMainTab('dashboard')"
               style="padding:8px 18px; font-weight:700; border-radius:6px; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); cursor:pointer;">
-              📈 Dashboard
+              ðŸ“ˆ Dashboard
             </button>
             <button class="register-tab-btn" id="btn-rep-tab-center"
               onclick="window.ReportsController.switchMainTab('center')"
               style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
-              📋 Report Center
+              ðŸ“‹ Report Center
             </button>
             <button class="register-tab-btn" id="btn-rep-tab-viewer"
               onclick="window.ReportsController.switchMainTab('viewer')"
               style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
-              📊 Saved Reports / Viewer
+              ðŸ“Š Saved Reports / Viewer
             </button>
             <button class="register-tab-btn" id="btn-rep-tab-scheduler"
               onclick="window.ReportsController.switchMainTab('scheduler')"
               style="padding:8px 18px; font-weight:600; border-radius:6px; background:transparent; color:var(--text-muted); border:1px solid transparent; cursor:pointer;">
-              ⏱️ Scheduled Reports
+              â±ï¸ Scheduled Reports
             </button>
           </div>
 
@@ -9226,67 +9374,67 @@
             <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px;">
               <div class="standard-kpi-card kpi-blue" style="cursor:pointer;" onclick="selectNav('view-sales-register')"
                 title="View Sales Register">
-                <div class="standard-kpi-icon">📈</div>
+                <div class="standard-kpi-icon">ðŸ“ˆ</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">ACTIVE SALES</span>
                     <span class="pill-badge pill-neutral metric-trend-pill">Sales</span>
                   </div>
-                  <div class="metric-value" id="rep-kpi-sales">₹ 0.00</div>
+                  <div class="metric-value" id="rep-kpi-sales">â‚¹ 0.00</div>
                   <div class="metric-note" style="color:var(--cyan); font-weight:600;">View Register &rarr;</div>
                 </div>
               </div>
               <div class="standard-kpi-card kpi-indigo" style="cursor:pointer;"
                 onclick="selectNav('view-purchase-register')" title="View Purchase Register">
-                <div class="standard-kpi-icon">📦</div>
+                <div class="standard-kpi-icon">ðŸ“¦</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">ACTIVE PURCHASES</span>
                     <span class="pill-badge pill-neutral metric-trend-pill">Bills</span>
                   </div>
-                  <div class="metric-value" id="rep-kpi-purchases">₹ 0.00</div>
+                  <div class="metric-value" id="rep-kpi-purchases">â‚¹ 0.00</div>
                   <div class="metric-note" style="color:var(--purple); font-weight:600;">View Bills &rarr;</div>
                 </div>
               </div>
               <div class="standard-kpi-card kpi-green">
-                <div class="standard-kpi-icon">💰</div>
+                <div class="standard-kpi-icon">ðŸ’°</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">GROSS PROFIT</span>
                     <span class="pill-badge pill-success metric-trend-pill">Margin</span>
                   </div>
-                  <div class="metric-value" id="rep-kpi-profit">₹ 0.00</div>
+                  <div class="metric-value" id="rep-kpi-profit">â‚¹ 0.00</div>
                   <div class="metric-note" style="color:var(--green); font-weight:600;">Margin Revenue</div>
                 </div>
               </div>
               <div class="standard-kpi-card kpi-orange" style="cursor:pointer;" onclick="selectNav('view-reminders')"
                 title="View Debtors & Reminders">
-                <div class="standard-kpi-icon">⏳</div>
+                <div class="standard-kpi-icon">â³</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">RECEIVABLES</span>
                     <span class="pill-badge pill-warning metric-trend-pill">Pending</span>
                   </div>
-                  <div class="metric-value" id="rep-kpi-receivables">₹ 0.00</div>
+                  <div class="metric-value" id="rep-kpi-receivables">â‚¹ 0.00</div>
                   <div class="metric-note" style="color:var(--yellow); font-weight:600;">Pending Debtors &rarr;</div>
                 </div>
               </div>
               <div class="standard-kpi-card kpi-teal" style="cursor:pointer;" onclick="selectNav('view-item-master')"
                 title="View Inventory">
-                <div class="standard-kpi-icon">📊</div>
+                <div class="standard-kpi-icon">ðŸ“Š</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">STOCK VALUE</span>
                     <span class="pill-badge pill-neutral metric-trend-pill">Assets</span>
                   </div>
-                  <div class="metric-value" id="rep-kpi-stock">₹ 0.00</div>
+                  <div class="metric-value" id="rep-kpi-stock">â‚¹ 0.00</div>
                   <div class="metric-note" id="rep-kpi-low-stock" style="color:var(--red); font-weight:600;">0 low stock
                     items</div>
                 </div>
               </div>
               <div class="standard-kpi-card kpi-purple" style="cursor:pointer;" onclick="selectNav('view-customers')"
                 title="View Customers">
-                <div class="standard-kpi-icon">👥</div>
+                <div class="standard-kpi-icon">ðŸ‘¥</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">CUSTOMERS</span>
@@ -9303,7 +9451,7 @@
               <!-- Recent Sales Invoices -->
               <div class="data-panel" style="padding:14px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">🛒 Recent Sales
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ›’ Recent Sales
                     Invoices</h4>
                   <button class="btn btn-secondary btn-sm"
                     onclick="window.ReportsController.openReportFromDashboard('SALES_REGISTER')"
@@ -9331,7 +9479,7 @@
               <!-- Recent Purchase Bills -->
               <div class="data-panel" style="padding:14px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">📦 Recent Purchase
+                  <h4 style="margin:0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ“¦ Recent Purchase
                     Invoices</h4>
                   <button class="btn btn-secondary btn-sm"
                     onclick="window.ReportsController.openReportFromDashboard('PURCHASE_REGISTER')"
@@ -9358,7 +9506,7 @@
 
               <!-- Payment Snapshot -->
               <div class="data-panel" style="padding:14px;">
-                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--text-main);">💳 Payment
+                <h4 style="margin:0 0 10px 0; font-size:0.92rem; font-weight:700; color:var(--text-main);">ðŸ’³ Payment
                   Snapshot</h4>
                 <div id="rep-payment-snapshot" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;">
                   <div style="color:var(--text-dim); padding:10px 0;">Loading payment summary...</div>
@@ -9370,7 +9518,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
               <!-- Top Customers -->
               <div class="data-panel" style="padding:14px;">
-                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--cyan);">👥 Top Customers
+                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--cyan);">ðŸ‘¥ Top Customers
                 </h4>
                 <div id="rep-top-customers" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
                   <div style="color:var(--text-dim);">Loading customers...</div>
@@ -9379,7 +9527,7 @@
 
               <!-- Top Items -->
               <div class="data-panel" style="padding:14px;">
-                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--yellow);">🏷️ Top Selling
+                <h4 style="margin:0 0 10px 0; font-size:0.9rem; font-weight:700; color:var(--yellow);">ðŸ·ï¸ Top Selling
                   Items</h4>
                 <div id="rep-top-items" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
                   <div style="color:var(--text-dim);">Loading items...</div>
@@ -9388,7 +9536,7 @@
 
               <!-- Business Health -->
               <div class="data-panel" style="padding:14px;">
-                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--green);">⚖️ Business Health
+                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--green);">âš–ï¸ Business Health
                 </h4>
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.78rem;">
                   <span>Gross Margin</span>
@@ -9403,14 +9551,14 @@
                   style="font-size:0.76rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
                   <div>Sales Invoices: <span id="rep-sales-count"
                       style="font-weight:600; color:var(--text-main);">0</span></div>
-                  <div>Average Sale: <span id="rep-sales-avg" style="font-weight:600; color:var(--text-main);">₹
+                  <div>Average Sale: <span id="rep-sales-avg" style="font-weight:600; color:var(--text-main);">â‚¹
                       0.00</span></div>
                 </div>
               </div>
 
               <!-- Stock Attention -->
               <div class="data-panel" style="padding:14px;">
-                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--red);">⚠️ Stock Attention
+                <h4 style="margin:0 0 8px 0; font-size:0.9rem; font-weight:700; color:var(--red);">âš ï¸ Stock Attention
                 </h4>
                 <div id="rep-stock-attention-details"
                   style="font-size:0.76rem; color:var(--text-muted); display:flex; flex-direction:column; gap:5px;">
@@ -9420,7 +9568,7 @@
                       style="font-weight:700; color:var(--yellow);">0</span></div>
                   <div>Out of Stock: <span id="rep-stock-out-count" style="font-weight:700; color:var(--red);">0</span>
                   </div>
-                  <div>Total Valuation: <span id="rep-stock-valuation-val" style="font-weight:700; color:var(--cyan);">₹
+                  <div>Total Valuation: <span id="rep-stock-valuation-val" style="font-weight:700; color:var(--cyan);">â‚¹
                       0.00</span></div>
                 </div>
               </div>
@@ -9459,11 +9607,11 @@
               <div style="display:flex; gap:6px;">
                 <button id="btn-rep-sub-viewer" class="btn btn-secondary btn-sm"
                   onclick="window.ReportsController.switchViewerSubView('viewer')"
-                  style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:rgba(56,189,248,0.15); color:var(--cyan); border-color:rgba(56,189,248,0.3);">📊
+                  style="font-size:0.78rem; font-weight:700; padding:6px 14px; background:rgba(56,189,248,0.15); color:var(--cyan); border-color:rgba(56,189,248,0.3);">ðŸ“Š
                   Dynamic Viewer</button>
                 <button id="btn-rep-sub-saved" class="btn btn-secondary btn-sm"
                   onclick="window.ReportsController.switchViewerSubView('catalog')"
-                  style="font-size:0.78rem; font-weight:600; padding:6px 14px;">📋 Saved Reports Catalog</button>
+                  style="font-size:0.78rem; font-weight:600; padding:6px 14px;">ðŸ“‹ Saved Reports Catalog</button>
               </div>
               <div id="viewer-saved-quick-bar" style="display:flex; align-items:center; gap:8px;">
                 <label style="font-size:0.75rem; color:var(--text-muted); margin:0;">Saved Views:</label>
@@ -9473,7 +9621,7 @@
                   <option value="">-- Load Saved Report --</option>
                 </select>
                 <button class="btn btn-purple btn-sm" onclick="window.ReportsController.saveCurrentReportConfig()"
-                  style="font-size:0.75rem; padding:4px 12px; white-space:nowrap;">💾 Save Report</button>
+                  style="font-size:0.75rem; padding:4px 12px; white-space:nowrap;">ðŸ’¾ Save Report</button>
               </div>
             </div>
 
@@ -9489,7 +9637,7 @@
                   </div>
                   <div style="display:flex; gap:8px;">
                     <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.loadSavedReports()"
-                      style="font-size:0.75rem; padding:4px 10px;">↻ Refresh</button>
+                      style="font-size:0.75rem; padding:4px 10px;">â†» Refresh</button>
                     <button class="btn btn-purple btn-sm" onclick="window.ReportsController.switchMainTab('center')"
                       style="font-size:0.75rem; padding:4px 12px;">+ Create from Report Center</button>
                   </div>
@@ -9529,7 +9677,7 @@
                 <div
                   style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="viewer-header-icon" style="font-size:1.1rem; color:var(--cyan);">📄</span>
+                    <span id="viewer-header-icon" style="font-size:1.1rem; color:var(--cyan);">ðŸ“„</span>
                     <h3 id="viewer-report-title"
                       style="margin:0; font-size:1rem; font-weight:700; color:var(--text-main);">Sales Register</h3>
                     <span id="viewer-active-filters-summary" class="pill-badge pill-neutral"
@@ -9538,7 +9686,7 @@
                   <div style="display:flex; align-items:center; gap:8px;">
                     <button class="btn btn-secondary btn-sm" id="btn-viewer-toggle-collapse"
                       onclick="window.ReportsController.toggleViewerFilterCollapse()"
-                      style="font-size:0.75rem; padding:3px 10px;">Collapse ▲</button>
+                      style="font-size:0.75rem; padding:3px 10px;">Collapse â–²</button>
                   </div>
                 </div>
 
@@ -9729,7 +9877,7 @@
                   </select>
                 </div>
                 <button class="btn btn-purple" onclick="window.ReportsController.saveCurrentReportConfig()"
-                  style="font-size:0.75rem; padding:5px 12px; white-space:nowrap;">💾 Save Report</button>
+                  style="font-size:0.75rem; padding:5px 12px; white-space:nowrap;">ðŸ’¾ Save Report</button>
               </div>
 
               <!-- Dynamic Report Data Table -->
@@ -9757,9 +9905,9 @@
                   <button class="btn btn-secondary btn-sm" id="btn-viewer-view-source"
                     onclick="window.ReportsController.viewSelectedRowSource()"
                     style="font-size:0.75rem; padding:4px 10px;"
-                    title="Deep-link into originating Sales, Purchase, or Bank record">👁️ View Source</button>
+                    title="Deep-link into originating Sales, Purchase, or Bank record">ðŸ‘ï¸ View Source</button>
                   <button class="btn btn-secondary btn-sm" onclick="window.ReportsController.printViewerReport()"
-                    style="font-size:0.75rem; padding:4px 10px;">🖨️ Print</button>
+                    style="font-size:0.75rem; padding:4px 10px;">ðŸ–¨ï¸ Print</button>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
                   <div style="display:flex; align-items:center; gap:6px;">
@@ -9807,7 +9955,7 @@
             <!-- 4 KPI CARDS (Desktop Image 4 Parity) -->
             <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
               <div class="standard-kpi-card kpi-blue">
-                <div class="standard-kpi-icon">⏰</div>
+                <div class="standard-kpi-icon">â°</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">ACTIVE SCHEDULES</span>
@@ -9818,7 +9966,7 @@
                 </div>
               </div>
               <div class="standard-kpi-card kpi-cyan">
-                <div class="standard-kpi-icon">🚀</div>
+                <div class="standard-kpi-icon">ðŸš€</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">NEXT RUN</span>
@@ -9829,7 +9977,7 @@
                 </div>
               </div>
               <div class="standard-kpi-card kpi-purple">
-                <div class="standard-kpi-icon">📅</div>
+                <div class="standard-kpi-icon">ðŸ“…</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">REPORTS THIS MONTH</span>
@@ -9840,7 +9988,7 @@
                 </div>
               </div>
               <div class="standard-kpi-card kpi-amber">
-                <div class="standard-kpi-icon">⚠️</div>
+                <div class="standard-kpi-icon">âš ï¸</div>
                 <div class="standard-kpi-body">
                   <div class="standard-kpi-top">
                     <span class="metric-label">FAILURES</span>
@@ -9871,7 +10019,7 @@
                 <option value="PDF_XLSX">PDF + XLSX</option>
                 <option value="CSV">CSV</option>
               </select>
-              <button class="btn btn-secondary" onclick="window.ReportsController.loadSchedules()">↻ Refresh</button>
+              <button class="btn btn-secondary" onclick="window.ReportsController.loadSchedules()">â†» Refresh</button>
             </div>
 
             <!-- SCHEDULES TABLE -->
@@ -9910,7 +10058,7 @@
           <div class="view-header"
             style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
             <div class="view-title-group" style="display:flex; align-items:center; gap:12px;">
-              <span style="font-size:1.6rem; color:var(--purple); font-weight:800;">⏰</span>
+              <span style="font-size:1.6rem; color:var(--purple); font-weight:800;">â°</span>
               <div>
                 <h1 style="margin:0; font-size:1.25rem; font-weight:700; color:#fff;">Reminder Center</h1>
                 <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:0.8rem;">Manage follow-ups, payment
@@ -9920,7 +10068,7 @@
             <div class="view-actions" style="display:flex; gap:10px; align-items:center;">
               <button class="btn btn-secondary" onclick="window.ReminderCenterController.refresh()"
                 style="height:34px; display:inline-flex; align-items:center; gap:6px;">
-                <span>⟳</span> Refresh
+                <span>âŸ³</span> Refresh
               </button>
               <button class="btn btn-primary" onclick="window.ReminderCenterController.openAddModal()"
                 style="height:34px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
@@ -9934,7 +10082,7 @@
             <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--blue, #38bdf8); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
               <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-blue" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); flex-shrink: 0;">⏰</span>
+                  <span class="kpi-icon-badge erp-kpi-theme-blue" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); flex-shrink: 0;">â°</span>
                   <span>Open Reminders</span>
                 </div>
                 <span class="pill-badge pill-neutral metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Active</span>
@@ -9946,7 +10094,7 @@
             <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--red, #f87171); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
               <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-red" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(248, 113, 113, 0.2); box-shadow: 0 0 12px rgba(248, 113, 113, 0.25); flex-shrink: 0;">⚠️</span>
+                  <span class="kpi-icon-badge erp-kpi-theme-red" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(248, 113, 113, 0.2); box-shadow: 0 0 12px rgba(248, 113, 113, 0.25); flex-shrink: 0;">âš ï¸</span>
                   <span>Overdue</span>
                 </div>
                 <span class="pill-badge pill-danger metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Alert</span>
@@ -9958,7 +10106,7 @@
             <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--green, #34d399); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
               <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-green" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(52, 211, 153, 0.2); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); flex-shrink: 0;">📅</span>
+                  <span class="kpi-icon-badge erp-kpi-theme-green" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(52, 211, 153, 0.2); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); flex-shrink: 0;">ðŸ“…</span>
                   <span>Due Today</span>
                 </div>
                 <span class="pill-badge pill-success metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Today</span>
@@ -9970,7 +10118,7 @@
             <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--purple, #a855f7); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
               <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-purple" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(167, 139, 250, 0.2); box-shadow: 0 0 12px rgba(167, 139, 250, 0.25); flex-shrink: 0;">🗓️</span>
+                  <span class="kpi-icon-badge erp-kpi-theme-purple" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(167, 139, 250, 0.2); box-shadow: 0 0 12px rgba(167, 139, 250, 0.25); flex-shrink: 0;">ðŸ—“ï¸</span>
                   <span>Next 7 Days</span>
                 </div>
                 <span class="pill-badge pill-purple metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Upcoming</span>
@@ -10086,15 +10234,15 @@
                 style="padding:14px 16px; border-top:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; gap:8px;">
                   <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.editSelected()"
-                    style="flex:1;">✏️ Edit</button>
+                    style="flex:1;">âœï¸ Edit</button>
                   <button id="btn-complete-selected" class="btn btn-primary btn-sm"
-                    onclick="window.ReminderCenterController.completeSelected()" style="flex:1;">✅ Complete</button>
+                    onclick="window.ReminderCenterController.completeSelected()" style="flex:1;">âœ… Complete</button>
                 </div>
                 <div style="display:flex; gap:8px;">
                   <button class="btn btn-secondary btn-sm" onclick="window.ReminderCenterController.snoozeSelected()"
-                    style="flex:1;">⏰ Snooze</button>
+                    style="flex:1;">â° Snooze</button>
                   <button class="btn btn-danger btn-sm" onclick="window.ReminderCenterController.deleteSelected()"
-                    style="flex:1;">🗑️ Delete</button>
+                    style="flex:1;">ðŸ—‘ï¸ Delete</button>
                 </div>
               </div>
             </div>
@@ -10281,17 +10429,17 @@
                 </div>
               </div>
               <div class="drawer-footer" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.UserAccessController.drawerEditUser()">✏️ Edit
+                <button class="btn btn-primary btn-sm" onclick="window.UserAccessController.drawerEditUser()">âœï¸ Edit
                   Account</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetPassword()">🔑
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerResetPassword()">ðŸ”‘
                   Reset Password</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleLock()">🔒
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerToggleLock()">ðŸ”’
                   Toggle Lock</button>
                 <button class="btn btn-secondary btn-sm"
-                  onclick="window.UserAccessController.drawerResetAuthenticator()">🛡️ Reset Auth</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerUserAudit()">📋
+                  onclick="window.UserAccessController.drawerResetAuthenticator()">ðŸ›¡ï¸ Reset Auth</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.drawerUserAudit()">ðŸ“‹
                   Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()">✖
+                <button class="btn btn-secondary btn-sm" onclick="window.UserAccessController.closeUserDrawer()">âœ–
                   Close</button>
               </div>
             </div>
@@ -10767,7 +10915,7 @@
               <button type="button" id="btn-prof-save" class="btn btn-primary"
                 onclick="window.ProfileController.saveProfile(event)"
                 style="height: 38px; padding: 0 18px; font-weight: 600;">
-                <span>💾</span> Save Profile
+                <span>ðŸ’¾</span> Save Profile
               </button>
             </div>
           </div>
@@ -10779,7 +10927,7 @@
               style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
               <div
                 style="font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <span>👤</span> Personal Details
+                <span>ðŸ‘¤</span> Personal Details
               </div>
               <form onsubmit="window.ProfileController.saveProfile(event)">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
@@ -10812,7 +10960,7 @@
               style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
               <div
                 style="font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <span>📋</span> Account Overview
+                <span>ðŸ“‹</span> Account Overview
               </div>
               <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.82rem;">
                 <div>
@@ -10847,7 +10995,7 @@
             style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 20px;">
             <div
               style="font-size: 1rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-              <span>🔑</span> Change Password
+              <span>ðŸ”‘</span> Change Password
             </div>
             <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.8rem;">Confirm your current password,
               then use at least 8 characters with a letter and a number.</p>
@@ -10870,7 +11018,7 @@
               </div>
               <button type="submit" id="btn-prof-change-pwd" class="btn btn-secondary"
                 style="height: 38px; padding: 0 18px; font-weight: 600; white-space: nowrap;">
-                <span>🔒</span> Update Password
+                <span>ðŸ”’</span> Update Password
               </button>
             </form>
           </div>
@@ -11402,10 +11550,10 @@
                     </label>
                     <select id="setting-currency" class="form-select"
                       style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem;">
-                      <option value="INR (₹)" selected>INR (&#8377;)</option>
+                      <option value="INR (â‚¹)" selected>INR (&#8377;)</option>
                       <option value="USD ($)">USD ($)</option>
-                      <option value="EUR (€)">EUR (&#8364;)</option>
-                      <option value="GBP (£)">GBP (&#163;)</option>
+                      <option value="EUR (â‚¬)">EUR (&#8364;)</option>
+                      <option value="GBP (Â£)">GBP (&#163;)</option>
                       <option value="AED">AED (&#1583;.&#1573;)</option>
                     </select>
                   </div>
@@ -11742,7 +11890,7 @@
                       <div style="position:relative;">
                         <input type="password" id="smtp-password" class="form-input"
                           style="height:38px; background:rgba(15,23,42,0.6); border-color:rgba(255,255,255,0.1); color:#ffffff; font-size:0.82rem; padding-right:36px;"
-                          placeholder="Configured — leave blank to keep current password">
+                          placeholder="Configured â€” leave blank to keep current password">
                         <span onclick="window.SettingsController.togglePasswordVisibility('smtp-password')"
                           style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94a3b8; font-size:0.9rem;"
                           title="Show/Hide Password">&#128065;</span>
@@ -12222,26 +12370,94 @@ Outstanding Balance: {BalanceAmount}
         <span class="trust-text">Secure &nbsp; Local &nbsp; Reliable</span>
       </div>
       <div class="footer-item footer-company" id="footer-company-name">
-        <span class="footer-icon">&#127970;</span> <span class="footer-val">Jasvi Industries</span>
+        <span class="footer-icon">&#127970;</span> <span class="footer-val" id="footer-company-val"></span>
       </div>
       <div class="footer-item footer-phone" id="footer-phone">
-        <span class="footer-icon">&#128222;</span> <span class="footer-val">9099939193</span>
+        <span class="footer-icon">&#128222;</span> <span class="footer-val" id="footer-phone-val"></span>
       </div>
       <div class="footer-item footer-email" id="footer-email">
-        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val">info@jasviindustries.in</span>
+        <span class="footer-icon">&#9993;&#65039;</span> <span class="footer-val" id="footer-email-val"></span>
       </div>
       <div class="footer-item footer-website" id="footer-website">
-        <a href="https://jasviindustries.in" target="_blank"
-          style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-          <span class="footer-icon">&#127760;</span> <span class="footer-val">https://jasviindustries.in</span>
-        </a>
+        <span class="footer-icon">&#127760;</span> <span class="footer-val" id="footer-website-val"></span>
       </div>
       <div class="footer-item footer-clock" id="footer-live-clock">
-        <span class="footer-icon">&#128197;</span> <span class="footer-val">Sunday, 18 Oct 2026 | 10:02:00 PM |
-          IST</span>
+        <span class="footer-icon">&#128197;</span> <span class="footer-val" id="footer-clock-val"></span>
       </div>
     </footer>
   </div>
+  <!-- Footer Dynamic Hydration: Desktop SharedApplicationFooter.java parity (zero fake placeholder text) -->
+  <script>
+    (function() {
+      try {
+        function _hydFooter(cfg) {
+          var co = document.getElementById('footer-company-val');
+          var ph = document.getElementById('footer-phone-val');
+          var em = document.getElementById('footer-email-val');
+          var wb = document.getElementById('footer-website-val');
+          var fw = document.getElementById('footer-website');
+          if (co) co.textContent = cfg.companyName || cfg.company_name || cfg.name || '';
+          if (ph) ph.textContent = cfg.mobile || cfg.phone || cfg.mobileNumber || '';
+          if (em) em.textContent = cfg.email || '';
+          var website = cfg.website || cfg.websiteUrl || '';
+          if (wb) wb.textContent = website;
+          /* Show footer-website only when a URL is present */
+          if (fw) fw.style.display = website ? '' : 'none';
+        }
+
+        function _hydFooterClock() {
+          var fc = document.getElementById('footer-clock-val');
+          if (!fc) return;
+          var now = new Date();
+          var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var d = days[now.getDay()];
+          var dt = d + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+          var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          h = h % 12 || 12;
+          var ts = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+          fc.textContent = dt + ' | ' + ts + ' | IST';
+        }
+
+        /* Try to hydrate footer from BrandingService or localStorage on DOMContentLoaded */
+        function _attemptFooterHydration() {
+          /* 1. Try BrandingService (loaded by app.js scripts) */
+          if (window.BrandingService && window.BrandingService.getCurrentBranding) {
+            try {
+              var br = window.BrandingService.getCurrentBranding();
+              if (br && (br.companyName || br.name)) { _hydFooter(br); return; }
+            } catch (_) {}
+          }
+          /* 2. Fallback: localStorage dse_branding */
+          var rawBrand = localStorage.getItem('dse_branding');
+          if (rawBrand) {
+            try { _hydFooter(JSON.parse(rawBrand)); } catch (_) {}
+          } else {
+            /* 3. Fallback: dse_company_settings */
+            var rawCfg = localStorage.getItem('dse_company_settings') || localStorage.getItem('dse_settings');
+            if (rawCfg) {
+              try { _hydFooter(JSON.parse(rawCfg)); } catch (_) {}
+            }
+          }
+        }
+
+        /* Start footer clock immediately */
+        _hydFooterClock();
+        setInterval(_hydFooterClock, 1000);
+
+        /* Hydrate company info after DOM ready */
+        if (document.readyState !== 'loading') {
+          _attemptFooterHydration();
+        } else {
+          document.addEventListener('DOMContentLoaded', _attemptFooterHydration);
+        }
+
+        /* Expose re-hydration function for BrandingService to call after API fetch */
+        window.refreshFooterCompanyProfile = function(cfg) { if (cfg) _hydFooter(cfg); };
+      } catch (_) {}
+    })();
+  </script>
 
   <!-- MODALS -->
 
@@ -13182,14 +13398,14 @@ Outstanding Balance: {BalanceAmount}
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-sale-summary"
-        onclick="window.SalesController.switchDrawerTab('summary')">📌 Summary</button>
+        onclick="window.SalesController.switchDrawerTab('summary')">ðŸ“Œ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-items"
-        onclick="window.SalesController.switchDrawerTab('items')">📦 Consignment Items</button>
+        onclick="window.SalesController.switchDrawerTab('items')">ðŸ“¦ Consignment Items</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-payments"
-        onclick="window.SalesController.switchDrawerTab('payments')">💳 Payments &amp; Allocations</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">◷
+        onclick="window.SalesController.switchDrawerTab('payments')">ðŸ’³ Payments &amp; Allocations</button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">â—·
         Audit Trail</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">📑
+      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">ðŸ“‘
         Documents &amp; Actions</button>
     </div>
 
@@ -13226,7 +13442,7 @@ Outstanding Balance: {BalanceAmount}
               <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;">GSTIN: <span id="drawer-cust-gstin"
                   style="font-family: monospace;">-</span></div>
               <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Contact: <span
-                  id="drawer-cust-phone">-</span> • <span id="drawer-cust-email">-</span></div>
+                  id="drawer-cust-phone">-</span> â€¢ <span id="drawer-cust-email">-</span></div>
             </div>
             <div>
               <div class="drawer-label">Billing Address</div>
@@ -13390,10 +13606,10 @@ Outstanding Balance: {BalanceAmount}
               GST-compliant Tax Invoice formatted via canonical desktop engine.</p>
             <div style="display: flex; gap: 8px;">
               <button class="btn btn-primary"
-                onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">👁️
+                onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">ðŸ‘ï¸
                 View / Print PDF</button>
               <button class="btn btn-secondary"
-                onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">⬇️
+                onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">â¬‡ï¸
                 Download</button>
             </div>
           </div>
@@ -13403,7 +13619,7 @@ Outstanding Balance: {BalanceAmount}
             <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate Code-128 dispatch label
               barcode for carton tracking and delivery logistics.</p>
             <button class="btn btn-secondary"
-              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">📦
+              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">ðŸ“¦
               Print Dispatch Barcode</button>
           </div>
         </div>
@@ -13416,7 +13632,7 @@ Outstanding Balance: {BalanceAmount}
             <input type="file" id="drawer-sale-attachment-input" style="display:none;"
               onchange="window.SalesController.handleAttachmentUpload(event)" />
             <button class="btn btn-secondary"
-              onclick="document.getElementById('drawer-sale-attachment-input').click()">📎 Attach File (PDF /
+              onclick="document.getElementById('drawer-sale-attachment-input').click()">ðŸ“Ž Attach File (PDF /
               Images)</button>
           </div>
         </div>
@@ -13429,14 +13645,14 @@ Outstanding Balance: {BalanceAmount}
         <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING APPROVAL:</span>
         <button class="btn btn-primary"
           style="background:var(--green); border-color:var(--green); font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.approveSelectedSale()">✔ Approve</button>
+          onclick="window.SalesController.approveSelectedSale()">âœ” Approve</button>
         <button class="btn btn-danger" style="font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.rejectSelectedSale()">✖ Reject</button>
+          onclick="window.SalesController.rejectSelectedSale()">âœ– Reject</button>
       </div>
       <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">◷ Full Audit</button>
+      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">â—· Full Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);"
-        onclick="window.SalesController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
+        onclick="window.SalesController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
       <button class="btn btn-primary"
         onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196;
         Print Tax Invoice</button>
@@ -13463,15 +13679,15 @@ Outstanding Balance: {BalanceAmount}
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-pur-summary"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">📌 Summary</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">ðŸ“Œ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-items"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">📦 Inward Items</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">ðŸ“¦ Inward Items</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-payments"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">💳 Outflow Payments</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">ðŸ’³ Outflow Payments</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-audit"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">◷ Audit Trail</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">â—· Audit Trail</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-docs"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">📑 Documents &amp; Proof</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">ðŸ“‘ Documents &amp; Proof</button>
     </div>
 
     <div class="drawer-body">
@@ -13618,10 +13834,10 @@ Outstanding Balance: {BalanceAmount}
             voucher generated directly from the canonical desktop engine.</p>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-primary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">👁️
+              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">ðŸ‘ï¸
               View / Print Bill</button>
             <button class="btn btn-secondary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">⬇️
+              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">â¬‡ï¸
               Download</button>
           </div>
         </div>
@@ -13631,9 +13847,9 @@ Outstanding Balance: {BalanceAmount}
     <!-- DRAWER ACTION FOOTER -->
     <div class="drawer-footer">
       <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">◷ Audit</button>
+      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">â—· Audit</button>
       <button class="btn btn-primary" style="background:var(--green); border-color:var(--green);"
-        onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">💳 Record Payment</button>
+        onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">ðŸ’³ Record Payment</button>
       <button class="btn btn-primary"
         onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196;
         Print Inward Bill</button>
@@ -13647,7 +13863,7 @@ Outstanding Balance: {BalanceAmount}
       <div class="modal-header">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem; color: var(--cyan);">◷</span>
+            <span style="font-size: 1.2rem; color: var(--cyan);">â—·</span>
             <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;">Audit Trail &amp;
               Activity History</h3>
           </div>
@@ -13697,7 +13913,7 @@ Outstanding Balance: {BalanceAmount}
       <div class="modal-header">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem; color: var(--green);">💸</span>
+            <span style="font-size: 1.2rem; color: var(--green);">ðŸ’¸</span>
             <h3 style="font-size: 1.15rem; font-family: 'Space Grotesk'; font-weight: 700; margin: 0;"
               id="rr-modal-title">Record Return Refund / Settlement</h3>
           </div>
@@ -13802,7 +14018,7 @@ Outstanding Balance: {BalanceAmount}
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
             <div class="form-group">
-              <label class="form-label" style="font-size:0.78rem;" id="rr-label-amount">Refund Amount (₹) *</label>
+              <label class="form-label" style="font-size:0.78rem;" id="rr-label-amount">Refund Amount (â‚¹) *</label>
               <input type="number" id="rr-amount" class="form-input" step="0.01" min="0.01" required
                 oninput="window.ReturnsController.updateRefundPreview()"
                 style="font-size: 1.1rem; font-weight: 700; color: var(--green);" />
@@ -13829,7 +14045,7 @@ Outstanding Balance: {BalanceAmount}
             <button type="button" class="btn btn-secondary"
               onclick="window.ReturnsController.resetRefundForm()">Reset</button>
             <button type="submit" id="btn-save-return-refund" class="btn btn-primary"
-              style="background: var(--green); border-color: var(--green);">💾 Save &amp; Record Refund</button>
+              style="background: var(--green); border-color: var(--green);">ðŸ’¾ Save &amp; Record Refund</button>
           </div>
         </form>
 
@@ -15557,7 +15773,7 @@ Outstanding Balance: {BalanceAmount}
   <div id="modal-select-bank-account" class="modal-backdrop" style="display:none;">
     <div class="modal-card" style="max-width:480px;">
       <div class="modal-header">
-        <h3 style="margin:0;">🏦 Select Bank Account</h3>
+        <h3 style="margin:0;">ðŸ¦ Select Bank Account</h3>
         <button class="modal-close"
           onclick="window.BankStatementController.closeModal('modal-select-bank-account')">&times;</button>
       </div>
@@ -15594,7 +15810,7 @@ Outstanding Balance: {BalanceAmount}
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>📂</span> Bank Statement History
+            <span>ðŸ“‚</span> Bank Statement History
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Browse previously imported statement batches, inspect reconciliation progress, or delete imports.
@@ -15667,7 +15883,7 @@ Outstanding Balance: {BalanceAmount}
   <div id="modal-statement-delete-confirm" class="modal-backdrop" style="display:none;">
     <div class="modal-card" style="max-width:520px;">
       <div class="modal-header">
-        <h3 id="msdc-title" style="margin:0; color:#f87171;">🗑️ Delete Bank Statement?</h3>
+        <h3 id="msdc-title" style="margin:0; color:#f87171;">ðŸ—‘ï¸ Delete Bank Statement?</h3>
         <button class="modal-close"
           onclick="window.BankStatementController.closeModal('modal-statement-delete-confirm')">&times;</button>
       </div>
@@ -15682,13 +15898,13 @@ Outstanding Balance: {BalanceAmount}
               Analysis:</div>
             <div id="msdc-impact-metrics"
               style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem; color:var(--text-main, #1e293b); margin-bottom:10px;">
-              <div>• Total Transactions: <strong id="msdc-metric-total" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>• Matched / Linked: <strong id="msdc-metric-matched" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>• Expense Entries: <strong id="msdc-metric-expenses" style="color:var(--text-main, #0f172a);">0</strong></div>
-              <div>• Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>â€¢ Total Transactions: <strong id="msdc-metric-total" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>â€¢ Matched / Linked: <strong id="msdc-metric-matched" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>â€¢ Expense Entries: <strong id="msdc-metric-expenses" style="color:var(--text-main, #0f172a);">0</strong></div>
+              <div>â€¢ Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
             </div>
             <div style="font-size:0.75rem; color:#dc2626; line-height:1.4;">
-              ⚠️ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
+              âš ï¸ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
               fails, nothing will be deleted.
             </div>
           </div>
@@ -15733,7 +15949,7 @@ Outstanding Balance: {BalanceAmount}
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>ⓘ</span> Match Transaction
+            <span>â“˜</span> Match Transaction
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Review possible matches and allocate the complete bank transaction.
@@ -15752,27 +15968,27 @@ Outstanding Balance: {BalanceAmount}
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">Bank Amount
             </div>
             <div class="kpi-value" id="mc-kpi-bank-amount"
-              style="font-size:1.05rem; font-weight:800; color:var(--cyan);">₹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--cyan);">â‚¹ 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--green);">Allocated</div>
             <div class="kpi-value" id="mc-kpi-allocated"
-              style="font-size:1.05rem; font-weight:800; color:var(--green);">₹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--green);">â‚¹ 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--yellow);">Round-off</div>
             <div class="kpi-value" id="mc-kpi-roundoff"
-              style="font-size:1.05rem; font-weight:800; color:var(--yellow);">₹ 0.00</div>
+              style="font-size:1.05rem; font-weight:800; color:var(--yellow);">â‚¹ 0.00</div>
           </div>
           <div class="kpi-card"
             style="flex: 1 1 0; min-width: 0; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
             <div class="kpi-label" style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:#f87171;">
               Bank Remaining</div>
-            <div class="kpi-value" id="mc-kpi-remaining" style="font-size:1.05rem; font-weight:800; color:#f87171;">₹
+            <div class="kpi-value" id="mc-kpi-remaining" style="font-size:1.05rem; font-weight:800; color:#f87171;">â‚¹
               0.00</div>
           </div>
           <div class="kpi-card"
@@ -15780,7 +15996,7 @@ Outstanding Balance: {BalanceAmount}
             <div class="kpi-label"
               style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--cyan);">Doc Residual
             </div>
-            <div class="kpi-value" id="mc-kpi-residual" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">₹
+            <div class="kpi-value" id="mc-kpi-residual" style="font-size:1.05rem; font-weight:800; color:var(--cyan);">â‚¹
               0.00</div>
           </div>
           <div class="kpi-card"
@@ -15800,7 +16016,7 @@ Outstanding Balance: {BalanceAmount}
           <div id="mc-banner-txn" style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">-</div>
           <div style="font-size:0.75rem; color:var(--text-dim); line-height:1.4;">
             Suggestions stay strict: exact amount + useful party + date. When you manually confirm, a final document
-            residual within the configured ₹1.00 round-off tolerance is settled explicitly without changing the actual
+            residual within the configured â‚¹1.00 round-off tolerance is settled explicitly without changing the actual
             bank amount. The total actual allocation must still equal the bank amount.
           </div>
         </div>
@@ -15821,10 +16037,10 @@ Outstanding Balance: {BalanceAmount}
                 <th style="width:130px;">Document</th>
                 <th>Customer / Supplier</th>
                 <th style="width:95px;">Date</th>
-                <th style="text-align:right; width:110px;">Total (₹)</th>
-                <th style="text-align:right; width:100px;">Paid (₹)</th>
+                <th style="text-align:right; width:110px;">Total (â‚¹)</th>
+                <th style="text-align:right; width:100px;">Paid (â‚¹)</th>
                 <th style="text-align:right; width:110px;">Outstanding</th>
-                <th style="text-align:right; width:120px;">Allocation (₹)</th>
+                <th style="text-align:right; width:120px;">Allocation (â‚¹)</th>
               </tr>
             </thead>
             <tbody id="mc-candidates-tbody">
@@ -15840,22 +16056,22 @@ Outstanding Balance: {BalanceAmount}
         <div
           style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:12px; border-top:1px solid var(--border-subtle);">
           <div id="mc-footer-summary" style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">
-            0 selected • Bank allocated ₹ 0.00 • Round-off ₹ 0.00 • Bank remaining ₹ 0.00 • Document residual ₹ 0.00
+            0 selected â€¢ Bank allocated â‚¹ 0.00 â€¢ Round-off â‚¹ 0.00 â€¢ Bank remaining â‚¹ 0.00 â€¢ Document residual â‚¹ 0.00
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.refreshSuggestions()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>🔄</span> Refresh Suggestions
+              <span>ðŸ”„</span> Refresh Suggestions
             </button>
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.closeModal('modal-match-candidate')">
-              <span>❌</span> Cancel
+              <span>âŒ</span> Cancel
             </button>
             <button type="button" id="mc-btn-confirm" class="btn btn-primary"
               onclick="window.BankStatementController.confirmCurrentAllocations()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>✅</span> Confirm Match
+              <span>âœ…</span> Confirm Match
             </button>
           </div>
         </div>
@@ -16362,15 +16578,15 @@ Outstanding Balance: {BalanceAmount}
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
               <button type="button" id="btn-fmode-deposit" class="btn btn-primary"
                 onclick="window.FinanceController.switchModalMode('BANK DEPOSIT')" style="font-weight: 700;">
-                💰 Bank Deposit
+                ðŸ’° Bank Deposit
               </button>
               <button type="button" id="btn-fmode-withdrawal" class="btn btn-secondary"
                 onclick="window.FinanceController.switchModalMode('BANK WITHDRAWAL')" style="font-weight: 700;">
-                💳 Bank Withdrawal
+                ðŸ’³ Bank Withdrawal
               </button>
               <button type="button" id="btn-fmode-expense" class="btn btn-secondary"
                 onclick="window.FinanceController.switchModalMode('EXPENSE')" style="font-weight: 700;">
-                💸 Operating Expense
+                ðŸ’¸ Operating Expense
               </button>
             </div>
           </div>
@@ -16408,7 +16624,7 @@ Outstanding Balance: {BalanceAmount}
             <!-- Column 2: Financials & Settlement -->
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div class="form-group">
-                <label class="form-label">Amount (₹) *</label>
+                <label class="form-label">Amount (â‚¹) *</label>
                 <input type="number" step="0.01" min="0.01" id="f-entry-amount" class="form-input" placeholder="0.00"
                   required style="font-weight: 700; font-size: 1.05rem; color: var(--cyan);">
               </div>
@@ -16463,7 +16679,7 @@ Outstanding Balance: {BalanceAmount}
     <div class="modal-card" style="max-width: 900px; width: 95%;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.3rem;">ℹ️</span>
+          <span style="font-size: 1.3rem;">â„¹ï¸</span>
           <div>
             <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Information</h3>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">View all ERP transactions linked
@@ -16492,18 +16708,18 @@ Outstanding Balance: {BalanceAmount}
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Linked</div>
             <div id="mla-bank-linked"
-              style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">₹ 0.00</div>
+              style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">â‚¹ 0.00</div>
           </div>
           <div class="kpi-card"
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Round-off</div>
             <div id="mla-round-off"
-              style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">₹ 0.00</div>
+              style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">â‚¹ 0.00</div>
           </div>
           <div class="kpi-card"
             style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Difference</div>
-            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">₹ 0.00
+            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">â‚¹ 0.00
             </div>
           </div>
         </div>
@@ -16532,10 +16748,10 @@ Outstanding Balance: {BalanceAmount}
         <!-- Footer -->
         <div
           style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
-          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions • Use
+          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions â€¢ Use
             View to open the existing linked workflow.</div>
           <button type="button" class="btn btn-secondary"
-            onclick="window.BankStatementController.closeModal('modal-linked-allocations')">✖ Close</button>
+            onclick="window.BankStatementController.closeModal('modal-linked-allocations')">âœ– Close</button>
         </div>
       </div>
     </div>
@@ -16546,7 +16762,7 @@ Outstanding Balance: {BalanceAmount}
     <div class="modal-card" style="max-width: 680px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">👁️ Bank Statement Transaction Details</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">ðŸ‘ï¸ Bank Statement Transaction Details</h3>
           <div id="mstd-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Audit inspection
             &amp; ERP narration editor</div>
         </div>
@@ -16618,7 +16834,7 @@ Outstanding Balance: {BalanceAmount}
           style="padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
           <button type="button" class="btn btn-secondary"
             onclick="window.BankStatementController.closeModal('modal-statement-txn-details')">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.saveTxnNotes()">💾 Save
+          <button type="button" class="btn btn-primary" onclick="window.BankStatementController.saveTxnNotes()">ðŸ’¾ Save
             Notes</button>
         </div>
       </div>
@@ -16630,7 +16846,7 @@ Outstanding Balance: {BalanceAmount}
     <div class="modal-card" style="max-width: 720px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">📄 Imported Statement Source Evidence</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">ðŸ“„ Imported Statement Source Evidence</h3>
           <div id="msse-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Original statement
             batch provenance &amp; SHA-256 fingerprint</div>
         </div>
@@ -16660,7 +16876,7 @@ Outstanding Balance: {BalanceAmount}
             <input type="text" id="msse-checksum" class="form-input" readonly
               style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--cyan);">
             <button type="button" class="btn btn-secondary btn-sm"
-              onclick="window.BankStatementController.copyChecksum()" style="white-space: nowrap;">📋 Copy</button>
+              onclick="window.BankStatementController.copyChecksum()" style="white-space: nowrap;">ðŸ“‹ Copy</button>
           </div>
         </div>
 
@@ -16909,7 +17125,7 @@ Outstanding Balance: {BalanceAmount}
       <div class="modal-header"
         style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.2rem; color:var(--purple);">⏰</span>
+          <span style="font-size:1.2rem; color:var(--purple);">â°</span>
           <h3 id="mre-modal-title" style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">Add
             Reminder</h3>
         </div>
@@ -16994,7 +17210,7 @@ Outstanding Balance: {BalanceAmount}
       <div class="modal-header"
         style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.2rem; color:var(--yellow);">⏰</span>
+          <span style="font-size:1.2rem; color:var(--yellow);">â°</span>
           <h3 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">Snooze Reminder</h3>
         </div>
         <button class="modal-close" onclick="window.ReminderCenterController.closeSnoozeModal()"
@@ -17026,7 +17242,7 @@ Outstanding Balance: {BalanceAmount}
   <div class="modal-overlay" id="session-timeout-modal" style="display: none; z-index: 1000000;">
     <div class="modal-box"
       style="max-width: 440px; width: 100%; text-align: center; border: 1px solid var(--purple-accent, #7c3aed); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
-      <div style="font-size: 2.8rem; margin-bottom: 8px;">⏳</div>
+      <div style="font-size: 2.8rem; margin-bottom: 8px;">â³</div>
       <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Session Inactivity
         Warning</h3>
       <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.4;">
@@ -17278,11 +17494,11 @@ Outstanding Balance: {BalanceAmount}
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span id="universal-preview-icon" style="font-size:1.2rem;">📄</span>
+          <span id="universal-preview-icon" style="font-size:1.2rem;">ðŸ“„</span>
           <span id="universal-preview-title" style="font-size:0.95rem; font-weight:700; color:#ffffff;">Document Preview</span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-          <a id="universal-preview-download-btn" href="#" download="preview_document" class="btn btn-secondary btn-sm" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">⬇️ Download</a>
+          <a id="universal-preview-download-btn" href="#" download="preview_document" class="btn btn-secondary btn-sm" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">â¬‡ï¸ Download</a>
           <button type="button" class="btn btn-secondary btn-sm" onclick="window.closeUniversalPreviewModal()" style="font-size:1.1rem; line-height:1; padding:2px 8px;">&times;</button>
         </div>
       </div>
@@ -17296,75 +17512,76 @@ Outstanding Balance: {BalanceAmount}
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.01"></script>
+  <script src="js/version.js?v=10.0.41.02"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.01"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.01"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.01"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.01"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.01"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.01"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.01"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.01"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.01"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.01"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.01"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.01"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.01"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.01"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.01"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.01"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.01"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.01"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.01"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.01"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.01"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.02"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.02"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.02"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.02"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.02"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.02"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.02"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.02"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.02"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.02"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.02"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.02"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.02"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.02"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.02"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.02"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.02"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.02"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.02"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.02"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.02"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.01"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.01"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.01"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.01"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.01"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.01"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.01"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.01"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.01"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.01"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.02"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.02"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.02"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.02"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.02"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.02"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.02"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.02"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.02"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.02"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.01"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.01"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.02"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.02"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.01"></script>
-  <script src="js/app.js?v=10.0.41.01"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.02"></script>
+  <script src="js/app.js?v=10.0.41.02"></script>
 </body>
 
 </html>
+

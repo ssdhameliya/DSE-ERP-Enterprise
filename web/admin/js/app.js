@@ -1806,7 +1806,7 @@ window.openInvoicePaymentDetails = function(type, id, invoiceNo, partyName, tota
   }
 };
 
-// Bootstrap on window load
-window.addEventListener('load', () => {
+// Bootstrap on DOMContentLoaded (v10.0.41.02: faster 50-100ms init vs window.load which waited for PDF/Excel libs)
+document.addEventListener('DOMContentLoaded', () => {
   window.App.init();
 });
