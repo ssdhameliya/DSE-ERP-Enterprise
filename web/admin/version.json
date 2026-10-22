@@ -1,15 +1,15 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 2,
-  "webVersion": "10.0.41.02",
-  "tag": "web-v10.0.41.02",
-  "releaseDate": "2026-10-22T02:05:00+05:30",
+  "webBuild": 1,
+  "webVersion": "10.0.41.01",
+  "tag": "web-v10.0.41.01",
+  "releaseDate": "2026-10-22T01:25:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.02 Universal Zero-Flash Routing, Immediate Hash View Hydration, and Header/Tab State Parity Across All Screens",
+  "summary": "10.0.41.01 Document Date Formatting Parity, ConfigManager Global Fallback, and Multi-line Email Message Body Expansion",
   "highlights": [
-    "1. Universal Zero-Flash Routing: Synchronous pre-paint route resolution in head guarantees that refreshing on any screen (Purchase, Bank, Sales, Quotations, Items, etc.) renders the target view from frame 0 with zero dashboard flash.",
-    "2. Synchronous Header & Tab Hydration: Pre-hydrates active module title, breadcrumb hierarchy, and workspace tab bar before script execution.",
-    "3. Auth Screen Leak Prevention: Instant authentication guard hides all background ERP views and renders the Auth overlay exclusively when unauthenticated.",
-    "4. Clean Early Router Hand-off: Seamless transition between early layout styles and NavigationRouter without layout shifts or duplicated active view states."
+    "1. Document Date Formatting Parity: Guaranteed custom date formats (e.g., DD/MM/YYYY, YYYY-MM-DD) set in company settings propagate consistently into all PDF renders and previews.",
+    "2. Server ConfigManager Global Cache: Persistent settings synchronization preventing uninitialized thread-local fallbacks during background and async document generation.",
+    "3. Multi-line Email Message Body: Expanded email transmission modal textarea height to show complete multi-line email messages with responsive vertical resizing.",
+    "4. Universal Lightbox PDF Studio: Unified lightbox preview and transmission flow across Quotation, Sales, and Returns."
   ]
 }
