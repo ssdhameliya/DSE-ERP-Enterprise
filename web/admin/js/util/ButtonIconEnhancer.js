@@ -9,8 +9,8 @@
 window.ButtonIconEnhancer = (function() {
   'use strict';
 
-  // Emoji regex to detect existing icons
-  const EMOJI_REGEX = /^[\s]*([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FA6F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}✨✏️🗑️💾🖨️📊✉️💬↻🧹💳📜🔍⚡✓✕«‹›»📄🏷️📌]+)/u;
+  // Emoji regex to detect existing icons and symbols
+  const EMOJI_REGEX = /^[\s]*([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FA6F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}✨✏️🗑️💾🖨️📊✉️💬↻🧹💳📜🔍⚡✓✕«‹›»📄🏷️📌⚙️➕🛒📦👁️🏦⏰🔔🌙☀️\+]+/u;
 
   // Semantic Action Dictionary matching desktop UiActionIcons.java
   function resolveButtonAction(text, id, classes) {
@@ -77,14 +77,14 @@ window.ButtonIconEnhancer = (function() {
       return { icon: '‹', role: 'role-secondary' };
     }
 
-    // Default neutral action
+    // Default neutral action with vibrant Indigo gradient
     return { icon: '⚡', role: 'role-secondary' };
   }
 
   function enhanceButton(btn) {
     if (!btn || btn.dataset.erpBtnEnhanced === 'true') return;
 
-    // Skip special elements: modal close '×', pagination controls, pure icon buttons, and navigation tabs
+    // Skip special elements: modal close '×', pagination controls, pure icon buttons, navigation tabs, and header quick-controls
     if (
       btn.classList.contains('modal-close') ||
       btn.classList.contains('modal-close-btn') ||
@@ -96,7 +96,15 @@ window.ButtonIconEnhancer = (function() {
       btn.classList.contains('gstr1-subtab-btn') ||
       btn.classList.contains('btn-preset-chip') ||
       btn.classList.contains('filter-chip-btn') ||
-      (btn.closest && btn.closest('.settings-tab-nav, .register-tab-bar, .workspace-tabs-container'))
+      btn.classList.contains('theme-toggle-switch') ||
+      btn.classList.contains('header-badge-btn') ||
+      btn.classList.contains('audio-toggle') ||
+      btn.id === 'btn-theme-toggle' ||
+      btn.id === 'audio-toggle-btn' ||
+      (btn.closest && (
+        btn.closest('.app-header') ||
+        btn.closest('.settings-tab-nav, .register-tab-bar, .workspace-tabs-container')
+      ))
     ) {
       btn.dataset.erpBtnEnhanced = 'true';
       return;
@@ -152,15 +160,17 @@ window.ButtonIconEnhancer = (function() {
       }
     }
 
-    // Action button special handling
-    const isTableActionBtn = /actions/i.test(cleanText) || btn.classList.contains('btn-purple');
+    // Table Action button special handling -> 3D Royal Purple
+    const isTableActionBtn = /actions/i.test(cleanText) || (btn.closest && btn.closest('td') && (btn.classList.contains('btn-purple') || btn.classList.contains('row-action-btn')));
     let action = resolveButtonAction(cleanText, btn.id || '', btn.className || '');
     if (isTableActionBtn) {
-      action = { icon: '⚙️', role: 'role-secondary' };
+      action = { icon: '⚙️', role: 'role-actions' };
       btn.classList.add('btn-purple');
+      btn.classList.add('role-actions');
+      btn.classList.add('role-purple');
     }
 
-    const finalIcon = existingIcon || action.icon;
+    const finalIcon = isTableActionBtn ? '⚙️' : (existingIcon || action.icon);
 
     // Apply 3D button class and role
     btn.classList.add('btn-action-3d');
@@ -168,14 +178,15 @@ window.ButtonIconEnhancer = (function() {
       btn.classList.add(action.role);
     }
 
-    // Inject 3D Icon Span if not present
-    if (!btn.querySelector('.btn-3d-icon')) {
-      const iconSpan = document.createElement('span');
-      iconSpan.className = 'btn-3d-icon';
-      iconSpan.innerText = finalIcon;
-      iconSpan.setAttribute('aria-hidden', 'true');
-      btn.insertBefore(iconSpan, btn.firstChild);
-    }
+    // Remove any previously injected duplicate 3D icon spans
+    btn.querySelectorAll('.btn-3d-icon').forEach(s => s.remove());
+
+    // Inject single 3D Icon Span
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'btn-3d-icon';
+    iconSpan.innerText = finalIcon;
+    iconSpan.setAttribute('aria-hidden', 'true');
+    btn.insertBefore(iconSpan, btn.firstChild);
   }
 
   return {

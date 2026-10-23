@@ -1,19 +1,18 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 11,
-  "webVersion": "10.0.41.11",
-  "tag": "web-v10.0.41.11",
-  "releaseDate": "2026-10-24T01:30:00+05:30",
+  "webBuild": 12,
+  "webVersion": "10.0.41.12",
+  "tag": "web-v10.0.41.12",
+  "releaseDate": "2026-10-24T02:15:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.11 Universal UI/UX Deep Forensic Investigation, Table Amount Colorization, Side Panel & Header Polish, Purchase Recon Rework, Tab Standardization, Bank Statement Refresh Fix & 3D Icons, and Dark/Light Mode Parity",
+  "summary": "10.0.41.12 Login Page Refresh Zero-Flicker Parity, Item Master & Inventory Row Click Table Collapse Fix, Recon Supplier Master Layout & Pagination Parity, Universal 3D Action Button Colorization, Double-Icon Elimination, and Automated Version Synchronizer",
   "highlights": [
-    "1. Universal Table Monetary Amount Colorization: Defined missing core semantic variables and .amount-* utilities across :root and body.light-theme with real-time DOM mutation observer coverage.",
-    "2. Side Panel (Detail Drawer) & Header Polish: Integrated tactile 3D badges into drawer labels, colorized drawer totals, and upgraded page view titles and multi-document workspace tabs with 3D elevation.",
-    "3. Purchase Reconciliation (PRC) Complete Rework: Placed 6-card KPI ribbon on top, streamlined single-row filter bar, activated date preset chips, defaulted period to Start of FY through Today, and installed 2027 enterprise pagination footer.",
-    "4. Navigation Tabs Standardization: Excluded navigation tabs from action button coloring across Settings and Registers, enforcing unified 2027 glassmorphic tab tokens in dark and light modes.",
-    "5. Action Button Clean-up: Purged triple colons and artifacts from button text, assigning clean 3D action roles.",
-    "6. Centralized Modal Dialog Parity: Guaranteed single-action buttons on informational alerts and toasts, removing accidental cancel buttons and applying 3D role gradients.",
-    "7. Bank Statement Screen Parity: Resolved Refresh button undefined batch ID exception and added 3D colorful icons and themes to all 8 KPI cards.",
-    "8. Strict Dark & Light Mode Color Contrast: Enforced WCAG AAA contrast compliance across all semantic tokens in both dark and light modes."
+    "1. Login Page Refresh Zero-Flicker Parity: Eliminated Frame-0 dual-state flash on refresh by synchronizing index.html static markup with modern enterprise branding and adding synchronous credential pre-population.",
+    "2. Item Master & Inventory (Stock Register) Row Click Table Preservation: Removed rogue vertical flex directions from item-master.html and inventory.html, docking side drawers alongside intact, fully visible tables.",
+    "3. Full Workspace Table Audit: Verified all 42 system views; confirmed all 19 drawer-enabled tables now strictly adhere to horizontal flex row architecture.",
+    "4. Recon Supplier Master Complete Parity: Relocated 4 compact KPI cards to top, implemented zero-waste single-row filter toolbar, defaulted period to Start of FY through Today, purged duplicate buttons, and installed 2027 enterprise register pagination footer.",
+    "5. Universal 3D Button Color System: Upgraded all table Action buttons to vibrant 3D Royal Purple, transformed secondary buttons to 3D Indigo gradients, and permanently eliminated dull/black button styling across dark and light modes.",
+    "6. Header Double Icons & Multi-Emoji Purge: Excluded all top-bar header controls from automatic icon mutation, resolving double icons (🌙 🌙 Dark, ⚡ ⏰, ⚙️ + New Sale F9).",
+    "7. Single-File Version Synchronization: Deployed scripts/sync-version.py and sync-version.ps1 to automatically propagate version metadata across version.json, js/version.js, and all 64+ index.html asset references in ~80ms."
   ]
 }

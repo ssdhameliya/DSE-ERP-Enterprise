@@ -121,8 +121,8 @@ window.ItemMasterController = (function() {
           <td style="font-family:monospace;">${i.hsn || '73063000'}</td>
           <td style="text-align:right;">${(i.gst || 18).toFixed(1)}%</td>
           <td style="text-align:right;">${(i.discountPercent || 0).toFixed(1)}%</td>
-          <td style="text-align:right; font-weight:600;">${formatMoney(i.purchasePrice)}</td>
-          <td style="text-align:right; font-weight:700; color:var(--yellow);">${formatMoney(i.sellingPrice)}</td>
+          <td style="text-align:right; font-weight:600;"><span class="amount-cost">${formatMoney(i.purchasePrice)}</span></td>
+          <td style="text-align:right; font-weight:700;"><span class="amount-primary">${formatMoney(i.sellingPrice)}</span></td>
           <td style="text-align:right; font-weight:700; color:${isLow ? 'var(--red)' : 'var(--green)'};">
             ${stock.toFixed(2)} ${i.unit || 'PCS'}
             ${isLow ? '<span style="font-size:0.65rem; color:var(--red); display:block; font-weight:800;">LOW STOCK</span>' : ''}
@@ -131,8 +131,8 @@ window.ItemMasterController = (function() {
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${i.remarks || ''}">${i.remarks || '-'}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn-purple" onclick="window.ItemMasterController.toggleActionMenu('${(i.itemCode || '').replace(/'/g, "\\'")}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-                ::: Actions
+              <button class="btn btn-purple role-actions role-purple btn-action-3d btn-sm" onclick="window.ItemMasterController.toggleActionMenu('${(i.itemCode || '').replace(/'/g, "\\'")}', event)" style="padding:4px 12px; font-size:0.75rem; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                Actions
               </button>
               <div id="item-action-menu-${(i.itemCode || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.ItemMasterController.openNewItemModal()"><span style="margin-right:8px;">➕</span> Create Item</div>
@@ -858,8 +858,8 @@ window.ItemMasterController = (function() {
           <td style="text-align:center;">${statusDisplay}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn-purple" onclick="window.ItemMasterController.toggleInventoryActionMenu('${code}', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Inventory Actions">
-                ::: Actions
+              <button class="btn btn-purple role-actions role-purple btn-action-3d btn-sm" onclick="window.ItemMasterController.toggleInventoryActionMenu('${code}', event)" style="padding:4px 12px; font-size:0.75rem; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Inventory Actions">
+                Actions
               </button>
               <div id="inv-action-menu-${(code || '').replace(/[^a-zA-Z0-9]/g, '_')}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.ItemMasterController.showInventoryDetails('${code}')"><span style="margin-right:8px;">👁️</span> View Item</div>

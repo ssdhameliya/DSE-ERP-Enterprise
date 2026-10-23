@@ -263,8 +263,8 @@ window.PurchaseReconController = (function() {
           <td><span class="pill-badge pill-neutral">${r.source || 'MANUAL'}</span></td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-purple btn-sm" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:4px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-                Actions ▼
+              <button class="btn btn-purple role-actions role-purple btn-action-3d btn-sm" onclick="window.PurchaseReconController.toggleActionMenu(${r.id}, event)" style="padding:4px 12px; font-size:0.75rem; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                Actions
               </button>
               <div id="recon-action-menu-${r.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:200px; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditRecon(${r.id})"><span style="margin-right:8px;">👁️</span> View Recon</div>
@@ -641,14 +641,27 @@ window.PurchaseReconController = (function() {
     document.querySelectorAll('#purchase-recon-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
   }
 
-  // ==========================================
-  // 3. RECON SUPPLIER MASTER (ReconSupplier.fxml)
-  // ==========================================
+  let supplierCurrentPage = 1;
+  const supplierPageSize = 25;
 
   async function loadReconSuppliers() {
     const tbody = document.getElementById('recon-supplier-tbody');
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Loading recon suppliers...</td></tr>`;
+    }
+
+    // Default Period to Start of FY to Today if empty
+    const fromInput = document.getElementById('rs-date-from');
+    const toInput = document.getElementById('rs-date-to');
+    if (fromInput && toInput && !fromInput.value && !toInput.value) {
+      const now = new Date();
+      const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      fromInput.value = `${yr}-04-01`;
+      toInput.value = formatLocalDate(now);
+      document.querySelectorAll('#view-recon-supplier .btn-preset-chip').forEach(b => {
+        if (b.innerText.trim().toUpperCase() === 'THIS FY') b.classList.add('active');
+        else b.classList.remove('active');
+      });
     }
 
     try {
@@ -672,7 +685,7 @@ window.PurchaseReconController = (function() {
   }
 
   function setSupplierDateFilter(preset, btnEl) {
-    document.querySelectorAll('#recon-supplier-view .btn-preset-chip, .recon-supplier-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#view-recon-supplier .btn-preset-chip').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
     const fromInput = document.getElementById('rs-date-from');
@@ -682,28 +695,30 @@ window.PurchaseReconController = (function() {
     const now = new Date();
     const todayStr = formatLocalDate(now);
 
-    if (preset === 'ALL') {
+    const norm = (preset || '').toUpperCase();
+    if (norm === 'ALL') {
       fromInput.value = '';
       toInput.value = '';
-    } else if (preset === 'TODAY') {
+    } else if (norm === 'TODAY') {
       fromInput.value = todayStr;
       toInput.value = todayStr;
-    } else if (preset === 'THIS_MONTH') {
+    } else if (norm === 'THIS_MONTH' || norm === 'MONTH') {
       const y = now.getFullYear();
       const m = now.getMonth();
       fromInput.value = formatLocalDate(new Date(y, m, 1));
       toInput.value = formatLocalDate(new Date(y, m + 1, 0));
-    } else if (preset === 'LAST_MONTH') {
+    } else if (norm === 'LAST_MONTH') {
       const y = now.getFullYear();
       const m = now.getMonth();
       fromInput.value = formatLocalDate(new Date(y, m - 1, 1));
       toInput.value = formatLocalDate(new Date(y, m, 0));
-    } else if (preset === 'THIS_FY') {
+    } else if (norm === 'THIS_FY') {
       const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
       fromInput.value = `${yr}-04-01`;
-      toInput.value = `${yr + 1}-03-31`;
+      toInput.value = todayStr;
     }
 
+    supplierCurrentPage = 1;
     loadReconSuppliers();
   }
 
@@ -712,12 +727,75 @@ window.PurchaseReconController = (function() {
     if (s) s.value = '';
     const st = document.getElementById('rs-status-filter');
     if (st) st.value = '';
+    const src = document.getElementById('rs-source-filter');
+    if (src) src.value = '';
+
+    const now = new Date();
+    const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
     const f = document.getElementById('rs-date-from');
-    if (f) f.value = '';
+    if (f) f.value = `${yr}-04-01`;
     const t = document.getElementById('rs-date-to');
-    if (t) t.value = '';
-    document.querySelectorAll('#recon-supplier-view .btn-preset-chip, .recon-supplier-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    if (t) t.value = formatLocalDate(now);
+
+    document.querySelectorAll('#view-recon-supplier .btn-preset-chip').forEach(b => {
+      if (b.innerText.trim().toUpperCase() === 'THIS FY') b.classList.add('active');
+      else b.classList.remove('active');
+    });
+
+    supplierCurrentPage = 1;
     loadReconSuppliers();
+  }
+
+  function updateSupplierPagination(totalRecords) {
+    const totalPages = Math.max(1, Math.ceil(totalRecords / supplierPageSize));
+    if (supplierCurrentPage > totalPages) supplierCurrentPage = totalPages;
+
+    const startIdx = totalRecords === 0 ? 0 : (supplierCurrentPage - 1) * supplierPageSize + 1;
+    const endIdx = Math.min(totalRecords, supplierCurrentPage * supplierPageSize);
+
+    const infoEl = document.getElementById('rs-pagination-info');
+    if (infoEl) infoEl.innerText = `Showing ${startIdx}-${endIdx} of ${totalRecords} suppliers`;
+
+    const pageDisplay = document.getElementById('rs-page-display');
+    if (pageDisplay) pageDisplay.innerText = `Page ${supplierCurrentPage} of ${totalPages}`;
+
+    const prevBtn = document.getElementById('rs-btn-prev');
+    if (prevBtn) prevBtn.disabled = supplierCurrentPage <= 1;
+
+    const nextBtn = document.getElementById('rs-btn-next');
+    if (nextBtn) nextBtn.disabled = supplierCurrentPage >= totalPages;
+
+    const firstBtn = document.getElementById('rs-btn-first');
+    if (firstBtn) firstBtn.disabled = supplierCurrentPage <= 1;
+
+    const lastBtn = document.getElementById('rs-btn-last');
+    if (lastBtn) lastBtn.disabled = supplierCurrentPage >= totalPages;
+  }
+
+  function firstSupplierPage() {
+    supplierCurrentPage = 1;
+    renderSupplierTable(reconSuppliers);
+  }
+
+  function prevSupplierPage() {
+    if (supplierCurrentPage > 1) {
+      supplierCurrentPage--;
+      renderSupplierTable(reconSuppliers);
+    }
+  }
+
+  function nextSupplierPage() {
+    const totalPages = Math.ceil(reconSuppliers.length / supplierPageSize);
+    if (supplierCurrentPage < totalPages) {
+      supplierCurrentPage++;
+      renderSupplierTable(reconSuppliers);
+    }
+  }
+
+  function lastSupplierPage() {
+    const totalPages = Math.ceil(reconSuppliers.length / supplierPageSize);
+    supplierCurrentPage = Math.max(1, totalPages);
+    renderSupplierTable(reconSuppliers);
   }
 
   function updateSupplierKpis(list) {
@@ -751,10 +829,16 @@ window.PurchaseReconController = (function() {
           </td>
         </tr>
       `;
+      updateSupplierPagination(0);
       return;
     }
 
-    tbody.innerHTML = rows.map(s => {
+    updateSupplierPagination(rows.length);
+
+    const start = (supplierCurrentPage - 1) * supplierPageSize;
+    const pageRows = rows.slice(start, start + supplierPageSize);
+
+    tbody.innerHTML = pageRows.map(s => {
       const isActive = (s.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
       const sCount = (s.reconCount != null ? s.reconCount : (s.reconRecordsCount || 0));
 
@@ -764,15 +848,15 @@ window.PurchaseReconController = (function() {
           <td style="font-weight:600; color:var(--text-main);">${s.legalName}</td>
           <td style="font-family:monospace; color:var(--purple);">${s.gstin || 'Unregistered'}</td>
           <td>${s.phone || '-'}</td>
-          <td style="text-align:right; font-weight:700;">${sCount}</td>
+          <td style="text-align:right; font-weight:700; color:var(--cyan); font-family:'JetBrains Mono',monospace;">${sCount}</td>
           <td><span class="pill-badge pill-neutral">${s.source || 'MANUAL'}</span></td>
           <td style="text-align:center;">
             ${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
-              <button class="btn btn-purple btn-sm" onclick="window.PurchaseReconController.toggleSupplierActionMenu(${s.id}, event)" style="padding:4px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-                Actions ▼
+              <button class="btn btn-purple role-actions role-purple btn-action-3d btn-sm" onclick="window.PurchaseReconController.toggleSupplierActionMenu(${s.id}, event)" style="padding:4px 12px; font-size:0.75rem; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                Actions
               </button>
               <div id="supplier-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">👁️</span> View Supplier</div>
@@ -1011,7 +1095,11 @@ window.PurchaseReconController = (function() {
     closeSupplierEditor,
     applySupplierFilters() { loadReconSuppliers(); },
     setSupplierDateFilter,
-    resetSupplierFilters
+    resetSupplierFilters,
+    firstSupplierPage,
+    prevSupplierPage,
+    nextSupplierPage,
+    lastSupplierPage
   };
 })();
 

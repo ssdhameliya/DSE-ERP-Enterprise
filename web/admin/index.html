@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.11">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.12">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -278,20 +278,20 @@
     <div class="auth-desktop-wrapper">
       <!-- LEFT BRAND COLUMN -->
       <div class="auth-brand-col">
-        <div class="auth-brand-banner-box" id="auth-brand-banner-box">
+        <div class="auth-brand-banner-box" id="auth-brand-banner-box" style="display: none;">
           <img src="assets/brand-banner.png" alt="Jasvi Industries" id="auth-brand-banner-img"
             onerror="this.onerror=null; const p = document.getElementById('auth-brand-banner-box'); if(p) p.style.display='none';">
         </div>
-        <div class="auth-brand-mark-box" id="auth-brand-mark-box">
+        <div class="auth-brand-mark-box" id="auth-brand-mark-box" style="display: none;">
           <img src="assets/brand-mark.png" alt="Jasvi Mark" id="auth-brand-mark-img"
             onerror="this.onerror=null; const p = document.getElementById('auth-brand-mark-box'); if(p) p.style.display='none';">
         </div>
         <h1 class="auth-brand-title">Jasvi Creation</h1>
         <div class="auth-brand-line"></div>
-        <div class="auth-brand-subtitle">Enterprise Production &amp; Distribution</div>
+        <div class="auth-brand-subtitle">Excellence in Ceramic Manufacturing &amp; Enterprise Engineering</div>
         <div class="auth-brand-tagline">Role-aware secure access to Jasvi Creation</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.09</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 10.0.41.12</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v10.0.41</div>
         </div>
@@ -315,7 +315,7 @@
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label"
               style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-              <span>&#128100;</span> Email or username *
+              <span class="erp-label-icon-badge theme-cyan">👤</span> Email or username *
             </label>
             <input type="text" id="login-identity" class="form-input" placeholder="admin or username" required autofocus
               autocomplete="username" style="height: 38px;">
@@ -324,7 +324,7 @@
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label"
               style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-              <span>&#128273;</span> Password *
+              <span class="erp-label-icon-badge theme-orange">🔑</span> Password *
             </label>
             <div style="position: relative;">
               <input type="password" id="login-password" class="form-input"
@@ -339,7 +339,7 @@
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label"
               style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-              <span>&#128101;</span> Role
+              <span class="erp-label-icon-badge theme-green">👥</span> Role
             </label>
             <select id="login-role" class="form-select" style="height: 38px; font-weight: 600;"
               onchange="window.updateLoginMode && window.updateLoginMode()">
@@ -371,22 +371,23 @@
           <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 0.76rem;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #cbd5e1;">
+              <span class="erp-label-icon-badge theme-neutral">📌</span>
               <input type="checkbox" id="login-remember"> Remember Me
             </label>
-            <button type="button" class="btn btn-secondary" onclick="window.App.toggleTheme()"
+            <button type="button" class="btn btn-secondary role-secondary btn-action-3d" onclick="window.App.toggleTheme()"
               id="btn-login-theme-toggle" style="height: 28px; padding: 0 10px; font-size: 0.72rem;">
               <span id="login-theme-icon">&#9788;</span> <span id="login-theme-text">Light Mode</span>
             </button>
           </div>
 
-          <button type="submit" id="btn-login-submit" class="auth-btn-purple">
-            <span id="btn-login-submit-text">&#10140; LOGIN</span>
+          <button type="submit" id="btn-login-submit" class="auth-btn-purple role-save btn-action-3d" data-erp-btn-enhanced="true">
+            <span class="btn-3d-icon" aria-hidden="true">💾</span> <span id="btn-login-submit-text">LOGIN</span>
           </button>
 
           <div class="auth-divider-or">OR</div>
 
-          <button type="button" class="auth-btn-purple-outline" onclick="showAuthTab('register')">
-            <span>+ Create a new User account</span>
+          <button type="button" class="auth-btn-purple-outline role-add btn-action-3d" onclick="showAuthTab('register')" data-erp-btn-enhanced="true">
+            <span class="btn-3d-icon" aria-hidden="true">✨</span> Create a new User account
           </button>
 
           <div style="text-align: center; margin-top: 12px;">
@@ -394,6 +395,21 @@
               style="color: #94a3b8; font-size: 0.76rem; text-decoration: none;">Forgot Password?</a>
           </div>
         </form>
+        <script>
+          (function() {
+            try {
+              var rem = localStorage.getItem('dse_remember_me') === 'true';
+              var id = localStorage.getItem('dse_saved_identity');
+              var role = localStorage.getItem('dse_saved_role') || 'ADMIN';
+              var idInput = document.getElementById('login-identity');
+              var remCheck = document.getElementById('login-remember');
+              var roleSel = document.getElementById('login-role');
+              if (rem && id && idInput) idInput.value = id;
+              if (remCheck) remCheck.checked = rem;
+              if (roleSel && role) roleSel.value = role;
+            } catch(e) {}
+          })();
+        </script>
 
         <!-- 2. MFA TOTP FORM (Desktop Challenge State) -->
         <form id="form-mfa" onsubmit="handleMfaSubmit(event)" style="display: none;">
@@ -664,10 +680,10 @@
         </div>
 
         <!-- Desktop Quick Action: + New Sale F9 -->
-        <button class="btn-purple" onclick="window.SalesController.openSaleEditorTab()"
+        <button id="header-btn-new-sale" class="btn-action-3d role-purple header-btn-new-sale" onclick="window.SalesController.openSaleEditorTab()"
           style="height: 32px; font-size: 0.78rem; padding: 0 14px; font-weight: 700; border-radius: 6px;"
-          title="Quick Create Sales Invoice (F9)">
-          <span>+</span> New Sale F9
+          title="Quick Create Sales Invoice (F9)" data-erp-btn-enhanced="true">
+          <span class="btn-3d-icon" aria-hidden="true">➕</span> New Sale F9
         </button>
 
         <!-- Theme Toggle (Dark / Light) -->
@@ -6311,78 +6327,78 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.11"></script>
+  <script src="js/version.js?v=10.0.41.12"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.11"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.11"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.11"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.11"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.11"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.11"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.11"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.11"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/ButtonIconEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/PaginationUiEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.11"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.11"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.11"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.11"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.11"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.11"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.11"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.11"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.11"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.11"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.12"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.12"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.12"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.12"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.12"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.12"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.12"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.12"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/ButtonIconEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/PaginationUiEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.12"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.12"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.12"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.12"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.12"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.12"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.12"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.12"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.12"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.12"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.11"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.11"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.11"></script>
-  <script src="js/services/ViewLoader.js?v=10.0.41.11"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.11"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.11"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.11"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.11"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.11"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.11"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.11"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.12"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.12"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.12"></script>
+  <script src="js/services/ViewLoader.js?v=10.0.41.12"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.12"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.12"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.12"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.12"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.12"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.12"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.12"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.11"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.12"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.12"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.11"></script>
-  <script src="js/app.js?v=10.0.41.11"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.12"></script>
+  <script src="js/app.js?v=10.0.41.12"></script>
 </body>
 
 </html>

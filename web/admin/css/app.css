@@ -383,8 +383,17 @@
     }
     .btn-primary { background: linear-gradient(135deg, #0284c7, #0284c7); color: #fff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
     .btn-primary:hover { background: linear-gradient(135deg, #0369a1, #0284c7); }
-    .btn-secondary { background: rgba(255, 255, 255, 0.06); color: var(--text-main); border: 1px solid var(--border-subtle); }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
+    .btn-secondary {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(165, 180, 252, 0.4) !important;
+      box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
+      box-shadow: 0 5px 14px rgba(79, 70, 229, 0.45) !important;
+      transform: translateY(-1px);
+    }
     .btn-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
     .btn-purple {
@@ -5845,19 +5854,58 @@
       box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45) !important;
     }
 
-    .role-cancel, .role-secondary, .btn-action-3d.role-cancel {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #cbd5e1 !important;
-      border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    }
-    .role-cancel:hover, .role-secondary:hover, .btn-action-3d.role-cancel:hover {
-      background: rgba(255, 255, 255, 0.15) !important;
+    .role-actions, .role-purple, .btn-action-3d.role-actions, .btn-action-3d.role-purple, .btn-purple, .btn-table-action, .row-action-btn, button.btn-purple, .btn.btn-purple {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
       color: #ffffff !important;
+      border: 1px solid rgba(192, 132, 252, 0.45) !important;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+    .role-actions:hover, .role-purple:hover, .btn-action-3d.role-actions:hover, .btn-action-3d.role-purple:hover, .btn-purple:hover, .btn-table-action:hover, .row-action-btn:hover, button.btn-purple:hover, .btn.btn-purple:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+      box-shadow: 0 6px 18px rgba(139, 92, 246, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+      transform: translateY(-1px) scale(1.02) !important;
+    }
+    body.light-theme .role-actions, body.light-theme .role-purple, body.light-theme .btn-action-3d.role-actions, body.light-theme .btn-action-3d.role-purple, body.light-theme .btn-purple, body.light-theme .btn-table-action, body.light-theme .row-action-btn, body.light-theme button.btn-purple, body.light-theme .btn.btn-purple {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #7c3aed !important;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+    }
+
+    .role-secondary, .btn-action-3d.role-secondary {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(165, 180, 252, 0.4) !important;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+    .role-secondary:hover, .btn-action-3d.role-secondary:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.5) !important;
+      transform: translateY(-1px) scale(1.02) !important;
+    }
+    body.light-theme .role-secondary, body.light-theme .btn-action-3d.role-secondary {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #4f46e5 !important;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+    }
+
+    .role-cancel, .btn-action-3d.role-cancel {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(148, 163, 184, 0.35) !important;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    }
+    .role-cancel:hover, .btn-action-3d.role-cancel:hover {
+      background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.4) !important;
     }
     body.light-theme .role-cancel, body.light-theme .btn-action-3d.role-cancel {
-      background: #f1f5f9 !important;
-      color: #334155 !important;
-      border: 1px solid #cbd5e1 !important;
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #64748b !important;
+      box-shadow: 0 3px 8px rgba(100, 116, 139, 0.25) !important;
     }
 
     .role-warning, .btn-action-3d.role-warning {
