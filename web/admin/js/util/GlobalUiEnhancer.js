@@ -12,18 +12,22 @@ window.GlobalUiEnhancer = (function() {
 
   let debounceTimer = null;
   let observer = null;
-  let isEnhancing = false;
+  let isGlobalEnhancing = false;
+  const activeEnhancingTargets = new WeakSet();
 
-  function runEnhancements(container) {
-    if (isEnhancing) return;
-    isEnhancing = true;
+  function runEnhancements(container, force = false) {
+    const root = container || document.getElementById('main-content-stage') || document.body;
+    if (!root) return;
+
+    if (!force && isGlobalEnhancing && !container) return;
+    if (activeEnhancingTargets.has(root)) return;
+    activeEnhancingTargets.add(root);
+
+    if (!container) isGlobalEnhancing = true;
     if (observer) {
       try { observer.disconnect(); } catch (e) {}
     }
     try {
-      const root = container || document.getElementById('main-content-stage') || document.body;
-      if (!root) return;
-
       if (window.TableUiEnhancer) {
         window.TableUiEnhancer.enhanceAll(root);
       }
@@ -40,16 +44,17 @@ window.GlobalUiEnhancer = (function() {
         window.WorkflowFocusManager.autoEnhanceScreen(root);
       }
     } finally {
+      activeEnhancingTargets.delete(root);
       // Allow DOM mutations to settle before reconnecting observer
       setTimeout(() => {
-        isEnhancing = false;
+        if (!container) isGlobalEnhancing = false;
         if (observer) {
           const target = document.getElementById('main-content-stage') || document.body;
           try {
             observer.observe(target, { childList: true, subtree: true });
           } catch (e) {}
         }
-      }, 150);
+      }, 50);
     }
   }
 
@@ -66,7 +71,7 @@ window.GlobalUiEnhancer = (function() {
     if (!target || observer) return;
 
     observer = new MutationObserver((mutations) => {
-      if (isEnhancing) return;
+      if (isGlobalEnhancing) return;
       let shouldEnhance = false;
 
       for (const m of mutations) {
@@ -143,7 +148,7 @@ window.GlobalUiEnhancer = (function() {
 
     enhance(container) {
       // Execute immediately and synchronously on the container so there is zero flash or layout jump
-      runEnhancements(container);
+      runEnhancements(container, true);
     }
   };
 })();

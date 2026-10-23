@@ -1,18 +1,19 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 8,
-  "webVersion": "10.0.41.08",
-  "tag": "web-v10.0.41.08",
-  "releaseDate": "2026-10-23T02:30:00+05:30",
+  "webBuild": 9,
+  "webVersion": "10.0.41.09",
+  "tag": "web-v10.0.41.09",
+  "releaseDate": "2026-10-23T23:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.08 Precision Fixes & Global Decision Dialogs (Actions Menu Restoration, Master Payment Lookups, Email Settings Jackson Serialization, 3-Button Standard Attachment Card, Contextual Monetary Amount Coloring, Delivery Address Interlocking, and Global Modal Dialogs)",
+  "summary": "10.0.41.09 Precision Fixes & Parity: Master Data 58px Compact KPI Ribbon Uniformity, Centralized Dynamic Table Layout & Reflow Authority, Recon Supplier & Purchase Recon Enterprise 2-Row Filter Toolbars & Centered Window Modals, Purchase Recon Add/Save Bug Fix, Settings Blank Screen Resolution, Purchase Creation Attachment Controls Parity, and Notification Center Header Badges Reset",
   "highlights": [
-    "1. Sales Register Actions Button: Fixed coordinate calculation and relocated '#sales-row-actions-menu' to application root with z-index 100025, completely restoring the purple '::: Actions' dropdown button.",
-    "2. Record Payment Lookups: Resolved view loading lifecycle and populated Payment Mode and Bank Account dropdowns purely from live Master Data lookup tables without mock arrays.",
-    "3. Corporate Email Settings: Added 'passwordConfigured' boolean to PUT /api/authority/email/settings payload, resolving Jackson null-to-primitive deserialization error while preserving date format integrity.",
-    "4. Standardized Attachment Card: Standardized 3-button layout (+ Add / Replace, Preview, Delete) in bottom-right Notes & Attachments card in Sale & Purchase creation, removing top redundant cards.",
-    "5. Universal Semantic Amount Coloring: Implemented contextual monetary styling across all registers and tables (Paid/Received = Green, Pending/Due = Yellow/Red, Total = Cyan).",
-    "6. Delivery Address Interlocking: Enforced strict readonly interlocking on Delivery Address and GSTIN inputs whenever 'Same as Billing Address' is checked on initial load and party selection.",
-    "7. Universal Decision Dialogs: Completely replaced all transient toast popups across the entire ERP with interactive modal dialogs (success, error, warning, info, exportSuccess) requiring explicit user confirmation."
+    "1. Universal 58px Compact KPI Ribbon: Standardized all 14 register and dashboard views to the Master Data golden standard (.compact-kpi-card, data-erp-kpi-compact-enhanced='true'), eliminating right-side blank space and enhancer refresh lockouts.",
+    "2. Centralized Dynamic Table Layout & Reflow: Installed sales-desktop-table wrapped in sales-table-card/sales-table-scroll with DynamicTableLayoutManager colgroup allocation, and hooked instant reflow into sidebar expand/collapse/hover.",
+    "3. Recon Supplier Toolbar & Centered Modal: Added standardized 2-row filter box (Search, Status, Source, Date From/To, Presets, Reset, Refresh) and replaced side drawer with centered window modal.",
+    "4. Purchase Recon Toolbar & Centered Modal: Replaced cramped single-row filter strip with standard 2-row filter box and converted side drawer into centered window modal dialog.",
+    "5. Purchase Recon Add/Save Bug Resolved: Resiliently parsed server page response (content/rows/array) and protected dialog/toast lifecycle, ensuring newly created records immediately display in register.",
+    "6. Settings Screen Blank Resolution: Mapped all left-sidebar view-settings-* sub-routes to monolithic views/settings.html before dispatching switchSection, completely fixing blank screen on navigation.",
+    "7. Purchase Creation Attachment Widget Parity: Standardized + Add / Replace, Preview, and Delete buttons and wired to controller methods with existingAttachmentPath initialization matching Quotation Editor.",
+    "8. Notification Center Badges Reset: Implemented clearCommunicationBadges() and dse_whatsapp_read_ack tracking, ensuring WhatsApp and Email counters reset to 0 upon viewing."
   ]
 }

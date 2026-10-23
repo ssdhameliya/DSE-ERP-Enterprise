@@ -149,13 +149,15 @@ window.NavigationRouter = (function() {
           btn.classList.remove('active');
         });
 
+        const isSettingsSub = viewId.startsWith('view-settings-');
+        const loadTargetId = isSettingsSub ? 'view-settings' : viewId;
+        const domViewId = isSettingsSub ? 'view-settings' : viewId;
+
         // If ViewLoader exists, ensure external view is loaded if needed
         if (window.ViewLoader && typeof window.ViewLoader.loadView === 'function') {
-          await window.ViewLoader.loadView(viewId);
+          await window.ViewLoader.loadView(loadTargetId);
         }
 
-        const isSettingsSub = viewId.startsWith('view-settings-');
-        const domViewId = isSettingsSub ? 'view-settings' : viewId;
         const targetView = document.getElementById(domViewId);
         if (targetView) {
           targetView.classList.add('active');
@@ -235,6 +237,13 @@ window.NavigationRouter = (function() {
         if (window.AuthService && window.AuthService.isAuthenticated()) {
           this.dispatchLifecycle(viewId);
         }
+
+        // Automatic Table Reflow across all screens on view switch
+        if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
+          window.DynamicTableLayoutManager.reflowAllTables();
+          setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 120);
+          setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 350);
+        }
       } finally {
         isNavigating = false;
       }
@@ -250,6 +259,9 @@ window.NavigationRouter = (function() {
         this.selectNav(next.id, false);
       } else {
         renderTabs();
+      }
+      if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 100);
       }
     },
 
@@ -296,6 +308,10 @@ window.NavigationRouter = (function() {
         this.showSidebarDrawer();
       }
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+      if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 250);
+      }
     },
 
     showSidebarDrawer() {
@@ -308,6 +324,10 @@ window.NavigationRouter = (function() {
       sb.classList.add('collapsed');
       sb.classList.add('hover-peek');
       isHoverPeekActive = true;
+      if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
+        window.DynamicTableLayoutManager.reflowAllTables();
+        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 250);
+      }
     },
 
     hideSidebarDrawer(delay = 180) {
@@ -320,6 +340,10 @@ window.NavigationRouter = (function() {
           sb.classList.remove('hover-peek');
           isHoverPeekActive = false;
           hoverHideTimeout = null;
+          if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
+            window.DynamicTableLayoutManager.reflowAllTables();
+            setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 250);
+          }
         }
       }, delay);
     },

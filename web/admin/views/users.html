@@ -27,34 +27,63 @@
             </div>
           </div>
 
-          <!-- 5 Desktop KPIs matching UserAccess.fxml -->
-          <div class="kpi-grid"
-            style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
-            <div class="kpi-card" style="border-left: 4px solid var(--purple); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">TOTAL SYSTEM USERS</span>
+          <!-- 5 Compact Desktop KPIs matching UserAccess.fxml -->
+          <div class="kpi-grid compact-kpi-ribbon"
+            style="display: flex; gap: 10px; margin-bottom: 12px; width: 100%; flex-wrap: nowrap;">
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(168,85,247,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">👤</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">TOTAL SYSTEM USERS</span>
+                  <span class="pill-badge pill-neutral" style="font-size: 0.6rem;">Accounts</span>
+                </div>
+                <div class="kpi-value" id="user-kpi-total" style="font-size: 1.15rem; font-weight: 800; color: #ffffff; font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
               </div>
-              <div class="kpi-value" id="user-kpi-total" style="font-size: 1.25rem;">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Accounts</div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--green); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ACTIVE ACCOUNTS</span></div>
-              <div class="kpi-value" id="user-kpi-active" style="font-size: 1.25rem; color: var(--green);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Active</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">✅</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">ACTIVE ACCOUNTS</span>
+                  <span class="pill-badge pill-success" style="font-size: 0.6rem;">Active</span>
+                </div>
+                <div class="kpi-value" id="user-kpi-active" style="font-size: 1.15rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
+              </div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--cyan); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">ROLES</span></div>
-              <div class="kpi-value" id="user-kpi-roles" style="font-size: 1.25rem; color: var(--cyan);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Access</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56,189,248,0.15); color: var(--cyan); border: 1px solid rgba(56,189,248,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">🛡️</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">ROLES</span>
+                  <span class="pill-badge pill-neutral" style="font-size: 0.6rem;">Access</span>
+                </div>
+                <div class="kpi-value" id="user-kpi-roles" style="font-size: 1.15rem; font-weight: 800; color: var(--cyan); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
+              </div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid #ef4444; padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOCKED ACCOUNTS</span></div>
-              <div class="kpi-value" id="user-kpi-locked" style="font-size: 1.25rem; color: #f87171;">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Security</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">🔒</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">LOCKED ACCOUNTS</span>
+                  <span class="pill-badge pill-danger" style="font-size: 0.6rem;">Security</span>
+                </div>
+                <div class="kpi-value" id="user-kpi-locked" style="font-size: 1.15rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
+              </div>
             </div>
-            <div class="kpi-card" style="border-left: 4px solid var(--yellow); padding: 12px 14px;">
-              <div class="kpi-header"><span class="kpi-label" style="font-size: 0.68rem;">LOGIN ACTIVITY</span></div>
-              <div class="kpi-value" id="user-kpi-mfa" style="font-size: 1.25rem; color: var(--yellow);">0</div>
-              <div class="kpi-meta" style="font-size: 0.65rem;">Today</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">⚡</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">LOGIN ACTIVITY</span>
+                  <span class="pill-badge pill-warning" style="font-size: 0.6rem; background: rgba(245,158,11,0.15); color: #fbbf24;">Today</span>
+                </div>
+                <div class="kpi-value" id="user-kpi-mfa" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
+              </div>
             </div>
           </div>
 
@@ -92,30 +121,32 @@
           </div>
 
           <!-- 10-Column Desktop Table -->
-          <div class="register-workspace" id="user-register-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto; border-radius:0;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th style="min-width: 150px;">User</th>
-                    <th style="min-width: 200px;">Email / Username</th>
-                    <th style="min-width: 110px;">Role</th>
-                    <th style="min-width: 110px;">Department</th>
-                    <th style="min-width: 120px;">Access</th>
-                    <th style="min-width: 110px;">Branch</th>
-                    <th style="min-width: 90px;">Status</th>
-                    <th style="min-width: 130px;">Last Login</th>
-                    <th style="min-width: 80px;">MFA</th>
-                    <th style="text-align: right; min-width: 100px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="users-table-tbody">
-                  <tr>
-                    <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading user
-                      accounts...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="user-register-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="sales-table-card" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden;">
+              <div class="sales-table-scroll" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;">
+                <table class="sales-desktop-table" id="users-main-table" style="width: 100%; table-layout: fixed;">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Email / Username</th>
+                      <th>Role</th>
+                      <th>Department</th>
+                      <th>Access</th>
+                      <th>Branch</th>
+                      <th style="text-align: center;">Status</th>
+                      <th>Last Login</th>
+                      <th style="text-align: center;">MFA</th>
+                      <th style="text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-tbody">
+                    <tr>
+                      <td colspan="10" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading user
+                        accounts...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Inline Docked User Detail Drawer -->

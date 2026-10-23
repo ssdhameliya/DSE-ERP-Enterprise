@@ -21,54 +21,52 @@
             </div>
           </div>
 
-          <!-- 4 REMINDER KPIS (Desktop ReminderCenter.fxml lines 27-87 Parity) -->
-          <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr); margin-bottom:16px; gap:12px;">
-            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--blue, #38bdf8); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
-              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-blue" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); flex-shrink: 0;">⏰</span>
-                  <span>Open Reminders</span>
+          <!-- 4 Compact REMINDER KPIS (Desktop ReminderCenter.fxml lines 27-87 Parity) -->
+          <div class="kpi-grid compact-kpi-ribbon"
+            style="display: flex; gap: 10px; margin-bottom: 12px; width: 100%; flex-wrap: nowrap;">
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56,189,248,0.15); color: var(--cyan); border: 1px solid rgba(56,189,248,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">⏰</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">OPEN REMINDERS</span>
+                  <span class="pill-badge pill-neutral" style="font-size: 0.6rem;">Active</span>
                 </div>
-                <span class="pill-badge pill-neutral metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Active</span>
+                <div class="kpi-value" id="rc-kpi-open" style="font-size: 1.15rem; font-weight: 800; color: #60a5fa; font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
               </div>
-              <div id="rc-kpi-open" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: #60a5fa; margin: 4px 0;">0</div>
-              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Active items requiring attention</div>
             </div>
-
-            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--red, #f87171); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
-              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-red" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(248, 113, 113, 0.2); box-shadow: 0 0 12px rgba(248, 113, 113, 0.25); flex-shrink: 0;">⚠️</span>
-                  <span>Overdue</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">⚠️</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">OVERDUE</span>
+                  <span class="pill-badge pill-danger" style="font-size: 0.6rem;">Alert</span>
                 </div>
-                <span class="pill-badge pill-danger metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Alert</span>
+                <div class="kpi-value" id="rc-kpi-overdue" style="font-size: 1.15rem; font-weight: 800; color: var(--red); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
               </div>
-              <div id="rc-kpi-overdue" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--red, #f87171); margin: 4px 0;">0</div>
-              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Past due and still incomplete</div>
             </div>
-
-            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--green, #34d399); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
-              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-green" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(52, 211, 153, 0.2); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); flex-shrink: 0;">📅</span>
-                  <span>Due Today</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">📅</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">DUE TODAY</span>
+                  <span class="pill-badge pill-success" style="font-size: 0.6rem;">Today</span>
                 </div>
-                <span class="pill-badge pill-success metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Today</span>
+                <div class="kpi-value" id="rc-kpi-due-today" style="font-size: 1.15rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
               </div>
-              <div id="rc-kpi-due-today" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--green, #4ade80); margin: 4px 0;">0</div>
-              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Scheduled for the current day</div>
             </div>
-
-            <div class="kpi-card" data-erp-kpi-enhanced="true" style="border-left: 4px solid var(--purple, #a855f7); display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px;">
-              <div class="kpi-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div class="kpi-label" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.05em; color: var(--text-muted); text-transform: uppercase;">
-                  <span class="kpi-icon-badge erp-kpi-theme-purple" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 1.05rem; background: rgba(167, 139, 250, 0.2); box-shadow: 0 0 12px rgba(167, 139, 250, 0.25); flex-shrink: 0;">🗓️</span>
-                  <span>Next 7 Days</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(168,85,247,0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">🗓️</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">NEXT 7 DAYS</span>
+                  <span class="pill-badge pill-purple" style="font-size: 0.6rem;">Upcoming</span>
                 </div>
-                <span class="pill-badge pill-purple metric-trend-pill" style="font-size: 0.65rem; padding: 2px 7px;">Upcoming</span>
+                <div class="kpi-value" id="rc-kpi-upcoming" style="font-size: 1.15rem; font-weight: 800; color: var(--purple); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">0</div>
               </div>
-              <div id="rc-kpi-upcoming" class="kpi-value" style="font-size: 1.6rem; font-weight: 800; color: var(--purple, #c084fc); margin: 4px 0;">0</div>
-              <div class="kpi-sub" style="font-size: 0.72rem; color: var(--text-muted);">Upcoming workload at a glance</div>
             </div>
           </div>
 
@@ -106,29 +104,31 @@
           </div>
 
           <!-- REMINDERS WORKSPACE (Docked Inline Split matching ReminderCenter.fxml lines 103-197) -->
-          <div class="register-workspace" id="reminder-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>REMINDER</th>
-                    <th style="width:140px;">REFERENCE</th>
-                    <th style="width:120px;">DUE DATE</th>
-                    <th style="width:110px; text-align:center;">PRIORITY</th>
-                    <th style="width:120px; text-align:center;">STATUS</th>
-                    <th style="width:130px;">CREATED BY</th>
-                    <th style="width:170px; text-align:center;">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody id="reminders-table-tbody">
-                  <tr>
-                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
-                        class="loading-spinner"></span> Loading reminders...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="reminder-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
+            <div class="sales-table-card" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden;">
+              <div class="sales-table-scroll" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;">
+                <table class="sales-desktop-table" id="reminders-main-table" style="width: 100%; table-layout: fixed;">
+                  <thead>
+                    <tr>
+                      <th>REMINDER</th>
+                      <th>REFERENCE</th>
+                      <th>DUE DATE</th>
+                      <th style="text-align:center;">PRIORITY</th>
+                      <th style="text-align:center;">STATUS</th>
+                      <th>CREATED BY</th>
+                      <th style="text-align:center;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reminders-table-tbody">
+                    <tr>
+                      <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span
+                          class="loading-spinner"></span> Loading reminders...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <div
-                style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle);">
+                style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); background:rgba(10,18,34,0.85); font-size:0.75rem;">
                 <div style="font-size:0.75rem; color:var(--text-muted);">Single-click a row to open or close details.
                   Use Edit for changes.</div>
                 <div id="rc-result-count" style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Showing 0

@@ -10,8 +10,13 @@ window.ViewLoader = (function() {
   return {
     async loadView(viewId) {
       if (!viewId) return null;
-      const cleanName = viewId.replace(/^view-/, '');
-      let viewEl = document.getElementById(viewId);
+      let targetViewId = viewId;
+      let cleanName = viewId.replace(/^view-/, '');
+      if (cleanName.startsWith('settings-') || cleanName === 'settings') {
+        cleanName = 'settings';
+        targetViewId = 'view-settings';
+      }
+      let viewEl = document.getElementById(targetViewId);
 
       // If view is already populated in DOM and not a stub, return it immediately
       if (viewEl && viewEl.children.length > 0 && !viewEl.dataset.stub) {
@@ -21,19 +26,19 @@ window.ViewLoader = (function() {
       // Check in-memory cache
       if (viewCache.has(cleanName)) {
         const html = viewCache.get(cleanName);
-        this.mountView(viewId, html);
-        return document.getElementById(viewId);
+        this.mountView(targetViewId, html);
+        return document.getElementById(targetViewId);
       }
 
       // Asynchronously fetch dedicated view HTML file
       try {
-        const version = (window.AppVersion && window.AppVersion.webVersion) || '10.0.41.06';
+        const version = (window.AppVersion && window.AppVersion.webVersion) || '10.0.41.09';
         const res = await fetch(`./views/${cleanName}.html?v=${version}`);
         if (res.ok) {
           const html = await res.text();
           viewCache.set(cleanName, html);
-          this.mountView(viewId, html);
-          return document.getElementById(viewId);
+          this.mountView(targetViewId, html);
+          return document.getElementById(targetViewId);
         }
       } catch (err) {
         console.warn(`[ViewLoader] Failed to fetch external view ./views/${cleanName}.html:`, err);

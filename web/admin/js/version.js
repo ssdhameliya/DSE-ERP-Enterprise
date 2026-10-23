@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.08",
+  version: "10.0.41.09",
   desktopVersion: "10.0.41",
-  webBuild: 8,
-  webVersion: "10.0.41.08",
-  tag: "web-v10.0.41.08",
-  releaseDate: "2026-10-23T02:30:00+05:30",
+  webBuild: 9,
+  webVersion: "10.0.41.09",
+  tag: "web-v10.0.41.09",
+  releaseDate: "2026-10-23T23:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.08 Precision Fixes & Global Decision Dialogs (Actions Menu Restoration, Master Payment Lookups, Email Settings Jackson Serialization, 3-Button Standard Attachment Card, Contextual Monetary Amount Coloring, Delivery Address Interlocking, and Global Modal Dialogs)"
+  summary: "10.0.41.09 Precision Fixes & Parity: Master Data 58px Compact KPI Ribbon Uniformity, Centralized Dynamic Table Layout & Reflow Authority, Recon Supplier & Purchase Recon Enterprise 2-Row Filter Toolbars & Centered Window Modals, Purchase Recon Add/Save Bug Fix, Settings Blank Screen Resolution, Purchase Creation Attachment Controls Parity, and Notification Center Header Badges Reset"
 };
 
 // Automatic UI Version Injection

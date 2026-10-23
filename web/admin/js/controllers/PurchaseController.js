@@ -16,6 +16,7 @@ window.PurchaseController = (function() {
   let editingInvoiceNo = null;
   let editingPurchase = null;
   let pendingAttachmentFile = null;
+  let existingAttachmentPath = '';
   let attachmentRemovalPending = false;
   let editorLines = [];
   let editorCharges = [];
@@ -1526,10 +1527,12 @@ window.PurchaseController = (function() {
           editingPurchase = null;
           editingInvoiceNo = null;
           isReadOnlyView = false;
+          existingAttachmentPath = '';
+          pendingAttachmentFile = null;
+          attachmentRemovalPending = false;
           document.getElementById('pe-invoice-date').value = today;
           document.getElementById('pe-po-date').value = today;
           refreshAttachmentUi(null);
-          pendingAttachmentFile = null;
           try {
             const nextRes = await window.OperationsService.getNextPurchaseInvoice();
             const nextVal = (typeof nextRes === 'string' ? nextRes : (nextRes?.value || nextRes?.invoiceNo)) || 'BILL-2026-0001';
@@ -1538,7 +1541,10 @@ window.PurchaseController = (function() {
             document.getElementById('pe-invoice-no').value = 'BILL-2026-0001';
           }
         } else {
-          refreshAttachmentUi(p.attachmentPath || p.attachment || null);
+          existingAttachmentPath = p.attachmentPath || p.attachment || '';
+          pendingAttachmentFile = null;
+          attachmentRemovalPending = false;
+          refreshAttachmentUi(existingAttachmentPath);
         }
 
         const isSame = p.sameAsBilling !== undefined ? !!p.sameAsBilling : 
@@ -1613,54 +1619,90 @@ window.PurchaseController = (function() {
     }
   }
 
-  // ATTACHMENT CONTROLS FOR PURCHASE
+  // ATTACHMENT CONTROLS FOR PURCHASE (SETTINGS & QUOTATION PARITY)
   function handleAttachmentFileSelected(inputEl) {
     if (inputEl && inputEl.files && inputEl.files[0]) {
       pendingAttachmentFile = inputEl.files[0];
       attachmentRemovalPending = false;
-      refreshAttachmentUi(pendingAttachmentFile.name);
+      refreshAttachmentUi(pendingAttachmentFile.name, pendingAttachmentFile.size);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${pendingAttachmentFile.name}`);
     }
   }
 
-  function previewAttachment() {
+  function previewEditorAttachment() {
     if (pendingAttachmentFile) {
       const url = URL.createObjectURL(pendingAttachmentFile);
       window.open(url, '_blank');
       return;
     }
-    if (editingPurchase && editingPurchase.id && (editingPurchase.attachmentPath || editingPurchase.attachment)) {
-      if (window.ApiService && window.ApiService.viewFile) {
-        window.ApiService.viewFile(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`);
-        return;
+    const path = existingAttachmentPath || (editingPurchase && (editingPurchase.attachmentPath || editingPurchase.attachment));
+    if (path) {
+      if (editingPurchase && editingPurchase.id) {
+        window.open(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, '_blank');
+      } else {
+        window.open(path, '_blank');
       }
-      window.open(editingPurchase.attachmentPath || editingPurchase.attachment, '_blank');
       return;
     }
     if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
   }
 
-  function removeAttachment() {
+  function previewAttachment() {
+    previewEditorAttachment();
+  }
+
+  function removeEditorAttachment() {
     pendingAttachmentFile = null;
     attachmentRemovalPending = true;
+    existingAttachmentPath = '';
     const fileInput = document.getElementById('pe-attachment-file-input');
     if (fileInput) fileInput.value = '';
     refreshAttachmentUi(null);
     if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
   }
 
-  function refreshAttachmentUi(fileName) {
-    const lbl = document.getElementById('pe-attachment-name');
+  function removeAttachment() {
+    removeEditorAttachment();
+  }
+
+  function refreshAttachmentUi(fileName, fileSize) {
+    const badge = document.getElementById('pe-attachment-badge');
+    const nameEl = document.getElementById('pe-attachment-name');
+    const sizeEl = document.getElementById('pe-attachment-size');
     const btnPreview = document.getElementById('pe-btn-attach-preview');
     const btnRemove = document.getElementById('pe-btn-attach-remove');
+
     const hasAttachment = Boolean(fileName) && !attachmentRemovalPending;
 
-    if (lbl) {
-      lbl.innerText = hasAttachment ? (fileName.split('/').pop().split('\\').pop()) : 'No attachment';
-      lbl.title = hasAttachment ? fileName : 'No attachment selected';
+    if (hasAttachment) {
+      const displayName = typeof fileName === 'string' ? fileName.split('/').pop().split('\\').pop() : 'Attached Document';
+      if (badge) badge.style.display = 'inline-block';
+      if (nameEl) {
+        nameEl.innerText = displayName;
+        nameEl.style.color = '#c084fc';
+        nameEl.title = fileName;
+      }
+      if (sizeEl) {
+        if (fileSize && typeof fileSize === 'number') {
+          const kb = (fileSize / 1024).toFixed(1);
+          sizeEl.innerText = `${kb} KB`;
+        } else {
+          sizeEl.innerText = 'Document attached';
+        }
+      }
+      if (btnPreview) btnPreview.disabled = false;
+      if (btnRemove) btnRemove.disabled = isReadOnlyView;
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (nameEl) {
+        nameEl.innerText = 'No document attached';
+        nameEl.style.color = '#cbd5e1';
+        nameEl.title = '';
+      }
+      if (sizeEl) sizeEl.innerText = 'PDF, PNG, JPG, DOC';
+      if (btnPreview) btnPreview.disabled = true;
+      if (btnRemove) btnRemove.disabled = true;
     }
-    if (btnPreview) btnPreview.disabled = !hasAttachment;
-    if (btnRemove) btnRemove.disabled = !hasAttachment || isReadOnlyView;
   }
 
   function onTransporterChange(selectEl) {
@@ -1693,76 +1735,6 @@ window.PurchaseController = (function() {
     }
     if (window.SalesController && window.SalesController.openChargesDialogForPurchase) {
       window.SalesController.openChargesDialogForPurchase(editorCharges, availableChargeTypes);
-    }
-  }
-
-  // ==========================================
-  // STANDARDIZED ATTACHMENT METHODS (SETTINGS & QUOTATION PARITY)
-  // ==========================================
-  function handleAttachmentFileSelected(inputEl) {
-    if (inputEl.files && inputEl.files[0]) {
-      pendingAttachmentFile = inputEl.files[0];
-      attachmentRemovalPending = false;
-      refreshAttachmentUi(pendingAttachmentFile.name, pendingAttachmentFile.size);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Attached ${pendingAttachmentFile.name}`);
-    }
-  }
-
-  function previewEditorAttachment() {
-    if (pendingAttachmentFile) {
-      const url = URL.createObjectURL(pendingAttachmentFile);
-      window.open(url, '_blank');
-      return;
-    }
-    if (existingAttachmentPath && editingPurchase && editingPurchase.id) {
-      window.open(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, '_blank');
-      return;
-    }
-    if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
-  }
-
-  function removeEditorAttachment() {
-    pendingAttachmentFile = null;
-    attachmentRemovalPending = true;
-    const fileInput = document.getElementById('pe-attachment-file-input');
-    if (fileInput) fileInput.value = '';
-    refreshAttachmentUi(null);
-    if (window.AppDialogService) window.AppDialogService.toastInfo('Attachment removed');
-  }
-
-  function refreshAttachmentUi(fileName, fileSize) {
-    const badge = document.getElementById('pe-attachment-badge');
-    const nameEl = document.getElementById('pe-attachment-name');
-    const sizeEl = document.getElementById('pe-attachment-size');
-    const btnPreview = document.getElementById('pe-btn-attach-preview');
-    const btnRemove = document.getElementById('pe-btn-attach-remove');
-
-    if (fileName) {
-      const displayName = typeof fileName === 'string' ? fileName.split('/').pop().split('\\').pop() : 'Attached Document';
-      if (badge) badge.style.display = 'inline-block';
-      if (nameEl) {
-        nameEl.innerText = displayName;
-        nameEl.style.color = '#c084fc';
-      }
-      if (sizeEl) {
-        if (fileSize && typeof fileSize === 'number') {
-          const kb = (fileSize / 1024).toFixed(1);
-          sizeEl.innerText = `${kb} KB`;
-        } else {
-          sizeEl.innerText = 'Document attached';
-        }
-      }
-      if (btnPreview) btnPreview.disabled = false;
-      if (btnRemove) btnRemove.disabled = false;
-    } else {
-      if (badge) badge.style.display = 'none';
-      if (nameEl) {
-        nameEl.innerText = 'No document attached';
-        nameEl.style.color = '#cbd5e1';
-      }
-      if (sizeEl) sizeEl.innerText = 'PDF, DOC, XLS, PNG, JPG';
-      if (btnPreview) btnPreview.disabled = true;
-      if (btnRemove) btnRemove.disabled = true;
     }
   }
 

@@ -3117,7 +3117,8 @@
     .compact-kpi-card {
       flex: 1 1 0 !important;
       min-width: 0 !important;
-      max-width: 100% !important;
+      max-width: none !important;
+      width: auto !important;
       min-height: 58px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -4732,23 +4733,34 @@
       color: #0f172a !important;
     }
 
-    /* 6. Universal KPI Ribbon Full-Width Proportional Scaling (Images 4, 5, 6, 7, 9, 10) */
+    /* 6. Universal KPI Ribbon Full-Width Proportional Scaling */
     .kpi-grid,
+    .compact-kpi-ribbon,
     .erp-kpi-ribbon,
     .erp-kpi-single-row {
       width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
       display: flex !important;
       flex-direction: row !important;
       flex-wrap: nowrap !important;
-      gap: 10px !important;
+      gap: 8px !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
     }
     .kpi-grid > .kpi-card,
+    .kpi-grid > .compact-kpi-card,
+    .compact-kpi-ribbon > .compact-kpi-card,
+    .compact-kpi-ribbon > .kpi-card,
     .erp-kpi-ribbon > .kpi-card,
-    .erp-kpi-single-row > .kpi-card {
+    .erp-kpi-ribbon > .compact-kpi-card,
+    .erp-kpi-single-row > .kpi-card,
+    .erp-kpi-single-row > .compact-kpi-card {
       flex: 1 1 0 !important;
       min-width: 0 !important;
       max-width: none !important;
       width: auto !important;
+      box-sizing: border-box !important;
     }
 
     /* 7. GSTR-1 Subpanel Display Isolation (Image 13) */

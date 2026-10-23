@@ -200,26 +200,14 @@ window.KpiCardEnhancer = (function() {
 
   function enhanceCard(card) {
     if (card.dataset.erpKpiCompactEnhanced === 'true') return;
-    card.dataset.erpKpiCompactEnhanced = 'true';
-
-    // Desktop Executive Dashboard parity: preserve .dash-kpi-card markup, classes, IDs and proportions
-    if (card.classList.contains('dash-kpi-card') || card.closest('.dash-kpi-row-6') || card.querySelector('.dash-kpi-header')) {
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.justifyContent = 'space-between';
-      card.style.minHeight = '76px';
-      card.style.height = 'auto';
-      card.style.maxHeight = 'none';
-      return;
-    }
 
     if (card.classList.contains('compact-kpi-card') && card.querySelector('.kpi-content-box')) {
-      // Already has native compact ribbon structure; preserve markup
+      card.dataset.erpKpiCompactEnhanced = 'true';
       return;
     }
 
     if (card.querySelector('.kpi-content-box') || card.querySelector('.kpi-row-top')) {
-      // Already has structured ribbon; preserve markup
+      card.dataset.erpKpiCompactEnhanced = 'true';
       return;
     }
 
@@ -392,7 +380,7 @@ window.KpiCardEnhancer = (function() {
 
   function enhanceGrid(grid) {
     if (!grid) return;
-    const cards = grid.querySelectorAll('.kpi-card, .dash-kpi-card, .dash-kpi-card.clickable-kpi, .standard-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card');
+    const cards = grid.querySelectorAll('.kpi-card, .dash-kpi-card, .dash-kpi-card.clickable-kpi, .standard-kpi-card, .bank-recon-kpi, .user-kpi, .metric-card, .approved-card, .compact-kpi-card');
     cards.forEach(card => enhanceCard(card));
     rebalanceContainer(grid);
 

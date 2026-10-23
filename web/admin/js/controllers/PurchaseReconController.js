@@ -40,6 +40,40 @@ window.PurchaseReconController = (function() {
   // 1. PURCHASE RECON REGISTER (PurchaseRecon.fxml)
   // ==========================================
 
+  function showModal(id) {
+    if (window.AppDialogService && window.AppDialogService.openModal) {
+      window.AppDialogService.openModal(id);
+    } else if (typeof window.openModal === 'function') {
+      window.openModal(id);
+    } else {
+      const el = document.getElementById(id);
+      if (el) { el.style.display = 'flex'; el.classList.add('active'); }
+    }
+  }
+
+  function hideModal(id) {
+    if (window.AppDialogService && window.AppDialogService.closeModal) {
+      window.AppDialogService.closeModal(id);
+    } else if (typeof window.closeModal === 'function') {
+      window.closeModal(id);
+    } else {
+      const el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; el.classList.remove('active'); }
+    }
+  }
+
+  function formatLocalDate(d) {
+    if (!d) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // ==========================================
+  // 1. PURCHASE RECON REGISTER (PurchaseRecon.fxml)
+  // ==========================================
+
   async function loadPurchaseRecon() {
     const tbody = document.getElementById('purchase-recon-tbody');
     if (tbody) {
@@ -58,11 +92,24 @@ window.PurchaseReconController = (function() {
       // 3. Fetch Page of Records
       const q = document.getElementById('pr-search')?.value?.trim() || '';
       const status = document.getElementById('pr-status-filter')?.value || '';
+      const fromDate = document.getElementById('pr-date-from')?.value || '';
+      const toDate = document.getElementById('pr-date-to')?.value || '';
 
-      const pageRes = await window.ReconService.getReconRecordsPage(currentPage, pageSize, q, status);
-      reconRecords = pageRes?.rows || [];
-      totalRows = pageRes?.totalRows || reconRecords.length;
-      totalPages = pageRes?.totalPages || (Math.ceil(totalRows / pageSize) || 1);
+      const pageRes = await window.ReconService.getReconRecordsPage(currentPage, pageSize, q, status, fromDate, toDate);
+      reconRecords = pageRes?.rows || pageRes?.content || (Array.isArray(pageRes) ? pageRes : []);
+      totalRows = pageRes?.totalRows != null ? pageRes.totalRows : (pageRes?.totalElements != null ? pageRes.totalElements : reconRecords.length);
+      totalPages = pageRes?.totalPages != null ? pageRes.totalPages : (Math.ceil(totalRows / pageSize) || 1);
+
+      // Fallback client-side filter if backend did not filter by date
+      if (fromDate || toDate) {
+        reconRecords = reconRecords.filter(r => {
+          if (!r.invoiceDate) return true;
+          const d = r.invoiceDate.toString().slice(0, 10);
+          if (fromDate && d < fromDate) return false;
+          if (toDate && d > toDate) return false;
+          return true;
+        });
+      }
 
       renderReconTable(reconRecords);
       updatePagination();
@@ -73,6 +120,57 @@ window.PurchaseReconController = (function() {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--red);">⚠️ Error loading purchase recon: ${err.message || 'Server error'}</td></tr>`;
       }
     }
+  }
+
+  function setReconDateFilter(preset, btnEl) {
+    document.querySelectorAll('#purchase-recon-view .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const fromInput = document.getElementById('pr-date-from');
+    const toInput = document.getElementById('pr-date-to');
+    if (!fromInput || !toInput) return;
+
+    const now = new Date();
+    const todayStr = formatLocalDate(now);
+
+    if (preset === 'ALL') {
+      fromInput.value = '';
+      toInput.value = '';
+    } else if (preset === 'TODAY') {
+      fromInput.value = todayStr;
+      toInput.value = todayStr;
+    } else if (preset === 'THIS_MONTH') {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      fromInput.value = formatLocalDate(new Date(y, m, 1));
+      toInput.value = formatLocalDate(new Date(y, m + 1, 0));
+    } else if (preset === 'LAST_MONTH') {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      fromInput.value = formatLocalDate(new Date(y, m - 1, 1));
+      toInput.value = formatLocalDate(new Date(y, m, 0));
+    } else if (preset === 'THIS_FY') {
+      const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      fromInput.value = `${yr}-04-01`;
+      toInput.value = `${yr + 1}-03-31`;
+    }
+
+    currentPage = 0;
+    loadPurchaseRecon();
+  }
+
+  function resetReconFilters() {
+    const s = document.getElementById('pr-search');
+    if (s) s.value = '';
+    const st = document.getElementById('pr-status-filter');
+    if (st) st.value = '';
+    const f = document.getElementById('pr-date-from');
+    if (f) f.value = '';
+    const t = document.getElementById('pr-date-to');
+    if (t) t.value = '';
+    document.querySelectorAll('#purchase-recon-view .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    currentPage = 0;
+    loadPurchaseRecon();
   }
 
   function updateReconKpis(m) {
@@ -252,12 +350,6 @@ window.PurchaseReconController = (function() {
 
   function onReconRowClick(id, event) {
     if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-    const panel = document.getElementById('recon-editor-panel');
-    const isOpen = panel && (panel.classList.contains('open') || panel.style.display === 'flex' || panel.style.display === 'block');
-    if (isOpen && activeEditingReconId === id) {
-      closeReconEditor();
-      return;
-    }
     openEditRecon(id);
   }
 
@@ -289,7 +381,7 @@ window.PurchaseReconController = (function() {
   }
 
   // ==========================================
-  // 2. PURCHASE RECON EDITOR PANEL
+  // 2. PURCHASE RECON EDITOR (Window Modal)
   // ==========================================
 
   function populateReconSupplierDropdown() {
@@ -303,42 +395,52 @@ window.PurchaseReconController = (function() {
     activeEditingReconId = null;
     editingRowVersion = 0;
 
-    const panel = document.getElementById('recon-editor-panel');
-    if (!panel) return;
+    const modal = document.getElementById('modal-purchase-recon-editor');
+    if (!modal) return;
 
     if (window.RegisterUiSupport) {
       window.RegisterUiSupport.clearSelection('#purchase-recon-tbody');
     }
 
-    document.getElementById('pr-editor-title').innerText = 'New Purchase Recon';
-    document.getElementById('pr-editor-subtitle').innerText = 'Reference generated automatically on save';
+    const titleEl = document.getElementById('pr-editor-title');
+    const subEl = document.getElementById('pr-editor-subtitle');
+    if (titleEl) titleEl.innerText = 'New Purchase Recon';
+    if (subEl) subEl.innerText = 'Reference generated automatically on save';
 
-    document.getElementById('pr-editor-supplier').value = '';
-    document.getElementById('pr-editor-invoice-no').value = '';
-    document.getElementById('pr-editor-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('pr-editor-taxable').value = '0.00';
-    document.getElementById('pr-editor-invoice-value').value = '0.00';
-    document.getElementById('pr-editor-cgst').value = '0.00';
-    document.getElementById('pr-editor-sgst').value = '0.00';
-    document.getElementById('pr-editor-igst').value = '0.00';
-    document.getElementById('pr-editor-other').value = '0.00';
-    document.getElementById('pr-editor-notes').value = '';
-    document.getElementById('pr-editor-linked').innerText = '₹ 0.00';
-    document.getElementById('pr-editor-balance').innerText = '₹ 0.00';
-    document.getElementById('pr-editor-status').innerText = 'OPEN';
+    const supEl = document.getElementById('pr-editor-supplier');
+    if (supEl) supEl.value = '';
+    const invEl = document.getElementById('pr-editor-invoice-no');
+    if (invEl) invEl.value = '';
+    const dateEl = document.getElementById('pr-editor-date');
+    if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
+    const taxEl = document.getElementById('pr-editor-taxable');
+    if (taxEl) taxEl.value = '0.00';
+    const valEl = document.getElementById('pr-editor-invoice-value');
+    if (valEl) valEl.value = '0.00';
+    const cgstEl = document.getElementById('pr-editor-cgst');
+    if (cgstEl) cgstEl.value = '0.00';
+    const sgstEl = document.getElementById('pr-editor-sgst');
+    if (sgstEl) sgstEl.value = '0.00';
+    const igstEl = document.getElementById('pr-editor-igst');
+    if (igstEl) igstEl.value = '0.00';
+    const othEl = document.getElementById('pr-editor-other');
+    if (othEl) othEl.value = '0.00';
+    const notesEl = document.getElementById('pr-editor-notes');
+    if (notesEl) notesEl.value = '';
+    const linkEl = document.getElementById('pr-editor-linked');
+    if (linkEl) linkEl.innerText = '₹ 0.00';
+    const balEl = document.getElementById('pr-editor-balance');
+    if (balEl) balEl.innerText = '₹ 0.00';
+    const statEl = document.getElementById('pr-editor-status');
+    if (statEl) statEl.innerText = 'OPEN';
 
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.showDrawer('recon-editor-panel');
-    } else {
-      panel.classList.add('open');
-      panel.style.display = 'flex';
-    }
+    showModal('modal-purchase-recon-editor');
   }
 
   async function openEditRecon(id) {
     activeEditingReconId = id;
-    const panel = document.getElementById('recon-editor-panel');
-    if (!panel) return;
+    const modal = document.getElementById('modal-purchase-recon-editor');
+    if (!modal) return;
 
     const rowEl = document.querySelector(`#purchase-recon-tbody tr[data-recon-id="${id}"]`);
     if (window.RegisterUiSupport && rowEl) {
@@ -350,29 +452,39 @@ window.PurchaseReconController = (function() {
       if (!r) return;
 
       editingRowVersion = r.rowVersion || 0;
-      document.getElementById('pr-editor-title').innerText = 'Edit Purchase Recon';
-      document.getElementById('pr-editor-subtitle').innerText = `System Ref: ${r.systemRef || 'PRC-' + id}`;
+      const titleEl = document.getElementById('pr-editor-title');
+      const subEl = document.getElementById('pr-editor-subtitle');
+      if (titleEl) titleEl.innerText = 'Edit Purchase Recon';
+      if (subEl) subEl.innerText = `System Ref: ${r.systemRef || 'PRC-' + id}`;
 
-      document.getElementById('pr-editor-supplier').value = r.supplierId || '';
-      document.getElementById('pr-editor-invoice-no').value = r.supplierInvoiceNo || '';
-      document.getElementById('pr-editor-date').value = r.invoiceDate || '';
-      document.getElementById('pr-editor-taxable').value = (parseFloat(r.taxableValue) || 0).toFixed(2);
-      document.getElementById('pr-editor-invoice-value').value = (parseFloat(r.invoiceValue) || 0).toFixed(2);
-      document.getElementById('pr-editor-cgst').value = (parseFloat(r.cgst) || 0).toFixed(2);
-      document.getElementById('pr-editor-sgst').value = (parseFloat(r.sgst) || 0).toFixed(2);
-      document.getElementById('pr-editor-igst').value = (parseFloat(r.igst) || 0).toFixed(2);
-      document.getElementById('pr-editor-other').value = (parseFloat(r.otherAdjustment) || 0).toFixed(2);
-      document.getElementById('pr-editor-notes').value = r.notes || '';
-      document.getElementById('pr-editor-linked').innerText = formatMoney(r.linkedAmount || 0);
-      document.getElementById('pr-editor-balance').innerText = formatMoney(r.balance || 0);
-      document.getElementById('pr-editor-status').innerText = (r.status || 'OPEN').toUpperCase();
+      const supEl = document.getElementById('pr-editor-supplier');
+      if (supEl) supEl.value = r.supplierId || '';
+      const invEl = document.getElementById('pr-editor-invoice-no');
+      if (invEl) invEl.value = r.supplierInvoiceNo || '';
+      const dateEl = document.getElementById('pr-editor-date');
+      if (dateEl) dateEl.value = r.invoiceDate || '';
+      const taxEl = document.getElementById('pr-editor-taxable');
+      if (taxEl) taxEl.value = (parseFloat(r.taxableValue) || 0).toFixed(2);
+      const valEl = document.getElementById('pr-editor-invoice-value');
+      if (valEl) valEl.value = (parseFloat(r.invoiceValue) || 0).toFixed(2);
+      const cgstEl = document.getElementById('pr-editor-cgst');
+      if (cgstEl) cgstEl.value = (parseFloat(r.cgst) || 0).toFixed(2);
+      const sgstEl = document.getElementById('pr-editor-sgst');
+      if (sgstEl) sgstEl.value = (parseFloat(r.sgst) || 0).toFixed(2);
+      const igstEl = document.getElementById('pr-editor-igst');
+      if (igstEl) igstEl.value = (parseFloat(r.igst) || 0).toFixed(2);
+      const othEl = document.getElementById('pr-editor-other');
+      if (othEl) othEl.value = (parseFloat(r.otherAdjustment) || 0).toFixed(2);
+      const notesEl = document.getElementById('pr-editor-notes');
+      if (notesEl) notesEl.value = r.notes || '';
+      const linkEl = document.getElementById('pr-editor-linked');
+      if (linkEl) linkEl.innerText = formatMoney(r.linkedAmount || 0);
+      const balEl = document.getElementById('pr-editor-balance');
+      if (balEl) balEl.innerText = formatMoney(r.balance || 0);
+      const statEl = document.getElementById('pr-editor-status');
+      if (statEl) statEl.innerText = (r.status || 'OPEN').toUpperCase();
 
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.showDrawer('recon-editor-panel');
-      } else {
-        panel.classList.add('open');
-        panel.style.display = 'flex';
-      }
+      showModal('modal-purchase-recon-editor');
 
     } catch (e) {
       alert('Failed to load record details: ' + (e.message || 'Server error'));
@@ -430,13 +542,13 @@ window.PurchaseReconController = (function() {
     try {
       if (activeEditingReconId) {
         await window.ReconService.updateReconRecord(activeEditingReconId, payload);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon record updated.');
+        try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon record updated.'); } catch (_) {}
       } else {
         await window.ReconService.createReconRecord(payload);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon record created.');
+        try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon record created.'); } catch (_) {}
       }
       closeReconEditor();
-      loadPurchaseRecon();
+      await loadPurchaseRecon();
     } catch (err) {
       console.error('Save purchase recon failed:', err);
       alert('Save failed: ' + (err.message || 'Server error'));
@@ -449,7 +561,7 @@ window.PurchaseReconController = (function() {
     if (!confirm('Are you sure you want to delete this purchase recon record?')) return;
     try {
       await window.ReconService.deleteReconRecord(id);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess('Record deleted.');
+      try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Record deleted.'); } catch (_) {}
       loadPurchaseRecon();
     } catch (err) {
       alert('Delete failed: ' + (err.message || 'Server error'));
@@ -458,7 +570,7 @@ window.PurchaseReconController = (function() {
 
   async function viewBankLinks(id) {
     const r = (reconRecords || []).find(x => x.id === id);
-    const searchRef = r ? (r.purchaseRef || r.invoiceNo || ('PRC-' + id)) : ('PRC-' + id);
+    const searchRef = r ? (r.purchaseRef || r.supplierInvoiceNo || ('PRC-' + id)) : ('PRC-' + id);
     if (window.NavigationRouter) {
       window.NavigationRouter.selectNav('view-bank-statement');
       setTimeout(() => {
@@ -475,16 +587,8 @@ window.PurchaseReconController = (function() {
 
   function closeReconEditor() {
     activeEditingReconId = null;
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.hideDrawer('recon-editor-panel', '#purchase-recon-tbody');
-    } else {
-      const panel = document.getElementById('recon-editor-panel');
-      if (panel) {
-        panel.classList.remove('open');
-        panel.style.display = 'none';
-      }
-      document.querySelectorAll('#purchase-recon-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
-    }
+    hideModal('modal-purchase-recon-editor');
+    document.querySelectorAll('#purchase-recon-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
   }
 
   // ==========================================
@@ -499,7 +603,12 @@ window.PurchaseReconController = (function() {
 
     try {
       const q = document.getElementById('rs-search')?.value?.trim() || '';
-      reconSuppliers = await window.ReconService.getReconSuppliers(q, 100) || [];
+      const status = document.getElementById('rs-status-filter')?.value || '';
+      let list = await window.ReconService.getReconSuppliers(q, 100) || [];
+      if (Array.isArray(list) && status) {
+        list = list.filter(s => (s.status || 'ACTIVE').toUpperCase() === status.toUpperCase());
+      }
+      reconSuppliers = list;
 
       updateSupplierKpis(reconSuppliers);
       renderSupplierTable(reconSuppliers);
@@ -510,6 +619,55 @@ window.PurchaseReconController = (function() {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--red);">⚠️ Error loading recon suppliers: ${err.message || 'Server error'}</td></tr>`;
       }
     }
+  }
+
+  function setSupplierDateFilter(preset, btnEl) {
+    document.querySelectorAll('#recon-supplier-view .btn-preset-chip, .recon-supplier-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const fromInput = document.getElementById('rs-date-from');
+    const toInput = document.getElementById('rs-date-to');
+    if (!fromInput || !toInput) return;
+
+    const now = new Date();
+    const todayStr = formatLocalDate(now);
+
+    if (preset === 'ALL') {
+      fromInput.value = '';
+      toInput.value = '';
+    } else if (preset === 'TODAY') {
+      fromInput.value = todayStr;
+      toInput.value = todayStr;
+    } else if (preset === 'THIS_MONTH') {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      fromInput.value = formatLocalDate(new Date(y, m, 1));
+      toInput.value = formatLocalDate(new Date(y, m + 1, 0));
+    } else if (preset === 'LAST_MONTH') {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      fromInput.value = formatLocalDate(new Date(y, m - 1, 1));
+      toInput.value = formatLocalDate(new Date(y, m, 0));
+    } else if (preset === 'THIS_FY') {
+      const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      fromInput.value = `${yr}-04-01`;
+      toInput.value = `${yr + 1}-03-31`;
+    }
+
+    loadReconSuppliers();
+  }
+
+  function resetSupplierFilters() {
+    const s = document.getElementById('rs-search');
+    if (s) s.value = '';
+    const st = document.getElementById('rs-status-filter');
+    if (st) st.value = '';
+    const f = document.getElementById('rs-date-from');
+    if (f) f.value = '';
+    const t = document.getElementById('rs-date-to');
+    if (t) t.value = '';
+    document.querySelectorAll('#recon-supplier-view .btn-preset-chip, .recon-supplier-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    loadReconSuppliers();
   }
 
   function updateSupplierKpis(list) {
@@ -585,12 +743,6 @@ window.PurchaseReconController = (function() {
 
   function onSupplierRowClick(id, event) {
     if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-    const panel = document.getElementById('recon-supplier-editor-panel');
-    const isOpen = panel && (panel.classList.contains('open') || panel.style.display === 'flex' || panel.style.display === 'block');
-    if (isOpen && activeEditingSupplierId === id) {
-      closeSupplierEditor();
-      return;
-    }
     openEditSupplier(id);
   }
 
@@ -598,35 +750,39 @@ window.PurchaseReconController = (function() {
     activeEditingSupplierId = null;
     editingRowVersion = 0;
 
-    const panel = document.getElementById('recon-supplier-editor-panel');
-    if (!panel) return;
+    const modal = document.getElementById('modal-recon-supplier-editor');
+    if (!modal) return;
 
     if (window.RegisterUiSupport) {
       window.RegisterUiSupport.clearSelection('#recon-supplier-tbody');
     }
 
-    document.getElementById('rs-editor-title').innerText = 'New Recon Supplier';
-    document.getElementById('rs-editor-name').value = '';
-    document.getElementById('rs-editor-gstin').value = '';
-    document.getElementById('rs-editor-pan').value = '';
-    document.getElementById('rs-editor-contact').value = '';
-    document.getElementById('rs-editor-phone').value = '';
-    document.getElementById('rs-editor-email').value = '';
-    document.getElementById('rs-editor-status').value = 'ACTIVE';
-    document.getElementById('rs-editor-notes').value = '';
+    const titleEl = document.getElementById('rs-editor-title');
+    if (titleEl) titleEl.innerText = 'New Recon Supplier';
+    const nameEl = document.getElementById('rs-editor-name');
+    if (nameEl) nameEl.value = '';
+    const gstinEl = document.getElementById('rs-editor-gstin');
+    if (gstinEl) gstinEl.value = '';
+    const panEl = document.getElementById('rs-editor-pan');
+    if (panEl) panEl.value = '';
+    const cntEl = document.getElementById('rs-editor-contact');
+    if (cntEl) cntEl.value = '';
+    const phEl = document.getElementById('rs-editor-phone');
+    if (phEl) phEl.value = '';
+    const emEl = document.getElementById('rs-editor-email');
+    if (emEl) emEl.value = '';
+    const stEl = document.getElementById('rs-editor-status');
+    if (stEl) stEl.value = 'ACTIVE';
+    const nEl = document.getElementById('rs-editor-notes');
+    if (nEl) nEl.value = '';
 
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.showDrawer('recon-supplier-editor-panel');
-    } else {
-      panel.classList.add('open');
-      panel.style.display = 'flex';
-    }
+    showModal('modal-recon-supplier-editor');
   }
 
   async function openEditSupplier(id) {
     activeEditingSupplierId = id;
-    const panel = document.getElementById('recon-supplier-editor-panel');
-    if (!panel) return;
+    const modal = document.getElementById('modal-recon-supplier-editor');
+    if (!modal) return;
 
     const rowEl = document.querySelector(`#recon-supplier-tbody tr[data-supplier-id="${id}"]`);
     if (window.RegisterUiSupport && rowEl) {
@@ -638,22 +794,26 @@ window.PurchaseReconController = (function() {
       if (!s) return;
 
       editingRowVersion = s.rowVersion || 0;
-      document.getElementById('rs-editor-title').innerText = 'Edit Recon Supplier';
-      document.getElementById('rs-editor-name').value = s.legalName || '';
-      document.getElementById('rs-editor-gstin').value = s.gstin || '';
-      document.getElementById('rs-editor-pan').value = s.pan || '';
-      document.getElementById('rs-editor-contact').value = s.contactPerson || '';
-      document.getElementById('rs-editor-phone').value = s.phone || '';
-      document.getElementById('rs-editor-email').value = s.email || '';
-      document.getElementById('rs-editor-status').value = s.status || 'ACTIVE';
-      document.getElementById('rs-editor-notes').value = s.notes || '';
+      const titleEl = document.getElementById('rs-editor-title');
+      if (titleEl) titleEl.innerText = 'Edit Recon Supplier';
+      const nameEl = document.getElementById('rs-editor-name');
+      if (nameEl) nameEl.value = s.legalName || '';
+      const gstinEl = document.getElementById('rs-editor-gstin');
+      if (gstinEl) gstinEl.value = s.gstin || '';
+      const panEl = document.getElementById('rs-editor-pan');
+      if (panEl) panEl.value = s.pan || '';
+      const cntEl = document.getElementById('rs-editor-contact');
+      if (cntEl) cntEl.value = s.contactPerson || '';
+      const phEl = document.getElementById('rs-editor-phone');
+      if (phEl) phEl.value = s.phone || '';
+      const emEl = document.getElementById('rs-editor-email');
+      if (emEl) emEl.value = s.email || '';
+      const stEl = document.getElementById('rs-editor-status');
+      if (stEl) stEl.value = s.status || 'ACTIVE';
+      const nEl = document.getElementById('rs-editor-notes');
+      if (nEl) nEl.value = s.notes || '';
 
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.showDrawer('recon-supplier-editor-panel');
-      } else {
-        panel.classList.add('open');
-        panel.style.display = 'flex';
-      }
+      showModal('modal-recon-supplier-editor');
     } catch (e) {
       alert('Failed to load supplier: ' + e.message);
     }
@@ -689,13 +849,13 @@ window.PurchaseReconController = (function() {
     try {
       if (activeEditingSupplierId) {
         await window.ReconService.updateReconSupplier(activeEditingSupplierId, payload);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon supplier updated.');
+        try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon supplier updated.'); } catch (_) {}
       } else {
         await window.ReconService.createReconSupplier(payload);
-        if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon supplier created.');
+        try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon supplier created.'); } catch (_) {}
       }
       closeSupplierEditor();
-      loadReconSuppliers();
+      await loadReconSuppliers();
     } catch (err) {
       alert('Save supplier failed: ' + (err.message || 'Server error'));
     } finally {
@@ -707,7 +867,7 @@ window.PurchaseReconController = (function() {
     if (!confirm('Are you sure you want to delete this recon supplier?\n\nWARNING: Suppliers linked to Purchase Recon records cannot be deleted.')) return;
     try {
       await window.ReconService.deleteReconSupplier(id);
-      if (window.AppDialogService) window.AppDialogService.toastSuccess('Supplier deleted.');
+      try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Supplier deleted.'); } catch (_) {}
       loadReconSuppliers();
     } catch (err) {
       alert('Delete supplier failed: ' + (err.message || 'Server error'));
@@ -716,16 +876,8 @@ window.PurchaseReconController = (function() {
 
   function closeSupplierEditor() {
     activeEditingSupplierId = null;
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.hideDrawer('recon-supplier-editor-panel', '#recon-supplier-tbody');
-    } else {
-      const panel = document.getElementById('recon-supplier-editor-panel');
-      if (panel) {
-        panel.classList.remove('open');
-        panel.style.display = 'none';
-      }
-      document.querySelectorAll('#recon-supplier-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
-    }
+    hideModal('modal-recon-supplier-editor');
+    document.querySelectorAll('#recon-supplier-tbody tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
   }
 
   function openLinkedBankEntry(ref, reconId) {
@@ -771,19 +923,6 @@ window.PurchaseReconController = (function() {
     }
   }
 
-  function viewBankLinks(id) {
-    const rec = allRecons.find(r => r.id === id);
-    if (!rec) return;
-    const links = rec.bankLinks || [];
-    if (links.length > 0) {
-      const first = links[0];
-      const targetRef = first.financeVoucherNo || first.bankReference || ('STM-' + first.statementTransactionId);
-      openLinkedBankEntry(targetRef, id);
-    } else {
-      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-statement');
-    }
-  }
-
   return {
     loadPurchaseRecon,
     openNewRecon,
@@ -799,6 +938,8 @@ window.PurchaseReconController = (function() {
     prevPage,
     nextPage,
     applyReconFilters() { currentPage = 0; loadPurchaseRecon(); },
+    setReconDateFilter,
+    resetReconFilters,
     loadReconSuppliers,
     openNewSupplier,
     openEditSupplier,
@@ -806,20 +947,25 @@ window.PurchaseReconController = (function() {
     toggleSupplierActionMenu,
     saveSupplier,
     deleteSupplier,
-    closeSupplierEditor
+    closeSupplierEditor,
+    applySupplierFilters() { loadReconSuppliers(); },
+    setSupplierDateFilter,
+    resetSupplierFilters
   };
 })();
 
-// Install escape listeners for both Purchase Recon and Recon Supplier drawers
+// Install escape listeners for both Purchase Recon and Recon Supplier window modals
 if (typeof window !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (window.RegisterUiSupport) {
-      window.RegisterUiSupport.installEscapeClose('recon-editor-panel', '#purchase-recon-tbody', () => {
-        if (window.PurchaseReconController) window.PurchaseReconController.closeReconEditor();
-      });
-      window.RegisterUiSupport.installEscapeClose('recon-supplier-editor-panel', '#recon-supplier-tbody', () => {
-        if (window.PurchaseReconController) window.PurchaseReconController.closeSupplierEditor();
-      });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const pModal = document.getElementById('modal-purchase-recon-editor');
+      if (pModal && (pModal.classList.contains('active') || pModal.style.display === 'flex')) {
+        window.PurchaseReconController.closeReconEditor();
+      }
+      const sModal = document.getElementById('modal-recon-supplier-editor');
+      if (sModal && (sModal.classList.contains('active') || sModal.style.display === 'flex')) {
+        window.PurchaseReconController.closeSupplierEditor();
+      }
     }
   });
 }

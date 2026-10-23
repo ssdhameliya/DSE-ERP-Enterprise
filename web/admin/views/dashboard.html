@@ -19,65 +19,80 @@
             </div>
           </div>
 
-          <!-- Top 6 KPI Cards (Image 1) -->
-          <div class="dash-kpi-row-6">
+          <!-- Top 6 KPI Cards (Standard Compact Ribbon Parity) -->
+          <div class="compact-kpi-ribbon erp-kpi-single-row kpi-grid"
+            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 14px; width: 100%; box-sizing: border-box; overflow: hidden;">
             <!-- 1. Active Sales -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-sales-register')"
-              title="View Sales Register">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128196; Active Sales</span>
-                <span class="dash-kpi-badge green">+3.4%</span>
+            <div class="compact-kpi-card theme-emerald" data-erp-kpi-compact-enhanced="true" onclick="selectNav('view-sales-register')"
+              title="View Sales Register" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">🛒</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="ACTIVE SALES">ACTIVE SALES</span>
+                  <span class="kpi-pill-badge" id="dash-kpi-sales-count">0</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-sales-amount">&#8377; 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-sales-amount">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-sales-count">0</span> active sales invoices</div>
             </div>
             <!-- 2. Active Purchases -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-purchase-register')"
-              title="View Purchase Register">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128230; Active Purchases</span>
-                <span class="dash-kpi-badge grey">Active</span>
+            <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true" onclick="selectNav('view-purchase-register')"
+              title="View Purchase Register" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">📦</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="ACTIVE PURCHASES">ACTIVE PURCHASES</span>
+                  <span class="kpi-pill-badge" id="dash-kpi-pur-count">0</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-pur-amount">&#8377; 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-pur-amount">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-pur-count">0</span> active purchase invoices</div>
             </div>
             <!-- 3. Receivables -->
-            <div class="dash-kpi-card clickable-kpi" onclick="window.navigateToReceivableSales()"
-              title="View Receivable Sales Invoices">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128179; Receivables</span>
-                <span class="dash-kpi-badge amber">Pending</span>
+            <div class="compact-kpi-card theme-amber" data-erp-kpi-compact-enhanced="true" onclick="window.navigateToReceivableSales()"
+              title="View Receivable Sales Invoices" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">⏳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="RECEIVABLES">RECEIVABLES</span>
+                  <span class="kpi-pill-badge" id="dash-kpi-receivables-count">Pending</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-receivables">&#8377; 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-receivables">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-receivables-count">0</span> open sales invoices</div>
             </div>
             <!-- 4. Payables -->
-            <div class="dash-kpi-card clickable-kpi" onclick="window.navigateToPayablePurchases()"
-              title="View Payable Purchase Bills">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128184; Payables</span>
-                <span class="dash-kpi-badge red">Payable</span>
+            <div class="compact-kpi-card theme-crimson" data-erp-kpi-compact-enhanced="true" onclick="window.navigateToPayablePurchases()"
+              title="View Payable Purchase Bills" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">💳</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="PAYABLES">PAYABLES</span>
+                  <span class="kpi-pill-badge" id="dash-kpi-payables-count">Payable</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-payables">&#8377; 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-payables">&#8377; 0.00</div>
-              <div class="dash-kpi-sub"><span id="dash-kpi-payables-count">0</span> open purchase invoices</div>
             </div>
             <!-- 5. Cash Position -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-bank-entry')" title="View Bank Entry">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#128176; Cash Position</span>
-                <span class="dash-kpi-badge green">Net Cash</span>
+            <div class="compact-kpi-card theme-teal" data-erp-kpi-compact-enhanced="true" onclick="selectNav('view-bank-entry')"
+              title="View Bank Entry" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">🏦</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="CASH POSITION">CASH POSITION</span>
+                  <span class="kpi-pill-badge">Net Cash</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-cash-position">&#8377; 0.00</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-cash-position">&#8377; 0.00</div>
-              <div class="dash-kpi-sub">Received less paid and expenses</div>
             </div>
             <!-- 6. Low Stock -->
-            <div class="dash-kpi-card clickable-kpi" onclick="selectNav('view-item-master')" title="View Item Master">
-              <div class="dash-kpi-header">
-                <span class="dash-kpi-title">&#9888; Low Stock</span>
-                <span class="dash-kpi-badge amber">Alert</span>
+            <div class="compact-kpi-card theme-blue" data-erp-kpi-compact-enhanced="true" onclick="selectNav('view-item-master')"
+              title="View Item Master" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">⚠️</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="LOW STOCK">LOW STOCK</span>
+                  <span class="kpi-pill-badge">Alert</span>
+                </div>
+                <div class="kpi-val-text" id="dash-kpi-low-stock">0</div>
               </div>
-              <div class="dash-kpi-val" id="dash-kpi-low-stock">0</div>
-              <div class="dash-kpi-sub">Stock levels healthy</div>
             </div>
           </div>
 

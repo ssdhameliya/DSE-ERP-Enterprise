@@ -16,51 +16,35 @@
             </div>
           </div>
 
-          <!-- KPI Cards Desktop Parity -->
-          <div class="kpi-grid"
-            style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;">
-            <div class="standard-kpi-card kpi-blue" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">📦</div>
-              <div class="standard-kpi-body" style="flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="metric-label">TOTAL ITEMS</span>
-                  <span class="metric-trend-pill trend-neutral">Active</span>
-                </div>
-                <div class="metric-value" id="item-kpi-total">0</div>
-                <div class="metric-note">Total items active</div>
+          <!-- 4 COMPACT KPI CARDS (Desktop Golden Parity - 58px) -->
+          <div class="kpi-grid compact-kpi-ribbon"
+            style="display:flex; gap:10px; margin-bottom:12px; width:100%; flex-wrap:nowrap;">
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true" style="flex:1 1 0; min-width:0; background:rgba(15,23,42,0.65); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:6px 12px; height:58px; display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:rgba(56,189,248,0.15); color:var(--cyan); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0;">📦</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">TOTAL ITEMS</div>
+                <div style="font-size:1.15rem; font-weight:800; color:#ffffff; font-family:'JetBrains Mono',monospace; line-height:1.2;" id="item-kpi-total">0</div>
               </div>
             </div>
-            <div class="standard-kpi-card kpi-purple" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">🏷️</div>
-              <div class="standard-kpi-body" style="flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="metric-label">CATEGORIES</span>
-                  <span class="metric-trend-pill trend-info">Tracked</span>
-                </div>
-                <div class="metric-value" id="item-kpi-categories">0</div>
-                <div class="metric-note">Categories tracked</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true" style="flex:1 1 0; min-width:0; background:rgba(15,23,42,0.65); border:1px solid rgba(168,85,247,0.25); border-radius:8px; padding:6px 12px; height:58px; display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0;">🏷️</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">CATEGORIES</div>
+                <div style="font-size:1.15rem; font-weight:800; color:#ffffff; font-family:'JetBrains Mono',monospace; line-height:1.2;" id="item-kpi-categories">0</div>
               </div>
             </div>
-            <div class="standard-kpi-card kpi-orange" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">⚠️</div>
-              <div class="standard-kpi-body" style="flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="metric-label">LOW STOCK</span>
-                  <span class="metric-trend-pill trend-warning">Alert</span>
-                </div>
-                <div class="metric-value" id="item-kpi-low-stock" style="color:var(--orange);">0</div>
-                <div class="metric-note">Low stock alerts</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true" style="flex:1 1 0; min-width:0; background:rgba(15,23,42,0.65); border:1px solid rgba(249,115,22,0.25); border-radius:8px; padding:6px 12px; height:58px; display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0;">⚠️</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">LOW STOCK</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--orange); font-family:'JetBrains Mono',monospace; line-height:1.2;" id="item-kpi-low-stock">0</div>
               </div>
             </div>
-            <div class="standard-kpi-card kpi-green" style="display:flex; align-items:center; gap:14px;">
-              <div class="standard-kpi-icon" style="background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">💰</div>
-              <div class="standard-kpi-body" style="flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="metric-label">TOTAL VALUATION</span>
-                  <span class="metric-trend-pill trend-positive">Rupees</span>
-                </div>
-                <div class="metric-value" id="item-kpi-value" style="color:var(--green);">&#8377; 0.00</div>
-                <div class="metric-note">Stock assets valuation</div>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true" style="flex:1 1 0; min-width:0; background:rgba(15,23,42,0.65); border:1px solid rgba(34,197,94,0.25); border-radius:8px; padding:6px 12px; height:58px; display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0;">💰</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">TOTAL VALUATION</div>
+                <div style="font-size:1.15rem; font-weight:800; color:var(--green); font-family:'JetBrains Mono',monospace; line-height:1.2;" id="item-kpi-value">&#8377; 0.00</div>
               </div>
             </div>
           </div>
@@ -84,35 +68,37 @@
           </div>
 
           <!-- Item Master Register Workspace (ItemMaster.fxml Parity) -->
-          <div class="register-workspace" id="item-master-workspace">
-            <div class="register-table-panel data-panel" style="overflow-x:auto;">
-              <table class="data-table clean-desktop-table" id="item-master-table">
-                <thead>
-                  <tr>
-                    <th style="width:40px; text-align:center;"><input type="checkbox"
-                        onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
-                    <th>Item Code</th>
-                    <th>Item Name</th>
-                    <th>Category</th>
-                    <th>Unit</th>
-                    <th>HSN/SAC</th>
-                    <th style="text-align:right;">% GST</th>
-                    <th style="text-align:right;">% Discount</th>
-                    <th style="text-align:right;">Purchase Price</th>
-                    <th style="text-align:right;">Selling Price</th>
-                    <th style="text-align:right;">In Stock</th>
-                    <th style="text-align:right;">Min Stock</th>
-                    <th>Remarks</th>
-                    <th style="text-align:center;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="items-table-tbody">
-                  <tr>
-                    <td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item
-                      catalog...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="register-workspace" id="item-master-workspace" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+            <div class="sales-table-card" style="flex:1; min-height:0; display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; overflow:hidden;">
+              <div class="sales-table-scroll" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;">
+                <table class="sales-desktop-table clean-desktop-table" id="item-master-table" style="width:100%; table-layout:fixed;">
+                  <thead>
+                    <tr>
+                      <th style="width:40px; text-align:center;"><input type="checkbox"
+                          onchange="window.ItemMasterController.toggleSelectAll(this.checked)" title="Select All"></th>
+                      <th>Item Code</th>
+                      <th>Item Name</th>
+                      <th>Category</th>
+                      <th>Unit</th>
+                      <th>HSN/SAC</th>
+                      <th style="text-align:right;">% GST</th>
+                      <th style="text-align:right;">% Discount</th>
+                      <th style="text-align:right;">Purchase Price</th>
+                      <th style="text-align:right;">Selling Price</th>
+                      <th style="text-align:right;">In Stock</th>
+                      <th style="text-align:right;">Min Stock</th>
+                      <th>Remarks</th>
+                      <th style="text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="items-table-tbody">
+                    <tr>
+                      <td colspan="14" style="text-align: center; color: var(--text-dim); padding: 30px;">Loading item
+                        catalog...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
               <!-- Multi-Select Bulk Footer matching ItemMaster.fxml -->
               <div

@@ -36,116 +36,88 @@
             </div>
           </div>
 
-          <!-- 8 Title Case KPI Cards (BankStatement.fxml Parity) -->
-          <div class="kpi-grid bank-recon-kpi-panel erp-kpi-single-row erp-kpi-density-dense"
+          <!-- 8 Compact KPI Cards (BankStatement.fxml Parity) -->
+          <div class="kpi-grid bank-recon-kpi-panel compact-kpi-ribbon"
             style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; width: 100%; overflow: hidden;">
-            <div class="kpi-card theme-blue"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total
-                  Transactions</span>
-                <span class="pill-badge pill-neutral" style="font-size: 0.58rem; padding: 1px 4px;">Rows</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Total Txns</span>
+                  <span class="pill-badge pill-neutral" style="font-size: 0.55rem; padding: 1px 4px;">Rows</span>
+                </div>
+                <div class="kpi-value" id="kpiTotal" style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
               </div>
-              <div class="kpi-value" id="kpiTotal"
-                style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">0</div>
-              <div class="kpi-meta" id="kpiTotalMeta"
-                style="font-size: 0.62rem; color: var(--text-dim); margin-top: 2px;">Imported rows</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #f87171;">Unmatched</span>
-                <span class="pill-badge pill-danger" style="font-size: 0.58rem; padding: 1px 4px;">Action</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #f87171; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Unmatched</span>
+                  <span class="pill-badge pill-danger" style="font-size: 0.55rem; padding: 1px 4px;">Action</span>
+                </div>
+                <div class="kpi-value" id="kpiUnmatched" style="font-size: 1.05rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
               </div>
-              <div class="kpi-value" id="kpiUnmatched" style="font-size: 1.15rem; font-weight: 800; color: #f87171;">0
-              </div>
-              <div class="kpi-meta" id="kpiUnmatchedMeta" style="font-size: 0.62rem; color: #f87171; margin-top: 2px;">
-                Needs action</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #fbbf24;">Suggested</span>
-                <span class="pill-badge pill-warning"
-                  style="font-size: 0.58rem; padding: 1px 4px; background: rgba(245,158,11,0.15); color: #fbbf24;">Rule</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #fbbf24; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Suggested</span>
+                  <span class="pill-badge pill-warning" style="font-size: 0.55rem; padding: 1px 4px; background: rgba(245,158,11,0.15); color: #fbbf24;">Rule</span>
+                </div>
+                <div class="kpi-value" id="kpiSuggested" style="font-size: 1.05rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
               </div>
-              <div class="kpi-value" id="kpiSuggested" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">0
-              </div>
-              <div class="kpi-meta" id="kpiSuggestedMeta" style="font-size: 0.62rem; color: #fbbf24; margin-top: 2px;">
-                System matches</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--green);">Matched</span>
-                <span class="pill-badge pill-success" style="font-size: 0.58rem; padding: 1px 4px;">Linked</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--green); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Matched</span>
+                  <span class="pill-badge pill-success" style="font-size: 0.55rem; padding: 1px 4px;">Linked</span>
+                </div>
+                <div class="kpi-value" id="kpiMatched" style="font-size: 1.05rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
               </div>
-              <div class="kpi-value" id="kpiMatched" style="font-size: 1.15rem; font-weight: 800; color: var(--green);">
-                0</div>
-              <div class="kpi-meta" id="kpiMatchedMeta"
-                style="font-size: 0.62rem; color: var(--green); margin-top: 2px;">Linked to ERP</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--purple);">Expenses</span>
-                <span class="pill-badge pill-purple" style="font-size: 0.58rem; padding: 1px 4px;">Expense</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(168,85,247,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--purple); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Expenses</span>
+                  <span class="pill-badge pill-purple" style="font-size: 0.55rem; padding: 1px 4px;">Expense</span>
+                </div>
+                <div class="kpi-value" id="kpiExpense" style="font-size: 1.05rem; font-weight: 800; color: var(--purple); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
               </div>
-              <div class="kpi-value" id="kpiExpense"
-                style="font-size: 1.15rem; font-weight: 800; color: var(--purple);">0</div>
-              <div class="kpi-meta" id="kpiExpenseMeta"
-                style="font-size: 0.62rem; color: var(--purple); margin-top: 2px;">Operating heads</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--green);">Total
-                  Credits</span>
-                <span class="pill-badge pill-success" style="font-size: 0.58rem; padding: 1px 4px;">In</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--green); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Credits</span>
+                  <span class="pill-badge pill-success" style="font-size: 0.55rem; padding: 1px 4px;">In</span>
+                </div>
+                <div class="kpi-value" id="kpiCredits" style="font-size: 0.98rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">₹ 0.00</div>
               </div>
-              <div class="kpi-value" id="kpiCredits" style="font-size: 1.05rem; font-weight: 800; color: var(--green);">
-                ₹ 0.00</div>
-              <div class="kpi-meta" id="kpiCreditsMeta"
-                style="font-size: 0.62rem; color: var(--green); margin-top: 2px;">Money in</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #f87171;">Total
-                  Debits</span>
-                <span class="pill-badge pill-danger" style="font-size: 0.58rem; padding: 1px 4px;">Out</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #f87171; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Debits</span>
+                  <span class="pill-badge pill-danger" style="font-size: 0.55rem; padding: 1px 4px;">Out</span>
+                </div>
+                <div class="kpi-value" id="kpiDebits" style="font-size: 0.98rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">₹ 0.00</div>
               </div>
-              <div class="kpi-value" id="kpiDebits" style="font-size: 1.05rem; font-weight: 800; color: #f87171;">₹ 0.00
-              </div>
-              <div class="kpi-meta" id="kpiDebitsMeta" style="font-size: 0.62rem; color: #f87171; margin-top: 2px;">
-                Money out</div>
             </div>
-            <div class="kpi-card"
-              style="padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;">
-              <div class="kpi-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="kpi-label"
-                  style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--cyan);">Reconciled</span>
-                <span class="pill-badge pill-purple" style="font-size: 0.58rem; padding: 1px 4px;">Rate</span>
+            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--cyan); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Reconciled</span>
+                  <span class="pill-badge pill-purple" style="font-size: 0.55rem; padding: 1px 4px;">Rate</span>
+                </div>
+                <div class="kpi-value" id="kpiReconciled" style="font-size: 1.05rem; font-weight: 800; color: var(--cyan); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0.0%</div>
               </div>
-              <div class="kpi-value" id="kpiReconciled"
-                style="font-size: 1.15rem; font-weight: 800; color: var(--cyan);">0.0%</div>
-              <div class="kpi-meta" id="kpiReconciledMeta"
-                style="font-size: 0.62rem; color: var(--cyan); margin-top: 2px;">Completion</div>
             </div>
           </div>
 
@@ -238,9 +210,9 @@
 
           <!-- Bank Statement Register Workspace (BankStatement.fxml Parity) -->
           <div class="register-workspace" id="statement-register-workspace" style="flex: 1 1 auto; height: 100%; min-height: 0;">
-            <div class="register-table-panel data-panel" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column; border-radius: 0;">
-              <div class="table-responsive" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto;">
-                <table class="data-table">
+            <div class="sales-table-card" style="flex: 1 1 auto; height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 0; overflow: hidden;">
+              <div class="sales-table-scroll" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;">
+                <table class="sales-desktop-table" id="bank-statement-table" style="width: 100%; table-layout: fixed;">
                   <thead>
                     <tr>
                       <th style="width: 36px; text-align: center;"></th>
@@ -253,7 +225,7 @@
                       <th style="text-align: right;">Balance (₹)</th>
                       <th style="text-align: center;">Status</th>
                       <th>Match / Link</th>
-                      <th style="text-align: center; width: 100px;">Actions</th>
+                      <th style="text-align: center;">Actions</th>
                     </tr>
                   </thead>
                   <tbody id="bank-statement-tbody">
