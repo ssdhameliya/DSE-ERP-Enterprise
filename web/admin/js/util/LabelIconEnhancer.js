@@ -1,64 +1,114 @@
 /**
  * Jasvi Industries ERP - LabelIconEnhancer
- * Centralized Form Label Enhancer matching desktop IconFactory.decorate(label).
+ * Centralized Form Label Enhancer matching desktop IconFactory.decorateFieldLabel().
  *
- * Automatically inspects form labels and ensures every field caption is
- * accompanied by its corresponding meaningful business icon.
+ * Automatically inspects every form label across all views, cards, sidebars, and
+ * modal dialogs, and decorates it with a tactile 3D icon badge and 2027 high-contrast
+ * neon/cyber themed label styling. Universal fallback ensures 100% label coverage.
  */
 window.LabelIconEnhancer = (function() {
   'use strict';
 
+  // Emoji detection regex (covering all unicode emojis and symbols)
+  const EMOJI_REGEX = /^[\s]*([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FA6F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]+)/u;
+
   function enhanceLabel(label) {
-    if (label.dataset.erpLabelEnhanced === 'true') return;
-    label.dataset.erpLabelEnhanced = 'true';
+    if (!label || label.dataset.erpLabelEnhanced === 'true') return;
 
-    // If label already contains an icon or emoji, skip
-    if (label.querySelector('.label-icon') || label.querySelector('span:first-child')) {
-      const first = label.querySelector('span:first-child');
-      if (first && /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/u.test(first.innerText)) {
-        return;
-      }
-    }
+    // Skip labels inside tables (e.g. custom table cells), unless explicitly a form-label
+    if (label.closest('td') && !label.classList.contains('form-label')) return;
 
-    const text = (label.innerText || label.textContent || '').trim();
-    if (!text || text.length < 2) return;
+    // If label is purely for a checkbox/switch without field caption
+    const directCheck = label.querySelector('input[type="checkbox"], input[type="radio"]');
+    const rawText = (label.innerText || label.textContent || '').trim();
 
-    // If label text already contains an emoji (e.g. 📅 from HTML), skip
-    if (/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(text)) {
+    if (!rawText || (rawText.length < 2 && !directCheck)) return;
+
+    // Avoid double enhancement if already contains 3D badge
+    if (label.querySelector('.erp-label-icon-badge')) {
+      label.dataset.erpLabelEnhanced = 'true';
       return;
     }
 
-    // Check if label has 'for' attribute or input inside
-    const forId = label.getAttribute('for') || '';
-    const icon = window.UiSemanticRegistry.fieldSemantic(text, forId);
+    label.dataset.erpLabelEnhanced = 'true';
 
-    if (icon) {
-      const span = document.createElement('span');
-      span.className = 'label-icon';
-      span.innerText = icon;
-      span.style.cssText = 'margin-right: 6px; font-size: 0.95em; opacity: 0.9;';
-      label.insertBefore(span, label.firstChild);
+    const forId = label.getAttribute('for') || '';
+    let existingIcon = '';
+    let cleanText = rawText;
+
+    // Check if label text starts with an emoji (e.g. from static HTML)
+    const match = cleanText.match(EMOJI_REGEX);
+    if (match && match[1]) {
+      existingIcon = match[1].trim();
+      // Remove the emoji from the text node so we don't have duplicate icons
+      const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT, null, false);
+      let textNode = walker.nextNode();
+      while (textNode) {
+        if (textNode.nodeValue && EMOJI_REGEX.test(textNode.nodeValue)) {
+          textNode.nodeValue = textNode.nodeValue.replace(EMOJI_REGEX, '').trimStart();
+          break;
+        }
+        textNode = walker.nextNode();
+      }
+      cleanText = (label.innerText || label.textContent || '').trim();
+    }
+
+    // Also check if there's an existing legacy .label-icon or plain icon span
+    const legacyIconSpan = label.querySelector('.label-icon, .form-icon');
+    if (legacyIconSpan) {
+      if (!existingIcon) existingIcon = legacyIconSpan.innerText.trim();
+      legacyIconSpan.remove();
+    }
+
+    // Resolve semantic descriptor (2027 Neon/Cyber Palette & Universal Fallback)
+    const desc = window.UiSemanticRegistry && window.UiSemanticRegistry.resolveLabelDescriptor
+      ? window.UiSemanticRegistry.resolveLabelDescriptor(cleanText, forId)
+      : { icon: '📌', colour: 'neutral', themeClass: 'theme-neutral', labelClass: 'erp-label-themed-neutral' };
+
+    const finalIcon = existingIcon || desc.icon || '📌';
+
+    // Build the 3D Tactile Icon Badge
+    const badge = document.createElement('span');
+    badge.className = `erp-label-icon-badge ${desc.themeClass}`;
+    badge.innerText = finalIcon;
+    badge.setAttribute('aria-hidden', 'true');
+
+    // Add theme class to label text
+    if (desc.labelClass) {
+      label.classList.add(desc.labelClass);
+    }
+
+    // Insertion: if label starts with checkbox, place badge after checkbox
+    if (directCheck && label.firstChild === directCheck) {
+      if (directCheck.nextSibling) {
+        label.insertBefore(badge, directCheck.nextSibling);
+      } else {
+        label.appendChild(badge);
+      }
+    } else {
+      label.insertBefore(badge, label.firstChild);
     }
   }
 
   return {
     enhance(container = document) {
       if (!container) return;
-      const labels = container.querySelectorAll('label.form-label, label, .field-label, .meta-label');
+      const selector = 'label.form-label, label.field-label, label.filter-label, .modal-body label, .editor-card label, label';
+      const labels = container.querySelectorAll(selector);
       labels.forEach(lbl => enhanceLabel(lbl));
     },
 
     init() {
       this.enhance(document);
 
-      // Auto-observe dynamic modals, drawers, and tabs
+      // Auto-observe dynamic modals, views, tabs, and drawers
       if (window.MutationObserver) {
         const observer = new MutationObserver((mutations) => {
           for (const m of mutations) {
             if (m.addedNodes && m.addedNodes.length > 0) {
               m.addedNodes.forEach(node => {
                 if (node.nodeType === 1) { // Element node
-                  if (node.matches && (node.matches('.modal-overlay, .side-drawer, .module-view, form, .form-group') || node.querySelector('label'))) {
+                  if (node.matches && (node.matches('label, .form-group, .modal-card, .modal-overlay, .modal, .editor-card, .module-view, form') || node.querySelector('label'))) {
                     this.enhance(node);
                   }
                 }

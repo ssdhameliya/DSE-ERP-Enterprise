@@ -372,6 +372,95 @@ window.UiSemanticRegistry = (function() {
       if (combined.includes('role')) return '🛡️';
       if (combined.includes('search')) return '🔍';
       return null;
+    },
+
+    /**
+     * Resolves rich 3D label descriptor with icon, color theme, and CSS classes
+     * (2027 Neon/Cyber Palette & Universal Fallback Parity)
+     */
+    resolveLabelDescriptor(labelText, inputId) {
+      const rawText = (labelText || '').toString().toLowerCase().trim()
+        .replace(/&amp;/g, ' and ')
+        .replace(/&/g, ' and ')
+        .replace(/[*:]+$/g, '')
+        .trim();
+      const rawId = (inputId || '').toString().toLowerCase().trim();
+      const text = rawText + ' ' + rawId;
+
+      // 1. Party / Entity
+      if (/customer|client|buyer/.test(text)) {
+        return { icon: '👤', colour: 'blue', themeClass: 'theme-blue', labelClass: 'erp-label-themed-blue' };
+      }
+      if (/supplier|vendor|seller/.test(text)) {
+        return { icon: '🏭', colour: 'teal', themeClass: 'theme-teal', labelClass: 'erp-label-themed-teal' };
+      }
+      if (/party/.test(text)) {
+        return { icon: '👥', colour: 'blue', themeClass: 'theme-blue', labelClass: 'erp-label-themed-blue' };
+      }
+
+      // 2. Identification / Document
+      if (/invoice|bill(\s|$)|po(\s|\.|$)|order|quote|quotation|ref(\s|\.|$)|hsn|sac|sku|barcode|code/.test(text)) {
+        return { icon: '🏷️', colour: 'cyan', themeClass: 'theme-cyan', labelClass: 'erp-label-themed-cyan' };
+      }
+
+      // 3. Finance & Currency
+      if (/amount|rate|price|total|balance|discount|debit|credit|sub\s*total|taxable|charge|fee|gross|net/.test(text)) {
+        return { icon: '💰', colour: 'green', themeClass: 'theme-green', labelClass: 'erp-label-themed-green' };
+      }
+
+      // 4. Date & Time
+      if (/date|time|period|from\s*date|to\s*date|due|valid|schedule|calendar/.test(text)) {
+        return { icon: '📅', colour: 'purple', themeClass: 'theme-purple', labelClass: 'erp-label-themed-purple' };
+      }
+
+      // 5. Taxation & Legal
+      if (/gst|gstin|pan(\s|$)|tax|cgst|sgst|igst|vat|cess/.test(text)) {
+        return { icon: '🏛️', colour: 'amber', themeClass: 'theme-amber', labelClass: 'erp-label-themed-amber' };
+      }
+
+      // 6. Location & Logistics
+      if (/address|city|state|pincode|zip|country|location|warehouse/.test(text)) {
+        return { icon: '📍', colour: 'pink', themeClass: 'theme-pink', labelClass: 'erp-label-themed-pink' };
+      }
+      if (/transport|vehicle|driver|lr(\s|\.|$)|eway|freight|delivery|dispatch|shipping/.test(text)) {
+        return { icon: '🚚', colour: 'orange', themeClass: 'theme-orange', labelClass: 'erp-label-themed-orange' };
+      }
+
+      // 7. Communication
+      if (/whatsapp/.test(text)) {
+        return { icon: '💬', colour: 'matrix', themeClass: 'theme-matrix', labelClass: 'erp-label-themed-matrix' };
+      }
+      if (/email|mail/.test(text)) {
+        return { icon: '✉️', colour: 'cyan', themeClass: 'theme-cyan', labelClass: 'erp-label-themed-cyan' };
+      }
+      if (/mobile|phone|contact|tel/.test(text)) {
+        return { icon: '📞', colour: 'teal', themeClass: 'theme-teal', labelClass: 'erp-label-themed-teal' };
+      }
+
+      // 8. Notes, Remarks & Attachments
+      if (/attachment|document|file|upload|bill\s*copy|receipt/.test(text)) {
+        return { icon: '📎', colour: 'purple', themeClass: 'theme-purple', labelClass: 'erp-label-themed-purple' };
+      }
+      if (/note|notes|remark|description|terms|narration|comment/.test(text)) {
+        return { icon: '📝', colour: 'purple', themeClass: 'theme-purple', labelClass: 'erp-label-themed-purple' };
+      }
+
+      // 9. Status & Workflow
+      if (/status|type|category|mode|active|payment\s*terms|unit/.test(text)) {
+        return { icon: '⚡', colour: 'amber', themeClass: 'theme-amber', labelClass: 'erp-label-themed-amber' };
+      }
+
+      // 10. Security & Access
+      if (/password|pin|security|mfa|otp|captcha|auth/.test(text)) {
+        return { icon: '🔑', colour: 'pink', themeClass: 'theme-pink', labelClass: 'erp-label-themed-pink' };
+      }
+      if (/user|username|role|permission|profile|designation/.test(text)) {
+        return { icon: '👤', colour: 'teal', themeClass: 'theme-teal', labelClass: 'erp-label-themed-teal' };
+      }
+
+      // Universal Safe Fallback Rule (Guarantee 100% labels styled)
+      return { icon: '📌', colour: 'neutral', themeClass: 'theme-neutral', labelClass: 'erp-label-themed-neutral' };
     }
   };
 })();
+

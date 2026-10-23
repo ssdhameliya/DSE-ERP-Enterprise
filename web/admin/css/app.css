@@ -4900,3 +4900,651 @@
       overflow-y: auto !important;
       overflow-x: auto !important;
     }
+
+    /* ==========================================================================
+       RELEASE v10.0.41.10 - COMPREHENSIVE ARCHITECTURE ENHANCEMENTS
+       Pillars 1 to 4 & Layout Archetypes A/B/C/D Parity
+       ========================================================================== */
+
+    /* --------------------------------------------------------------------------
+       1. 3D TACTILE LABEL ICON BADGES & 2027 NEON/CYBER HIGHLIGHT PALETTE
+       -------------------------------------------------------------------------- */
+    .erp-label-icon-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 22px !important;
+      height: 22px !important;
+      border-radius: 6px !important;
+      margin-right: 7px !important;
+      font-size: 0.82rem !important;
+      line-height: 1 !important;
+      vertical-align: middle !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      transition: all 0.15s ease !important;
+    }
+
+    /* Themed 3D Badges */
+    .erp-label-icon-badge.theme-blue {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(14, 165, 233, 0.18)) !important;
+      border: 1px solid rgba(56, 189, 248, 0.55) !important;
+      color: #38bdf8 !important;
+    }
+    .erp-label-icon-badge.theme-teal {
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.4), rgba(20, 184, 166, 0.18)) !important;
+      border: 1px solid rgba(45, 212, 191, 0.55) !important;
+      color: #2dd4bf !important;
+    }
+    .erp-label-icon-badge.theme-green {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.4), rgba(16, 185, 129, 0.18)) !important;
+      border: 1px solid rgba(52, 211, 153, 0.55) !important;
+      color: #34d399 !important;
+    }
+    .erp-label-icon-badge.theme-purple {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.4), rgba(139, 92, 246, 0.18)) !important;
+      border: 1px solid rgba(167, 139, 250, 0.55) !important;
+      color: #a78bfa !important;
+    }
+    .erp-label-icon-badge.theme-amber {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(245, 158, 11, 0.18)) !important;
+      border: 1px solid rgba(251, 191, 36, 0.55) !important;
+      color: #fbbf24 !important;
+    }
+    .erp-label-icon-badge.theme-pink {
+      background: linear-gradient(135deg, rgba(244, 114, 182, 0.4), rgba(236, 72, 153, 0.18)) !important;
+      border: 1px solid rgba(244, 114, 182, 0.55) !important;
+      color: #f472b6 !important;
+    }
+    .erp-label-icon-badge.theme-orange {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.4), rgba(249, 115, 22, 0.18)) !important;
+      border: 1px solid rgba(251, 146, 60, 0.55) !important;
+      color: #fb923c !important;
+    }
+    .erp-label-icon-badge.theme-cyan {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(6, 182, 212, 0.2)) !important;
+      border: 1px solid rgba(56, 189, 248, 0.6) !important;
+      color: #38bdf8 !important;
+    }
+    .erp-label-icon-badge.theme-matrix {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.45), rgba(22, 163, 74, 0.2)) !important;
+      border: 1px solid rgba(34, 197, 94, 0.6) !important;
+      color: #22c55e !important;
+    }
+    .erp-label-icon-badge.theme-neutral {
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.3), rgba(100, 116, 139, 0.15)) !important;
+      border: 1px solid rgba(148, 163, 184, 0.4) !important;
+      color: #cbd5e1 !important;
+    }
+
+    /* Modern 2027 Label Text Styling */
+    label.form-label,
+    label.field-label,
+    .modal-body label,
+    label.filter-label {
+      display: inline-flex !important;
+      align-items: center !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.02em !important;
+      margin-bottom: 5px !important;
+    }
+    label.form-label.erp-label-themed-blue   { color: #7dd3fc !important; }
+    label.form-label.erp-label-themed-teal   { color: #5eead4 !important; }
+    label.form-label.erp-label-themed-green  { color: #6ee7b7 !important; }
+    label.form-label.erp-label-themed-purple { color: #c4b5fd !important; }
+    label.form-label.erp-label-themed-amber  { color: #fde047 !important; }
+    label.form-label.erp-label-themed-pink   { color: #f9a8d4 !important; }
+    label.form-label.erp-label-themed-orange { color: #fdba74 !important; }
+    label.form-label.erp-label-themed-cyan   { color: #7dd3fc !important; }
+    label.form-label.erp-label-themed-matrix { color: #86efac !important; }
+
+    /* Light Theme 3D Badge & Label Adjustments */
+    body.light-theme .erp-label-icon-badge {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 1px 0 #ffffff !important;
+    }
+    body.light-theme .erp-label-icon-badge.theme-blue    { background: #e0f2fe !important; border-color: #38bdf8 !important; color: #0284c7 !important; }
+    body.light-theme .erp-label-icon-badge.theme-teal    { background: #ccfbf1 !important; border-color: #2dd4bf !important; color: #0f766e !important; }
+    body.light-theme .erp-label-icon-badge.theme-green   { background: #dcfce7 !important; border-color: #4ade80 !important; color: #15803d !important; }
+    body.light-theme .erp-label-icon-badge.theme-purple  { background: #f3e8ff !important; border-color: #c084fc !important; color: #7e22ce !important; }
+    body.light-theme .erp-label-icon-badge.theme-amber   { background: #fef3c7 !important; border-color: #fbbf24 !important; color: #b45309 !important; }
+    body.light-theme .erp-label-icon-badge.theme-pink    { background: #fce7f3 !important; border-color: #f472b6 !important; color: #be185d !important; }
+    body.light-theme .erp-label-icon-badge.theme-orange  { background: #ffedd5 !important; border-color: #fb923c !important; color: #c2410c !important; }
+    body.light-theme .erp-label-icon-badge.theme-neutral { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #334155 !important; }
+    body.light-theme label.form-label.erp-label-themed-blue   { color: #0369a1 !important; }
+    body.light-theme label.form-label.erp-label-themed-teal   { color: #0f766e !important; }
+    body.light-theme label.form-label.erp-label-themed-green  { color: #15803d !important; }
+    body.light-theme label.form-label.erp-label-themed-purple { color: #6b21a8 !important; }
+    body.light-theme label.form-label.erp-label-themed-amber  { color: #92400e !important; }
+    body.light-theme label.form-label.erp-label-themed-pink   { color: #9d174d !important; }
+    body.light-theme label.form-label.erp-label-themed-orange { color: #9a3412 !important; }
+
+    /* --------------------------------------------------------------------------
+       2. AUTOMATED SEMANTIC MONETARY AMOUNT CLASSES
+       -------------------------------------------------------------------------- */
+    .amount-green {
+      color: #34d399 !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.25) !important;
+      white-space: nowrap !important;
+    }
+    .amount-red {
+      color: #f87171 !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      text-shadow: 0 0 8px rgba(248, 113, 113, 0.25) !important;
+      white-space: nowrap !important;
+    }
+    .amount-yellow {
+      color: #fbbf24 !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      text-shadow: 0 0 8px rgba(251, 191, 36, 0.25) !important;
+      white-space: nowrap !important;
+    }
+    .amount-cyan {
+      color: #38bdf8 !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.25) !important;
+      white-space: nowrap !important;
+    }
+
+    body.light-theme .amount-green  { color: #059669 !important; text-shadow: none !important; }
+    body.light-theme .amount-red    { color: #dc2626 !important; text-shadow: none !important; }
+    body.light-theme .amount-yellow { color: #d97706 !important; text-shadow: none !important; }
+    body.light-theme .amount-cyan   { color: #0284c7 !important; text-shadow: none !important; }
+
+    /* --------------------------------------------------------------------------
+       3. 3D GLASSMORPHIC UNIVERSAL SIDE DETAIL DRAWER
+       -------------------------------------------------------------------------- */
+    .erp-global-detail-drawer {
+      position: fixed;
+      top: 58px;
+      right: 0;
+      width: 400px;
+      max-width: 90vw;
+      height: calc(100vh - 98px);
+      background: rgba(13, 20, 36, 0.94);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6), inset 1px 0 0 rgba(255, 255, 255, 0.08);
+      z-index: 100005;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+    .erp-global-detail-drawer.open {
+      transform: translateX(0);
+    }
+    body.light-theme .erp-global-detail-drawer {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border-left: 1px solid #cbd5e1 !important;
+      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .erp-drawer-hero {
+      padding: 16px 20px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.2) 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+    body.light-theme .erp-drawer-hero {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .erp-drawer-hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .erp-drawer-hero-id {
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    body.light-theme .erp-drawer-hero-id { color: #0f172a !important; }
+    .erp-drawer-hero-sub {
+      font-size: 0.76rem;
+      color: #94a3b8;
+    }
+    body.light-theme .erp-drawer-hero-sub { color: #64748b !important; }
+
+    /* 3D Drawer Metrics Ribbon */
+    .erp-drawer-metrics-ribbon {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .erp-drawer-metric-pill {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 6px 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    body.light-theme .erp-drawer-metric-pill {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    .erp-drawer-metric-label {
+      font-size: 0.66rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .erp-drawer-metric-val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    /* Scrollable Drawer Body */
+    .erp-drawer-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .erp-drawer-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    body.light-theme .erp-drawer-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    .erp-drawer-card-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .erp-drawer-field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+    }
+    body.light-theme .erp-drawer-field-row {
+      border-bottom: 1px solid #f1f5f9 !important;
+    }
+    .erp-drawer-field-row:last-child { border-bottom: none; }
+    .erp-drawer-field-label {
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    body.light-theme .erp-drawer-field-label { color: #64748b !important; }
+    .erp-drawer-field-val {
+      font-weight: 600;
+      color: #f1f5f9;
+      text-align: right;
+      max-width: 60%;
+      word-break: break-word;
+    }
+    body.light-theme .erp-drawer-field-val { color: #0f172a !important; }
+
+    /* Fixed Bottom Action Dock (Max 4-5 Actions) */
+    .erp-drawer-action-dock {
+      padding: 12px 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    body.light-theme .erp-drawer-action-dock {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+    }
+    .erp-drawer-btn {
+      flex: 1 1 calc(50% - 6px);
+      height: 34px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: all 0.15s ease;
+    }
+    .erp-drawer-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    /* --------------------------------------------------------------------------
+       4. UNIVERSAL MODERN 2027 GLASSMORPHIC PAGINATION STRIP
+       -------------------------------------------------------------------------- */
+    .erp-pagination-bar-2027 {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 6px 14px !important;
+      margin-top: 6px !important;
+      background: rgba(15, 23, 42, 0.82) !important;
+      backdrop-filter: blur(14px) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 8px !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+      z-index: 10 !important;
+    }
+    body.light-theme .erp-pagination-bar-2027 {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    }
+    .erp-pagination-info-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      padding: 4px 10px !important;
+      background: rgba(56, 189, 248, 0.12) !important;
+      border: 1px solid rgba(56, 189, 248, 0.3) !important;
+      border-radius: 20px !important;
+      color: #38bdf8 !important;
+      font-size: 0.74rem !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    body.light-theme .erp-pagination-info-badge {
+      background: #e0f2fe !important;
+      border-color: #38bdf8 !important;
+      color: #0369a1 !important;
+    }
+    .erp-pagination-controls {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    .erp-pagination-btn {
+      min-width: 30px !important;
+      height: 28px !important;
+      padding: 0 8px !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 6px !important;
+      color: var(--text-main) !important;
+      font-size: 0.74rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      transition: all 0.12s ease !important;
+    }
+    .erp-pagination-btn:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.25) !important;
+      border-color: #38bdf8 !important;
+      color: #ffffff !important;
+      transform: translateY(-1px) !important;
+    }
+    .erp-pagination-btn:disabled {
+      opacity: 0.35 !important;
+      cursor: not-allowed !important;
+    }
+    .erp-pagination-btn.active {
+      background: linear-gradient(135deg, #0284c7, #0ea5e9) !important;
+      border-color: #38bdf8 !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.45) !important;
+    }
+    body.light-theme .erp-pagination-btn {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .erp-pagination-btn:hover:not(:disabled) {
+      background: #e0f2fe !important;
+      border-color: #0284c7 !important;
+      color: #0284c7 !important;
+    }
+    body.light-theme .erp-pagination-btn.active {
+      background: #0284c7 !important;
+      color: #ffffff !important;
+    }
+    .erp-pagination-right {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+    .erp-pagination-select {
+      height: 28px !important;
+      padding: 0 6px !important;
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 6px !important;
+      color: var(--text-main) !important;
+    }
+    body.light-theme .erp-pagination-select {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       5. UNIVERSAL 3D BUTTON ENHANCER TOKENS (UiActionIcons.java Parity)
+       -------------------------------------------------------------------------- */
+    .btn-action-3d {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      padding: 6px 14px !important;
+      border-radius: 6px !important;
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+      transition: all 0.14s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      text-decoration: none !important;
+      white-space: nowrap !important;
+    }
+    .btn-action-3d:hover:not(:disabled) {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+    .btn-action-3d:active:not(:disabled) {
+      transform: translateY(0) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    }
+    .btn-action-3d .btn-3d-icon {
+      font-size: 0.88rem !important;
+      line-height: 1 !important;
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Role-based 3D Buttons */
+    .btn-action-3d.role-primary,
+    .btn-action-3d.role-add {
+      background: linear-gradient(135deg, #10b981, #059669) !important;
+      border: 1px solid #34d399 !important;
+      color: #ffffff !important;
+    }
+    .btn-action-3d.role-edit {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+      border: 1px solid #a78bfa !important;
+      color: #ffffff !important;
+    }
+    .btn-action-3d.role-danger,
+    .btn-action-3d.role-delete {
+      background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+      border: 1px solid #f87171 !important;
+      color: #ffffff !important;
+    }
+    .btn-action-3d.role-save {
+      background: linear-gradient(135deg, #059669, #047857) !important;
+      border: 1px solid #10b981 !important;
+      color: #ffffff !important;
+    }
+    .btn-action-3d.role-secondary,
+    .btn-action-3d.role-cancel {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid var(--border-subtle) !important;
+      color: var(--text-main) !important;
+    }
+    .btn-action-3d.role-excel {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.15)) !important;
+      border: 1px solid rgba(52, 211, 153, 0.45) !important;
+      color: #34d399 !important;
+    }
+    .btn-action-3d.role-print {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(126, 34, 206, 0.15)) !important;
+      border: 1px solid rgba(192, 132, 252, 0.45) !important;
+      color: #c084fc !important;
+    }
+    .btn-action-3d.role-email {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 165, 233, 0.15)) !important;
+      border: 1px solid rgba(56, 189, 248, 0.45) !important;
+      color: #38bdf8 !important;
+    }
+    .btn-action-3d.role-whatsapp {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(22, 163, 74, 0.15)) !important;
+      border: 1px solid rgba(34, 197, 94, 0.5) !important;
+      color: #22c55e !important;
+    }
+    .btn-action-3d.role-refresh {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(2, 132, 199, 0.12)) !important;
+      border: 1px solid rgba(56, 189, 248, 0.4) !important;
+      color: #38bdf8 !important;
+    }
+    .btn-action-3d.role-reset {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(217, 119, 6, 0.12)) !important;
+      border: 1px solid rgba(251, 191, 36, 0.4) !important;
+      color: #fbbf24 !important;
+    }
+    .btn-action-3d.role-payment {
+      background: linear-gradient(135deg, #059669, #0d9488) !important;
+      border: 1px solid #10b981 !important;
+      color: #ffffff !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       6. ARCHETYPE B: 2-COLUMN WORKSPACE EQUAL-HEIGHT STRETCH (ZERO BLANK SPACES)
+       -------------------------------------------------------------------------- */
+    #view-purchase-creation > div[style*="grid-template-columns"],
+    #view-quotation-editor > div[style*="grid-template-columns"],
+    #view-sale-create .sale-workspace-container {
+      display: grid !important;
+      grid-template-columns: 1fr 340px !important;
+      gap: 12px !important;
+      align-items: stretch !important;
+      height: 100% !important;
+      min-height: 0 !important;
+    }
+
+    #view-purchase-creation > div[style*="grid-template-columns"] > div:first-child,
+    #view-quotation-editor > div[style*="grid-template-columns"] > div:first-child,
+    #view-sale-create .sale-workspace-container > div:first-child {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      gap: 8px !important;
+    }
+
+    #view-purchase-creation > div[style*="grid-template-columns"] > div:first-child > .editor-card:last-child,
+    #view-quotation-editor > div[style*="grid-template-columns"] > div:first-child > .editor-card:last-child,
+    #view-sale-create .sale-workspace-container > div:first-child > .editor-card:last-child {
+      flex: 1 !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+
+    #view-purchase-creation .editor-card > div[style*="border"],
+    #view-sale-create .editor-card > div[style*="overflow"],
+    #view-quotation-editor .editor-card > div[style*="overflow"] {
+      flex: 1 !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+    }
+
+    #view-purchase-creation > div[style*="grid-template-columns"] > div:last-child,
+    #view-quotation-editor > div[style*="grid-template-columns"] > div:last-child,
+    #view-sale-create .sale-workspace-container > div:last-child {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 340px !important;
+      min-width: 340px !important;
+      max-width: 340px !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      padding-right: 2px !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       7. ARCHETYPE D: ALL MODAL DIALOGS ZERO-BLANK-SPACE ARCHITECTURE
+       -------------------------------------------------------------------------- */
+    .modal-card,
+    .modal-content {
+      display: flex !important;
+      flex-direction: column !important;
+      max-height: 85vh !important;
+      overflow: hidden !important;
+      border-radius: 14px !important;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+    }
+    .modal-header {
+      flex-shrink: 0 !important;
+    }
+    .modal-body {
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      padding: 18px 24px !important;
+    }
+    .modal-footer {
+      flex-shrink: 0 !important;
+      border-top: 1px solid var(--border-subtle) !important;
+      padding: 12px 24px !important;
+      background: rgba(15, 23, 42, 0.4) !important;
+    }
+    body.light-theme .modal-footer {
+      background: #f8fafc !important;
+    }
+

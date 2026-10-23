@@ -293,6 +293,8 @@ window.App = (function() {
       if (window.NavigationRouter) window.NavigationRouter.init();
       if (window.GlobalUiEnhancer) window.GlobalUiEnhancer.init();
       if (window.LabelIconEnhancer) window.LabelIconEnhancer.init();
+      if (window.ButtonIconEnhancer) window.ButtonIconEnhancer.init();
+      if (window.PaginationUiEnhancer) window.PaginationUiEnhancer.init();
 
       // Check current session
       const user = window.AuthService.getCurrentUser();

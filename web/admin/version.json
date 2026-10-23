@@ -1,19 +1,19 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 9,
-  "webVersion": "10.0.41.09",
-  "tag": "web-v10.0.41.09",
-  "releaseDate": "2026-10-23T23:30:00+05:30",
+  "webBuild": 10,
+  "webVersion": "10.0.41.10",
+  "tag": "web-v10.0.41.10",
+  "releaseDate": "2026-10-24T00:15:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.09 Precision Fixes & Parity: Master Data 58px Compact KPI Ribbon Uniformity, Centralized Dynamic Table Layout & Reflow Authority, Recon Supplier & Purchase Recon Enterprise 2-Row Filter Toolbars & Centered Window Modals, Purchase Recon Add/Save Bug Fix, Settings Blank Screen Resolution, Purchase Creation Attachment Controls Parity, and Notification Center Header Badges Reset",
+  "summary": "10.0.41.10 3D Tactile Labels, Semantic Amount Coloring, Universal Glassmorphic Detail Drawer, Dynamic Button Role System, Symmetrical Zero-Gap Scrolling Architecture, and 2027 Futuristic Pagination Standard",
   "highlights": [
-    "1. Universal 58px Compact KPI Ribbon: Standardized all 14 register and dashboard views to the Master Data golden standard (.compact-kpi-card, data-erp-kpi-compact-enhanced='true'), eliminating right-side blank space and enhancer refresh lockouts.",
-    "2. Centralized Dynamic Table Layout & Reflow: Installed sales-desktop-table wrapped in sales-table-card/sales-table-scroll with DynamicTableLayoutManager colgroup allocation, and hooked instant reflow into sidebar expand/collapse/hover.",
-    "3. Recon Supplier Toolbar & Centered Modal: Added standardized 2-row filter box (Search, Status, Source, Date From/To, Presets, Reset, Refresh) and replaced side drawer with centered window modal.",
-    "4. Purchase Recon Toolbar & Centered Modal: Replaced cramped single-row filter strip with standard 2-row filter box and converted side drawer into centered window modal dialog.",
-    "5. Purchase Recon Add/Save Bug Resolved: Resiliently parsed server page response (content/rows/array) and protected dialog/toast lifecycle, ensuring newly created records immediately display in register.",
-    "6. Settings Screen Blank Resolution: Mapped all left-sidebar view-settings-* sub-routes to monolithic views/settings.html before dispatching switchSection, completely fixing blank screen on navigation.",
-    "7. Purchase Creation Attachment Widget Parity: Standardized + Add / Replace, Preview, and Delete buttons and wired to controller methods with existingAttachmentPath initialization matching Quotation Editor.",
-    "8. Notification Center Badges Reset: Implemented clearCommunicationBadges() and dse_whatsapp_read_ack tracking, ensuring WhatsApp and Email counters reset to 0 upon viewing."
+    "1. 3D Colorful Label Badges & Universal Coverage: Equipped all 464 form and modal labels with tactile 3D icon badges, themed glowing text, and semantic category palettes mirroring IconFactory.java.",
+    "2. Semantic Monetary Amount Coloring: Automated real-time column header semantic analysis applying Green (Credit/Paid/Received), Red (Debit/Overdue/Expense), Yellow (Pending/Due/Tax), and Cyan (Total/Taxable/Price) styling across all tables.",
+    "3. Universal 3D Glassmorphic Side Detail Drawer: Installed RegisterDetailDrawer.java parity side drawer with dynamic non-blank field extraction, status pills, and context-aware quick actions across all register records.",
+    "4. Universal Button Icons & Role Gradients: Centralized button role system (Save, Cancel, Delete, Add, Export, Print, Sync, Filter) with vibrant icons, 7px graphic gap, and desktop UiActionIcons parity across all views and modals.",
+    "5. Symmetrical Equal-Height Zero-Gap Layouts: Standardized Archetypes A/B/C/D with flex-stretch containers, eliminating empty right-side/bottom dead zones across all 42 screens and window dialogs.",
+    "6. Line-Item Table Real Estate & Anti-Clipping: Maximized table viewports to 75-80%, enabled unclipped 2-line header wrapping, horizontal scroll wrappers, and automated container overflow repair.",
+    "7. Purchase Creation Attachment & Table Parity: Repaired vertical layout clipping, restored compact 48px horizontal attachment dropzone, and harmonized responsive table scrolling.",
+    "8. Universal 2027 Pagination Strip: Installed modern glassmorphic pagination with neon cyan active pages, record counters, and responsive page switchers across all 34 table views."
   ]
 }

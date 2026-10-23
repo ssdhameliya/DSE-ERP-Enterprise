@@ -134,34 +134,42 @@ window.TableUiEnhancer = (function() {
           return;
         }
 
-        // Check if cell is a monetary amount (e.g. ₹ 1,250.00)
-        if (rawText.startsWith('₹') || rawText.startsWith('Rs.') || rawText.startsWith('INR')) {
-          td.dataset.erpCellEnhanced = 'true';
-          // Preserve existing intentional text colors (e.g. red for pending, yellow for grand total)
-          const hasExplicitColor = td.style.color || (td.getAttribute('style') || '').includes('color:');
-          if (!hasExplicitColor) {
-            const colIdx = Array.prototype.indexOf.call(row.children, td);
-            const th = table.querySelector(`thead th:nth-child(${colIdx + 1})`);
-            const hText = th ? (th.innerText || th.textContent || '').toLowerCase() : '';
-            const numVal = parseFloat(rawText.replace(/[^0-9.-]/g, '')) || 0;
+        // Check if cell is a monetary amount (e.g. ₹ 1,250.00, or numbers under amount headers)
+        const colIdx = Array.prototype.indexOf.call(row.children, td);
+        const th = table.querySelector(`thead th:nth-child(${colIdx + 1})`);
+        const hText = th ? (th.innerText || th.textContent || '').toLowerCase() : '';
+        const isAmountHeader = /amount|rate|price|total|balance|paid|due|tax|gst|debit|credit|subtotal|discount|value/i.test(hText);
+        const isMoneyString = rawText.startsWith('₹') || rawText.startsWith('Rs.') || rawText.startsWith('INR') || /^-?₹?\s*\d+(?:,\d+)*(?:\.\d+)?$/.test(rawText);
 
-            if (hText.includes('paid') || hText.includes('received') || hText.includes('credit') || hText.includes('inflow') || hText.includes('settled')) {
-              td.classList.add('cell-money-green');
-            } else if (hText.includes('pending') || hText.includes('balance') || hText.includes('due') || hText.includes('outflow') || hText.includes('debit') || hText.includes('unpaid')) {
-              if (numVal > 0) {
-                td.classList.add('cell-money-yellow');
-              } else {
-                td.classList.add('cell-money-green');
-              }
-            } else if (hText.includes('total') || hText.includes('net') || hText.includes('grand') || hText.includes('subtotal')) {
-              td.classList.add('cell-money-cyan');
+        if (isAmountHeader || isMoneyString) {
+          td.dataset.erpCellEnhanced = 'true';
+          const numVal = parseFloat(rawText.replace(/[^0-9.-]/g, '')) || 0;
+
+          // Remove any prior conflicting classes
+          td.classList.remove('amount-green', 'amount-red', 'amount-yellow', 'amount-cyan', 'cell-money-green', 'cell-money-yellow', 'cell-money-cyan');
+
+          if (/paid|received|credit|inflow|collection|settled/.test(hText)) {
+            td.classList.add('amount-green');
+          } else if (/debit|overdue|penalty|expense|loss|return/.test(hText)) {
+            td.classList.add('amount-red');
+          } else if (/pending|balance|due|outstanding|partial|tax|gst|cgst|sgst|igst/.test(hText)) {
+            if (numVal > 0) {
+              td.classList.add('amount-yellow');
+            } else if (numVal < 0) {
+              td.classList.add('amount-red');
             } else {
-              td.classList.add('cell-money-green');
+              td.classList.add('amount-green');
             }
+          } else if (/total|net|grand|taxable|subtotal|price|rate|invoice\s*value|bill\s*amount/.test(hText)) {
+            td.classList.add('amount-cyan');
+          } else {
+            // General monetary fallback
+            td.classList.add(numVal >= 0 ? 'amount-cyan' : 'amount-red');
           }
+
           td.style.textAlign = 'right';
-          td.style.fontFamily = "'Space Grotesk', monospace";
-          td.style.fontWeight = '600';
+          td.style.fontFamily = "'JetBrains Mono', monospace";
+          td.style.fontWeight = '700';
           td.style.whiteSpace = 'nowrap';
           td.style.overflow = 'visible';
           td.style.textOverflow = 'clip';
@@ -368,10 +376,21 @@ window.TableUiEnhancer = (function() {
      */
     enhanceTable(table) {
       if (!table || table.nodeType !== 1) return;
+
+      // Auto-repair table parent wrapper if missing horizontal overflow
+      const parent = table.parentElement;
+      if (parent && parent.style) {
+        const pOverflow = parent.style.overflow;
+        if (pOverflow === 'hidden' || (!parent.style.overflowX && parent.style.overflowY === 'auto')) {
+          parent.style.overflowX = 'auto';
+          parent.style.overflowY = 'auto';
+        }
+      }
+
       enhanceHeaders(table);
+      enhanceCells(table);
       const isEntryWorkspace = table.closest && table.closest('.sale-workspace-container, #view-sale-create, #view-purchase-creation');
       if (!isEntryWorkspace) {
-        enhanceCells(table);
         attachTableInteractions(table);
       }
       if (window.DynamicTableLayoutManager) {

@@ -20,9 +20,9 @@
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns: 1fr 340px; gap:16px; align-items:start;">
+          <div style="display:grid; grid-template-columns: 1fr 340px; gap:12px; align-items:stretch; min-height:0;">
             <!-- Left Main Column -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
               <!-- Card 1: Supplier & Purchase Details -->
               <div class="editor-card">
                 <div class="editor-card-header">Supplier &amp; Purchase Details</div>
@@ -151,7 +151,7 @@
 
                 <!-- Line Items Table -->
                 <div
-                  style="border:1px solid var(--border-subtle); border-radius:6px; overflow:hidden; max-height:260px; overflow-y:auto;">
+                  style="border:1px solid var(--border-subtle); border-radius:6px; min-height:180px; max-height:320px; overflow-y:auto; overflow-x:auto;">
                   <table class="data-table" style="margin:0; width:100%;">
                     <thead>
                       <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
@@ -189,7 +189,7 @@
             </div>
 
             <!-- Right Rail: Summary, Transport Details & Attachments -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
               <!-- Summary Card matching desktop Purchase.fxml -->
               <div class="editor-card">
                 <div class="editor-card-header">Purchase Summary</div>
@@ -276,34 +276,38 @@
                 </div>
               </div>
 
-              <!-- Card 3: Notes & Attachment matching Settings Branding style -->
-              <div class="editor-card">
+              <!-- Card 3: Notes & Attachment matching Desktop Screenshot 1 & Sale Create -->
+              <div class="editor-card" id="pe-card-notes">
                 <div class="editor-card-header">
                   <span>&#128203; Notes &amp; Attachment</span>
                 </div>
-                <textarea id="pe-notes" class="form-input" placeholder="Inward inspection notes..."
-                  style="height: 60px; font-size: 0.78rem; margin-bottom: 8px;"></textarea>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <textarea id="pe-notes" class="form-input" placeholder="Inward inspection notes..."
+                    style="height: 44px; min-height: 44px; font-size: 0.76rem; resize: none;"></textarea>
 
-                <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="color:#c084fc;">📎</span>
-                      <div style="font-size:0.8rem; font-weight:700; color:#ffffff;">Attached Document</div>
+                  <div style="margin-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                      <label class="form-label" style="font-size: 0.72rem; margin: 0; font-weight: 600;">Attached Document</label>
+                      <span id="pe-attachment-badge" class="badge" style="font-size: 0.65rem; display: none; background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.4);">Attached</span>
                     </div>
-                    <span id="pe-attachment-badge" class="badge" style="font-size:0.68rem; display:none; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">Attached</span>
-                  </div>
-                  <div style="font-size:0.68rem; color:#64748b; margin-bottom:8px;">Vendor bill copy, physical receipt scan, or GRN &bull; Max 10MB</div>
-
-                  <div id="pe-attachment-dropzone" style="min-height:70px; background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.12); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; margin-bottom:8px; text-align:center;">
-                    <div id="pe-attachment-icon" style="font-size:1.3rem; color:#64748b; margin-bottom:3px;">📄</div>
-                    <div id="pe-attachment-name" style="font-size:0.75rem; color:#cbd5e1; font-weight:500; word-break:break-all; max-width:100%;">No document attached</div>
-                    <div id="pe-attachment-size" style="font-size:0.68rem; color:#64748b;">PDF, PNG, JPG, DOC</div>
-                  </div>
-                  <input type="file" id="pe-attachment-file-input" style="display:none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
-                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()" style="background:#a855f7; border-color:#9333ea; padding:4px 12px; font-size:0.72rem; font-weight:600;">+ Add / Replace</button>
-                    <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()" style="padding:4px 12px; font-size:0.72rem;" disabled>👁 Preview</button>
-                    <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()" style="padding:4px 12px; font-size:0.72rem; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.35); color:#f87171;" disabled>Remove</button>
+                    <div id="pe-attachment-dropzone" style="min-height: 48px; background: rgba(0,0,0,0.25); border: 1px dashed rgba(255,255,255,0.12); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 6px;">
+                      <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                        <span id="pe-attachment-icon" style="font-size: 1.1rem; color: #94a3b8;">📄</span>
+                        <div style="display: flex; flex-direction: column; overflow: hidden;">
+                          <div id="pe-attachment-name" style="font-size: 0.74rem; color: #cbd5e1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No document attached</div>
+                          <div id="pe-attachment-size" style="font-size: 0.65rem; color: #64748b;">Max 10MB (PDF, PNG, JPG, DOC)</div>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="file" id="pe-attachment-file-input" style="display: none;" onchange="window.PurchaseController.handleAttachmentFileSelected(this)">
+                    <div style="display: flex; gap: 6px;">
+                      <button type="button" id="pe-btn-attach-add" class="btn btn-primary" onclick="document.getElementById('pe-attachment-file-input').click()"
+                        style="background: #a855f7; border-color: #9333ea; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; flex: 1; justify-content: center;">+ Add / Replace</button>
+                      <button type="button" id="pe-btn-attach-preview" class="btn btn-secondary" onclick="window.PurchaseController.previewAttachment()"
+                        style="padding: 4px 10px; font-size: 0.72rem; justify-content: center;" disabled>👁 Preview</button>
+                      <button type="button" id="pe-btn-attach-remove" class="btn btn-secondary" onclick="window.PurchaseController.removeAttachment()"
+                        style="padding: 4px 10px; font-size: 0.72rem; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.35); color: #f87171; justify-content: center;" disabled>🗑️ Delete</button>
+                    </div>
                   </div>
                 </div>
               </div>
