@@ -93,7 +93,7 @@ window.LabelIconEnhancer = (function() {
   return {
     enhance(container = document) {
       if (!container) return;
-      const selector = 'label.form-label, label.field-label, label.filter-label, .modal-body label, .editor-card label, label';
+      const selector = 'label, .form-label, .field-label, .filter-label, .drawer-label, .drawer-field-label, .summary-row span:first-child, .drawer-field-row > span.drawer-field-label';
       const labels = container.querySelectorAll(selector);
       labels.forEach(lbl => enhanceLabel(lbl));
     },
@@ -108,7 +108,7 @@ window.LabelIconEnhancer = (function() {
             if (m.addedNodes && m.addedNodes.length > 0) {
               m.addedNodes.forEach(node => {
                 if (node.nodeType === 1) { // Element node
-                  if (node.matches && (node.matches('label, .form-group, .modal-card, .modal-overlay, .modal, .editor-card, .module-view, form') || node.querySelector('label'))) {
+                  if (node.matches && (node.matches('label, .drawer-field-label, .form-group, .modal-card, .modal-overlay, .modal, .editor-card, .module-view, .side-drawer, .detail-drawer, form') || node.querySelector('label, .drawer-field-label'))) {
                     this.enhance(node);
                   }
                 }

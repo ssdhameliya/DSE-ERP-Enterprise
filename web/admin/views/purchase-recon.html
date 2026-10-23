@@ -11,56 +11,9 @@
     </div>
   </div>
 
-  <!-- Standard 2-Row Filter Toolbar (Sales Register Parity) -->
-  <div class="sales-filter-box">
-    <div class="sales-filter-row-1">
-      <div style="flex: 2; min-width: 240px;">
-        <label class="form-label" style="font-size: 0.72rem;">&#128269; Search Purchase Recon</label>
-        <input type="text" id="pr-search" class="form-input" placeholder="Search PRC ref, supplier name, invoice no..."
-          oninput="window.PurchaseReconController.applyReconFilters()" style="height: 34px; font-size: 0.78rem;">
-      </div>
-      <div style="flex: 1; min-width: 150px;">
-        <label class="form-label" style="font-size: 0.72rem;">🏷️ Status</label>
-        <select id="pr-status-filter" class="form-select" onchange="window.PurchaseReconController.applyReconFilters()"
-          style="height: 34px; font-size: 0.78rem;">
-          <option value="">All Status</option>
-          <option value="OPEN">OPEN</option>
-          <option value="PARTIAL">PARTIAL</option>
-          <option value="RECONCILED">RECONCILED</option>
-          <option value="REVIEW">REVIEW</option>
-        </select>
-      </div>
-      <div style="display: flex; align-items: flex-end;">
-        <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewRecon()"
-          style="height: 34px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;">+ New Purchase Recon</button>
-      </div>
-    </div>
-    <div class="sales-filter-row-2">
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <label class="form-label" style="margin: 0; font-size: 0.72rem;">📅 Period:</label>
-        <input type="date" id="pr-date-from" class="form-input" style="width: 130px; height: 30px; font-size: 0.75rem;"
-          onchange="window.PurchaseReconController.applyReconFilters()">
-        <span style="font-size: 0.75rem; color: var(--text-dim);">to</span>
-        <input type="date" id="pr-date-to" class="form-input" style="width: 130px; height: 30px; font-size: 0.75rem;"
-          onchange="window.PurchaseReconController.applyReconFilters()">
-      </div>
-      <div class="filter-quick-chips">
-        <button type="button" class="filter-chip-btn" onclick="window.PurchaseReconController.setReconDateFilter('today')">Today</button>
-        <button type="button" class="filter-chip-btn" onclick="window.PurchaseReconController.setReconDateFilter('month')">This Month</button>
-        <button type="button" class="filter-chip-btn active" onclick="window.PurchaseReconController.setReconDateFilter('all')">All</button>
-      </div>
-      <div style="display: flex; gap: 6px; margin-left: auto;">
-        <button type="button" id="pr-btn-reset" class="btn btn-secondary" onclick="window.PurchaseReconController.resetReconFilters()"
-          style="height: 30px; font-size: 0.75rem;">Reset</button>
-        <button type="button" id="pr-btn-refresh" class="btn btn-secondary" onclick="window.PurchaseReconController.loadPurchaseRecon()"
-          style="height: 30px; font-size: 0.75rem;">&#8635; Refresh</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6 Compact KPI Cards (Master Data Ribbon Parity) -->
+  <!-- 6 Compact KPI Cards (Directly beneath View Header) -->
   <div class="compact-kpi-ribbon erp-kpi-single-row kpi-grid"
-    style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden;">
+    style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; width: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
     <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true" style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
       <div class="kpi-icon-bubble">📋</div>
       <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
@@ -123,9 +76,49 @@
     </div>
   </div>
 
+  <!-- Space-Efficient Unified Filter Toolbar (Zero Wasted Space) -->
+  <div class="sales-filter-box" style="margin-bottom: 10px; padding: 10px 14px; flex-shrink: 0;">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 220px;">
+        <input type="text" id="pr-search" class="form-input" placeholder="Search PRC ref, supplier name, invoice no..."
+          oninput="window.PurchaseReconController.applyReconFilters()" style="height: 32px; font-size: 0.78rem;">
+      </div>
+      <div style="width: 140px;">
+        <select id="pr-status-filter" class="form-select" onchange="window.PurchaseReconController.applyReconFilters()"
+          style="height: 32px; font-size: 0.78rem;">
+          <option value="">All Status</option>
+          <option value="OPEN">OPEN</option>
+          <option value="PARTIAL">PARTIAL</option>
+          <option value="RECONCILED">RECONCILED</option>
+          <option value="REVIEW">REVIEW</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;">📅 Period:</span>
+        <input type="date" id="pr-date-from" class="form-input" style="width: 130px; height: 32px; font-size: 0.75rem;"
+          onchange="window.PurchaseReconController.applyReconFilters()">
+        <span style="font-size: 0.75rem; color: var(--text-dim);">to</span>
+        <input type="date" id="pr-date-to" class="form-input" style="width: 130px; height: 32px; font-size: 0.75rem;"
+          onchange="window.PurchaseReconController.applyReconFilters()">
+      </div>
+      <div class="filter-quick-chips" style="display: flex; gap: 4px; align-items: center;">
+        <button type="button" class="btn-preset-chip" onclick="window.PurchaseReconController.setReconDateFilter('today', this)">Today</button>
+        <button type="button" class="btn-preset-chip" onclick="window.PurchaseReconController.setReconDateFilter('this_month', this)">This Month</button>
+        <button type="button" class="btn-preset-chip" onclick="window.PurchaseReconController.setReconDateFilter('this_fy', this)">This FY</button>
+        <button type="button" class="btn-preset-chip active" onclick="window.PurchaseReconController.setReconDateFilter('all', this)">All</button>
+      </div>
+      <div style="display: flex; gap: 6px; margin-left: auto;">
+        <button type="button" id="pr-btn-reset" class="btn btn-action-3d role-reset btn-sm" onclick="window.PurchaseReconController.resetReconFilters()"
+          style="height: 32px; font-size: 0.75rem;">Reset</button>
+        <button type="button" id="pr-btn-refresh" class="btn btn-action-3d role-refresh btn-sm" onclick="window.PurchaseReconController.loadPurchaseRecon()"
+          style="height: 32px; font-size: 0.75rem;">&#8635; Refresh</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Standard Desktop Table Viewport -->
   <div class="sales-table-card" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;">
-    <div class="sales-table-scroll" style="flex: 1 1 auto; min-height: 0; overflow-y: auto !important; overflow-x: hidden !important;">
+    <div class="sales-table-scroll" style="flex: 1 1 auto; min-height: 0; overflow-y: auto !important; overflow-x: auto !important;">
       <table class="sales-desktop-table" id="purchase-recon-table">
         <thead>
           <tr>
@@ -150,13 +143,15 @@
       </table>
     </div>
 
-    <!-- Register Pagination Footer -->
-    <div class="sales-table-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: var(--bg-card); border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
-      <div style="font-size: 0.78rem; color: var(--text-muted);" id="pr-pagination-info">Showing 0 of 0 records</div>
-      <div style="display: flex; gap: 6px;">
-        <button type="button" id="pr-btn-prev" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.prevPage()" disabled>&larr; Prev</button>
-        <span id="pr-page-display" style="font-size: 0.78rem; font-weight: 600; padding: 4px 8px; color: var(--text-main);">Page 1 of 1</span>
-        <button type="button" id="pr-btn-next" class="btn btn-secondary btn-sm" onclick="window.PurchaseReconController.nextPage()" disabled>Next &rarr;</button>
+    <!-- 2027 Enterprise Register Pagination Footer -->
+    <div class="table-footer-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--bg-card); border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
+      <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;" id="pr-pagination-info">Showing 0 of 0 records</div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button type="button" id="pr-btn-first" class="btn btn-secondary btn-sm btn-page" onclick="window.PurchaseReconController.firstPage()" title="First Page">&laquo;</button>
+        <button type="button" id="pr-btn-prev" class="btn btn-secondary btn-sm btn-page" onclick="window.PurchaseReconController.prevPage()" disabled title="Previous Page">&larr; Prev</button>
+        <span id="pr-page-display" style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; color: var(--cyan); background: rgba(56, 189, 248, 0.1); border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.25);">Page 1 of 1</span>
+        <button type="button" id="pr-btn-next" class="btn btn-secondary btn-sm btn-page" onclick="window.PurchaseReconController.nextPage()" disabled title="Next Page">Next &rarr;</button>
+        <button type="button" id="pr-btn-last" class="btn btn-secondary btn-sm btn-page" onclick="window.PurchaseReconController.lastPage()" title="Last Page">&raquo;</button>
       </div>
     </div>
   </div>

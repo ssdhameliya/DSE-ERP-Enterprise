@@ -89,6 +89,16 @@ window.PurchaseReconController = (function() {
       reconSuppliers = await window.ReconService.getReconSuppliers('', 100) || [];
       populateReconSupplierDropdown();
 
+      // Initialize default date range to Start of Financial Year -> Today if not set
+      const fromInput = document.getElementById('pr-date-from');
+      const toInput = document.getElementById('pr-date-to');
+      if (fromInput && toInput && !fromInput.value && !toInput.value) {
+        const now = new Date();
+        const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+        fromInput.value = `${yr}-04-01`;
+        toInput.value = formatLocalDate(now);
+      }
+
       // 3. Fetch Page of Records
       const q = document.getElementById('pr-search')?.value?.trim() || '';
       const status = document.getElementById('pr-status-filter')?.value || '';
@@ -109,10 +119,18 @@ window.PurchaseReconController = (function() {
           if (toDate && d > toDate) return false;
           return true;
         });
+        totalRows = reconRecords.length;
+        totalPages = Math.ceil(totalRows / pageSize) || 1;
       }
 
       renderReconTable(reconRecords);
       updatePagination();
+
+      // Trigger table UI enhancement for amounts
+      if (window.TableUiEnhancer) {
+        const tbl = document.getElementById('purchase-recon-table');
+        if (tbl) window.TableUiEnhancer.enhanceTable(tbl);
+      }
 
     } catch (err) {
       console.error('Failed to load purchase recon:', err);
@@ -123,7 +141,7 @@ window.PurchaseReconController = (function() {
   }
 
   function setReconDateFilter(preset, btnEl) {
-    document.querySelectorAll('#purchase-recon-view .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#view-purchase-recon .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
     const fromInput = document.getElementById('pr-date-from');
@@ -132,27 +150,28 @@ window.PurchaseReconController = (function() {
 
     const now = new Date();
     const todayStr = formatLocalDate(now);
+    const p = (preset || '').toUpperCase();
 
-    if (preset === 'ALL') {
+    if (p === 'ALL') {
       fromInput.value = '';
       toInput.value = '';
-    } else if (preset === 'TODAY') {
+    } else if (p === 'TODAY') {
       fromInput.value = todayStr;
       toInput.value = todayStr;
-    } else if (preset === 'THIS_MONTH') {
+    } else if (p === 'THIS_MONTH' || p === 'MONTH') {
       const y = now.getFullYear();
       const m = now.getMonth();
       fromInput.value = formatLocalDate(new Date(y, m, 1));
       toInput.value = formatLocalDate(new Date(y, m + 1, 0));
-    } else if (preset === 'LAST_MONTH') {
+    } else if (p === 'LAST_MONTH') {
       const y = now.getFullYear();
       const m = now.getMonth();
       fromInput.value = formatLocalDate(new Date(y, m - 1, 1));
       toInput.value = formatLocalDate(new Date(y, m, 0));
-    } else if (preset === 'THIS_FY') {
+    } else if (p === 'THIS_FY' || p === 'FY') {
       const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
       fromInput.value = `${yr}-04-01`;
-      toInput.value = `${yr + 1}-03-31`;
+      toInput.value = todayStr;
     }
 
     currentPage = 0;
@@ -164,11 +183,15 @@ window.PurchaseReconController = (function() {
     if (s) s.value = '';
     const st = document.getElementById('pr-status-filter');
     if (st) st.value = '';
-    const f = document.getElementById('pr-date-from');
-    if (f) f.value = '';
-    const t = document.getElementById('pr-date-to');
-    if (t) t.value = '';
-    document.querySelectorAll('#purchase-recon-view .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
+    const fromInput = document.getElementById('pr-date-from');
+    const toInput = document.getElementById('pr-date-to');
+    if (fromInput && toInput) {
+      const now = new Date();
+      const yr = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      fromInput.value = `${yr}-04-01`;
+      toInput.value = formatLocalDate(now);
+    }
+    document.querySelectorAll('#view-purchase-recon .btn-preset-chip, .purchase-recon-filter-chips .btn-preset-chip').forEach(b => b.classList.remove('active'));
     currentPage = 0;
     loadPurchaseRecon();
   }
@@ -227,12 +250,11 @@ window.PurchaseReconController = (function() {
           <td style="font-weight:700; color:var(--cyan); font-family:monospace;">${r.reference || r.systemRef || ('PRC-' + r.id)}</td>
           <td style="white-space:nowrap;">${window.FormatUtil ? window.FormatUtil.formatDate(r.invoiceDate) : formatDate(r.invoiceDate)}</td>
           <td style="font-weight:600; color:var(--text-main);">${r.supplierName || '-'}</td>
-          <td style="font-family:monospace; color:var(--purple);">${r.supplierInvoiceNo || '-'}</td>
-          <td style="text-align:right; font-weight:700;">${formatMoney(invVal)}</td>
+          <td class="amount-cyan" style="text-align:right; font-weight:700; color:var(--cyan);">${formatMoney(invVal)}</td>
           <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--cyan);" title="${linkedDisplay}">
             ${firstLink ? `<span class="pill-badge pill-neutral" style="cursor:pointer; color:var(--cyan); border:1px solid rgba(56,189,248,0.3);" onclick="event.stopPropagation(); window.PurchaseReconController.openLinkedBankEntry('${firstLink}', ${r.id})">${linkedDisplay}</span>` : '-'}
           </td>
-          <td style="text-align:right; font-weight:700; color:${balance > 0 ? 'var(--yellow)' : 'var(--green)'};">
+          <td class="${balance > 0 ? 'amount-yellow' : 'amount-green'}" style="text-align:right; font-weight:700; color:${balance > 0 ? 'var(--yellow)' : 'var(--green)'};">
             ${formatMoney(balance)}
           </td>
           <td style="text-align:center;">
@@ -354,16 +376,36 @@ window.PurchaseReconController = (function() {
   }
 
   function updatePagination() {
-    const lbl = document.getElementById('pr-page-info');
-    const btnPrev = document.getElementById('recon-btn-prev');
-    const btnNext = document.getElementById('recon-btn-next');
+    const lbl = document.getElementById('pr-pagination-info') || document.getElementById('pr-page-info');
+    const pageDisp = document.getElementById('pr-page-display');
+    const btnFirst = document.getElementById('pr-btn-first');
+    const btnPrev = document.getElementById('pr-btn-prev') || document.getElementById('recon-btn-prev');
+    const btnNext = document.getElementById('pr-btn-next') || document.getElementById('recon-btn-next');
+    const btnLast = document.getElementById('pr-btn-last');
 
     const start = totalRows === 0 ? 0 : currentPage * pageSize + 1;
     const end = Math.min(totalRows, (currentPage + 1) * pageSize);
 
     if (lbl) lbl.innerText = `Showing ${start}–${end} of ${totalRows} records`;
+    if (pageDisp) pageDisp.innerText = `Page ${currentPage + 1} of ${Math.max(1, totalPages)}`;
+    if (btnFirst) btnFirst.disabled = currentPage <= 0;
     if (btnPrev) btnPrev.disabled = currentPage <= 0;
     if (btnNext) btnNext.disabled = currentPage + 1 >= totalPages;
+    if (btnLast) btnLast.disabled = currentPage + 1 >= totalPages;
+  }
+
+  function firstPage() {
+    if (currentPage > 0) {
+      currentPage = 0;
+      loadPurchaseRecon();
+    }
+  }
+
+  function lastPage() {
+    if (currentPage + 1 < totalPages) {
+      currentPage = Math.max(0, totalPages - 1);
+      loadPurchaseRecon();
+    }
   }
 
   function prevPage() {
@@ -558,13 +600,21 @@ window.PurchaseReconController = (function() {
   }
 
   async function deleteReconRecord(id) {
-    if (!confirm('Are you sure you want to delete this purchase recon record?')) return;
+    const ok = window.AppDialogService
+      ? await window.AppDialogService.destructive('Confirm Delete', 'Delete Purchase Recon Record', 'Are you sure you want to delete this purchase recon record?')
+      : confirm('Are you sure you want to delete this purchase recon record?');
+    if (!ok) return;
+
     try {
       await window.ReconService.deleteReconRecord(id);
-      try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Record deleted.'); } catch (_) {}
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon record deleted.');
       loadPurchaseRecon();
     } catch (err) {
-      alert('Delete failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) {
+        window.AppDialogService.error('Delete Failed', 'Could not delete record', err.message || 'Server error');
+      } else {
+        alert('Delete failed: ' + (err.message || 'Server error'));
+      }
     }
   }
 
@@ -864,13 +914,21 @@ window.PurchaseReconController = (function() {
   }
 
   async function deleteSupplier(id) {
-    if (!confirm('Are you sure you want to delete this recon supplier?\n\nWARNING: Suppliers linked to Purchase Recon records cannot be deleted.')) return;
+    const ok = window.AppDialogService
+      ? await window.AppDialogService.destructive('Confirm Delete', 'Delete Recon Supplier', 'Are you sure you want to delete this recon supplier?\n\nWARNING: Suppliers linked to Purchase Recon records cannot be deleted.')
+      : confirm('Are you sure you want to delete this recon supplier?\n\nWARNING: Suppliers linked to Purchase Recon records cannot be deleted.');
+    if (!ok) return;
+
     try {
       await window.ReconService.deleteReconSupplier(id);
-      try { if (window.AppDialogService) window.AppDialogService.toastSuccess('Supplier deleted.'); } catch (_) {}
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Supplier deleted.');
       loadReconSuppliers();
     } catch (err) {
-      alert('Delete supplier failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) {
+        window.AppDialogService.error('Delete Failed', 'Could not delete supplier', err.message || 'Server error');
+      } else {
+        alert('Delete supplier failed: ' + (err.message || 'Server error'));
+      }
     }
   }
 
@@ -935,8 +993,11 @@ window.PurchaseReconController = (function() {
     viewBankLinks,
     openLinkedBankEntry,
     closeReconEditor,
+    firstPage,
+    lastPage,
     prevPage,
     nextPage,
+    updatePagination,
     applyReconFilters() { currentPage = 0; loadPurchaseRecon(); },
     setReconDateFilter,
     resetReconFilters,

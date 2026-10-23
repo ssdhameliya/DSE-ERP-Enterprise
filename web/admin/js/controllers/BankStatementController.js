@@ -102,9 +102,39 @@ window.BankStatementController = (function() {
     }
   }
 
-  async function loadBatch(id) {
-    currentBatchId = id;
-    currentBatch = batches.find(b => b.id === id) || null;
+  async function refresh() {
+    let targetId = currentBatchId;
+    if (!targetId || targetId === 'undefined') {
+      const cmb = document.getElementById('cmbBatch');
+      if (cmb && cmb.value) targetId = parseInt(cmb.value);
+    }
+    if (!targetId && batches && batches.length > 0) {
+      targetId = batches[0].id;
+    }
+    return loadBatch(targetId);
+  }
+
+  async function loadBatch(id = null) {
+    let targetId = id;
+    if (!targetId || targetId === 'undefined') {
+      targetId = currentBatchId;
+    }
+    if (!targetId || targetId === 'undefined') {
+      const cmb = document.getElementById('cmbBatch');
+      if (cmb && cmb.value) {
+        targetId = parseInt(cmb.value);
+      }
+    }
+    if (!targetId && batches && batches.length > 0) {
+      targetId = batches[0].id;
+    }
+    if (!targetId) {
+      renderEmptyState('No bank statement selected. Please select or import a statement.');
+      return;
+    }
+
+    currentBatchId = targetId;
+    currentBatch = batches.find(b => b.id === targetId) || null;
     selectedTxnIds.clear();
     updateBulkToolbar();
 
@@ -115,7 +145,7 @@ window.BankStatementController = (function() {
 
     try {
       // 1. Fetch Metrics & Update KPI Cards
-      const metrics = await window.ReconService.getBatchMetrics(id);
+      const metrics = await window.ReconService.getBatchMetrics(targetId);
       updateKpis(metrics);
 
       // 2. Fetch Page of Transactions
@@ -125,7 +155,7 @@ window.BankStatementController = (function() {
       const from = document.getElementById('bs-from-date')?.value || '';
       const to = document.getElementById('bs-to-date')?.value || '';
 
-      const pageRes = await window.ReconService.getTransactionPage(id, currentPage, pageSize, status, direction, from, to, q);
+      const pageRes = await window.ReconService.getTransactionPage(targetId, currentPage, pageSize, status, direction, from, to, q);
       currentTransactions = pageRes?.rows || [];
       totalRows = pageRes?.totalRows || currentTransactions.length;
       totalPages = pageRes?.totalPages || (Math.ceil(totalRows / pageSize) || 1);
@@ -2240,6 +2270,9 @@ window.BankStatementController = (function() {
     loadStatementWorkspace,
     onBatchSelected,
     loadBatch,
+    refresh,
+    get currentBatchId() { return currentBatchId; },
+    get currentBatch() { return currentBatch; },
     prevPage,
     nextPage,
     changePageSize,

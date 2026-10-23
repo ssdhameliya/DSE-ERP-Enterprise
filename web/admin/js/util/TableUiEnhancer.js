@@ -148,31 +148,40 @@ window.TableUiEnhancer = (function() {
           // Remove any prior conflicting classes
           td.classList.remove('amount-green', 'amount-red', 'amount-yellow', 'amount-cyan', 'cell-money-green', 'cell-money-yellow', 'cell-money-cyan');
 
+          let amountClass = 'amount-cyan';
           if (/paid|received|credit|inflow|collection|settled/.test(hText)) {
-            td.classList.add('amount-green');
+            amountClass = 'amount-green';
           } else if (/debit|overdue|penalty|expense|loss|return/.test(hText)) {
-            td.classList.add('amount-red');
+            amountClass = 'amount-red';
           } else if (/pending|balance|due|outstanding|partial|tax|gst|cgst|sgst|igst/.test(hText)) {
             if (numVal > 0) {
-              td.classList.add('amount-yellow');
+              amountClass = 'amount-yellow';
             } else if (numVal < 0) {
-              td.classList.add('amount-red');
+              amountClass = 'amount-red';
             } else {
-              td.classList.add('amount-green');
+              amountClass = 'amount-green';
             }
           } else if (/total|net|grand|taxable|subtotal|price|rate|invoice\s*value|bill\s*amount/.test(hText)) {
-            td.classList.add('amount-cyan');
+            amountClass = 'amount-cyan';
           } else {
-            // General monetary fallback
-            td.classList.add(numVal >= 0 ? 'amount-cyan' : 'amount-red');
+            amountClass = numVal >= 0 ? 'amount-cyan' : 'amount-red';
           }
 
+          td.classList.add(amountClass);
+          td.style.setProperty('color', `var(--${amountClass.replace('amount-', '')})`, 'important');
           td.style.textAlign = 'right';
           td.style.fontFamily = "'JetBrains Mono', monospace";
           td.style.fontWeight = '700';
           td.style.whiteSpace = 'nowrap';
           td.style.overflow = 'visible';
           td.style.textOverflow = 'clip';
+
+          // Pierce child elements so nested spans receive the semantic color
+          const childSpans = td.querySelectorAll('span, div, b');
+          childSpans.forEach(cs => {
+            cs.classList.add(amountClass);
+            cs.style.setProperty('color', `var(--${amountClass.replace('amount-', '')})`, 'important');
+          });
           return;
         }
       });

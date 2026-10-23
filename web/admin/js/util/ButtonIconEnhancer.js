@@ -84,8 +84,20 @@ window.ButtonIconEnhancer = (function() {
   function enhanceButton(btn) {
     if (!btn || btn.dataset.erpBtnEnhanced === 'true') return;
 
-    // Skip special elements: modal close '×', pagination controls, pure icon buttons
-    if (btn.classList.contains('modal-close') || btn.classList.contains('modal-close-btn') || btn.classList.contains('erp-pagination-btn')) {
+    // Skip special elements: modal close '×', pagination controls, pure icon buttons, and navigation tabs
+    if (
+      btn.classList.contains('modal-close') ||
+      btn.classList.contains('modal-close-btn') ||
+      btn.classList.contains('erp-pagination-btn') ||
+      btn.classList.contains('settings-tab-btn') ||
+      btn.classList.contains('register-tab-btn') ||
+      btn.classList.contains('tab-btn') ||
+      btn.classList.contains('workspace-tab') ||
+      btn.classList.contains('gstr1-subtab-btn') ||
+      btn.classList.contains('btn-preset-chip') ||
+      btn.classList.contains('filter-chip-btn') ||
+      (btn.closest && btn.closest('.settings-tab-nav, .register-tab-bar, .workspace-tabs-container'))
+    ) {
       btn.dataset.erpBtnEnhanced = 'true';
       return;
     }
@@ -98,22 +110,34 @@ window.ButtonIconEnhancer = (function() {
 
     btn.dataset.erpBtnEnhanced = 'true';
 
+    // Helper to clean literal artifacts like :::, ⋮, ▾, ⚡, dots
+    const cleanArtifacts = (str) => str.replace(/[:\.\u22ee\u25bc\u25be\u26a1]+/g, '').trim();
+
+    // Clean literal artifacts from the button's direct text nodes
+    const walker = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null, false);
+    let tNode = walker.nextNode();
+    while (tNode) {
+      if (tNode.nodeValue && /[:\.\u22ee\u25bc\u25be\u26a1]/.test(tNode.nodeValue)) {
+        tNode.nodeValue = cleanArtifacts(tNode.nodeValue);
+      }
+      tNode = walker.nextNode();
+    }
+
     let existingIcon = '';
-    let cleanText = rawText;
+    let cleanText = (btn.innerText || btn.textContent || '').trim();
 
     // Check if button text already starts with an emoji or symbol
     const match = cleanText.match(EMOJI_REGEX);
     if (match && match[1]) {
       existingIcon = match[1].trim();
-      // Clean leading emoji from first text node
-      const walker = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null, false);
-      let textNode = walker.nextNode();
+      const textWalker = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null, false);
+      let textNode = textWalker.nextNode();
       while (textNode) {
         if (textNode.nodeValue && EMOJI_REGEX.test(textNode.nodeValue)) {
           textNode.nodeValue = textNode.nodeValue.replace(EMOJI_REGEX, '').trimStart();
           break;
         }
-        textNode = walker.nextNode();
+        textNode = textWalker.nextNode();
       }
       cleanText = (btn.innerText || btn.textContent || '').trim();
     }
@@ -128,7 +152,14 @@ window.ButtonIconEnhancer = (function() {
       }
     }
 
-    const action = resolveButtonAction(cleanText, btn.id || '', btn.className || '');
+    // Action button special handling
+    const isTableActionBtn = /actions/i.test(cleanText) || btn.classList.contains('btn-purple');
+    let action = resolveButtonAction(cleanText, btn.id || '', btn.className || '');
+    if (isTableActionBtn) {
+      action = { icon: '⚙️', role: 'role-secondary' };
+      btn.classList.add('btn-purple');
+    }
+
     const finalIcon = existingIcon || action.icon;
 
     // Apply 3D button class and role

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=10.0.41.10">
+  <link rel="stylesheet" href="css/app.css?v=10.0.41.11">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -861,9 +861,9 @@
             'view-inventory':           { title: 'Inventory Ledger',      breadcrumb: 'Real-time Warehouse Stock & Valuation', icon: '&#127981;' },
             'view-barcode':             { title: 'Barcode Studio',        breadcrumb: 'Thermal Label & Security Seal Studio',  icon: '&#128207;' },
             'view-customers':           { title: 'CRM / Customers',       breadcrumb: 'Client Profiles & Credit Limits',       icon: '&#128101;' },
-            'view-customer-360':        { title: 'Customer 360°',         breadcrumb: 'CRM / One Customer View across Records',icon: '&#127760;' },
+            'view-customer-360':        { title: 'Customer 360Â°',         breadcrumb: 'CRM / One Customer View across Records',icon: '&#127760;' },
             'view-suppliers':           { title: 'HRM / Suppliers',       breadcrumb: 'Vendor Profiles & Payment Registers',   icon: '&#127970;' },
-            'view-supplier-360':        { title: 'Supplier 360°',         breadcrumb: 'HRM / One Supplier View across Records',icon: '&#127760;' },
+            'view-supplier-360':        { title: 'Supplier 360Â°',         breadcrumb: 'HRM / One Supplier View across Records',icon: '&#127760;' },
             'view-reports':             { title: 'Reports & BI',          breadcrumb: 'Executive Analytics & Drilldown',       icon: '&#128200;' },
             'view-reminders':           { title: 'Reminder Center',       breadcrumb: 'Payment Follow-ups & Tasks',            icon: '&#9200;' },
             'view-users':               { title: 'User Access & RBAC',    breadcrumb: 'Role Matrix & Security Governance',     icon: '&#128100;' },
@@ -2155,14 +2155,14 @@
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-sale-summary"
-        onclick="window.SalesController.switchDrawerTab('summary')">&#128207;Œ Summary</button>
+        onclick="window.SalesController.switchDrawerTab('summary')">&#128207;Å’ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-items"
-        onclick="window.SalesController.switchDrawerTab('items')">&#128207;¦ Consignment Items</button>
+        onclick="window.SalesController.switchDrawerTab('items')">&#128207;Â¦ Consignment Items</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-payments"
         onclick="window.SalesController.switchDrawerTab('payments')">&#128179; Payments &amp; Allocations</button>
       <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">&#9671;
         Audit Trail</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">&#128207;‘
+      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">&#128207;â€˜
         Documents &amp; Actions</button>
     </div>
 
@@ -2376,7 +2376,7 @@
             <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate Code-128 dispatch label
               barcode for carton tracking and delivery logistics.</p>
             <button class="btn btn-secondary"
-              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">&#128207;¦
+              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">&#128207;Â¦
               Print Dispatch Barcode</button>
           </div>
         </div>
@@ -2389,7 +2389,7 @@
             <input type="file" id="drawer-sale-attachment-input" style="display:none;"
               onchange="window.SalesController.handleAttachmentUpload(event)" />
             <button class="btn btn-secondary"
-              onclick="document.getElementById('drawer-sale-attachment-input').click()">&#128207;Ž Attach File (PDF /
+              onclick="document.getElementById('drawer-sale-attachment-input').click()">&#128207;Å½ Attach File (PDF /
               Images)</button>
           </div>
         </div>
@@ -2436,15 +2436,15 @@
     <!-- 5 TABS NAVIGATION BAR -->
     <div class="drawer-tabs-bar">
       <button class="drawer-tab-btn active" id="tab-btn-pur-summary"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">&#128207;Œ Summary</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">&#128207;Å’ Summary</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-items"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">&#128207;¦ Inward Items</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">&#128207;Â¦ Inward Items</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-payments"
         onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">&#128179; Outflow Payments</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-audit"
         onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">&#9671; Audit Trail</button>
       <button class="drawer-tab-btn" id="tab-btn-pur-docs"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">&#128207;‘ Documents &amp; Proof</button>
+        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">&#128207;â€˜ Documents &amp; Proof</button>
     </div>
 
     <div class="drawer-body">
@@ -4567,7 +4567,7 @@
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>&#128207;‚</span> Bank Statement History
+            <span>&#128207;â€š</span> Bank Statement History
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Browse previously imported statement batches, inspect reconciliation progress, or delete imports.
@@ -4661,7 +4661,7 @@
               <div>&bull; Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
             </div>
             <div style="font-size:0.75rem; color:#dc2626; line-height:1.4;">
-              &#9888;ï¸ Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
+              &#9888;Ã¯Â¸Â Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
               fails, nothing will be deleted.
             </div>
           </div>
@@ -4819,7 +4819,7 @@
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.refreshSuggestions()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>&#128269;„</span> Refresh Suggestions
+              <span>&#128269;â€ž</span> Refresh Suggestions
             </button>
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.closeModal('modal-match-candidate')">
@@ -5603,7 +5603,7 @@
     <div class="modal-card" style="max-width: 720px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">&#128207;„ Imported Statement Source Evidence</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">&#128207;â€ž Imported Statement Source Evidence</h3>
           <div id="msse-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Original statement
             batch provenance &amp; SHA-256 fingerprint</div>
         </div>
@@ -6293,7 +6293,7 @@
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span id="universal-preview-icon" style="font-size:1.2rem;">&#128207;„</span>
+          <span id="universal-preview-icon" style="font-size:1.2rem;">&#128207;â€ž</span>
           <span id="universal-preview-title" style="font-size:0.95rem; font-weight:700; color:#ffffff;">Document Preview</span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -6311,79 +6311,80 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=10.0.41.10"></script>
+  <script src="js/version.js?v=10.0.41.11"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=10.0.41.10"></script>
-  <script src="js/util/FormatUtil.js?v=10.0.41.10"></script>
-  <script src="js/util/DatePickerFormatter.js?v=10.0.41.10"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.10"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.10"></script>
-  <script src="js/util/AudioSynthesizer.js?v=10.0.41.10"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.10"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.10"></script>
-  <script src="js/util/TableUiEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/ButtonIconEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/PaginationUiEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.10"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.10"></script>
-  <script src="js/util/AppDialogService.js?v=10.0.41.10"></script>
-  <script src="js/util/FormDirtyTracker.js?v=10.0.41.10"></script>
-  <script src="js/util/DeepLinkService.js?v=10.0.41.10"></script>
-  <script src="js/util/BarcodeGenerator.js?v=10.0.41.10"></script>
-  <script src="js/util/ShortcutManager.js?v=10.0.41.10"></script>
-  <script src="js/util/RegisterUiSupport.js?v=10.0.41.10"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.10"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.10"></script>
+  <script src="js/util/xlsx.full.min.js?v=10.0.41.11"></script>
+  <script src="js/util/FormatUtil.js?v=10.0.41.11"></script>
+  <script src="js/util/DatePickerFormatter.js?v=10.0.41.11"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=10.0.41.11"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=10.0.41.11"></script>
+  <script src="js/util/AudioSynthesizer.js?v=10.0.41.11"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=10.0.41.11"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=10.0.41.11"></script>
+  <script src="js/util/TableUiEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/ButtonIconEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/PaginationUiEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=10.0.41.11"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=10.0.41.11"></script>
+  <script src="js/util/AppDialogService.js?v=10.0.41.11"></script>
+  <script src="js/util/FormDirtyTracker.js?v=10.0.41.11"></script>
+  <script src="js/util/DeepLinkService.js?v=10.0.41.11"></script>
+  <script src="js/util/BarcodeGenerator.js?v=10.0.41.11"></script>
+  <script src="js/util/ShortcutManager.js?v=10.0.41.11"></script>
+  <script src="js/util/RegisterUiSupport.js?v=10.0.41.11"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=10.0.41.11"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=10.0.41.11"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=10.0.41.10"></script>
-  <script src="js/services/ApiService.js?v=10.0.41.10"></script>
-  <script src="js/services/AuthService.js?v=10.0.41.10"></script>
-  <script src="js/services/ViewLoader.js?v=10.0.41.10"></script>
-  <script src="js/services/NotificationService.js?v=10.0.41.10"></script>
-  <script src="js/services/MasterService.js?v=10.0.41.10"></script>
-  <script src="js/services/OperationsService.js?v=10.0.41.10"></script>
-  <script src="js/services/ReportService.js?v=10.0.41.10"></script>
-  <script src="js/services/ReconService.js?v=10.0.41.10"></script>
-  <script src="js/services/AccountingService.js?v=10.0.41.10"></script>
-  <script src="js/services/ImportService.js?v=10.0.41.10"></script>
+  <script src="js/services/BrandingService.js?v=10.0.41.11"></script>
+  <script src="js/services/ApiService.js?v=10.0.41.11"></script>
+  <script src="js/services/AuthService.js?v=10.0.41.11"></script>
+  <script src="js/services/ViewLoader.js?v=10.0.41.11"></script>
+  <script src="js/services/NotificationService.js?v=10.0.41.11"></script>
+  <script src="js/services/MasterService.js?v=10.0.41.11"></script>
+  <script src="js/services/OperationsService.js?v=10.0.41.11"></script>
+  <script src="js/services/ReportService.js?v=10.0.41.11"></script>
+  <script src="js/services/ReconService.js?v=10.0.41.11"></script>
+  <script src="js/services/AccountingService.js?v=10.0.41.11"></script>
+  <script src="js/services/ImportService.js?v=10.0.41.11"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/SalesController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/PurchaseController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ReturnsController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/QuotationController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ItemMasterController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/PartyController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/FinanceController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/BankStatementController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/CommunicationController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/GstController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/EWayBillController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ImportController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ReportsController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/MasterDataController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/UserAccessController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/ProfileController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/SettingsController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.10"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.10"></script>
+  <script src="js/controllers/DashboardController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/SalesController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/PurchaseController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ReturnsController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/QuotationController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ItemMasterController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/PartyController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/FinanceController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/BankStatementController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/CommunicationController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/GstController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/EWayBillController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ImportController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ReportsController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/MasterDataController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/UserAccessController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/ProfileController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/SettingsController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=10.0.41.11"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=10.0.41.11"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=10.0.41.10"></script>
-  <script src="js/app.js?v=10.0.41.10"></script>
+  <script src="js/navigation/NavigationRouter.js?v=10.0.41.11"></script>
+  <script src="js/app.js?v=10.0.41.11"></script>
 </body>
 
 </html>
+
 

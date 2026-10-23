@@ -157,8 +157,9 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'inline-flex';
       btnCancel.innerText = safeAction || 'Cancel';
+      btnCancel.className = 'btn btn-action-3d role-cancel';
       btnConfirm.innerText = primaryAction || 'Continue';
-      btnConfirm.className = 'btn btn-primary';
+      btnConfirm.className = 'btn btn-action-3d role-primary';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -241,8 +242,9 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'inline-flex';
       btnCancel.innerText = safeAction || 'Cancel';
+      btnCancel.className = 'btn btn-action-3d role-cancel';
       btnConfirm.innerText = primaryAction || 'Delete';
-      btnConfirm.className = 'btn btn-danger';
+      btnConfirm.className = 'btn btn-action-3d role-delete';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -298,8 +300,9 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'inline-flex';
       btnCancel.innerText = safeAction || 'Cancel';
+      btnCancel.className = 'btn btn-action-3d role-cancel';
       btnConfirm.innerText = primaryAction || 'Proceed';
-      btnConfirm.className = 'btn btn-warning';
+      btnConfirm.className = 'btn btn-action-3d role-warning';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -369,8 +372,8 @@ window.AppDialogService = (function() {
       detailEl.style.display = 'none';
 
       btnCancel.style.display = 'none';
-      btnConfirm.innerText = 'Close';
-      btnConfirm.className = 'btn btn-secondary';
+      btnConfirm.innerText = 'OK';
+      btnConfirm.className = 'btn btn-action-3d role-primary';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -381,6 +384,13 @@ window.AppDialogService = (function() {
       return new Promise((resolve) => {
         activeDialogResolver = resolve;
       });
+    },
+
+    /**
+     * Alias for info() to satisfy legacy code calling AppDialogService.alert()
+     */
+    alert(title, heading, message) {
+      return this.info(title, heading, message);
     },
 
     /**
@@ -415,7 +425,7 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'none';
       btnConfirm.innerText = 'Close';
-      btnConfirm.className = 'btn btn-danger';
+      btnConfirm.className = 'btn btn-action-3d role-delete';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -476,7 +486,7 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'none';
       btnConfirm.innerText = primaryAction || 'OK';
-      btnConfirm.className = 'btn btn-primary';
+      btnConfirm.className = 'btn btn-action-3d role-save';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';
@@ -537,7 +547,7 @@ window.AppDialogService = (function() {
 
       btnCancel.style.display = 'none';
       btnConfirm.innerText = primaryAction || 'OK';
-      btnConfirm.className = 'btn btn-warning';
+      btnConfirm.className = 'btn btn-action-3d role-warning';
 
       container.style.display = 'flex';
       container.style.zIndex = '100020';

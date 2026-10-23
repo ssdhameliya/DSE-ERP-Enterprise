@@ -24,6 +24,17 @@
       --sem-info: #3b82f6;
       --sem-info-bg: rgba(59, 130, 246, 0.15);
 
+      /* Core Semantic Palette (Dark Mode Parity) */
+      --green: #10b981;
+      --emerald: #10b981;
+      --yellow: #f59e0b;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --purple: #8b5cf6;
+      --blue: #3b82f6;
+      --teal: #14b8a6;
+      --orange: #f97316;
+
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -188,16 +199,21 @@
     }
     .workspace-tabs-container { display: flex; align-items: center; gap: 4px; overflow-x: auto; }
     .workspace-tab {
-      display: flex; align-items: center; gap: 8px; padding: 5px 12px;
-      background: rgba(255, 255, 255, 0.03); border: 1px solid transparent;
+      display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 6px 6px 0 0; font-size: 0.78rem; color: var(--text-muted);
-      cursor: pointer; user-select: none; transition: all 0.15s; white-space: nowrap;
+      cursor: pointer; user-select: none; transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;
     }
-    .workspace-tab:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.06); }
+    .workspace-tab:hover {
+      color: var(--text-main); background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
     .workspace-tab.active {
-      color: var(--cyan); background: rgba(15, 23, 42, 0.95);
+      color: var(--cyan); background: rgba(15, 23, 42, 0.98);
       border-color: var(--border-subtle); border-bottom-color: transparent;
-      font-weight: 600;
+      border-top: 2px solid var(--cyan);
+      font-weight: 700;
+      box-shadow: 0 -2px 10px rgba(56, 189, 248, 0.2);
     }
     .workspace-tab-close {
       font-size: 0.85rem; color: var(--text-dim); border-radius: 50%;
@@ -336,12 +352,26 @@
       font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px; display: block;
     }
 
-    /* VIEW HEADERS */
+    /* VIEW HEADERS (MODERN 2027 3D ENTERPRISE POLISH) */
     .view-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle);
     }
-    .view-title-group h1 { font-size: 1.4rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; gap: 10px; }
+    .view-title-group h1 {
+      font-size: 1.4rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+      display: flex; align-items: center; gap: 12px;
+      color: var(--text-main);
+    }
+    .view-title-group h1 > span:first-child,
+    .view-header-icon-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(2, 132, 199, 0.25) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 10px;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
     .view-title-group p { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
     .view-actions { display: flex; align-items: center; gap: 10px; }
 
@@ -371,6 +401,181 @@
     }
     .btn-purple:active {
       transform: translateY(0);
+    }
+
+    /* FORCED SEMANTIC AMOUNT UTILITY CLASSES (DESKTOP PARITY) */
+    .amount-green  { color: var(--green) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace !important; }
+    .amount-red    { color: var(--red) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace !important; }
+    .amount-yellow { color: var(--yellow) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace !important; }
+    .amount-cyan   { color: var(--cyan) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace !important; }
+    .amount-purple { color: var(--purple) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace !important; }
+
+    /* UNIVERSAL 3D ACTION BUTTON ROLES (UiActionIcons.java & UiDesignSystem.java) */
+    .btn-action-3d {
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      cursor: pointer !important;
+    }
+    .btn-action-3d:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    }
+    .btn-action-3d:active {
+      transform: translateY(0) !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .btn-action-3d.role-add {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(52, 211, 153, 0.4) !important;
+    }
+    .btn-action-3d.role-save {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(56, 189, 248, 0.4) !important;
+    }
+    .btn-action-3d.role-cancel {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(148, 163, 184, 0.3) !important;
+    }
+    .btn-action-3d.role-delete, .btn-action-3d.role-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(248, 113, 113, 0.4) !important;
+    }
+    .btn-action-3d.role-excel {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(52, 211, 153, 0.4) !important;
+    }
+    .btn-action-3d.role-print {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(192, 132, 252, 0.4) !important;
+    }
+    .btn-action-3d.role-whatsapp {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(74, 222, 128, 0.4) !important;
+    }
+    .btn-action-3d.role-email {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(96, 165, 250, 0.4) !important;
+    }
+    .btn-action-3d.role-payment {
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(34, 211, 238, 0.4) !important;
+    }
+    .btn-action-3d.role-refresh {
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(125, 211, 252, 0.4) !important;
+    }
+    .btn-action-3d.role-reset {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(251, 191, 36, 0.4) !important;
+    }
+    .btn-action-3d.role-secondary {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(192, 132, 252, 0.3) !important;
+    }
+    .btn-action-3d.role-primary {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(56, 189, 248, 0.4) !important;
+    }
+
+    /* DATE PRESET FILTER CHIPS (TACTILE 3D) */
+    .btn-preset-chip, .filter-chip-btn {
+      padding: 4px 11px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .btn-preset-chip:hover, .filter-chip-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-preset-chip.active, .filter-chip-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%) !important;
+      border-color: #f59e0b !important;
+      color: #fbbf24 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+    }
+
+    /* UNIFIED 2027 NAVIGATION TABS (Settings, Supplier-360, Reports, GST) */
+    .settings-tab-btn, .register-tab-btn, .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .settings-tab-btn:hover, .register-tab-btn:hover, .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    .settings-tab-btn.active, .register-tab-btn.active, .tab-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(2, 132, 199, 0.22) 100%) !important;
+      border-color: var(--cyan) !important;
+      color: #38bdf8 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 3px 10px rgba(56, 189, 248, 0.25), inset 0 2px 0 var(--cyan) !important;
+    }
+
+    /* Light Theme Overrides for Navigation Tabs */
+    body.light-theme .settings-tab-btn,
+    body.light-theme .register-tab-btn,
+    body.light-theme .tab-btn {
+      background: #f1f5f9;
+      border-color: rgba(148, 163, 184, 0.35);
+      color: #475569;
+    }
+    body.light-theme .settings-tab-btn:hover,
+    body.light-theme .register-tab-btn:hover,
+    body.light-theme .tab-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    body.light-theme .settings-tab-btn.active,
+    body.light-theme .register-tab-btn.active,
+    body.light-theme .tab-btn.active {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+      border-color: #0284c7 !important;
+      color: #0284c7 !important;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2), inset 0 2px 0 #0284c7 !important;
     }
 
     /* MATCH LINK PULSATING HIGHLIGHT */
@@ -498,6 +703,19 @@
       --text-muted: #334155;
       --text-dim: #64748b;
       --primary-deep: #e2e8f0;
+
+      /* High-Contrast Semantic Palette (Light Theme Parity) */
+      --green: #059669;
+      --emerald: #047857;
+      --yellow: #d97706;
+      --amber: #d97706;
+      --red: #dc2626;
+      --purple: #7c3aed;
+      --blue: #2563eb;
+      --cyan: #0284c7;
+      --teal: #0f766e;
+      --orange: #c2410c;
+
       color: #0f172a;
       background-color: #f8fafc;
       color-scheme: light;
@@ -3469,6 +3687,8 @@
 
     .module-view.fixed-viewport .data-panel,
     .module-view.fixed-viewport #sales-table-panel,
+    .module-view.fixed-viewport #purchase-table-panel,
+    .module-view.fixed-viewport .register-table-panel,
     .module-view.fixed-viewport .table-panel,
     .module-view.fixed-viewport .table-panel-viewport {
       flex: 1 !important;
@@ -3501,6 +3721,19 @@
       z-index: 20 !important;
       background: rgba(15, 23, 42, 0.98) !important;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .table-footer-bar {
+      min-height: 52px !important;
+      height: auto !important;
+      padding: 8px 16px !important;
+      flex-shrink: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      background: var(--bg-card) !important;
+      border-top: 1px solid var(--border-subtle) !important;
+      z-index: 10 !important;
     }
 
     .module-view.fixed-viewport .sales-register-workspace .data-panel > div:last-child,
@@ -5546,5 +5779,295 @@
     }
     body.light-theme .modal-footer {
       background: #f8fafc !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       8. UNIVERSAL HIGH-CONTRAST TABLE AND METRIC AMOUNTS
+       -------------------------------------------------------------------------- */
+    .amount-green, td.amount-green { color: var(--green) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace; }
+    .amount-red, td.amount-red { color: var(--red) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace; }
+    .amount-yellow, td.amount-yellow { color: var(--yellow) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace; }
+    .amount-cyan, td.amount-cyan { color: var(--cyan) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace; }
+    .amount-purple, td.amount-purple { color: var(--purple) !important; font-weight: 700 !important; font-family: 'JetBrains Mono', monospace; }
+
+    /* --------------------------------------------------------------------------
+       9. UNIVERSAL 2027 3D BUTTON ROLES & DIALOG ACTIONS
+       -------------------------------------------------------------------------- */
+    .btn-action-3d {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      padding: 6px 14px !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      user-select: none !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    }
+    .btn-action-3d:active {
+      transform: translateY(1px) scale(0.98) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .role-primary, .btn-action-3d.role-primary {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #38bdf8 !important;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    .role-primary:hover, .btn-action-3d.role-primary:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
+    }
+
+    .role-add, .role-save, .btn-action-3d.role-save {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #34d399 !important;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    .role-add:hover, .role-save:hover, .btn-action-3d.role-save:hover {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+      box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45) !important;
+    }
+
+    .role-delete, .role-danger, .btn-action-3d.role-delete {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #f87171 !important;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    .role-delete:hover, .role-danger:hover, .btn-action-3d.role-delete:hover {
+      background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
+      box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45) !important;
+    }
+
+    .role-cancel, .role-secondary, .btn-action-3d.role-cancel {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #cbd5e1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    }
+    .role-cancel:hover, .role-secondary:hover, .btn-action-3d.role-cancel:hover {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+    }
+    body.light-theme .role-cancel, body.light-theme .btn-action-3d.role-cancel {
+      background: #f1f5f9 !important;
+      color: #334155 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+
+    .role-warning, .btn-action-3d.role-warning {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #fbbf24 !important;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35) !important;
+    }
+
+    .role-excel, .btn-action-3d.role-excel {
+      background: linear-gradient(135deg, #15803d 0%, #166534 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #4ade80 !important;
+    }
+
+    .role-print, .btn-action-3d.role-print {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #94a3b8 !important;
+    }
+
+    .role-whatsapp, .btn-action-3d.role-whatsapp {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #22c55e !important;
+    }
+
+    .role-email, .btn-action-3d.role-email {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #60a5fa !important;
+    }
+
+    .role-payment, .btn-action-3d.role-payment {
+      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #2dd4bf !important;
+    }
+
+    .role-refresh, .btn-action-3d.role-refresh {
+      background: rgba(56, 189, 248, 0.12) !important;
+      color: var(--cyan) !important;
+      border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    }
+
+    .role-reset, .btn-action-3d.role-reset {
+      background: rgba(245, 158, 11, 0.12) !important;
+      color: var(--yellow) !important;
+      border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    }
+
+    /* Date Preset Chip Filter Styling */
+    .btn-preset-chip {
+      padding: 4px 10px !important;
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      border-radius: 6px !important;
+      border: 1px solid var(--border-subtle) !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      color: var(--text-muted) !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn-preset-chip:hover {
+      background: rgba(56, 189, 248, 0.12) !important;
+      color: var(--cyan) !important;
+      border-color: rgba(56, 189, 248, 0.4) !important;
+    }
+    .btn-preset-chip.active {
+      background: rgba(56, 189, 248, 0.22) !important;
+      color: #ffffff !important;
+      border-color: var(--cyan) !important;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.3) !important;
+    }
+    body.light-theme .btn-preset-chip {
+      background: #f1f5f9 !important;
+      color: #64748b !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .btn-preset-chip.active {
+      background: #e0f2fe !important;
+      color: #0284c7 !important;
+      border-color: #0284c7 !important;
+    }
+
+    /* Unified Navigation Tabs (Settings, Registers, Subtabs) */
+    .settings-tab-btn, .register-tab-btn, .tab-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      padding: 8px 16px !important;
+      font-size: 0.82rem !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      color: var(--text-muted) !important;
+      border: 1px solid var(--border-subtle) !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .settings-tab-btn:hover, .register-tab-btn:hover, .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text-main) !important;
+      border-color: rgba(255, 255, 255, 0.18) !important;
+    }
+    .settings-tab-btn.active, .register-tab-btn.active, .tab-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(2, 132, 199, 0.25)) !important;
+      color: #38bdf8 !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25) !important;
+      font-weight: 700 !important;
+    }
+    body.light-theme .settings-tab-btn,
+    body.light-theme .register-tab-btn,
+    body.light-theme .tab-btn {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme .settings-tab-btn:hover,
+    body.light-theme .register-tab-btn:hover,
+    body.light-theme .tab-btn:hover {
+      background: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    body.light-theme .settings-tab-btn.active,
+    body.light-theme .register-tab-btn.active,
+    body.light-theme .tab-btn.active {
+      background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important;
+      color: #0284c7 !important;
+      border-color: #0284c7 !important;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15) !important;
+    }
+
+    /* View Header Icon Badge */
+    .view-header-icon-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      flex-shrink: 0;
+    }
+    body.light-theme .view-header-icon-badge {
+      background: #e0f2fe;
+      border-color: #bae6fd;
+    }
+
+    /* Multi-Document Workspace Tab Elevation */
+    .workspace-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 8px 8px 0 0;
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      border-bottom: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .workspace-tab:hover {
+      background: rgba(30, 41, 59, 0.7);
+      color: var(--text-main);
+    }
+    .workspace-tab.active {
+      background: var(--bg-surface);
+      color: var(--cyan);
+      border-color: rgba(56, 189, 248, 0.35);
+      border-top: 2px solid var(--cyan);
+      box-shadow: 0 -4px 12px rgba(56, 189, 248, 0.12);
+      font-weight: 700;
+    }
+    body.light-theme .workspace-tab {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+      border-bottom: none;
+    }
+    body.light-theme .workspace-tab.active {
+      background: #ffffff;
+      color: #0284c7;
+      border-color: #cbd5e1;
+      border-top: 2px solid #0284c7;
+    }
+
+    /* Table Footer Bar (Replaces crushed app-footer-bar) */
+    .table-footer-bar {
+      min-height: 52px !important;
+      height: 52px !important;
+      background: var(--bg-card) !important;
+      border-top: 1px solid var(--border-subtle) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 0 16px !important;
+      box-sizing: border-box !important;
+      flex-shrink: 0 !important;
+    }
+    body.light-theme .table-footer-bar {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
     }
 

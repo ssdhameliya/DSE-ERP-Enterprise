@@ -1,19 +1,19 @@
 {
   "desktopVersion": "10.0.41",
-  "webBuild": 10,
-  "webVersion": "10.0.41.10",
-  "tag": "web-v10.0.41.10",
-  "releaseDate": "2026-10-24T00:15:00+05:30",
+  "webBuild": 11,
+  "webVersion": "10.0.41.11",
+  "tag": "web-v10.0.41.11",
+  "releaseDate": "2026-10-24T01:30:00+05:30",
   "environment": "Production / Enterprise",
-  "summary": "10.0.41.10 3D Tactile Labels, Semantic Amount Coloring, Universal Glassmorphic Detail Drawer, Dynamic Button Role System, Symmetrical Zero-Gap Scrolling Architecture, and 2027 Futuristic Pagination Standard",
+  "summary": "10.0.41.11 Universal UI/UX Deep Forensic Investigation, Table Amount Colorization, Side Panel & Header Polish, Purchase Recon Rework, Tab Standardization, Bank Statement Refresh Fix & 3D Icons, and Dark/Light Mode Parity",
   "highlights": [
-    "1. 3D Colorful Label Badges & Universal Coverage: Equipped all 464 form and modal labels with tactile 3D icon badges, themed glowing text, and semantic category palettes mirroring IconFactory.java.",
-    "2. Semantic Monetary Amount Coloring: Automated real-time column header semantic analysis applying Green (Credit/Paid/Received), Red (Debit/Overdue/Expense), Yellow (Pending/Due/Tax), and Cyan (Total/Taxable/Price) styling across all tables.",
-    "3. Universal 3D Glassmorphic Side Detail Drawer: Installed RegisterDetailDrawer.java parity side drawer with dynamic non-blank field extraction, status pills, and context-aware quick actions across all register records.",
-    "4. Universal Button Icons & Role Gradients: Centralized button role system (Save, Cancel, Delete, Add, Export, Print, Sync, Filter) with vibrant icons, 7px graphic gap, and desktop UiActionIcons parity across all views and modals.",
-    "5. Symmetrical Equal-Height Zero-Gap Layouts: Standardized Archetypes A/B/C/D with flex-stretch containers, eliminating empty right-side/bottom dead zones across all 42 screens and window dialogs.",
-    "6. Line-Item Table Real Estate & Anti-Clipping: Maximized table viewports to 75-80%, enabled unclipped 2-line header wrapping, horizontal scroll wrappers, and automated container overflow repair.",
-    "7. Purchase Creation Attachment & Table Parity: Repaired vertical layout clipping, restored compact 48px horizontal attachment dropzone, and harmonized responsive table scrolling.",
-    "8. Universal 2027 Pagination Strip: Installed modern glassmorphic pagination with neon cyan active pages, record counters, and responsive page switchers across all 34 table views."
+    "1. Universal Table Monetary Amount Colorization: Defined missing core semantic variables and .amount-* utilities across :root and body.light-theme with real-time DOM mutation observer coverage.",
+    "2. Side Panel (Detail Drawer) & Header Polish: Integrated tactile 3D badges into drawer labels, colorized drawer totals, and upgraded page view titles and multi-document workspace tabs with 3D elevation.",
+    "3. Purchase Reconciliation (PRC) Complete Rework: Placed 6-card KPI ribbon on top, streamlined single-row filter bar, activated date preset chips, defaulted period to Start of FY through Today, and installed 2027 enterprise pagination footer.",
+    "4. Navigation Tabs Standardization: Excluded navigation tabs from action button coloring across Settings and Registers, enforcing unified 2027 glassmorphic tab tokens in dark and light modes.",
+    "5. Action Button Clean-up: Purged triple colons and artifacts from button text, assigning clean 3D action roles.",
+    "6. Centralized Modal Dialog Parity: Guaranteed single-action buttons on informational alerts and toasts, removing accidental cancel buttons and applying 3D role gradients.",
+    "7. Bank Statement Screen Parity: Resolved Refresh button undefined batch ID exception and added 3D colorful icons and themes to all 8 KPI cards.",
+    "8. Strict Dark & Light Mode Color Contrast: Enforced WCAG AAA contrast compliance across all semantic tokens in both dark and light modes."
   ]
 }

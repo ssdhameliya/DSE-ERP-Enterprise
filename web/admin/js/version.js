@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.10",
+  version: "10.0.41.11",
   desktopVersion: "10.0.41",
-  webBuild: 10,
-  webVersion: "10.0.41.10",
-  tag: "web-v10.0.41.10",
-  releaseDate: "2026-10-24T00:15:00+05:30",
+  webBuild: 11,
+  webVersion: "10.0.41.11",
+  tag: "web-v10.0.41.11",
+  releaseDate: "2026-10-24T01:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.10 3D Tactile Labels, Semantic Amount Coloring, Universal Glassmorphic Detail Drawer, Dynamic Button Role System, Symmetrical Zero-Gap Scrolling Architecture, and 2027 Futuristic Pagination Standard"
+  summary: "10.0.41.11 Universal UI/UX Deep Forensic Investigation, Table Amount Colorization, Side Panel & Header Polish, Purchase Recon Rework, Tab Standardization, Bank Statement Refresh Fix & 3D Icons, and Dark/Light Mode Parity"
 };
 
 // Automatic UI Version Injection

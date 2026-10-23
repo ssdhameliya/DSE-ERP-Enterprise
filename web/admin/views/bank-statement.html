@@ -37,86 +37,94 @@
           </div>
 
           <!-- 8 Compact KPI Cards (BankStatement.fxml Parity) -->
-          <div class="kpi-grid bank-recon-kpi-panel compact-kpi-ribbon"
-            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; width: 100%; overflow: hidden;">
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Total Txns</span>
-                  <span class="pill-badge pill-neutral" style="font-size: 0.55rem; padding: 1px 4px;">Rows</span>
+          <div class="kpi-grid bank-recon-kpi-panel compact-kpi-ribbon erp-kpi-single-row"
+            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
+            <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">📊</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Total Txns">TOTAL TXNS</span>
+                  <span class="kpi-pill-badge pill-neutral">Rows</span>
                 </div>
-                <div class="kpi-value" id="kpiTotal" style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
+                <div class="kpi-val-text" id="kpiTotal">0</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #f87171; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Unmatched</span>
-                  <span class="pill-badge pill-danger" style="font-size: 0.55rem; padding: 1px 4px;">Action</span>
+            <div class="compact-kpi-card theme-crimson" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">⚡</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Unmatched">UNMATCHED</span>
+                  <span class="kpi-pill-badge pill-danger">Action</span>
                 </div>
-                <div class="kpi-value" id="kpiUnmatched" style="font-size: 1.05rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
+                <div class="kpi-val-text" id="kpiUnmatched" style="color: #f87171;">0</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #fbbf24; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Suggested</span>
-                  <span class="pill-badge pill-warning" style="font-size: 0.55rem; padding: 1px 4px; background: rgba(245,158,11,0.15); color: #fbbf24;">Rule</span>
+            <div class="compact-kpi-card theme-amber" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">💡</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Suggested">SUGGESTED</span>
+                  <span class="kpi-pill-badge pill-warning">Rule</span>
                 </div>
-                <div class="kpi-value" id="kpiSuggested" style="font-size: 1.05rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
+                <div class="kpi-val-text" id="kpiSuggested" style="color: #fbbf24;">0</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--green); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Matched</span>
-                  <span class="pill-badge pill-success" style="font-size: 0.55rem; padding: 1px 4px;">Linked</span>
+            <div class="compact-kpi-card theme-emerald" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">🔗</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Matched">MATCHED</span>
+                  <span class="kpi-pill-badge pill-success">Linked</span>
                 </div>
-                <div class="kpi-value" id="kpiMatched" style="font-size: 1.05rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
+                <div class="kpi-val-text" id="kpiMatched" style="color: var(--green);">0</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(168,85,247,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--purple); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Expenses</span>
-                  <span class="pill-badge pill-purple" style="font-size: 0.55rem; padding: 1px 4px;">Expense</span>
+            <div class="compact-kpi-card theme-purple" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">📉</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Expenses">EXPENSES</span>
+                  <span class="kpi-pill-badge pill-purple">Expense</span>
                 </div>
-                <div class="kpi-value" id="kpiExpense" style="font-size: 1.05rem; font-weight: 800; color: var(--purple); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0</div>
+                <div class="kpi-val-text" id="kpiExpense" style="color: var(--purple);">0</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--green); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Credits</span>
-                  <span class="pill-badge pill-success" style="font-size: 0.55rem; padding: 1px 4px;">In</span>
+            <div class="compact-kpi-card theme-cyan" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">💰</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Credits">CREDITS</span>
+                  <span class="kpi-pill-badge pill-success">In</span>
                 </div>
-                <div class="kpi-value" id="kpiCredits" style="font-size: 0.98rem; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">₹ 0.00</div>
+                <div class="kpi-val-text" id="kpiCredits" style="color: var(--green);">₹ 0.00</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #f87171; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Debits</span>
-                  <span class="pill-badge pill-danger" style="font-size: 0.55rem; padding: 1px 4px;">Out</span>
+            <div class="compact-kpi-card theme-red" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">💸</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Debits">DEBITS</span>
+                  <span class="kpi-pill-badge pill-danger">Out</span>
                 </div>
-                <div class="kpi-value" id="kpiDebits" style="font-size: 0.98rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">₹ 0.00</div>
+                <div class="kpi-val-text" id="kpiDebits" style="color: #f87171;">₹ 0.00</div>
               </div>
             </div>
-            <div class="compact-kpi-card" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
-              <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: var(--cyan); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Reconciled</span>
-                  <span class="pill-badge pill-purple" style="font-size: 0.55rem; padding: 1px 4px;">Rate</span>
+            <div class="compact-kpi-card theme-blue" data-erp-kpi-compact-enhanced="true"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              <div class="kpi-icon-bubble">🎯</div>
+              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
+                  <span class="kpi-title-text" title="Reconciled">RECONCILED</span>
+                  <span class="kpi-pill-badge pill-purple">Rate</span>
                 </div>
-                <div class="kpi-value" id="kpiReconciled" style="font-size: 1.05rem; font-weight: 800; color: var(--cyan); font-family: 'JetBrains Mono', monospace; line-height: 1.1;">0.0%</div>
+                <div class="kpi-val-text" id="kpiReconciled" style="color: var(--cyan);">0.0%</div>
               </div>
             </div>
           </div>
@@ -139,7 +147,7 @@
               <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.resetFilters()"
                 style="height: 34px;">Reset</button>
               <button class="btn btn-secondary btn-sm"
-                onclick="window.BankStatementController.loadBatch(window.BankStatementController.currentBatchId)"
+                onclick="window.BankStatementController.refresh()"
                 style="height: 34px;">&#8635; Refresh</button>
             </div>
 

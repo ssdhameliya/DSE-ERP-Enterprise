@@ -80,8 +80,17 @@ window.GlobalUiEnhancer = (function() {
           const n = m.addedNodes[i];
           if (n.nodeType === 1) {
             const tag = n.tagName;
-            // Strictly ignore internal table elements, cols, options, badges, and inputs
-            if (tag === 'COL' || tag === 'COLGROUP' || tag === 'TBODY' || tag === 'THEAD' || tag === 'TR' || tag === 'TD' || tag === 'OPTION') {
+            // Handle dynamic table row rendering
+            if (tag === 'TR' || tag === 'TBODY') {
+              const tbl = n.closest ? n.closest('table') : null;
+              if (tbl && window.TableUiEnhancer && !n.closest?.('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) {
+                window.TableUiEnhancer.enhanceTable(tbl);
+              }
+              continue;
+            }
+
+            // Strictly ignore columns, options, badges, and inputs
+            if (tag === 'COL' || tag === 'COLGROUP' || tag === 'THEAD' || tag === 'TD' || tag === 'OPTION') {
               continue;
             }
             if (
@@ -106,13 +115,16 @@ window.GlobalUiEnhancer = (function() {
             if (n.closest && (n.closest('.sale-workspace-container') || n.closest('#view-sale-create') || n.closest('#view-purchase-creation'))) {
               continue;
             }
-            // Only trigger if an entire new view or significant panel is injected
+            // Only trigger if an entire new view, drawer, or significant panel is injected
             if (
               n.classList && (
                 n.classList.contains('module-view') ||
                 n.classList.contains('kpi-grid') ||
                 n.classList.contains('data-panel') ||
-                n.classList.contains('modal-card')
+                n.classList.contains('modal-card') ||
+                n.classList.contains('side-drawer') ||
+                n.classList.contains('detail-drawer') ||
+                n.classList.contains('drawer-body')
               )
             ) {
               shouldEnhance = true;
