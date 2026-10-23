@@ -1263,23 +1263,58 @@
       font-size: 0.75rem !important;
       text-align: left;
     }
-    /* Fast Entry Line Item Tables exempt from squashing */
+    /* Line Item Tables in Invoice Workspaces - Zero horizontal scrolling required */
     #view-sale-create table.data-table,
     #view-purchase-creation table.data-table,
+    #view-quotation-editor table.sales-desktop-table,
     .sale-workspace-container table.data-table {
-      table-layout: auto !important;
+      table-layout: fixed !important;
       width: 100% !important;
-      min-width: 1050px !important;
+      min-width: 0 !important;
+      border-collapse: collapse !important;
     }
     #view-sale-create .erp-th-badge,
-    #view-purchase-creation .erp-th-badge {
+    #view-purchase-creation .erp-th-badge,
+    #view-quotation-editor .erp-th-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 2px !important;
+      padding: 1px 4px !important;
+      font-size: 0.65rem !important;
       white-space: nowrap !important;
+      max-width: 100% !important;
+      border-radius: 4px !important;
+      line-height: 1.1 !important;
+    }
+    #view-sale-create .erp-th-badge .erp-th-icon,
+    #view-purchase-creation .erp-th-badge .erp-th-icon,
+    #view-quotation-editor .erp-th-badge .erp-th-icon {
+      font-size: 0.65rem !important;
     }
     #view-sale-create .erp-th-label,
-    #view-purchase-creation .erp-th-label {
-      overflow: visible !important;
-      text-overflow: clip !important;
+    #view-purchase-creation .erp-th-label,
+    #view-quotation-editor .erp-th-label {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
       white-space: nowrap !important;
+      font-size: 0.65rem !important;
+      font-weight: 700 !important;
+    }
+    #view-sale-create table.data-table th,
+    #view-sale-create table.data-table td,
+    #view-purchase-creation table.data-table th,
+    #view-purchase-creation table.data-table td,
+    #view-quotation-editor table.sales-desktop-table th,
+    #view-quotation-editor table.sales-desktop-table td {
+      padding: 5px 3px !important;
+      font-size: 0.72rem !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+    .invoice-table-container {
+      overflow-x: hidden !important;
+      width: 100% !important;
     }
     .sales-desktop-table th,
     table.data-table th,

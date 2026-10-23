@@ -1763,14 +1763,20 @@ window.PartyController = (function() {
   function previewPartyDocument(partyType, partyId, metaId, fileName) {
     const endpoint = `/api/support/documents/${encodeURIComponent(partyType)}/${partyId}/attachments/${metaId}`;
     if (window.ApiService && window.ApiService.viewFile) {
-      window.ApiService.viewFile(endpoint);
+      window.ApiService.viewFile(endpoint, fileName || 'document');
     } else {
       window.open(endpoint, '_blank');
     }
   }
 
   async function deletePartyDocument(partyType, partyId, metaId) {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    let confirmed = false;
+    if (window.AppDialogService && typeof window.AppDialogService.destructive === 'function') {
+      confirmed = await window.AppDialogService.destructive('Delete Document', 'Permanently remove this document?', 'This document will be removed from party records.', 'Delete Document');
+    } else {
+      confirmed = confirm('Are you sure you want to delete this document?');
+    }
+    if (!confirmed) return;
     try {
       await window.ReportService.deletePartyDocument(partyType, partyId, metaId);
       if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();

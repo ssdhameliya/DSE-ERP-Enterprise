@@ -747,19 +747,32 @@ window.PurchaseController = (function() {
   // ==========================================
 
   async function approvePurchase(invoiceNo) {
-    if (!confirm(`Approve purchase invoice ${invoiceNo}?\n\nThis will post inventory into stock and enable vendor payments.`)) return;
+    let confirmed = false;
+    const msg = `Approve purchase invoice ${invoiceNo}?\n\nThis will post inventory into stock and enable vendor payments.`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Approve Purchase', 'Post to Inventory Stock', msg, 'Approve Purchase', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.approvePurchase(invoiceNo);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} approved successfully!`);
       loadPurchases(currentPage);
       closeDrawer();
     } catch (err) {
-      alert('Approval failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Approval failed: ' + (err.message || 'Server error'));
+      else alert('Approval failed: ' + (err.message || 'Server error'));
     }
   }
 
   async function rejectPurchasePrompt(invoiceNo) {
-    const reason = prompt(`Enter rejection reason for purchase ${invoiceNo}:`, 'Discrepancy in received goods');
+    let reason = null;
+    if (window.AppDialogService && typeof window.AppDialogService.prompt === 'function') {
+      reason = await window.AppDialogService.prompt('Reject Purchase', `Purchase Invoice • ${invoiceNo}`, `Enter rejection reason for purchase ${invoiceNo}:`, 'Discrepancy in received goods');
+    } else {
+      reason = prompt(`Enter rejection reason for purchase ${invoiceNo}:`, 'Discrepancy in received goods');
+    }
     if (reason === null) return;
     try {
       await window.OperationsService.rejectPurchase(invoiceNo, reason);
@@ -767,31 +780,48 @@ window.PurchaseController = (function() {
       loadPurchases(currentPage);
       closeDrawer();
     } catch (err) {
-      alert('Rejection failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Rejection failed: ' + (err.message || 'Server error'));
+      else alert('Rejection failed: ' + (err.message || 'Server error'));
     }
   }
 
   async function cancelPurchase(invoiceNo) {
-    if (!confirm(`Cancel purchase invoice ${invoiceNo}?\n\nThis will reverse inward stock movements and vendor ledger credits.`)) return;
+    let confirmed = false;
+    const msg = `Cancel purchase invoice ${invoiceNo}?\n\nThis will reverse inward stock movements and vendor ledger credits.`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Cancel Purchase', 'Reverse Inward Stock Movements', msg, 'Cancel Purchase', 'Keep Purchase');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.cancelPurchase(invoiceNo);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} cancelled.`);
       loadPurchases(currentPage);
       closeDrawer();
     } catch (err) {
-      alert('Cancellation failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Cancellation failed: ' + (err.message || 'Server error'));
+      else alert('Cancellation failed: ' + (err.message || 'Server error'));
     }
   }
 
   async function deletePurchase(invoiceNo) {
-    if (!confirm(`Are you sure you want to permanently delete purchase ${invoiceNo}?\n\nWARNING: This cannot be undone.`)) return;
+    let confirmed = false;
+    const msg = `Are you sure you want to permanently delete purchase ${invoiceNo}?\n\nWARNING: This cannot be undone.`;
+    if (window.AppDialogService && typeof window.AppDialogService.destructive === 'function') {
+      confirmed = await window.AppDialogService.destructive('Delete Purchase', 'Permanent Deletion', msg, 'Delete Purchase', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.deletePurchase(invoiceNo);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Purchase ${invoiceNo} deleted permanently.`);
       loadPurchases(currentPage);
       closeDrawer();
     } catch (err) {
-      alert('Delete failed: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Delete failed: ' + (err.message || 'Server error'));
+      else alert('Delete failed: ' + (err.message || 'Server error'));
     }
   }
 
@@ -1637,9 +1667,14 @@ window.PurchaseController = (function() {
     }
     const path = existingAttachmentPath || (editingPurchase && (editingPurchase.attachmentPath || editingPurchase.attachment));
     if (path) {
+      const filename = typeof path === 'string' ? path.split('/').pop().split('\\').pop() : 'attachment';
       if (editingPurchase && editingPurchase.id) {
-        window.open(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, '_blank');
-      } else {
+        if (window.ApiService && typeof window.ApiService.viewFile === 'function') {
+          window.ApiService.viewFile(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, filename);
+        } else {
+          window.open(`/api/support/documents/PURCHASE/${editingPurchase.id}/attachment-file`, '_blank');
+        }
+      } else if (typeof path === 'string' && (path.startsWith('http') || path.startsWith('blob:'))) {
         window.open(path, '_blank');
       }
       return;
@@ -2262,12 +2297,12 @@ window.PurchaseController = (function() {
     const attPath = p?.attachmentPath || p?.attachment;
     if (!p || !attPath) {
       if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment available to preview');
-      else alert('No attachment available to preview');
       return;
     }
     const purchaseId = p.id;
+    const filename = attPath.split('/').pop().split('\\').pop() || 'attachment';
     if (purchaseId && window.ApiService && window.ApiService.viewFile) {
-      window.ApiService.viewFile(`/api/support/documents/PURCHASE/${purchaseId}/attachment-file`);
+      window.ApiService.viewFile(`/api/support/documents/PURCHASE/${purchaseId}/attachment-file`, filename);
     } else {
       window.open(attPath, '_blank');
     }
@@ -2278,7 +2313,6 @@ window.PurchaseController = (function() {
     const attPath = p?.attachmentPath || p?.attachment;
     if (!p || !attPath) {
       if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment available to download');
-      else alert('No attachment available to download');
       return;
     }
     const purchaseId = p.id;

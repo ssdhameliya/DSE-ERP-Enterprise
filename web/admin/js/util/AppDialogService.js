@@ -11,6 +11,8 @@ window.AppDialogService = (function() {
 
   let activeDialogResolver = null;
 
+  let isPromptMode = false;
+
   /**
    * Creates or returns the single global dialog container
    */
@@ -32,6 +34,9 @@ window.AppDialogService = (function() {
             <button type="button" class="app-dialog-close-btn" id="app-dialog-btn-close" title="Close (Esc)">&times;</button>
           </div>
           <div class="app-dialog-body" id="app-dialog-body"></div>
+          <div class="app-dialog-prompt-wrap" id="app-dialog-prompt-wrap" style="display: none; padding: 4px 20px 14px 20px;">
+            <input type="text" id="app-dialog-prompt-input" class="form-input" style="width: 100%; height: 38px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff; padding: 0 12px; font-size: 0.85rem;" />
+          </div>
           <div class="app-dialog-detail" id="app-dialog-detail" style="display: none;"></div>
           <div class="app-dialog-footer" id="app-dialog-footer">
             <button type="button" class="btn btn-secondary" id="app-dialog-btn-cancel">Cancel</button>
@@ -53,6 +58,21 @@ window.AppDialogService = (function() {
     const btnClose = container.querySelector('#app-dialog-btn-close');
     const btnCancel = container.querySelector('#app-dialog-btn-cancel');
     const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+    const promptInput = container.querySelector('#app-dialog-prompt-input');
+
+    if (promptInput) {
+      promptInput.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          resolveDialog(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          resolveDialog(false);
+        }
+      };
+    }
 
     if (btnClose) {
       btnClose.onclick = function(e) {
@@ -94,10 +114,21 @@ window.AppDialogService = (function() {
 
   function resolveDialog(confirmed) {
     const container = document.getElementById('modal-app-dialog');
+    const promptWrap = document.getElementById('app-dialog-prompt-wrap');
+    const promptInput = document.getElementById('app-dialog-prompt-input');
+
+    let resolvedValue = confirmed;
+    if (isPromptMode) {
+      resolvedValue = confirmed ? (promptInput ? promptInput.value : '') : null;
+    }
+
     if (container) {
       container.style.display = 'none';
       container.classList.remove('active');
     }
+    if (promptWrap) promptWrap.style.display = 'none';
+    isPromptMode = false;
+
     if (window.AudioSynthesizer) {
       try {
         if (confirmed) window.AudioSynthesizer.playSuccess();
@@ -107,7 +138,7 @@ window.AppDialogService = (function() {
     if (typeof activeDialogResolver === 'function') {
       const resolver = activeDialogResolver;
       activeDialogResolver = null;
-      resolver(confirmed);
+      resolver(resolvedValue);
     }
   }
 
@@ -391,6 +422,74 @@ window.AppDialogService = (function() {
      */
     alert(title, heading, message) {
       return this.info(title, heading, message);
+    },
+
+    /**
+     * Input prompt modal matching browser prompt() but rendered in 3D dark centralized dialog
+     * @returns {Promise<string|null>}
+     */
+    prompt(title, heading, message, defaultValue = '', placeholder = '') {
+      if (arguments.length === 1) {
+        message = title;
+        title = 'Input Required';
+        heading = '';
+      } else if (arguments.length === 2) {
+        message = title;
+        defaultValue = heading;
+        title = 'Input Required';
+        heading = '';
+      }
+
+      isPromptMode = true;
+      const container = ensureDialogContainer();
+      attachDialogHandlers(container);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+
+      const iconBox = container.querySelector('#app-dialog-icon-box');
+      const titleEl = container.querySelector('#app-dialog-title');
+      const headingEl = container.querySelector('#app-dialog-heading');
+      const bodyEl = container.querySelector('#app-dialog-body');
+      const detailEl = container.querySelector('#app-dialog-detail');
+      const promptWrap = container.querySelector('#app-dialog-prompt-wrap');
+      const promptInput = container.querySelector('#app-dialog-prompt-input');
+      const btnCancel = container.querySelector('#app-dialog-btn-cancel');
+      const btnConfirm = container.querySelector('#app-dialog-btn-confirm');
+
+      iconBox.innerText = '✏️';
+      iconBox.className = 'app-dialog-icon-box sem-purple';
+      titleEl.innerText = title || 'Input Required';
+      headingEl.innerText = heading || '';
+      bodyEl.innerText = message || '';
+      detailEl.style.display = 'none';
+
+      if (promptWrap && promptInput) {
+        promptWrap.style.display = 'block';
+        promptInput.value = defaultValue || '';
+        promptInput.placeholder = placeholder || 'Enter value...';
+      }
+
+      btnCancel.style.display = 'inline-flex';
+      btnCancel.innerText = 'Cancel';
+      btnCancel.className = 'btn btn-action-3d role-cancel';
+      btnConfirm.innerText = 'OK';
+      btnConfirm.className = 'btn btn-action-3d role-primary';
+
+      container.style.display = 'flex';
+      container.style.zIndex = '100020';
+      container.classList.add('active');
+
+      setTimeout(() => {
+        if (promptInput) {
+          promptInput.focus();
+          promptInput.select();
+        } else {
+          btnConfirm.focus();
+        }
+      }, 80);
+
+      return new Promise((resolve) => {
+        activeDialogResolver = resolve;
+      });
     },
 
     /**
@@ -783,13 +882,27 @@ window.AppDialogService = (function() {
   };
 })();
 
-// Universal interception of legacy browser alert to render 3D window dialogs
+// Universal interception of legacy browser alert, confirm, and prompt to guarantee 100% centralized dialogs
 if (typeof window !== 'undefined') {
   window.alert = function(message) {
     if (window.AppDialogService && typeof window.AppDialogService.info === 'function') {
-      window.AppDialogService.info('Notice', '', String(message));
+      return window.AppDialogService.info('Notice', '', String(message));
     } else {
       console.warn('[Alert Intercepted]:', message);
     }
+  };
+
+  window.confirm = function(message) {
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      return window.AppDialogService.confirm('Confirmation', 'Please Confirm', String(message));
+    }
+    return true;
+  };
+
+  window.prompt = function(message, defaultVal) {
+    if (window.AppDialogService && typeof window.AppDialogService.prompt === 'function') {
+      return window.AppDialogService.prompt('Input Required', '', String(message), defaultVal || '');
+    }
+    return defaultVal || null;
   };
 }

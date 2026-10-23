@@ -409,7 +409,14 @@ window.ReturnsController = (function () {
 
   // 3. WORKFLOW ACTIONS: APPROVE, REJECT, CANCEL, DELETE, EDIT REASON
   async function approveReturn(no) {
-    if (!confirm(`Approve Return ${no}?\n\nApproval posts the Return stock movement and starts the Return settlement period.`)) return;
+    let confirmed = false;
+    const msg = `Approve Return ${no}?\n\nApproval posts the Return stock movement and starts the Return settlement period.`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Approve Return', 'Post Return Stock Movement', msg, 'Approve Return', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.approveReturn(no);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} approved successfully!`);
@@ -423,7 +430,13 @@ window.ReturnsController = (function () {
   }
 
   async function rejectReturnPrompt(no) {
-    const reason = prompt(`Enter rejection reason for Return ${no}:`);
+    let reason = null;
+    const promptMsg = `Enter rejection reason for Return ${no}:`;
+    if (window.AppDialogService && typeof window.AppDialogService.prompt === 'function') {
+      reason = await window.AppDialogService.prompt('Reject Return', `Return Document • ${no}`, promptMsg, 'Goods condition not matching return policy');
+    } else {
+      reason = prompt(promptMsg);
+    }
     if (reason === null) return;
     try {
       await window.OperationsService.rejectReturn(no, reason);
@@ -438,7 +451,14 @@ window.ReturnsController = (function () {
   }
 
   async function cancelReturn(no) {
-    if (!confirm(`Cancel Return ${no} and reverse its stock movement?`)) return;
+    let confirmed = false;
+    const msg = `Cancel Return ${no} and reverse its stock movement?`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Cancel Return', 'Reverse Stock Movement', msg, 'Cancel Return', 'Keep Return');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.cancelReturn(no, currentType === 'SALES RETURN');
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} cancelled successfully.`);
@@ -452,7 +472,14 @@ window.ReturnsController = (function () {
   }
 
   async function deleteReturn(no) {
-    if (!confirm(`Delete Return ${no} from the register?\n\nActive return stock movement will be safely reversed and audit trail preserved.`)) return;
+    let confirmed = false;
+    const msg = `Delete Return ${no} from the register?\n\nActive return stock movement will be safely reversed and audit trail preserved.`;
+    if (window.AppDialogService && typeof window.AppDialogService.destructive === 'function') {
+      confirmed = await window.AppDialogService.destructive('Delete Return', 'Permanent Deletion', msg, 'Delete Return', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.deleteReturn(no, currentType === 'SALES RETURN');
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Return ${no} deleted from register.`);
@@ -1374,20 +1401,23 @@ window.ReturnsController = (function () {
 
   async function downloadRefundProof(refundId) {
     try {
-      if (window.AppDialogService) window.AppDialogService.toastInfo('Loading refund proof...');
-      const token = localStorage.getItem('dse_access_token');
-      const url = `/api/support/return-refunds/${refundId}/attachment-file`;
-      const res = await fetch(url, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-      if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      if (window.ApiService && typeof window.ApiService.viewFile === 'function') {
+        const url = `/api/support/return-refunds/${refundId}/attachment-file`;
+        await window.ApiService.viewFile(url, `refund_proof_${refundId}.pdf`);
+      } else {
+        const token = localStorage.getItem('dse_access_token');
+        const url = `/api/support/return-refunds/${refundId}/attachment-file`;
+        const res = await fetch(url, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      }
     } catch (err) {
       if (window.AppDialogService) window.AppDialogService.toastError('Failed to open proof: ' + err.message);
-      else alert('Failed to open proof: ' + err.message);
     }
   }
 
@@ -1406,11 +1436,20 @@ window.ReturnsController = (function () {
     const refundType = document.getElementById('rr-scope-full')?.checked ? 'FULL' : 'PARTIAL';
     const proofFile = document.getElementById('rr-proof-file')?.files?.[0];
 
-    if (!returnNo) { alert('Return number is missing.'); return; }
-    if (amount <= 0) { alert('Refund amount must be greater than zero.'); return; }
-    if (!date) { alert('Refund date is required.'); return; }
+    if (!returnNo) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Return number is missing.');
+      return;
+    }
+    if (amount <= 0) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Refund amount must be greater than zero.');
+      return;
+    }
+    if (!date) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Refund date is required.');
+      return;
+    }
     if (proofFile && proofFile.size > 25 * 1024 * 1024) {
-      alert('Attachment is larger than 25 MB.');
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Attachment is larger than 25 MB.');
       return;
     }
 

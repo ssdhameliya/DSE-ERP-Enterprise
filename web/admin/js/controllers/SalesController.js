@@ -1102,9 +1102,12 @@ window.SalesController = {
       }
 
       // 5. Attachment state initialization
+      this.editingSale = existingSale || null;
+      this.editingSaleId = existingSale ? existingSale.id : null;
+      this.existingAttachmentPath = existingSale ? (existingSale.attachmentPath || existingSale.attachment) : null;
       this.pendingAttachmentFile = null;
       this.attachmentRemovalPending = false;
-      this.refreshAttachmentUi(existingSale ? existingSale.attachmentPath : null);
+      this.refreshAttachmentUi(this.existingAttachmentPath);
 
       // 6. Charges
       this.invoiceCharges = [];
@@ -1751,8 +1754,19 @@ window.SalesController = {
       window.open(url, '_blank');
       return;
     }
-    if (this.existingAttachmentPath && this.editingSaleId) {
-      window.open(`/api/support/documents/SALES/${this.editingSaleId}/attachment-file`, '_blank');
+    const sale = this.editingSale;
+    const saleId = (sale && sale.id) || this.editingSaleId;
+    const attPath = this.existingAttachmentPath || (sale && (sale.attachmentPath || sale.attachment));
+    if (saleId && attPath) {
+      const filename = typeof attPath === 'string' ? attPath.split('/').pop().split('\\').pop() : 'attachment';
+      if (window.ApiService && typeof window.ApiService.viewFile === 'function') {
+        window.ApiService.viewFile(`/api/support/documents/SALE/${saleId}/attachment-file`, filename);
+      } else {
+        window.open(`/api/support/documents/SALE/${saleId}/attachment-file`, '_blank');
+      }
+      return;
+    } else if (attPath && typeof attPath === 'string' && (attPath.startsWith('http') || attPath.startsWith('blob:'))) {
+      window.open(attPath, '_blank');
       return;
     }
     if (window.AppDialogService) window.AppDialogService.toastWarning('No attachment file available to preview');
@@ -2496,9 +2510,14 @@ window.SalesController = {
   },
 
   async reversePaymentReceipt(paymentId, invoiceNo, amount) {
-    if (!confirm(`Are you sure you want to reverse / delete payment receipt of ${window.FormatUtil.formatRupees(amount)}?\n\nThis will re-open the invoice balance.`)) {
-      return;
+    let confirmed = false;
+    const msg = `Are you sure you want to reverse / delete payment receipt of ${window.FormatUtil.formatRupees(amount)}?\n\nThis will re-open the invoice balance.`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Reverse Receipt', 'Re-open Invoice Balance', msg, 'Delete / Reverse', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
     }
+    if (!confirmed) return;
 
     try {
       if (paymentId > 0) {
@@ -3663,9 +3682,14 @@ window.SalesController = {
       return;
     }
 
-    if (!confirm(`Cancel ${invoiceNo}?\n\nStock will be restored and document status will become CANCELLED.`)) {
-      return;
+    let confirmed = false;
+    const cancelMsg = `Cancel ${invoiceNo}?\n\nStock will be restored and document status will become CANCELLED.`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Cancel Invoice', 'Restore Inventory Stock', cancelMsg, 'Cancel Invoice', 'Keep Invoice');
+    } else {
+      confirmed = confirm(cancelMsg);
     }
+    if (!confirmed) return;
 
     try {
       await window.OperationsService.cancelSale(invoiceNo);
@@ -3690,9 +3714,14 @@ window.SalesController = {
     const isCancelled = sale.documentStatus === 'CANCELLED';
     const stockNote = isCancelled ? 'Stock was already restored when this sale was cancelled.' : 'Stock will be restored.';
 
-    if (!confirm(`Delete ${invoiceNo}?\n\nThe document will disappear from the normal Sales Register, but its backend audit record will be retained as DELETED.\n${stockNote}`)) {
-      return;
+    let confirmedDelete = false;
+    const deleteMsg = `Delete ${invoiceNo}?\n\nThe document will disappear from the normal Sales Register, but its backend audit record will be retained as DELETED.\n${stockNote}`;
+    if (window.AppDialogService && typeof window.AppDialogService.destructive === 'function') {
+      confirmedDelete = await window.AppDialogService.destructive('Delete Invoice', 'Permanent Audit Record', deleteMsg, 'Delete Invoice', 'Cancel');
+    } else {
+      confirmedDelete = confirm(deleteMsg);
     }
+    if (!confirmedDelete) return;
 
     try {
       await window.OperationsService.deleteSale(invoiceNo);
@@ -4249,31 +4278,34 @@ window.SalesController = {
 
   previewCurrentDrawerAttachment() {
     const s = this.currentDrawerSale;
-    if (!s || !s.attachmentPath) {
+    const att = s && (s.attachmentPath || s.attachment);
+    if (!s || !att) {
       window.AppDialogService.showToast('No attachment available to preview', 'warning');
       return;
     }
     const saleId = s.id;
+    const filename = typeof att === 'string' ? att.split('/').pop().split('\\').pop() : 'attachment';
     if (saleId && window.ApiService && window.ApiService.viewFile) {
-      window.ApiService.viewFile(`/api/support/documents/SALE/${saleId}/attachment-file`);
-    } else if (s.attachmentPath) {
-      window.open(s.attachmentPath, '_blank');
+      window.ApiService.viewFile(`/api/support/documents/SALE/${saleId}/attachment-file`, filename);
+    } else if (att && typeof att === 'string' && (att.startsWith('http') || att.startsWith('blob:'))) {
+      window.open(att, '_blank');
     }
   },
 
   downloadCurrentDrawerAttachment() {
     const s = this.currentDrawerSale;
-    if (!s || !s.attachmentPath) {
+    const att = s && (s.attachmentPath || s.attachment);
+    if (!s || !att) {
       window.AppDialogService.showToast('No attachment available to download', 'warning');
       return;
     }
     const saleId = s.id;
-    const filename = s.attachmentPath.split('/').pop().split('\\').pop() || 'attachment';
+    const filename = typeof att === 'string' ? att.split('/').pop().split('\\').pop() || 'attachment' : 'attachment';
     if (saleId && window.ApiService && window.ApiService.downloadFile) {
       window.ApiService.downloadFile(`/api/support/documents/SALE/${saleId}/attachment-file`, filename);
-    } else if (s.attachmentPath) {
+    } else if (att) {
       const a = document.createElement('a');
-      a.href = s.attachmentPath;
+      a.href = att;
       a.download = filename;
       document.body.appendChild(a);
       a.click();

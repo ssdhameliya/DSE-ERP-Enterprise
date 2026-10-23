@@ -206,25 +206,25 @@
                     onclick="window.SalesController.removeLastWorkspaceRow()">&#128465; Remove</button>
                 </div>
 
-                <!-- 13-Column Dynamic Items Table (Image 4 & Desktop Screenshot 1) -->
-                <div style="overflow-x: auto; max-height: 280px; min-height: 160px;">
-                  <table class="data-table" style="font-size: 0.76rem; min-width: 900px;">
+                <!-- 14-Column Dynamic Items Table without horizontal scrolling -->
+                <div class="invoice-table-container" style="overflow-x: auto; max-height: 280px; min-height: 160px; width: 100%;">
+                  <table class="data-table" style="font-size: 0.72rem; width: 100%; table-layout: fixed;">
                     <thead>
                       <tr>
-                        <th>Item Code</th>
-                        <th>Description</th>
-                        <th>Category</th>
-                        <th>HSN/SAC</th>
-                        <th>Unit</th>
-                        <th>Qty</th>
-                        <th>Rate (&#8377;)</th>
-                        <th>Discount %</th>
-                        <th>Discount (&#8377;)</th>
-                        <th id="ws-th-gst">GST %</th>
-                        <th>Taxable (&#8377;)</th>
-                        <th id="ws-th-gst-amt">GST Amount (&#8377;)</th>
-                        <th style="text-align: right;">Amount (&#8377;)</th>
-                        <th style="text-align: center; width: 60px;">Action</th>
+                        <th style="width: 9%;">Item Code</th>
+                        <th style="width: 15%;">Description</th>
+                        <th style="width: 8%;">Category</th>
+                        <th style="width: 7%;">HSN/SAC</th>
+                        <th style="width: 4%;">Unit</th>
+                        <th style="width: 5%; text-align: right;">Qty</th>
+                        <th style="width: 8%; text-align: right;">Rate (&#8377;)</th>
+                        <th style="width: 5%; text-align: right;">Disc %</th>
+                        <th style="width: 6%; text-align: right;">Disc (&#8377;)</th>
+                        <th id="ws-th-gst" style="width: 5%; text-align: right;">GST %</th>
+                        <th style="width: 8%; text-align: right;">Taxable (&#8377;)</th>
+                        <th id="ws-th-gst-amt" style="width: 7%; text-align: right;">GST (&#8377;)</th>
+                        <th style="width: 9%; text-align: right;">Amount (&#8377;)</th>
+                        <th style="width: 4%; text-align: center;">Action</th>
                       </tr>
                     </thead>
                     <tbody id="ws-items-tbody">

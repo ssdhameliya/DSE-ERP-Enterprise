@@ -884,7 +884,18 @@ window.BankStatementController = (function() {
     });
 
     if (documentResidual > 0.01) {
-      const proceed = confirm(`Partial Document Settlement:\n\nBank allocation: ${formatMoney(allocated)}\nDocument residual after this match: ${formatMoney(documentResidual)}\n\nThis will leave one or more documents PARTIAL. Continue only if this bank transaction is genuinely a partial settlement.`);
+      let proceed = false;
+      if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+        proceed = await window.AppDialogService.confirm(
+          'Partial Settlement',
+          'Partial Document Settlement',
+          `Bank allocation: ${formatMoney(allocated)}\nDocument residual after this match: ${formatMoney(documentResidual)}\n\nThis will leave one or more documents PARTIAL. Continue only if this bank transaction is genuinely a partial settlement.`,
+          'Continue Match',
+          'Cancel'
+        );
+      } else {
+        proceed = confirm(`Partial Document Settlement:\n\nBank allocation: ${formatMoney(allocated)}\nDocument residual after this match: ${formatMoney(documentResidual)}\n\nThis will leave one or more documents PARTIAL. Continue only if this bank transaction is genuinely a partial settlement.`);
+      }
       if (!proceed) return;
     }
 
@@ -950,13 +961,26 @@ window.BankStatementController = (function() {
   }
 
   async function reverseMatch(txnId) {
-    if (!confirm('Are you sure you want to reverse this reconciliation link?\n\nThis will restore the transaction to UNMATCHED status.')) return;
+    let confirmed = false;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm(
+        'Reverse Reconciliation',
+        'Reverse Match Link',
+        'Are you sure you want to reverse this reconciliation link? This will restore the transaction to UNMATCHED status.',
+        'Reverse Match',
+        'Keep'
+      );
+    } else {
+      confirmed = confirm('Are you sure you want to reverse this reconciliation link?\n\nThis will restore the transaction to UNMATCHED status.');
+    }
+    if (!confirmed) return;
     try {
       await window.ReconService.reverseTransaction(txnId, 'Admin');
       if (window.AppDialogService) window.AppDialogService.toastSuccess('Reconciliation reversed.');
       loadBatch(currentBatchId);
     } catch (err) {
-      alert('Failed to reverse: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to reverse: ' + (err.message || 'Server error'));
+      else alert('Failed to reverse: ' + (err.message || 'Server error'));
     }
   }
 
@@ -1343,7 +1367,18 @@ window.BankStatementController = (function() {
       const res = await window.ReconService.importStatement(payload);
 
       if (res?.alreadyImported && res?.batch) {
-        const openExisting = confirm(`This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`);
+        let openExisting = false;
+        if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+          openExisting = await window.AppDialogService.confirm(
+            'Statement Already Imported',
+            'Duplicate Statement Detected',
+            `This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`,
+            'Open Statement',
+            'Cancel'
+          );
+        } else {
+          openExisting = confirm(`This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`);
+        }
         if (openExisting) {
           loadStatementWorkspace(res.batch.id);
         }
@@ -1848,13 +1883,26 @@ window.BankStatementController = (function() {
   }
 
   async function unignoreTransaction(id) {
-    if (!confirm('Return this transaction to UNMATCHED status?')) return;
+    let confirmed = false;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm(
+        'Restore Transaction',
+        'Restore to Unmatched',
+        'Return this transaction to UNMATCHED status?',
+        'Restore',
+        'Cancel'
+      );
+    } else {
+      confirmed = confirm('Return this transaction to UNMATCHED status?');
+    }
+    if (!confirmed) return;
     try {
       await window.ReconService.reverseTransaction(id, 'Admin');
       if (window.AppDialogService) window.AppDialogService.toastSuccess('Transaction returned to UNMATCHED status.');
       loadBatch(currentBatchId);
     } catch (err) {
-      alert('Failed to return transaction: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to return transaction: ' + (err.message || 'Server error'));
+      else alert('Failed to return transaction: ' + (err.message || 'Server error'));
     }
   }
 

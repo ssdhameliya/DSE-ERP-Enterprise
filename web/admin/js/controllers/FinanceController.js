@@ -550,7 +550,7 @@ window.FinanceController = {
           <td><span class="pill-badge pill-purple">${cat}</span></td>
           <td style="color:var(--text-main); font-size:0.82rem; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${desc}">
             ${desc}
-            ${billUrl ? `<a href="${billUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--cyan); margin-left:6px; text-decoration:none;" title="View Attached Bill">📎</a>` : ''}
+            ${billUrl ? `<a href="javascript:void(0)" onclick="window.FinanceController.viewBillAttachment('${billUrl.replace(/'/g, "\\'")}', event)" style="color:var(--cyan); margin-left:6px; text-decoration:none;" title="View Attached Bill">📎</a>` : ''}
           </td>
           <td style="font-weight:600; color:var(--text-main); font-size:0.8rem;">${payee}</td>
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
@@ -869,7 +869,7 @@ window.FinanceController = {
     const statusEl = document.getElementById('f-entry-bill-name') || document.getElementById('f-bill-upload-status');
     if (statusEl) {
       if (v.billAttachmentUrl || v.attachmentUrl) {
-        statusEl.innerHTML = `Current file: <a href="${v.billAttachmentUrl || v.attachmentUrl}" target="_blank" style="color:var(--cyan);">View Attachment</a>`;
+        statusEl.innerHTML = `Current file: <a href="javascript:void(0)" onclick="window.FinanceController.viewBillAttachment('${(v.billAttachmentUrl || v.attachmentUrl).replace(/'/g, "\\'")}', event)" style="color:var(--cyan); text-decoration:underline;">View Attachment</a>`;
       } else {
         statusEl.innerText = 'No file selected';
         statusEl.style.color = 'var(--text-dim)';
@@ -2654,6 +2654,20 @@ window.FinanceController = {
       window.FormatUtil.downloadTablePdf(title, headers, rows, `${r.partyName.replace(/[^a-zA-Z0-9]/g, '_')}_Aging_Statement.pdf`);
     } else {
       window.print();
+    }
+  },
+
+  viewBillAttachment(url, event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (!url) return;
+    if (window.ApiService && typeof window.ApiService.viewFile === 'function') {
+      const filename = url.split('/').pop().split('\\').pop() || 'voucher-attachment';
+      window.ApiService.viewFile(url, filename);
+    } else {
+      window.open(url, '_blank');
     }
   }
 };

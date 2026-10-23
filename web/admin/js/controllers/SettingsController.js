@@ -606,24 +606,24 @@ window.SettingsController = (function() {
           try { profile = await window.ReportService.getProfile(); } catch (err) {}
         }
 
-        setVal('setting-company-name', serverSettings['company.name'] || (profile && profile.companyName) || 'JASVI INDUSTRIES');
-        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || 'Excellence in Ceramic Manufacturing & Enterprise Engineering');
-        setVal('setting-company-phone', serverSettings['company.phone'] || (profile && profile.phone) || '+91 90999 39193');
-        setVal('setting-company-email', serverSettings['company.email'] || (profile && profile.email) || 'accounts@jasviindustries.in');
-        setVal('setting-company-gstin', serverSettings['company.gstin'] || (profile && profile.gstin) || '24AAACJ1234A1Z5');
-        setVal('setting-company-pan', serverSettings['company.pan'] || (profile && profile.pan) || 'AAACJ1234A');
+        setVal('setting-company-name', serverSettings['company.name'] || (profile && profile.companyName) || '');
+        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || '');
+        setVal('setting-company-phone', serverSettings['company.phone'] || (profile && profile.phone) || '');
+        setVal('setting-company-email', serverSettings['company.email'] || (profile && profile.email) || '');
+        setVal('setting-company-gstin', serverSettings['company.gstin'] || (profile && profile.gstin) || '');
+        setVal('setting-company-pan', serverSettings['company.pan'] || (profile && profile.pan) || '');
         setVal('setting-business-type', serverSettings['company.businessType'] || (profile && profile.businessType) || 'MANUFACTURING');
-        setVal('setting-industry', serverSettings['company.industry'] || (profile && profile.industry) || 'CERAMICS');
-        setVal('setting-fy-start', serverSettings['company.financialYearStart'] || '2026-04-01');
+        setVal('setting-industry', serverSettings['company.industry'] || (profile && profile.industry) || 'GENERAL');
+        setVal('setting-fy-start', serverSettings['company.financialYearStart'] || '');
 
-        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || 'Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India');
-        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || 'Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat');
-        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || 'https://jasviindustries.in');
-        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || 'GUJARAT (24)');
+        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || '');
+        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || '');
+        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || '');
+        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || '');
 
-        setVal('setting-app-name', serverSettings['application.displayName'] || (profile && profile.companyName) || 'JASVI INDUSTRIES ERP');
-        setVal('setting-app-tagline', serverSettings['application.tagline'] || 'Enterprise Production & Distribution');
-        setVal('setting-app-starting-text', serverSettings['application.startingText'] || 'Welcome to Jasvi Industries ERP System');
+        setVal('setting-app-name', serverSettings['application.displayName'] || (profile && profile.companyName) || '');
+        setVal('setting-app-tagline', serverSettings['application.tagline'] || '');
+        setVal('setting-app-starting-text', serverSettings['application.startingText'] || '');
 
         const bannerVal = serverSettings['application.brandImagePath'] || serverSettings['application.banner'];
         setAssetPreview('preview-app-banner', 'placeholder-app-banner', bannerVal, null, 'status-app-banner', 'application.brandImagePath');
@@ -799,17 +799,17 @@ window.SettingsController = (function() {
         const normDateFmt = window.FormatUtil ? window.FormatUtil.normalizeDateFormat(rawDateFmt) : rawDateFmt;
         const normTimeFmt = window.FormatUtil ? window.FormatUtil.normalizeTimeFormat(rawTimeFmt) : rawTimeFmt;
 
-        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || 'Plot No. 45-48, GIDC Industrial Estate, Morbi - 363641, Gujarat, India');
-        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || 'Warehouse 2, National Highway 8A, Trajpar, Morbi - 363642, Gujarat');
-        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || 'https://jasviindustries.in');
-        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || 'GUJARAT (24)');
-        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || 'Excellence in Ceramic Manufacturing & Enterprise Engineering');
+        setVal('setting-company-address', serverSettings['company.address'] || (profile && profile.address) || '');
+        setVal('setting-ship-address', serverSettings['company.shipAddress'] || (profile && profile.shipAddress) || '');
+        setVal('setting-company-website', serverSettings['company.website'] || (profile && profile.website) || '');
+        setVal('setting-company-state', serverSettings['company.state'] || (profile && profile.state) || '');
+        setVal('setting-company-tagline', serverSettings['company.tagline'] || (profile && profile.tagline) || '');
 
         setVal('setting-currency', serverSettings['company.currency'] || (profile && profile.currency) || 'INR (₹)');
         setVal('setting-timezone', serverSettings['company.timeZone'] || (profile && profile.timezone) || 'Asia/Kolkata (IST)');
         setVal('setting-date-format', normDateFmt);
         setVal('setting-time-format', normTimeFmt);
-        setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '(1) All Prices are Nett-Godown.\n(2) Our responsibility ceases as soon as the goods leaves our godown.\n(3) Intrest @ 24% p.a. will be charged, if the payment not paid in due time.\n(4) Payments to be made by payees A/c Chque / DD / RTGS / NEFT Only.');
+        setVal('setting-invoice-terms', serverSettings['company.terms'] || (profile && profile.invoiceTerms) || '');
 
         let invoiceSettings = {};
         try {
@@ -971,10 +971,10 @@ window.SettingsController = (function() {
         const res = await window.ApiService.get('/api/authority/email/settings');
         cachedEmailSettings = res;
         if (res) {
-          setVal('smtp-host', res.host || 'smtp.gmail.com');
+          setVal('smtp-host', res.host || '');
           setVal('smtp-port', res.port || '587');
-          setVal('smtp-email', res.email || 'ssdhameliya@gmail.com');
-          setVal('smtp-from-name', res.fromName || 'Jasvi Industries Accounts');
+          setVal('smtp-email', res.email || '');
+          setVal('smtp-from-name', res.fromName || '');
           setChk('smtp-tls', res.startTls !== false);
         }
 

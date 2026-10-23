@@ -3,22 +3,19 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "10.0.41.12",
+  version: "10.0.41.13",
   desktopVersion: "10.0.41",
-  webBuild: 12,
-  webVersion: "10.0.41.12",
-  tag: "web-v10.0.41.12",
-  releaseDate: "2026-10-24T02:15:00+05:30",
+  webBuild: 13,
+  webVersion: "10.0.41.13",
+  tag: "web-v10.0.41.13",
+  releaseDate: "2026-10-24T03:00:00+05:30",
   environment: "Production / Enterprise",
-  summary: "10.0.41.12 Login Page Refresh Zero-Flicker Parity, Item Master & Inventory Row Click Table Collapse Fix, Recon Supplier Master Layout & Pagination Parity, Universal 3D Action Button Colorization, Double-Icon Elimination, and Automated Version Synchronizer",
+  summary: "10.0.41.13 Centralized Modal Dialog Parity, Universal Attachment Preview in View/Edit Modes, Zero-Scroll 100% Proportional Line Item Tables, Server-Authoritative Branding & Zero Mock Data Purge",
   highlights: [
-    "1. Login Page Refresh Zero-Flicker Parity: Eliminated Frame-0 dual-state flash on refresh by synchronizing index.html static markup with modern enterprise branding and adding synchronous credential pre-population.",
-    "2. Item Master & Inventory (Stock Register) Row Click Table Preservation: Removed rogue vertical flex directions from item-master.html and inventory.html, docking side drawers alongside intact, fully visible tables.",
-    "3. Full Workspace Table Audit: Verified all 42 system views; confirmed all 19 drawer-enabled tables now strictly adhere to horizontal flex row architecture.",
-    "4. Recon Supplier Master Complete Parity: Relocated 4 compact KPI cards to top, implemented zero-waste single-row filter toolbar, defaulted period to Start of FY through Today, purged duplicate buttons, and installed 2027 enterprise register pagination footer.",
-    "5. Universal 3D Button Color System: Upgraded all table Action buttons to vibrant 3D Royal Purple, transformed secondary buttons to 3D Indigo gradients, and permanently eliminated dull/black button styling across dark and light modes.",
-    "6. Header Double Icons & Multi-Emoji Purge: Excluded all top-bar header controls from automatic icon mutation, resolving double icons (🌙 🌙 Dark, ⚡ ⏰, ⚙️ + New Sale F9).",
-    "7. Single-File Version Synchronization: Deployed scripts/sync-version.py and sync-version.ps1 to automatically propagate version metadata across version.json, js/version.js, and all 64+ index.html asset references in ~80ms."
+    "1. Centralized Modal Dialog Parity: Extended AppDialogService with prompt() modal; installed universal monkey-patches on window.alert, window.confirm, and window.prompt to completely prevent native browser dialogs; migrated Notification Center, Sales, Purchase, Quotation, Returns, and Bank Reconciliation to modern modal dialogs.",
+    "2. Universal Multi-Transaction Attachment System: Resolved broken attachment previews across View mode (Details Drawers) and Edit mode (Creation Workspaces) across Sales, Purchases, Quotations, Payments, Return Refunds, and Expenses; routed all file views and downloads through ApiService.viewFile() with Bearer JWT authentication.",
+    "3. Table Header & Line Items Horizontal Overflow Elimination: Applied table-layout: fixed !important; width: 100% !important; min-width: 0 !important; and configured 14-column proportional percentage allocations in Sales Creation, Purchase Creation, and Quotation Editor, completely eliminating right-to-left horizontal scrolling.",
+    "4. Dynamic Branding & Zero Mock Data Purge: Removed all hardcoded demo company names, addresses, phones, GSTINs, bank accounts, and fallback strings from settings.html and SettingsController.js; upgraded BrandingService to dynamically resolve and render brand logo, application mark, and business tagline directly from PostgreSQL server settings (/api/support/settings)."
   ]
 };
 

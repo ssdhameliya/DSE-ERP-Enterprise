@@ -468,7 +468,19 @@ window.NotificationCenterController = (function() {
     },
 
     async clearHistory() {
-      if (!confirm('Clear all your notification history? This action cannot be undone.')) return;
+      let confirmed = false;
+      if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+        confirmed = await window.AppDialogService.confirm(
+          'Clear Notification History',
+          'This action cannot be undone',
+          'Clear all your notification history? This action cannot be undone.',
+          'Clear History',
+          'Cancel'
+        );
+      } else {
+        confirmed = confirm('Clear all your notification history? This action cannot be undone.');
+      }
+      if (!confirmed) return;
       try {
         await window.ApiService.delete('/api/insights/notifications');
         if (window.AppDialogService && window.AppDialogService.showToast) {

@@ -2,21 +2,25 @@
  * Jasvi Industries ERP - BrandingService
  * Desktop Parity with org.example.service.BrandingService & org.example.ui.SharedApplicationFooter
  * Dynamic settings-driven branding, quotes, company profile, and disappearance rules.
+ * ZERO mock data: Authoritative values loaded from server settings (/api/support/settings).
  */
 window.BrandingService = (function() {
   'use strict';
 
   const STORAGE_KEY = 'dse_branding';
   const DEFAULT_BRANDING = {
-    name: 'Jashvi Engineers',
-    tagline: 'Enterprise Production & Distribution',
-    logoPath: 'assets/logo.png',
+    name: '',
+    tagline: '',
+    logoPath: '',
     phone: '',
     email: '',
     website: '',
-    bankName: 'Kotak Mahindra Bank',
-    bankAccount: '50200012847192',
-    accountHolder: 'Jashvi Engineers'
+    bankName: '',
+    bankAccount: '',
+    accountHolder: '',
+    mark: '',
+    banner: '',
+    logo: ''
   };
 
   let currentProfile = null;
@@ -44,10 +48,48 @@ window.BrandingService = (function() {
 
   currentProfile = loadProfileFromStorage();
 
+  async function resolveAssetUrl(val, assetKey) {
+    if (!val || typeof val !== 'string' || val.trim() === '' || val === 'null' || val === 'undefined') {
+      return '';
+    }
+    if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
+      return val;
+    }
+    let key = '';
+    if (val.startsWith('server-resource:')) {
+      key = val.replace('server-resource:', '').trim();
+    } else if (val.includes(':\\') || val.startsWith('/') || val.startsWith('\\')) {
+      if (assetKey) key = assetKey;
+    } else if (assetKey) {
+      key = assetKey;
+    }
+
+    if (key) {
+      try {
+        const token = (window.AuthService && window.AuthService.getAccessToken ? window.AuthService.getAccessToken() : null) ||
+                      localStorage.getItem('dse_access_token') ||
+                      localStorage.getItem('auth_token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const resp = await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(key)}`, { headers });
+        if (resp.ok) {
+          const blob = await resp.blob();
+          if (blob && blob.size > 0) {
+            const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/png';
+            const imgBlob = (blob.type === mime) ? blob : new Blob([blob], { type: mime });
+            return URL.createObjectURL(imgBlob);
+          }
+        }
+      } catch (err) {
+        console.warn('[BrandingService] Failed to resolve server-resource ' + key, err);
+      }
+    }
+    return '';
+  }
+
   // Desktop SharedApplicationFooter disappearance rule
   function updateFooters() {
     const profile = currentProfile || DEFAULT_BRANDING;
-    const name = profile.name || DEFAULT_BRANDING.name;
+    const name = (profile.name || '').trim();
     const phone = (profile.phone || '').trim();
     const email = (profile.email || '').trim();
     const website = (profile.website || '').trim();
@@ -56,7 +98,7 @@ window.BrandingService = (function() {
     const authFooter = document.querySelector('.auth-desktop-footer');
     if (authFooter) {
       const trustHtml = `<span style="color: #38bdf8; font-weight: 700;">Secure &nbsp; Local &nbsp; Reliable</span>`;
-      const companyHtml = `<span>🏢 ${name}</span>`;
+      const companyHtml = name ? `<span>🏢 ${name}</span>` : '';
       const phoneHtml = phone ? `<span>📞 ${phone}</span>` : '';
       const emailHtml = email ? `<span>✉️ ${email}</span>` : '';
       const webUrl = website ? (website.startsWith('http') ? website : 'https://' + website) : '';
@@ -65,7 +107,8 @@ window.BrandingService = (function() {
       const clockHtml = `<span id="auth-footer-clock" class="auth-clock"></span>`;
 
       // Build items array, only non-blank optional fields included
-      const items = [trustHtml, companyHtml];
+      const items = [trustHtml];
+      if (companyHtml) items.push(companyHtml);
       if (phoneHtml) items.push(phoneHtml);
       if (emailHtml) items.push(emailHtml);
       if (websiteHtml) items.push(websiteHtml);
@@ -83,7 +126,12 @@ window.BrandingService = (function() {
       const websiteEl = document.getElementById('footer-website');
 
       if (companyEl) {
-        companyEl.innerHTML = `<span class="footer-icon">&#127970;</span> <span class="footer-val">${name}</span>`;
+        if (name) {
+          companyEl.innerHTML = `<span class="footer-icon">&#127970;</span> <span class="footer-val">${name}</span>`;
+          companyEl.style.display = 'inline-flex';
+        } else {
+          companyEl.style.display = 'none';
+        }
       }
 
       if (phoneEl) {
@@ -117,31 +165,57 @@ window.BrandingService = (function() {
     }
   }
 
-  // Update Auth Brand Elements
+  // Update Auth Brand Elements & Header Brand
   function updateAuthBrand() {
     const profile = currentProfile || DEFAULT_BRANDING;
-    const name = profile.name || DEFAULT_BRANDING.name;
-    const tagline = profile.tagline || DEFAULT_BRANDING.tagline;
+    const name = (profile.name || '').trim();
+    const tagline = (profile.tagline || '').trim();
 
     const brandTitleEl = document.querySelector('.auth-brand-title');
-    if (brandTitleEl) brandTitleEl.textContent = name;
+    if (brandTitleEl) brandTitleEl.textContent = name || 'Enterprise ERP';
 
     const brandSubtitleEl = document.querySelector('.auth-brand-subtitle');
-    if (brandSubtitleEl) brandSubtitleEl.textContent = tagline;
+    if (brandSubtitleEl) {
+      brandSubtitleEl.textContent = tagline;
+      brandSubtitleEl.style.display = tagline ? 'block' : 'none';
+    }
 
     const brandQuoteEl = document.querySelector('.auth-brand-tagline');
-    if (brandQuoteEl) brandQuoteEl.textContent = `Role-aware secure access to ${name}`;
+    if (brandQuoteEl) {
+      brandQuoteEl.textContent = name ? `Role-aware secure access to ${name}` : 'Role-aware secure enterprise access';
+    }
 
     const cardSubtitleEl = document.getElementById('auth-card-subtitle');
-    if (cardSubtitleEl) cardSubtitleEl.textContent = `Role-aware secure access to ${name}`;
+    if (cardSubtitleEl) {
+      cardSubtitleEl.textContent = name ? `Role-aware secure access to ${name}` : 'Role-aware secure enterprise access';
+    }
 
     const appHeaderBrandTitle = document.querySelector('.app-header .brand-title');
     if (appHeaderBrandTitle) {
-      const parts = name.split(' ');
-      if (parts.length > 1) {
-        appHeaderBrandTitle.innerHTML = `${parts[0].toUpperCase()} <span>${parts.slice(1).join(' ').toUpperCase()}</span>`;
+      if (name) {
+        const parts = name.split(' ');
+        if (parts.length > 1) {
+          appHeaderBrandTitle.innerHTML = `${parts[0].toUpperCase()} <span>${parts.slice(1).join(' ').toUpperCase()}</span>`;
+        } else {
+          appHeaderBrandTitle.innerHTML = `${name.toUpperCase()} <span>ERP</span>`;
+        }
       } else {
-        appHeaderBrandTitle.innerHTML = `${name.toUpperCase()} <span>ERP</span>`;
+        appHeaderBrandTitle.innerHTML = `ENTERPRISE <span>ERP</span>`;
+      }
+    }
+
+    // Header Logo Icon (displays logo image or mark image or first initial)
+    const headerLogoEl = document.getElementById('header-brand-logo');
+    if (headerLogoEl) {
+      const markUrl = localStorage.getItem('dse_brand_mark_url') || profile.mark;
+      const logoUrl = localStorage.getItem('dse_brand_logo_url') || profile.logo;
+      const displayImg = markUrl || logoUrl;
+      if (displayImg) {
+        headerLogoEl.innerHTML = `<img src="${displayImg}" style="width:100%; height:100%; object-fit:contain; border-radius:inherit;" alt="Logo" onerror="this.style.display='none';">`;
+      } else if (name) {
+        headerLogoEl.textContent = name.charAt(0).toUpperCase();
+      } else {
+        headerLogoEl.textContent = 'E';
       }
     }
 
@@ -153,15 +227,15 @@ window.BrandingService = (function() {
 
     const markActive = localStorage.getItem('dse_brand_mark_active');
     const markUrl = localStorage.getItem('dse_brand_mark_url') || profile.mark;
-    if (markActive === 'false' || profile.mark === '' || profile.mark === null) {
+    if (markActive === 'false' || !markUrl) {
       if (markBox) markBox.style.display = 'none';
-    } else if (markBox && (markUrl || markActive === 'true')) {
+    } else if (markBox && markUrl) {
       markBox.style.display = 'block';
-      if (markImg && markUrl) markImg.src = markUrl;
+      if (markImg) markImg.src = markUrl;
     }
 
     const bannerUrl = localStorage.getItem('dse_brand_banner_url') || profile.banner;
-    if (profile.banner === '' || profile.banner === null) {
+    if (!bannerUrl) {
       if (bannerBox) bannerBox.style.display = 'none';
     } else if (bannerBox && bannerUrl) {
       bannerBox.style.display = 'block';
@@ -197,36 +271,56 @@ window.BrandingService = (function() {
       if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
         const updated = Object.assign({}, currentProfile);
         if (settings['company.name']) updated.name = settings['company.name'];
+        else if (settings['application.displayName']) updated.name = settings['application.displayName'];
+
         if (settings['company.tagline']) updated.tagline = settings['company.tagline'];
+        else if (settings['application.tagline']) updated.tagline = settings['application.tagline'];
+
         if (settings['company.phone'] !== undefined) updated.phone = settings['company.phone'];
         if (settings['company.email'] !== undefined) updated.email = settings['company.email'];
         if (settings['company.website'] !== undefined) updated.website = settings['company.website'];
-        if (settings['company.bankName']) updated.bankName = settings['company.bankName'];
-        if (settings['company.bankAccount']) updated.bankAccount = settings['company.bankAccount'];
+        if (settings['company.bankName'] !== undefined) updated.bankName = settings['company.bankName'];
+        if (settings['company.bankAccount'] !== undefined) updated.bankAccount = settings['company.bankAccount'];
 
         // Synchronize startup mark asset matching desktop LoginController
         const markVal = settings['application.markImagePath'] !== undefined ? settings['application.markImagePath'] : settings['application.mark'];
-        if (markVal !== undefined) {
-          if (!markVal || markVal === 'null' || markVal === '') {
-            localStorage.setItem('dse_brand_mark_active', 'false');
-            localStorage.removeItem('dse_brand_mark_url');
-            const markBox = document.getElementById('auth-brand-mark-box');
-            if (markBox) markBox.style.display = 'none';
-          } else {
+        if (markVal && markVal !== 'null' && markVal !== '') {
+          const resolvedMark = await resolveAssetUrl(markVal, 'application.markImagePath');
+          if (resolvedMark) {
             localStorage.setItem('dse_brand_mark_active', 'true');
-            const markBox = document.getElementById('auth-brand-mark-box');
-            if (markBox) markBox.style.display = 'block';
+            localStorage.setItem('dse_brand_mark_url', resolvedMark);
+            updated.mark = resolvedMark;
           }
+        } else if (markVal === '' || markVal === null) {
+          localStorage.setItem('dse_brand_mark_active', 'false');
+          localStorage.removeItem('dse_brand_mark_url');
+          updated.mark = '';
         }
 
         // Synchronize startup banner asset
         const bannerVal = settings['application.brandImagePath'] !== undefined ? settings['application.brandImagePath'] : settings['application.brand'];
-        if (bannerVal !== undefined) {
-          if (!bannerVal || bannerVal === 'null' || bannerVal === '') {
-            localStorage.removeItem('dse_brand_banner_url');
-            const bannerBox = document.getElementById('auth-brand-banner-box');
-            if (bannerBox) bannerBox.style.display = 'none';
+        if (bannerVal && bannerVal !== 'null' && bannerVal !== '') {
+          const resolvedBanner = await resolveAssetUrl(bannerVal, 'application.brandImagePath');
+          if (resolvedBanner) {
+            localStorage.setItem('dse_brand_banner_url', resolvedBanner);
+            updated.banner = resolvedBanner;
           }
+        } else if (bannerVal === '' || bannerVal === null) {
+          localStorage.removeItem('dse_brand_banner_url');
+          updated.banner = '';
+        }
+
+        // Synchronize invoice logo asset
+        const logoVal = settings['company.logoPath'] !== undefined ? settings['company.logoPath'] : settings['invoice.header.logo'];
+        if (logoVal && logoVal !== 'null' && logoVal !== '') {
+          const resolvedLogo = await resolveAssetUrl(logoVal, 'company.logoPath');
+          if (resolvedLogo) {
+            localStorage.setItem('dse_brand_logo_url', resolvedLogo);
+            updated.logo = resolvedLogo;
+          }
+        } else if (logoVal === '' || logoVal === null) {
+          localStorage.removeItem('dse_brand_logo_url');
+          updated.logo = '';
         }
 
         currentProfile = updated;
@@ -255,11 +349,13 @@ window.BrandingService = (function() {
       updateFooters();
       updateAuthBrand();
       startClock();
+      refreshRemote();
     });
   } else {
     updateFooters();
     updateAuthBrand();
     startClock();
+    refreshRemote();
   }
 
   return {
@@ -267,13 +363,14 @@ window.BrandingService = (function() {
       return Object.assign({}, currentProfile || DEFAULT_BRANDING);
     },
     companyName() {
-      return (currentProfile && currentProfile.name) || DEFAULT_BRANDING.name;
+      return (currentProfile && currentProfile.name) || '';
     },
     tagline() {
-      return (currentProfile && currentProfile.tagline) || DEFAULT_BRANDING.tagline;
+      return (currentProfile && currentProfile.tagline) || '';
     },
     loginDescription() {
-      return `Role-aware secure access to ${this.companyName()}`;
+      const c = this.companyName();
+      return c ? `Role-aware secure access to ${c}` : 'Role-aware secure enterprise access';
     },
     updateProfile(newSettings) {
       if (!newSettings || typeof newSettings !== 'object') return;

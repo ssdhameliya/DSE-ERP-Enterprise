@@ -412,8 +412,9 @@ window.QuotationController = (function () {
 
   function previewCurrentDrawerAttachment() {
     if (!selectedQuote || !selectedQuote.id) return;
+    const fileName = (selectedQuote.attachmentPath || selectedQuote.attachment || 'quotation-attachment').split('/').pop().split('\\').pop();
     if (window.ApiService && window.ApiService.viewFile) {
-      window.ApiService.viewFile(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`);
+      window.ApiService.viewFile(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`, fileName);
     } else {
       window.open(`/api/support/documents/QUOTATION/${selectedQuote.id}/attachment-file`, '_blank');
     }
@@ -440,7 +441,14 @@ window.QuotationController = (function () {
 
   // 3. WORKFLOW ACTIONS
   async function convertToSale(id, no, rowVersion) {
-    if (!confirm(`Convert Quotation ${no} to an active Sales Invoice and update inventory stock?`)) return;
+    let confirmed = false;
+    const msg = `Convert Quotation ${no} to an active Sales Invoice and update inventory stock?`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Convert to Sale', 'Generate Sales Invoice', msg, 'Convert to Sale', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       const res = await window.OperationsService.convertQuotation(id, 'Admin', rowVersion);
@@ -486,19 +494,34 @@ window.QuotationController = (function () {
   }
 
   async function duplicate(id, no) {
-    if (!confirm(`Duplicate Quotation ${no}?`)) return;
+    let confirmed = false;
+    const msg = `Duplicate Quotation ${no}?`;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      confirmed = await window.AppDialogService.confirm('Duplicate Quotation', 'Create Duplicate Copy', msg, 'Duplicate', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.duplicateQuotation(id, 'Admin');
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} duplicated successfully!`);
       loadQuotations(0);
     } catch (err) {
       console.error('Duplicate failed:', err);
-      alert('Failed to duplicate: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to duplicate: ' + (err.message || 'Server error'));
+      else alert('Failed to duplicate: ' + (err.message || 'Server error'));
     }
   }
 
   async function deleteQuotation(id, no, rowVersion) {
-    if (!confirm(`Delete Quotation ${no}?`)) return;
+    let confirmed = false;
+    const msg = `Delete Quotation ${no}?`;
+    if (window.AppDialogService && typeof window.AppDialogService.destructive === 'function') {
+      confirmed = await window.AppDialogService.destructive('Delete Quotation', 'Permanent Deletion', msg, 'Delete Quotation', 'Cancel');
+    } else {
+      confirmed = confirm(msg);
+    }
+    if (!confirmed) return;
     try {
       await window.OperationsService.deleteQuotation(id, rowVersion);
       if (window.AppDialogService) window.AppDialogService.toastSuccess(`Quotation ${no} deleted successfully.`);
@@ -506,7 +529,8 @@ window.QuotationController = (function () {
       closeDrawer();
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('Failed to delete: ' + (err.message || 'Server error'));
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to delete: ' + (err.message || 'Server error'));
+      else alert('Failed to delete: ' + (err.message || 'Server error'));
     }
   }
 
@@ -921,8 +945,14 @@ window.QuotationController = (function () {
     });
   }
 
-  function sendWhatsappPrompt(id, no, phone) {
-    const mobile = prompt(`Send Quotation ${no} via WhatsApp to number (with country code):`, phone || '');
+  async function sendWhatsappPrompt(id, no, phone) {
+    let mobile = null;
+    const promptMsg = `Send Quotation ${no} via WhatsApp to number (with country code):`;
+    if (window.AppDialogService && typeof window.AppDialogService.prompt === 'function') {
+      mobile = await window.AppDialogService.prompt('WhatsApp Quotation', `Quotation • ${no}`, promptMsg, phone || '', '+91 9999999999');
+    } else {
+      mobile = prompt(promptMsg, phone || '');
+    }
     if (!mobile) return;
     const clean = mobile.replace(/\D/g, '');
     const num = clean.length === 10 ? '91' + clean : clean;
@@ -1470,11 +1500,14 @@ window.QuotationController = (function () {
         window.open(url, '_blank');
         return;
       }
-      if (existingAttachmentPath && editingQuotationId) {
+      const path = existingAttachmentPath || (selectedQuote && (selectedQuote.attachmentPath || selectedQuote.attachment));
+      const targetId = editingQuotationId || (selectedQuote && selectedQuote.id);
+      if (path && targetId) {
+        const filename = typeof path === 'string' ? path.split('/').pop().split('\\').pop() : 'quotation-attachment';
         if (window.ApiService && window.ApiService.viewFile) {
-          window.ApiService.viewFile(`/api/support/documents/QUOTATION/${editingQuotationId}/attachment-file`);
+          window.ApiService.viewFile(`/api/support/documents/QUOTATION/${targetId}/attachment-file`, filename);
         } else {
-          window.open(`/api/support/documents/QUOTATION/${editingQuotationId}/attachment-file`, '_blank');
+          window.open(`/api/support/documents/QUOTATION/${targetId}/attachment-file`, '_blank');
         }
         return;
       }

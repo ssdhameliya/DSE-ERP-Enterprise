@@ -149,26 +149,26 @@
                   </div>
                 </div>
 
-                <!-- Line Items Table -->
-                <div
-                  style="border:1px solid var(--border-subtle); border-radius:6px; min-height:180px; max-height:320px; overflow-y:auto; overflow-x:auto;">
-                  <table class="data-table" style="margin:0; width:100%;">
+                <!-- Line Items Table without horizontal scrolling -->
+                <div class="invoice-table-container"
+                  style="border:1px solid var(--border-subtle); border-radius:6px; min-height:180px; max-height:320px; overflow-y:auto; overflow-x:auto; width:100%;">
+                  <table class="data-table" style="margin:0; width:100%; table-layout:fixed;">
                     <thead>
                       <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
-                        <th>Code</th>
-                        <th>Description</th>
-                        <th>Category</th>
-                        <th>HSN</th>
-                        <th>Unit</th>
-                        <th style="text-align:right;">Qty</th>
-                        <th style="text-align:right;">Rate (&#8377;)</th>
-                        <th style="text-align:right;">Disc %</th>
-                        <th style="text-align:right;">Disc (&#8377;)</th>
-                        <th style="text-align:right;">GST %</th>
-                        <th style="text-align:right;">Taxable (&#8377;)</th>
-                        <th style="text-align:right;">GST (&#8377;)</th>
-                        <th style="text-align:right;">Total (&#8377;)</th>
-                        <th style="text-align:center;">Action</th>
+                        <th style="width: 9%;">Code</th>
+                        <th style="width: 15%;">Description</th>
+                        <th style="width: 8%;">Category</th>
+                        <th style="width: 7%;">HSN</th>
+                        <th style="width: 4%;">Unit</th>
+                        <th style="width: 5%; text-align:right;">Qty</th>
+                        <th style="width: 8%; text-align:right;">Rate (&#8377;)</th>
+                        <th style="width: 5%; text-align:right;">Disc %</th>
+                        <th style="width: 6%; text-align:right;">Disc (&#8377;)</th>
+                        <th style="width: 5%; text-align:right;">GST %</th>
+                        <th style="width: 8%; text-align:right;">Taxable (&#8377;)</th>
+                        <th style="width: 7%; text-align:right;">GST (&#8377;)</th>
+                        <th style="width: 9%; text-align:right;">Total (&#8377;)</th>
+                        <th style="width: 4%; text-align:center;">Action</th>
                       </tr>
                     </thead>
                     <tbody id="pe-lines-body">
