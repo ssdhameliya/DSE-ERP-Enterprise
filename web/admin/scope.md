@@ -6,9 +6,11 @@
 > **Release Staging (Web)**: `D:\GitHub\ReleaseSource Website\admin`  
 > **Repository Target (Web)**: `D:\GitHub\DSE-ERP-Enterprise` (`web/admin`)  
 > **Repository Target (Desktop/Server)**: `D:\GitHub\DSE-ERP-Primary` (`ssdhameliya/DSE-ERP`)  
-> **Live UAT Runtime**: `https://erp-uat.jasviindustries.in/admin/`  
-> **Investigation Date**: October 17, 2026  
-> **Status**: **INVESTIGATION & SCOPE DEFINITION ONLY — NO CODE ALTERED OR BUILT**
+> **Live UAT Runtime**: `https://erp-uat.jasviindustries.in/` (Pure Java Vaadin Web UI — `10.0.51`)  
+> **Live PROD Runtime**: `https://erp.jasviindustries.in/` (Pure Java Vaadin Web UI — `10.0.51`)  
+> **Current Transition Status:** ACTIVE. Release `10.0.51` overhauls the Web UI into a modern 3D interface, resolves post-login `Could not navigate to ''` by disabling React Router, enables recursive route discovery, adds safe database fallbacks, and introduces custom 404 handling. See [scope10.0.51.md](file:///d:/ERP%20Website/admin/scope10.0.51.md) for full architectural, deployment, and live verification details.
+
+
 
 ---
 
