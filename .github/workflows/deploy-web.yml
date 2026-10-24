@@ -100,8 +100,10 @@ jobs:
 
       - name: Verify Live UAT Endpoints
         run: |
-          curl -fsSL https://web-uat.jasviindustries.in | grep -q "Jasvi Industries"
-          curl -fsSL https://erp-uat.jasviindustries.in | grep -q "Jasvi Industries ERP"
+          UAT_WEB=$(curl -fsSL https://web-uat.jasviindustries.in)
+          echo "$UAT_WEB" | grep -q "Jasvi Industries"
+          UAT_ERP=$(curl -fsSL https://erp-uat.jasviindustries.in)
+          echo "$UAT_ERP" | grep -q "Jasvi Industries ERP"
           READY=0
           for i in {1..20}; do
             if curl -fsSL https://erp-uat.jasviindustries.in/api/runtime/health 2>/dev/null | grep -q '"ready":true'; then
@@ -195,9 +197,12 @@ jobs:
 
       - name: Verify Live PROD Endpoints
         run: |
-          curl -fsSL https://jasviindustries.in | grep -q "Jasvi Industries"
-          curl -fsSL https://www.jasviindustries.in | grep -q "Jasvi Industries"
-          curl -fsSL https://erp.jasviindustries.in | grep -q "Jasvi Industries ERP"
+          PROD_WEB=$(curl -fsSL https://jasviindustries.in)
+          echo "$PROD_WEB" | grep -q "Jasvi Industries"
+          PROD_WWW=$(curl -fsSL https://www.jasviindustries.in)
+          echo "$PROD_WWW" | grep -q "Jasvi Industries"
+          PROD_ERP=$(curl -fsSL https://erp.jasviindustries.in)
+          echo "$PROD_ERP" | grep -q "Jasvi Industries ERP"
           READY=0
           for i in {1..20}; do
             if curl -fsSL https://erp.jasviindustries.in/api/runtime/health 2>/dev/null | grep -q '"ready":true'; then
