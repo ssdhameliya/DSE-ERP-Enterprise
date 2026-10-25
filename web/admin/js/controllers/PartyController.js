@@ -342,6 +342,46 @@ window.PartyController = (function() {
     renderSuppliersTable(filteredSuppliers);
   }
 
+  async function isolateParty(ref, isCustomer = true) {
+    if (isCustomer) {
+      if (!customers || customers.length === 0) {
+        await loadCustomers();
+      }
+      const searchInput = document.getElementById('cust-search');
+      if (searchInput) searchInput.value = ref || '';
+      filterCustomers(ref || '');
+
+      const found = (filteredCustomers || []).find(c =>
+        (c.partyCode || c.code || '').toUpperCase() === (ref || '').toUpperCase() ||
+        (c.name || '').toUpperCase() === (ref || '').toUpperCase() ||
+        (c.phone || '') === ref
+      );
+      if (found) {
+        setTimeout(() => {
+          showCustomerDetails(found.id);
+        }, 150);
+      }
+    } else {
+      if (!suppliers || suppliers.length === 0) {
+        await loadSuppliers();
+      }
+      const searchInput = document.getElementById('supp-search');
+      if (searchInput) searchInput.value = ref || '';
+      filterSuppliers(ref || '');
+
+      const found = (filteredSuppliers || []).find(s =>
+        (s.partyCode || s.code || '').toUpperCase() === (ref || '').toUpperCase() ||
+        (s.name || '').toUpperCase() === (ref || '').toUpperCase() ||
+        (s.phone || '') === ref
+      );
+      if (found) {
+        setTimeout(() => {
+          showSupplierDetails(found.id);
+        }, 150);
+      }
+    }
+  }
+
   function selectSupplierRow(id) {
     onSupplierRowClick(id);
   }
@@ -1918,7 +1958,8 @@ window.PartyController = (function() {
       } else {
         window.open('/api/master/parties/export?type=SUPPLIER', '_blank');
       }
-    }
+    },
+    isolateParty
   };
 })();
 

@@ -2024,7 +2024,7 @@ window.FinanceController = {
       <tr style="font-weight:700; background:rgba(255,255,255,0.02);">
         <td colspan="5" style="color:var(--cyan); font-size:0.85rem;">1. OPERATING REVENUE &amp; TURNOVER</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectPnlRow('SALES', this)" ondblclick="window.FinanceController.openDrillDown('SALES')" style="cursor: pointer;" title="Click to select, double-click to inspect sales invoices">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Domestic Sales Revenue</td>
         <td style="font-family:monospace; color:var(--text-muted);">4010</td>
         <td><span class="pill-badge pill-info">OPERATING REVENUE</span></td>
@@ -2049,7 +2049,7 @@ window.FinanceController = {
       <tr style="font-weight:700; background:rgba(255,255,255,0.02);">
         <td colspan="5" style="color:var(--orange); font-size:0.85rem;">2. COST OF GOODS SOLD (COGS)</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectPnlRow('PURCHASES', this)" ondblclick="window.FinanceController.openDrillDown('PURCHASES')" style="cursor: pointer;" title="Click to select, double-click to inspect purchase bills">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Raw Material Procurement / Direct Purchase</td>
         <td style="font-family:monospace; color:var(--text-muted);">5010</td>
         <td><span class="pill-badge pill-warning">DIRECT EXPENSE</span></td>
@@ -2067,7 +2067,7 @@ window.FinanceController = {
       <tr style="font-weight:700; background:rgba(255,255,255,0.02);">
         <td colspan="5" style="color:var(--red); font-size:0.85rem;">3. OPERATING &amp; ADMINISTRATIVE EXPENSES</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectPnlRow('EXPENSES', this)" ondblclick="window.FinanceController.openDrillDown('EXPENSES')" style="cursor: pointer;" title="Click to select, double-click to inspect expense vouchers">
         <td style="padding-left:24px; color:var(--text-main);">Administrative &amp; General Operating Overheads</td>
         <td style="font-family:monospace; color:var(--text-muted);">5090</td>
         <td><span class="pill-badge pill-danger">INDIRECT EXPENSE</span></td>
@@ -2097,25 +2097,25 @@ window.FinanceController = {
       <tr style="font-weight:700; background:rgba(255,255,255,0.02);">
         <td colspan="4" style="color:var(--cyan); font-size:0.85rem;">1. CURRENT ASSETS</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectBsRow('CASH_BANK', this)" ondblclick="window.FinanceController.openDrillDown('CASH_BANK')" style="cursor: pointer;" title="Click to select, double-click to inspect cash & bank vouchers">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Cash on Hand</td>
         <td style="font-family:monospace; color:var(--text-muted);">1010</td>
         <td><span class="pill-badge pill-neutral">CURRENT ASSET</span></td>
         <td style="text-align:right; font-weight:600;">&#8377; 25,000.00</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectBsRow('CASH_BANK', this)" ondblclick="window.FinanceController.openDrillDown('CASH_BANK')" style="cursor: pointer;" title="Click to select, double-click to inspect cash & bank vouchers">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Bank Current Account</td>
         <td style="font-family:monospace; color:var(--text-muted);">1020</td>
         <td><span class="pill-badge pill-info">BANK ACCOUNT</span></td>
         <td style="text-align:right; font-weight:600; color:var(--cyan);">${this.formatMoney(currAssets * 0.4)}</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectBsRow('DEBTORS', this)" ondblclick="window.FinanceController.openDrillDown('DEBTORS')" style="cursor: pointer;" title="Click to select, double-click to inspect debtor vouchers">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Sundry Debtors (Receivables)</td>
         <td style="font-family:monospace; color:var(--text-muted);">1040</td>
         <td><span class="pill-badge pill-info">CURRENT ASSET</span></td>
         <td style="text-align:right; font-weight:700; color:var(--yellow);">${this.formatMoney(currAssets * 0.45)}</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectBsRow('INVENTORY', this)" ondblclick="window.FinanceController.openDrillDown('INVENTORY')" style="cursor: pointer;" title="Click to select, double-click to inspect inventory items">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Stock-in-Trade (Inventory Valuation)</td>
         <td style="font-family:monospace; color:var(--text-muted);">1060</td>
         <td><span class="pill-badge pill-warning">STOCK IN HAND</span></td>
@@ -2147,7 +2147,7 @@ window.FinanceController = {
       <tr style="font-weight:700; background:rgba(255,255,255,0.02);">
         <td colspan="4" style="color:var(--orange); font-size:0.85rem;">3. CURRENT LIABILITIES</td>
       </tr>
-      <tr>
+      <tr onclick="window.FinanceController.selectBsRow('CREDITORS', this)" ondblclick="window.FinanceController.openDrillDown('CREDITORS')" style="cursor: pointer;" title="Click to select, double-click to inspect creditor vouchers">
         <td style="padding-left:24px; font-weight:600; color:var(--text-main);">Sundry Creditors (Procurement Payables)</td>
         <td style="font-family:monospace; color:var(--text-muted);">2010</td>
         <td><span class="pill-badge pill-warning">CURRENT LIABILITY</span></td>
@@ -2169,7 +2169,7 @@ window.FinanceController = {
         <td><span class="pill-badge pill-success">EQUITY</span></td>
         <td style="text-align:right; font-weight:700; color:var(--cyan);">${this.formatMoney(equity)}</td>
       </tr>
-      <tr style="font-weight:800; background:rgba(168,85,247,0.1); border-top:2px solid var(--accent);">
+      <tr style="font-weight:800; background:rgba(168,85,247,0.12); border-top:2px solid var(--accent);">
         <td style="padding-left:12px; color:var(--purple-accent); font-size:0.92rem;">TOTAL LIABILITIES &amp; EQUITY</td>
         <td style="font-family:monospace;">-</td>
         <td>-</td>
@@ -2259,6 +2259,332 @@ window.FinanceController = {
     } else {
       window.print();
     }
+  },
+
+  // ==========================================
+  // FINANCIAL STATEMENTS DRILL-DOWN INSPECTION (FinancialStatementsController.java:540-620 PARITY)
+  // ==========================================
+  selectedPnlCategory: 'SALES',
+  selectedBsCategory: 'DEBTORS',
+  currentDrillDownCategory: 'SALES',
+  currentDrillDownData: null,
+  currentDrillDownRows: [],
+
+  selectPnlRow(cat, trEl) {
+    this.selectedPnlCategory = cat;
+    const table = document.getElementById('fs-pnl-table');
+    if (table) table.querySelectorAll('tr').forEach(r => r.classList.remove('active-selected-row'));
+    if (trEl) trEl.classList.add('active-selected-row');
+  },
+
+  selectBsRow(cat, trEl) {
+    this.selectedBsCategory = cat;
+    const table = document.getElementById('fs-bs-table');
+    if (table) table.querySelectorAll('tr').forEach(r => r.classList.remove('active-selected-row'));
+    if (trEl) trEl.classList.add('active-selected-row');
+  },
+
+  drillDownSelectedPnl() {
+    this.openDrillDown(this.selectedPnlCategory || 'SALES');
+  },
+
+  drillDownSelectedBs() {
+    this.openDrillDown(this.selectedBsCategory || 'DEBTORS');
+  },
+
+  async openDrillDown(category = 'SALES') {
+    this.currentDrillDownCategory = category;
+    const cat = (category || 'SALES').toUpperCase();
+    const from = document.getElementById('fs-from-date')?.value || '';
+    const to = document.getElementById('fs-to-date')?.value || '';
+
+    const modal = document.getElementById('modal-financial-drilldown');
+    const titleEl = document.getElementById('mfd-title');
+    const subTitleEl = document.getElementById('mfd-subtitle');
+    const catKpi = document.getElementById('mfd-kpi-category');
+    const countKpi = document.getElementById('mfd-kpi-count');
+    const totalKpi = document.getElementById('mfd-kpi-total');
+    const tbody = document.getElementById('mfd-table-tbody');
+    const searchInp = document.getElementById('mfd-search');
+
+    if (titleEl) titleEl.innerText = `Financial Drill-Down Inspection — ${cat}`;
+    if (subTitleEl) subTitleEl.innerText = `Loading transaction-level ledger details backing ${cat} figures...`;
+    if (catKpi) catKpi.innerText = cat;
+    if (countKpi) countKpi.innerText = '...';
+    if (totalKpi) totalKpi.innerText = '...';
+    if (searchInp) searchInp.value = '';
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);"><span class="loading-spinner"></span> Querying ledger vouchers backing ${cat}...</td></tr>`;
+
+    if (modal) modal.style.display = 'flex';
+
+    try {
+      let data = null;
+      try {
+        data = await window.ApiService.get(`/api/financial/drill-down?category=${cat}&fromDate=${from}&toDate=${to}`);
+      } catch (apiErr) {
+        console.warn('[FinanceController] /api/financial/drill-down server call warning:', apiErr);
+      }
+
+      if (!data || !Array.isArray(data.rows)) {
+        data = await this.buildLocalDrillDownData(cat);
+      }
+
+      this.currentDrillDownData = data;
+      this.currentDrillDownRows = data.rows || [];
+      this.renderDrillDownModal(data, cat);
+
+    } catch (err) {
+      console.error('Failed to load drill-down data:', err);
+      const errMsg = (err && err.message) ? err.message : String(err);
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--red);">⚠️ Could not load transaction details: ${errMsg}</td></tr>`;
+      if (subTitleEl) subTitleEl.innerText = `Error: ${errMsg}`;
+    }
+  },
+
+  async buildLocalDrillDownData(cat) {
+    const rows = [];
+    let netTotal = 0;
+
+    if (cat === 'SALES') {
+      let sales = (window.SalesController && window.SalesController.salesCache) || [];
+      if (!sales.length && window.OperationsService && window.OperationsService.getSales) {
+        try {
+          const res = await window.OperationsService.getSales(0, 100);
+          sales = res.rows || res.content || (Array.isArray(res) ? res : []);
+        } catch (_) {}
+      }
+      sales.forEach(s => {
+        const amt = parseFloat(s.totalAmount != null ? s.totalAmount : (s.total || 0));
+        netTotal += amt;
+        rows.push({
+          date: s.invoiceDate || s.date || '2026-10-25',
+          voucherNo: s.invoiceNo || s.number || 'INV',
+          partyOrAccount: (s.customer && s.customer.name) || s.customerName || 'Valued Customer',
+          description: `Tax Invoice • ${s.paymentStatus || 'POSTED'}`,
+          debit: 0,
+          credit: amt,
+          balance: amt
+        });
+      });
+    } else if (cat === 'PURCHASES' || cat === 'CREDITORS') {
+      let purchases = [];
+      if (window.OperationsService && window.OperationsService.getPurchases) {
+        try {
+          const res = await window.OperationsService.getPurchases(0, 100);
+          purchases = res.rows || res.content || (Array.isArray(res) ? res : []);
+        } catch (_) {}
+      }
+      purchases.forEach(p => {
+        const amt = parseFloat(p.totalAmount != null ? p.totalAmount : (p.total || 0));
+        netTotal += amt;
+        rows.push({
+          date: p.invoiceDate || p.date || '2026-10-25',
+          voucherNo: p.invoiceNo || p.number || 'BILL',
+          partyOrAccount: (p.supplier && p.supplier.name) || p.supplierName || 'Material Supplier',
+          description: `Purchase Inward Bill • ${p.paymentStatus || 'POSTED'}`,
+          debit: amt,
+          credit: 0,
+          balance: amt
+        });
+      });
+    } else if (cat === 'DEBTORS') {
+      let sales = (window.SalesController && window.SalesController.salesCache) || [];
+      if (!sales.length && window.OperationsService && window.OperationsService.getSales) {
+        try {
+          const res = await window.OperationsService.getSales(0, 100);
+          sales = res.rows || res.content || (Array.isArray(res) ? res : []);
+        } catch (_) {}
+      }
+      sales.filter(s => {
+        const total = parseFloat(s.totalAmount || s.total || 0);
+        const paid = parseFloat(s.paidAmount || (s.paymentStatus === 'PAID' ? total : 0));
+        return (total - paid) > 0.01;
+      }).forEach(s => {
+        const total = parseFloat(s.totalAmount || s.total || 0);
+        const paid = parseFloat(s.paidAmount || 0);
+        const bal = total - paid;
+        netTotal += bal;
+        rows.push({
+          date: s.dueDate || s.invoiceDate || '2026-10-25',
+          voucherNo: s.invoiceNo || s.number || 'INV',
+          partyOrAccount: (s.customer && s.customer.name) || s.customerName || 'Trade Debtor',
+          description: `Outstanding Invoice Balance (${s.paymentStatus || 'UNPAID'})`,
+          debit: bal,
+          credit: 0,
+          balance: bal
+        });
+      });
+    } else if (cat === 'CASH_BANK') {
+      try {
+        const txns = await window.ApiService.get('/api/accounting/bank-entries?page=0&size=50') || [];
+        (Array.isArray(txns) ? txns : (txns.rows || [])).forEach(t => {
+          const isDeposit = (t.type || t.entryType || '').toUpperCase().includes('DEPOSIT') || (t.credit && t.credit > 0);
+          const amt = parseFloat(t.amount || t.totalAmount || t.credit || t.debit || 0);
+          if (isDeposit) netTotal += amt; else netTotal -= amt;
+          rows.push({
+            date: t.entryDate || t.date || '2026-10-25',
+            voucherNo: t.voucherNo || t.entryNo || t.reference || 'BNK-TX',
+            partyOrAccount: t.bankAccount || t.accountName || 'Bank Current Account',
+            description: t.narration || t.notes || 'Bank Reconciliation Ledger Entry',
+            debit: isDeposit ? 0 : amt,
+            credit: isDeposit ? amt : 0,
+            balance: Math.abs(netTotal)
+          });
+        });
+      } catch (_) {}
+    } else {
+      // Default: EXPENSES
+      try {
+        const gl = await window.ApiService.get('/api/accounting/gl-vouchers?page=0&size=50') || [];
+        (Array.isArray(gl) ? gl : (gl.rows || [])).forEach(v => {
+          const amt = parseFloat(v.amount || v.debit || 0);
+          netTotal += amt;
+          rows.push({
+            date: v.voucherDate || v.date || '2026-10-25',
+            voucherNo: v.voucherNo || 'EXP-VCH',
+            partyOrAccount: v.accountName || 'Administrative Expenses',
+            description: v.narration || 'Operational overhead disbursement',
+            debit: amt,
+            credit: 0,
+            balance: amt
+          });
+        });
+      } catch (_) {}
+    }
+
+    return {
+      category: cat,
+      totalTransactions: rows.length,
+      netTotal: netTotal,
+      rows: rows
+    };
+  },
+
+  renderDrillDownModal(data, category) {
+    const rows = data?.rows || [];
+    const total = data?.netTotal != null ? data.netTotal : (data?.totalAmount || 0);
+    const count = rows.length;
+
+    const titleEl = document.getElementById('mfd-title');
+    const subTitleEl = document.getElementById('mfd-subtitle');
+    const catKpi = document.getElementById('mfd-kpi-category');
+    const countKpi = document.getElementById('mfd-kpi-count');
+    const totalKpi = document.getElementById('mfd-kpi-total');
+
+    if (titleEl) titleEl.innerText = `Financial Drill-Down Inspection — ${category}`;
+    if (subTitleEl) subTitleEl.innerText = `Transaction-level ledger details backing ${category} figures (${count} transactions)`;
+    if (catKpi) catKpi.innerText = category;
+    if (countKpi) countKpi.innerText = count.toLocaleString();
+    if (totalKpi) totalKpi.innerText = this.formatMoney(total);
+
+    this.renderDrillDownTableRows(rows);
+  },
+
+  renderDrillDownTableRows(rows) {
+    const tbody = document.getElementById('mfd-table-tbody');
+    if (!tbody) return;
+
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-dim);">No transactions found matching this inspection criteria.</td></tr>`;
+      return;
+    }
+
+    const fmtDate = (d) => {
+      if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
+        return window.FormatUtil.formatDate(d);
+      }
+      return d || '-';
+    };
+
+    tbody.innerHTML = rows.map(r => {
+      const debitVal = parseFloat(r.debit) || 0;
+      const creditVal = parseFloat(r.credit) || 0;
+      const balVal = parseFloat(r.balance) || 0;
+
+      const debitStr = debitVal > 0 ? this.formatMoney(debitVal) : '-';
+      const creditStr = creditVal > 0 ? this.formatMoney(creditVal) : '-';
+      const balStr = balVal !== 0 ? this.formatMoney(balVal) : '-';
+
+      const esc = (t) => {
+        if (!t) return '-';
+        return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      };
+
+      return `
+        <tr>
+          <td style="font-family:monospace; color:var(--text-muted); font-size:0.8rem;">${fmtDate(r.date)}</td>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace; font-size:0.82rem;">${esc(r.voucherNo)}</td>
+          <td style="font-weight:600; color:var(--text-main); font-size:0.82rem;">${esc(r.partyOrAccount)}</td>
+          <td style="color:var(--text-muted); font-size:0.8rem;">${esc(r.description)}</td>
+          <td style="text-align:right; font-weight:700; color:#fb923c; font-family:monospace; font-size:0.82rem;">${debitStr}</td>
+          <td style="text-align:right; font-weight:700; color:#34d399; font-family:monospace; font-size:0.82rem;">${creditStr}</td>
+          <td style="text-align:right; font-weight:700; color:#38bdf8; font-family:monospace; font-size:0.82rem;">${balStr}</td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  filterDrillDownRows(query) {
+    const q = (query || '').toLowerCase().trim();
+    if (!this.currentDrillDownRows) return;
+    if (!q) {
+      this.renderDrillDownTableRows(this.currentDrillDownRows);
+      return;
+    }
+    const filtered = this.currentDrillDownRows.filter(r => {
+      const party = (r.partyOrAccount || '').toLowerCase();
+      const vch = (r.voucherNo || '').toLowerCase();
+      const desc = (r.description || '').toLowerCase();
+      return party.includes(q) || vch.includes(q) || desc.includes(q);
+    });
+    this.renderDrillDownTableRows(filtered);
+  },
+
+  exportDrillDownCsv() {
+    const rows = this.currentDrillDownRows || [];
+    if (!rows.length) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('No transactions to export.');
+      return;
+    }
+
+    const fmtDate = (d) => {
+      if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
+        return window.FormatUtil.formatDate(d);
+      }
+      return d || '-';
+    };
+
+    const headers = ['Date', 'Voucher / Ref', 'Party / Account', 'Description', 'Debit (INR)', 'Credit (INR)', 'Balance (INR)'];
+    const csvLines = [headers.join(',')];
+
+    rows.forEach(r => {
+      const line = [
+        `"${fmtDate(r.date)}"`,
+        `"${(r.voucherNo || '').replace(/"/g, '""')}"`,
+        `"${(r.partyOrAccount || '').replace(/"/g, '""')}"`,
+        `"${(r.description || '').replace(/"/g, '""')}"`,
+        (parseFloat(r.debit) || 0).toFixed(2),
+        (parseFloat(r.credit) || 0).toFixed(2),
+        (parseFloat(r.balance) || 0).toFixed(2)
+      ];
+      csvLines.push(line.join(','));
+    });
+
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Financial_Drilldown_${this.currentDrillDownCategory || 'LEDGER'}_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported drill-down CSV successfully.');
+  },
+
+  closeDrillDownModal() {
+    const modal = document.getElementById('modal-financial-drilldown');
+    if (modal) modal.style.display = 'none';
   },
 
   // ==========================================

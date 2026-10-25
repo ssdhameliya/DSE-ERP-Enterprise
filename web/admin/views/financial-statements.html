@@ -127,6 +127,12 @@
 
           <!-- TAB 1: P&L STATEMENT -->
           <div id="fs-panel-pnl" class="fs-tab-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time Profit &amp; Loss Statement • Click any row or use Inspect to view transaction vouchers</span>
+              <button class="btn btn-secondary btn-sm" id="btnDrillDownPnl" onclick="window.FinanceController.drillDownSelectedPnl()" style="height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🔍</span> Inspect / Drill-Down
+              </button>
+            </div>
             <div class="table-container standard-table-card">
               <table class="table" id="fs-pnl-table">
                 <thead>
@@ -147,6 +153,12 @@
 
           <!-- TAB 2: BALANCE SHEET -->
           <div id="fs-panel-bs" class="fs-tab-panel" style="display:none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Audited Balance Sheet Position • Click any row or use Inspect to view ledger details</span>
+              <button class="btn btn-secondary btn-sm" id="btnDrillDownBs" onclick="window.FinanceController.drillDownSelectedBs()" style="height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🔍</span> Inspect / Drill-Down
+              </button>
+            </div>
             <div class="table-container standard-table-card">
               <table class="table" id="fs-bs-table">
                 <thead>

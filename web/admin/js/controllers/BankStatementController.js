@@ -16,6 +16,7 @@ window.BankStatementController = (function() {
 
   let activeMatchingTxn = null;
   let activeCandidates = [];
+  let autoMatchSuggestions = [];
 
   function formatMoney(amount) {
     return '₹ ' + (parseFloat(amount) || 0).toLocaleString('en-IN', {
@@ -919,6 +920,280 @@ window.BankStatementController = (function() {
     } finally {
       if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.innerHTML = '<span>✅</span> Confirm Match'; }
     }
+  }
+
+  // ==========================================
+  // AUTO MATCH SUGGESTIONS & KPI FILTERS (Desktop BankStatementController.java:1101 Parity)
+  // ==========================================
+
+  function filterByKpiStatus(status) {
+    const cmb = document.getElementById('cmbStatus');
+    if (cmb) {
+      cmb.value = status === 'ALL' ? '' : status;
+    }
+    currentPage = 0;
+    loadBatch(currentBatchId);
+  }
+
+  function filterByReference(ref) {
+    const txt = document.getElementById('txtSearch');
+    if (txt) {
+      txt.value = ref || '';
+    }
+    const cmb = document.getElementById('cmbStatus');
+    if (cmb) cmb.value = '';
+    currentPage = 0;
+    loadBatch(currentBatchId);
+  }
+
+  async function openAutoMatchDialog() {
+    if (!currentBatchId) {
+      if (window.AppDialogService) window.AppDialogService.toastInfo('Please select a bank statement batch first.');
+      return;
+    }
+
+    const modal = document.getElementById('modal-bank-auto-match');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    const searchInput = document.getElementById('mbam-search');
+    if (searchInput) searchInput.value = '';
+
+    const tbody = document.getElementById('mbam-table-tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: var(--text-dim);"><span class="loading-spinner"></span> Scanning bank transactions and evaluating match candidates...</td></tr>`;
+    }
+
+    updateAutoMatchKpis(0, 0, 0, 0);
+
+    try {
+      let targets = (currentTransactions || []).filter(t => ['UNMATCHED', 'SUGGESTED'].includes(t.status));
+      if (targets.length === 0) {
+        targets = currentTransactions || [];
+      }
+
+      const suggestions = [];
+
+      for (const t of targets) {
+        try {
+          const bankAmount = parseFloat(t.debit) > 0 ? parseFloat(t.debit) : parseFloat(t.credit) || 0;
+          if (bankAmount <= 0) continue;
+
+          let candidates = [];
+          if (window.ReconService && window.ReconService.suggestMatch) {
+            candidates = await window.ReconService.suggestMatch(t.id);
+          }
+          if ((!candidates || candidates.length === 0) && window.ReconService && window.ReconService.getCandidates) {
+            candidates = await window.ReconService.getCandidates(t.id);
+          }
+
+          if (candidates && candidates.length > 0) {
+            const sorted = candidates.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+            const best = sorted[0];
+            const conf = best.confidence || 0;
+
+            if (conf >= 70 || Math.abs((parseFloat(best.outstanding) || 0) - bankAmount) <= 1.00) {
+              suggestions.push({
+                selected: true,
+                txn: t,
+                candidate: {
+                  ...best,
+                  outstanding: parseFloat(best.outstanding) || 0,
+                  totalAmount: parseFloat(best.totalAmount) || 0
+                },
+                bankAmount: bankAmount,
+                confidence: conf || 85
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Auto match scan error on txn', t.id, e);
+        }
+      }
+
+      autoMatchSuggestions = suggestions;
+      renderAutoMatchModal(autoMatchSuggestions);
+
+    } catch (err) {
+      console.error('Failed to open auto match dialog:', err);
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: var(--red);">⚠️ Error generating suggestions: ${err.message || 'Server error'}</td></tr>`;
+      }
+    }
+  }
+
+  function updateAutoMatchKpis(count, selectedCount, totalAmount, avgConf) {
+    const elSugg = document.getElementById('mbam-kpi-suggestions');
+    const elSel = document.getElementById('mbam-kpi-selected');
+    const elAmt = document.getElementById('mbam-kpi-amount');
+    const elConf = document.getElementById('mbam-kpi-confidence');
+    const btnConfirm = document.getElementById('mbam-btn-confirm');
+
+    if (elSugg) elSugg.innerText = count.toLocaleString();
+    if (elSel) elSel.innerText = selectedCount.toLocaleString();
+    if (elAmt) elAmt.innerText = formatMoney(totalAmount);
+    if (elConf) elConf.innerText = Math.round(avgConf) + '%';
+
+    if (btnConfirm) {
+      btnConfirm.disabled = selectedCount === 0;
+      btnConfirm.innerHTML = `<span>✔</span> Confirm Match (${selectedCount})`;
+    }
+  }
+
+  function renderAutoMatchModal(items) {
+    const selected = items.filter(x => x.selected);
+    const totalAmt = selected.reduce((s, x) => s + x.bankAmount, 0);
+    const avgConf = selected.length > 0 ? selected.reduce((s, x) => s + x.confidence, 0) / selected.length : 0;
+    updateAutoMatchKpis(items.length, selected.length, totalAmt, avgConf);
+
+    const chkAll = document.getElementById('mbam-chk-select-all');
+    if (chkAll) {
+      chkAll.checked = items.length > 0 && selected.length === items.length;
+      chkAll.indeterminate = selected.length > 0 && selected.length < items.length;
+    }
+
+    renderAutoMatchTable(items);
+  }
+
+  function renderAutoMatchTable(items) {
+    const tbody = document.getElementById('mbam-table-tbody');
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 1.8rem; margin-bottom: 8px;">✨</div>
+            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">No Auto-Match Suggestions Found</div>
+            <div style="font-size: 0.78rem; margin-top: 4px; color: var(--text-dim);">No unmatched transactions have high-confidence matches with open Sales, Purchases, or Returns.</div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = items.map((item, idx) => {
+      const isDebit = parseFloat(item.txn.debit) > 0;
+      const conf = Math.round(item.confidence || 0);
+      let confColor = 'var(--text-muted)';
+      if (conf >= 80) confColor = 'var(--green)';
+      else if (conf >= 50) confColor = 'var(--yellow)';
+
+      return `
+        <tr style="${item.selected ? 'background: rgba(139, 92, 246, 0.08);' : ''}">
+          <td style="text-align: center;">
+            <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="window.BankStatementController.onAutoMatchCheckboxChange(${idx}, this.checked)">
+          </td>
+          <td style="white-space: nowrap; font-size: 0.78rem;">${formatDate(item.txn.transactionDate)}</td>
+          <td style="font-family: monospace; font-weight: 600; color: var(--text-dim); font-size: 0.78rem;">${item.txn.reference || item.txn.chequeNo || '-'}</td>
+          <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem;" title="${item.txn.description || ''}">${item.txn.description || '-'}</td>
+          <td style="text-align: right; font-weight: 700; color: ${isDebit ? '#fb923c' : 'var(--green)'};">${formatMoney(item.bankAmount)}</td>
+          <td>
+            <span class="pill-badge pill-neutral" style="font-size: 0.7rem; padding: 2px 6px;">${item.candidate.type || 'DOC'}</span>
+            <span style="font-family: monospace; font-weight: 700; color: var(--cyan); margin-left: 4px; font-size: 0.8rem;">${item.candidate.documentNo}</span>
+          </td>
+          <td style="font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem;" title="${item.candidate.partyName || ''}">${item.candidate.partyName || '-'}</td>
+          <td style="white-space: nowrap; font-size: 0.78rem; color: var(--text-dim);">${formatDate(item.candidate.documentDate)}</td>
+          <td style="text-align: right; font-weight: 700; color: #38bdf8; font-size: 0.8rem;">${formatMoney(item.candidate.outstanding)}</td>
+          <td style="text-align: center;">
+            <span style="font-weight: 800; color: ${confColor}; font-size: 0.8rem;">${conf}%</span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function toggleAutoMatchSelectAll(checked) {
+    autoMatchSuggestions.forEach(x => { x.selected = checked; });
+    renderAutoMatchModal(autoMatchSuggestions);
+  }
+
+  function onAutoMatchCheckboxChange(idx, checked) {
+    if (autoMatchSuggestions[idx]) {
+      autoMatchSuggestions[idx].selected = checked;
+    }
+    renderAutoMatchModal(autoMatchSuggestions);
+  }
+
+  function filterAutoMatchSuggestions(query) {
+    const q = (query || '').toLowerCase().trim();
+    if (!q) {
+      renderAutoMatchTable(autoMatchSuggestions);
+      return;
+    }
+    const filtered = autoMatchSuggestions.filter(item => {
+      const party = (item.candidate.partyName || '').toLowerCase();
+      const docNo = (item.candidate.documentNo || '').toLowerCase();
+      const desc = (item.txn.description || '').toLowerCase();
+      const ref = (item.txn.reference || '').toLowerCase();
+      return party.includes(q) || docNo.includes(q) || desc.includes(q) || ref.includes(q);
+    });
+    renderAutoMatchTable(filtered);
+  }
+
+  async function confirmBulkAutoMatch() {
+    const selected = autoMatchSuggestions.filter(x => x.selected);
+    if (selected.length === 0) {
+      if (window.AppDialogService) window.AppDialogService.toastInfo('No suggestions selected for auto-matching.');
+      return;
+    }
+
+    let proceed = true;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      proceed = await window.AppDialogService.confirm(
+        'Confirm Auto-Match',
+        `Approve ${selected.length} Match Suggestions`,
+        `Are you sure you want to approve and execute ${selected.length} auto-matches? This will link transactions and update outstanding balances.`,
+        'Confirm & Reconcile',
+        'Cancel'
+      );
+    }
+    if (!proceed) return;
+
+    const btnConfirm = document.getElementById('mbam-btn-confirm');
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = `<span class="loading-spinner"></span> Reconciling ${selected.length}...`;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const item of selected) {
+      try {
+        const payload = {
+          user: 'Admin',
+          allocations: [
+            {
+              documentType: item.candidate.type,
+              documentId: item.candidate.id,
+              amount: Math.min(item.candidate.outstanding, item.bankAmount)
+            }
+          ]
+        };
+        await window.ReconService.matchTransaction(item.txn.id, payload);
+        successCount++;
+      } catch (err) {
+        console.error('Failed auto match for txn', item.txn.id, err);
+        failCount++;
+      }
+    }
+
+    if (window.AppDialogService) {
+      if (failCount === 0) {
+        window.AppDialogService.toastSuccess(`Successfully reconciled ${successCount} bank transactions.`);
+      } else {
+        window.AppDialogService.toastInfo(`Reconciled ${successCount} transactions. ${failCount} failed.`);
+      }
+    }
+
+    closeAutoMatchDialog();
+    loadBatch(currentBatchId);
+  }
+
+  function closeAutoMatchDialog() {
+    const modal = document.getElementById('modal-bank-auto-match');
+    if (modal) modal.style.display = 'none';
   }
 
   async function quickMoveExpense(txnId, amount) {
@@ -2346,6 +2621,17 @@ window.BankStatementController = (function() {
     onAllocationInputChanged,
     refreshSuggestions,
     confirmCurrentAllocations,
+
+    // KPI Filters & Auto Match Suggestions (Desktop Parity)
+    filterByKpiStatus,
+    filterByReference,
+    openAutoMatchDialog,
+    renderAutoMatchModal,
+    toggleAutoMatchSelectAll,
+    onAutoMatchCheckboxChange,
+    filterAutoMatchSuggestions,
+    confirmBulkAutoMatch,
+    closeAutoMatchDialog,
 
     quickMoveExpense,
     quickMoveBankEntry,

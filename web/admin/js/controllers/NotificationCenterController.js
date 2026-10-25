@@ -544,26 +544,35 @@ window.NotificationCenterController = (function() {
       // 4. Quotations
       else if (mod.includes('QUOTATION') || ref.startsWith('QT') || target.includes('quotation')) {
         window.NavigationRouter.selectNav('view-quotations');
+        if (window.QuotationController && window.QuotationController.isolateQuotation && ref) {
+          window.QuotationController.isolateQuotation(ref);
+        }
       }
       // 5. Returns
       else if (mod.includes('RETURN') || target.includes('return')) {
-        if (mod.includes('PURCHASE') || target.includes('purchase')) {
-          window.NavigationRouter.selectNav('view-purchase-returns');
-        } else {
-          window.NavigationRouter.selectNav('view-sales-returns');
+        const isSales = !mod.includes('PURCHASE') && !target.includes('purchase');
+        window.NavigationRouter.selectNav(isSales ? 'view-sales-returns' : 'view-purchase-returns');
+        if (window.ReturnsController && window.ReturnsController.isolateReturn && ref) {
+          window.ReturnsController.isolateReturn(ref, isSales);
         }
       }
       // 6. Payments
       else if (mod.includes('PAYMENT') || target.includes('payment')) {
-        window.NavigationRouter.selectNav('view-bank-entry');
+        window.NavigationRouter.selectNav('view-payment-receipt');
       }
       // 7. Inventory & Item Master
       else if (mod.includes('ITEM') || mod.includes('INVENT') || target.includes('item') || target.includes('inventory')) {
         window.NavigationRouter.selectNav('view-item-master');
+        if (window.ItemMasterController && window.ItemMasterController.isolateItem && ref) {
+          window.ItemMasterController.isolateItem(ref);
+        }
       }
       // 8. Banking & Expenses
       else if (mod.includes('BANK') || mod.includes('EXPENSE') || target.includes('bank') || target.includes('expense')) {
-        window.NavigationRouter.selectNav('view-bank-entry');
+        window.NavigationRouter.selectNav('view-bank-statement');
+        if (window.BankStatementController && window.BankStatementController.filterByReference && ref) {
+          window.BankStatementController.filterByReference(ref);
+        }
       }
       // 9. Reports & Scheduled Reports
       else if (mod.includes('REPORT') || target.includes('report')) {
@@ -584,8 +593,14 @@ window.NotificationCenterController = (function() {
       // 13. Customer / Supplier CRM
       else if (mod.includes('CUSTOMER') || target.includes('customer')) {
         window.NavigationRouter.selectNav('view-customers');
+        if (window.PartyController && window.PartyController.isolateParty && ref) {
+          window.PartyController.isolateParty(ref, true);
+        }
       } else if (mod.includes('SUPPLIER') || target.includes('supplier')) {
         window.NavigationRouter.selectNav('view-suppliers');
+        if (window.PartyController && window.PartyController.isolateParty && ref) {
+          window.PartyController.isolateParty(ref, false);
+        }
       }
       // 14. Data Import
       else if (mod.includes('IMPORT') || target.includes('import')) {

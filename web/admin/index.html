@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -3771,7 +3771,7 @@
 
   <!-- MODAL: EMAIL INVOICE (ACTION: EMAIL) -->
   <div class="modal-overlay" id="modal-email-invoice">
-    <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-card" style="max-width: 760px; width: 95vw;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.2rem;">&#9993;&#65039;</span>
@@ -3801,8 +3801,8 @@
 
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label">Message Body</label>
-            <textarea id="mei-body" class="form-input" rows="7"
-              style="height: 160px; min-height: 140px; resize: vertical; font-size: 0.84rem; font-family: inherit; line-height: 1.5; padding: 10px 12px;"></textarea>
+            <textarea id="mei-body" class="form-input" rows="12"
+              style="height: 220px; min-height: 200px; resize: vertical; font-size: 0.84rem; font-family: inherit; line-height: 1.5; padding: 10px 12px;"></textarea>
           </div>
 
           <div
@@ -5305,9 +5305,26 @@
             identifier</small>
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
-          <label class="form-label">Lookup Display Value *</label>
+          <label class="form-label" id="lbl-lookup-value-title">Lookup Display Value *</label>
           <input type="text" id="m-lookup-value" class="form-input" placeholder="e.g. Net 30 Days"
             oninput="window.MasterDataController.onLookupValueInput(this.value)" required>
+          <!-- Reference Format Token Helper Strip & Live Preview (REFERENCE_FORMAT Category) -->
+          <div id="ref-format-helper-container" style="display: none; margin-top: 8px;">
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Click token to insert:</span>
+              <span style="color: var(--cyan); font-size: 0.72rem;">XXXX = Sequence Digits</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 2px 8px; height: 26px; font-family: monospace;" onclick="window.MasterDataController.insertFormatToken('{DD}')">+ {DD}</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 2px 8px; height: 26px; font-family: monospace;" onclick="window.MasterDataController.insertFormatToken('{MM}')">+ {MM}</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 2px 8px; height: 26px; font-family: monospace;" onclick="window.MasterDataController.insertFormatToken('{YYYY}')">+ {YYYY}</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 2px 8px; height: 26px; font-family: monospace;" onclick="window.MasterDataController.insertFormatToken('{YY}')">+ {YY}</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 2px 8px; height: 26px; font-family: monospace;" onclick="window.MasterDataController.insertFormatToken('{XXXX}')">+ {XXXX}</button>
+            </div>
+            <div id="ref-format-preview-box" style="padding: 8px 12px; background: rgba(14, 165, 233, 0.1); border: 1px dashed rgba(14, 165, 233, 0.4); border-radius: 6px; font-family: monospace; font-size: 0.82rem; color: #38bdf8;">
+              Live Preview (Seq #1): <strong id="ref-format-preview-text">-</strong>
+            </div>
+          </div>
         </div>
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label">Description / Remarks</label>
@@ -5444,6 +5461,161 @@
           <button type="submit" id="btn-f-submit" class="btn btn-primary">Save Journal Entry</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FINANCIAL DRILL-DOWN INSPECTION (FinancialStatementsController.java PARITY) -->
+  <div class="modal-overlay" id="modal-financial-drilldown" style="display: none;">
+    <div class="modal-card" style="max-width: 1050px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); overflow: hidden;">
+      <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem; color: #38bdf8;">🔍</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; color: #fff;" id="mfd-title">Financial Drill-Down Inspection</h3>
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" id="mfd-subtitle">Transaction-level ledger details backing financial statements</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.FinanceController.closeDrillDownModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
+        <!-- Metric Strip (Category, Transactions, Net Total) -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="padding: 10px 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Category</div>
+            <div id="mfd-kpi-category" style="font-weight: 700; color: #38bdf8; font-size: 1.15rem; margin-top: 2px;">SALES</div>
+          </div>
+          <div style="padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Transactions</div>
+            <div id="mfd-kpi-count" style="font-weight: 700; color: #fff; font-size: 1.15rem; margin-top: 2px;">0</div>
+          </div>
+          <div style="padding: 10px 14px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Net Total</div>
+            <div id="mfd-kpi-total" style="font-weight: 700; color: #34d399; font-size: 1.15rem; margin-top: 2px;">₹ 0.00</div>
+          </div>
+        </div>
+
+        <!-- Filter bar: Search & Export CSV -->
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="flex: 1; position: relative;">
+            <input type="text" id="mfd-search" class="filter-input" style="width: 100%; padding-left: 30px; height: 34px;" placeholder="Filter transactions by party, voucher or note..." oninput="window.FinanceController.filterDrillDownRows(this.value)">
+            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.FinanceController.exportDrillDownCsv()" style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>📥</span> Export CSV
+          </button>
+        </div>
+
+        <!-- Table Container -->
+        <div class="data-panel standard-table-card" style="flex: 1; min-height: 280px; max-height: 440px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <table class="table standard-data-table" id="mfd-table">
+            <thead>
+              <tr style="background: rgba(15, 23, 42, 0.95); position: sticky; top: 0; z-index: 2;">
+                <th style="width: 110px;"><span>📅</span> Date</th>
+                <th style="width: 150px;"><span>📄</span> Voucher / Ref</th>
+                <th><span>👤</span> Party / Account</th>
+                <th><span>📝</span> Description</th>
+                <th style="text-align: right; width: 130px; color: #fb923c;"><span>💸</span> Debit (₹)</th>
+                <th style="text-align: right; width: 130px; color: #34d399;"><span>✔</span> Credit (₹)</th>
+                <th style="text-align: right; width: 140px; color: #38bdf8;"><span>⚖️</span> Balance (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="mfd-table-tbody">
+              <tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);"><span class="loading-spinner"></span> Loading transactions...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.9);">
+        <div style="font-size: 0.74rem; color: var(--text-dim);" id="mfd-footer-note">Audited transaction ledger records backing financial statements</div>
+        <button type="button" class="btn btn-secondary" onclick="window.FinanceController.closeDrillDownModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BANK AUTO MATCH SUGGESTIONS (BankStatementController.java:1101 PARITY) -->
+  <div class="modal-overlay" id="modal-bank-auto-match" style="display: none;">
+    <div class="modal-card" style="max-width: 1180px; width: 96vw; max-height: 92vh; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); overflow: hidden;">
+      <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem; color: #a855f7;">✨</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; color: #fff;" id="mbam-title">Auto Match Suggestions</h3>
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" id="mbam-subtitle">Review and approve high-confidence auto-matched bank transactions</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeAutoMatchDialog()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
+        <!-- 4 Metric Cards Strip -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <div style="padding: 10px 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Suggestions</div>
+            <div id="mbam-kpi-suggestions" style="font-weight: 700; color: #38bdf8; font-size: 1.15rem; margin-top: 2px;">0</div>
+          </div>
+          <div style="padding: 10px 14px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Selected</div>
+            <div id="mbam-kpi-selected" style="font-weight: 700; color: #34d399; font-size: 1.15rem; margin-top: 2px;">0</div>
+          </div>
+          <div style="padding: 10px 14px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Amount</div>
+            <div id="mbam-kpi-amount" style="font-weight: 700; color: #fbbf24; font-size: 1.15rem; margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div style="padding: 10px 14px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Avg Confidence</div>
+            <div id="mbam-kpi-confidence" style="font-weight: 700; color: #a855f7; font-size: 1.15rem; margin-top: 2px;">0%</div>
+          </div>
+        </div>
+
+        <!-- Filter Bar: Checkbox Select All, Live Search, Refresh -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--text-main); white-space: nowrap;">
+            <input type="checkbox" id="mbam-chk-select-all" checked onchange="window.BankStatementController.toggleAutoMatchSelectAll(this.checked)"> Select All
+          </label>
+          <div style="flex: 1; position: relative;">
+            <input type="text" id="mbam-search" class="filter-input" style="width: 100%; padding-left: 30px; height: 34px;" placeholder="Filter suggestions by party, reference, document..." oninput="window.BankStatementController.filterAutoMatchSuggestions(this.value)">
+            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; color: var(--text-dim); pointer-events: none;">🔍</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openAutoMatchDialog()" style="height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>↻</span> Refresh Suggestions
+          </button>
+        </div>
+
+        <!-- Scrollable Table -->
+        <div class="data-panel standard-table-card" style="flex: 1; min-height: 280px; max-height: 440px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <table class="table standard-data-table" id="mbam-table">
+            <thead>
+              <tr style="background: rgba(15, 23, 42, 0.95); position: sticky; top: 0; z-index: 2;">
+                <th style="width: 50px; text-align: center;">Sel</th>
+                <th style="width: 105px;"><span>📅</span> Bank Date</th>
+                <th style="width: 130px;"><span>🔖</span> Ref / Cheque</th>
+                <th><span>📝</span> Narration</th>
+                <th style="text-align: right; width: 125px;"><span>💸</span> Bank Amount</th>
+                <th style="width: 150px;"><span>📄</span> Matched Document</th>
+                <th><span>👤</span> Party / Account</th>
+                <th style="width: 105px;"><span>📅</span> Doc Date</th>
+                <th style="text-align: right; width: 125px; color: #38bdf8;"><span>⚖️</span> Outstanding</th>
+                <th style="text-align: center; width: 95px;"><span>📊</span> Conf</th>
+              </tr>
+            </thead>
+            <tbody id="mbam-table-tbody">
+              <tr><td colspan="10" style="text-align: center; padding: 30px; color: var(--text-dim);"><span class="loading-spinner"></span> Scanning for high-confidence suggestions...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.9);">
+        <div style="font-size: 0.74rem; color: var(--text-dim);">Confirming matches will link bank transactions and create corresponding Bank Entries and payment allocations.</div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeAutoMatchDialog()">Cancel</button>
+          <button type="button" class="btn btn-primary" id="mbam-btn-confirm" onclick="window.BankStatementController.confirmBulkAutoMatch()" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border-color: #8b5cf6; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+            <span>✔</span> Confirm Match
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

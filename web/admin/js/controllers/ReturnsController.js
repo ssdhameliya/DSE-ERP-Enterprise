@@ -719,9 +719,34 @@ window.ReturnsController = (function () {
       window.SalesController.openEmailModal(no, typeCode, ret);
       return;
     }
-    const email = prompt(`Send Return ${no} to email address:`);
+    let email = null;
+    if (window.AppDialogService && typeof window.AppDialogService.prompt === 'function') {
+      email = await window.AppDialogService.prompt(`Send Return ${no} to email address:`, 'accounts@party.com');
+    }
     if (!email) return;
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending ${currentType} ${no} to ${email}...`);
+  }
+
+  async function isolateReturn(ref, isSales = true) {
+    const searchId = isSales ? 'sr-filter-search' : 'pr-filter-search';
+    const searchEl = document.getElementById(searchId);
+    if (searchEl) {
+      searchEl.value = ref || '';
+    }
+    const partyEl = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier');
+    if (partyEl) partyEl.value = '';
+    const statusEl = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status');
+    if (statusEl) statusEl.value = '';
+
+    await loadReturns(isSales ? 'SALES RETURN' : 'PURCHASE RETURN', 0);
+
+    const found = (returnsList || []).find(r => (r.no || r.returnNo || '').toUpperCase() === (ref || '').toUpperCase());
+    if (found) {
+      setTimeout(() => {
+        showDetails(found.no || found.returnNo);
+      }, 150);
+    }
+  }
 
     let attachmentBase64 = null;
     try {
@@ -1523,6 +1548,7 @@ window.ReturnsController = (function () {
     exportExcel,
     sendEmailPrompt,
     sendWhatsappPrompt,
+    isolateReturn,
     viewOriginalDoc,
     openCreateReturnModal,
     onInvoiceSelectChanged,

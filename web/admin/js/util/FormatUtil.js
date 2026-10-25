@@ -571,6 +571,43 @@
           window.AppDialogService.toastError(`Could not generate PDF: ${err.message}`);
         }
       }
+    },
+
+    /**
+     * Centralized Reference Number Formatter matching BusinessOperationsService.java:762
+     * & ReferenceFormatRules.java
+     * Supports tokens: DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, YYYY, YY, MM, DD (and {YYYY}, {MM}, etc.)
+     * and sequence pattern: X{2,} or {X+} (padded with zeros)
+     */
+    formatDatedReference(pattern, seq = 1, date = new Date()) {
+      if (!pattern || typeof pattern !== 'string') return '';
+      const d = (date instanceof Date) ? date : (this.parseDate(date) || new Date());
+      const yyyy = String(d.getFullYear());
+      const yy = yyyy.slice(-2);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+
+      let res = pattern
+        .replace(/\{?DD-MM-YYYY\}?/gi, `${dd}-${mm}-${yyyy}`)
+        .replace(/\{?DD\/MM\/YYYY\}?/gi, `${dd}/${mm}/${yyyy}`)
+        .replace(/\{?YYYY-MM-DD\}?/gi, `${yyyy}-${mm}-${dd}`)
+        .replace(/\{?YYYY\}?/gi, yyyy)
+        .replace(/\{?YY\}?/gi, yy)
+        .replace(/\{?MM\}?/gi, mm)
+        .replace(/\{?DD\}?/gi, dd);
+
+      // Sequence replacement: X{2,} or {X+}
+      const seqMatch = res.match(/\{?X{2,}\}?/i);
+      if (seqMatch) {
+        const fullToken = seqMatch[0];
+        const cleanXs = fullToken.replace(/[\{\}]/g, '');
+        const width = cleanXs.length;
+        const seqVal = parseInt(seq, 10) || 1;
+        const paddedSeq = String(seqVal).padStart(width, '0');
+        res = res.replace(fullToken, paddedSeq);
+      }
+
+      return res;
     }
   };
   if (window.FormatUtil) {

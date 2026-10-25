@@ -276,6 +276,26 @@ window.QuotationController = (function () {
     showDetails(id);
   }
 
+  async function isolateQuotation(ref) {
+    const searchEl = document.getElementById('quote-filter-search');
+    if (searchEl) searchEl.value = ref || '';
+    const numEl = document.getElementById('quote-filter-number');
+    if (numEl) numEl.value = '';
+    const custEl = document.getElementById('quote-filter-customer');
+    if (custEl) custEl.value = '';
+    const statEl = document.getElementById('quote-filter-status');
+    if (statEl) statEl.value = '';
+
+    await loadQuotations(0);
+
+    const found = (quotationsList || []).find(q => (q.no || q.quotationNo || '').toUpperCase() === (ref || '').toUpperCase());
+    if (found) {
+      setTimeout(() => {
+        showDetails(found.id || found.no);
+      }, 150);
+    }
+  }
+
   function toggleActionMenu(id, event) {
     if (event) event.stopPropagation();
     const menuId = 'quote-action-menu-' + id;
@@ -1540,6 +1560,7 @@ window.QuotationController = (function () {
       loadQuotations(0);
     },
     initDateFilters,
+    isolateQuotation,
     openQuotationView: showDetails,
     openDrawer: showDetails
   };

@@ -85,6 +85,23 @@ window.ItemMasterController = (function() {
     renderTable(filteredItems);
   }
 
+  async function isolateItem(ref) {
+    if (!items || items.length === 0) {
+      await loadItems();
+    }
+    const input = document.getElementById('item-search');
+    if (input) input.value = ref || '';
+    filterItems(ref || '');
+
+    const found = (filteredItems || []).find(i => (i.itemCode || '').toUpperCase() === (ref || '').toUpperCase());
+    if (found) {
+      selectedCodes.clear();
+      selectedCodes.add(found.itemCode);
+      updateSelectionFooter();
+      renderTable(filteredItems);
+    }
+  }
+
   function renderTable(rows) {
     const tbody = document.getElementById('items-table-tbody');
     if (!tbody) return;
@@ -1460,6 +1477,7 @@ window.ItemMasterController = (function() {
     },
     importItems() {
       this.importItemsExcel();
-    }
+    },
+    isolateItem
   };
 })();

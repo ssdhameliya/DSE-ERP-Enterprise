@@ -388,27 +388,43 @@ window.GlobalSearchController = (function() {
         }
       } else if (key.includes('CUSTOMER') || target.includes('customer')) {
         window.NavigationRouter.selectNav('view-customers');
-        if (window.PartyController && window.PartyController.filterCustomers) {
+        if (window.PartyController && window.PartyController.isolateParty) {
+          window.PartyController.isolateParty(ref, true);
+        } else if (window.PartyController && window.PartyController.filterCustomers) {
           window.PartyController.filterCustomers(ref);
         }
       } else if (key.includes('SUPPLIER') || target.includes('supplier')) {
         window.NavigationRouter.selectNav('view-suppliers');
-        if (window.PartyController && window.PartyController.filterSuppliers) {
+        if (window.PartyController && window.PartyController.isolateParty) {
+          window.PartyController.isolateParty(ref, false);
+        } else if (window.PartyController && window.PartyController.filterSuppliers) {
           window.PartyController.filterSuppliers(ref);
         }
       } else if (key.includes('ITEM') || key.includes('INVENTORY') || target.includes('item')) {
         window.NavigationRouter.selectNav('view-item-master');
-        if (window.ItemMasterController && window.ItemMasterController.filterItems) {
+        if (window.ItemMasterController && window.ItemMasterController.isolateItem) {
+          window.ItemMasterController.isolateItem(ref);
+        } else if (window.ItemMasterController && window.ItemMasterController.filterItems) {
           window.ItemMasterController.filterItems(ref);
         }
       } else if (key.includes('QUOTATION') || ref.startsWith('QT') || target.includes('quotation')) {
         window.NavigationRouter.selectNav('view-quotations');
+        if (window.QuotationController && window.QuotationController.isolateQuotation) {
+          window.QuotationController.isolateQuotation(ref);
+        }
       } else if (key.includes('RETURN') || target.includes('return')) {
-        window.NavigationRouter.selectNav('view-sales-returns');
+        const isSalesReturn = !key.includes('PURCHASE');
+        window.NavigationRouter.selectNav(isSalesReturn ? 'view-sales-returns' : 'view-purchase-returns');
+        if (window.ReturnsController && window.ReturnsController.isolateReturn) {
+          window.ReturnsController.isolateReturn(ref, isSalesReturn);
+        }
       } else if (key.includes('PAYMENT') || target.includes('payment')) {
         window.NavigationRouter.selectNav('view-payment-receipt');
       } else if (key.includes('BANK') || key.includes('EXPENSE') || target.includes('bank')) {
         window.NavigationRouter.selectNav('view-bank-statement');
+        if (window.BankStatementController && window.BankStatementController.filterByReference) {
+          window.BankStatementController.filterByReference(ref);
+        }
       } else if (key.includes('REMINDER') || target.includes('reminder')) {
         window.NavigationRouter.selectNav('view-reminders');
       } else if (key.includes('COMMUNICATION') || target.includes('communication')) {

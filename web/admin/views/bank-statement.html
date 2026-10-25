@@ -36,22 +36,26 @@
             </div>
           </div>
 
-          <!-- 8 Compact KPI Cards (BankStatement.fxml Parity) -->
+          <!-- 7 Compact KPI Cards (BankStatement.fxml Parity) -->
           <div class="kpi-grid bank-recon-kpi-panel compact-kpi-ribbon erp-kpi-single-row"
             style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
             <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              onclick="window.BankStatementController.filterByKpiStatus('ALL')"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              title="Click to show all transactions">
               <div class="kpi-icon-bubble">📊</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
                 <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
                   <span class="kpi-title-text" title="Total Txns">TOTAL TXNS</span>
-                  <span class="kpi-pill-badge pill-neutral">Rows</span>
+                  <span class="kpi-pill-badge pill-neutral">All</span>
                 </div>
                 <div class="kpi-val-text" id="kpiTotal">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-crimson" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              onclick="window.BankStatementController.filterByKpiStatus('UNMATCHED')"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              title="Click to filter Unmatched transactions">
               <div class="kpi-icon-bubble">⚡</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
                 <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
@@ -62,7 +66,9 @@
               </div>
             </div>
             <div class="compact-kpi-card theme-amber" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              onclick="window.BankStatementController.filterByKpiStatus('SUGGESTED')"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              title="Click to filter Suggested transactions">
               <div class="kpi-icon-bubble">💡</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
                 <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
@@ -73,7 +79,9 @@
               </div>
             </div>
             <div class="compact-kpi-card theme-emerald" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              onclick="window.BankStatementController.filterByKpiStatus('MATCHED')"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              title="Click to filter Matched transactions">
               <div class="kpi-icon-bubble">🔗</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
                 <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
@@ -84,7 +92,9 @@
               </div>
             </div>
             <div class="compact-kpi-card theme-purple" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              onclick="window.BankStatementController.filterByKpiStatus('EXPENSE')"
+              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              title="Click to filter Expense transactions">
               <div class="kpi-icon-bubble">📉</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
                 <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
@@ -114,17 +124,6 @@
                   <span class="kpi-pill-badge pill-danger">Out</span>
                 </div>
                 <div class="kpi-val-text" id="kpiDebits" style="color: #f87171;">₹ 0.00</div>
-              </div>
-            </div>
-            <div class="compact-kpi-card theme-blue" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
-              <div class="kpi-icon-bubble">🎯</div>
-              <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Reconciled">RECONCILED</span>
-                  <span class="kpi-pill-badge pill-purple">Rate</span>
-                </div>
-                <div class="kpi-val-text" id="kpiReconciled" style="color: var(--cyan);">0.0%</div>
               </div>
             </div>
           </div>
@@ -164,6 +163,11 @@
                   selected</span>
               </div>
               <div style="display: flex; gap: 8px;">
+                <button id="btnAutoMatch" class="btn btn-primary btn-sm"
+                  onclick="window.BankStatementController.openAutoMatchDialog()"
+                  style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border-color: #8b5cf6; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>✨</span> Auto Match Suggestions
+                </button>
                 <button id="btnBulkReview" class="btn btn-secondary btn-sm"
                   onclick="window.BankStatementController.bulkMarkReview()" disabled>Reviewed</button>
                 <button id="btnBulkIgnore" class="btn btn-secondary btn-sm"
