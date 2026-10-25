@@ -304,15 +304,15 @@ window.BankStatementController = (function() {
 
       return `
         <tr data-stmt-id="${t.id}" onclick="window.BankStatementController.onTxnRowClick(${t.id}, event)" style="cursor:pointer; ${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
-          <td style="text-align:center;" onclick="event.stopPropagation();">
+          <td style="width:44px; min-width:44px; max-width:44px; text-align:center;" onclick="event.stopPropagation();">
             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.BankStatementController.toggleSelectTxn(${t.id}, this.checked)">
           </td>
           <td style="white-space:nowrap; font-weight:600;">${formatDate(t.transactionDate)}</td>
           <td style="white-space:nowrap; color:var(--text-muted); font-size:0.75rem;">${formatDate(t.valueDate || t.transactionDate)}</td>
-          <td style="font-family:monospace; font-weight:600; color:var(--cyan); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t.reference || ''}">
+          <td style="font-family:monospace; font-weight:600; color:var(--cyan); white-space:normal; word-break:break-all; line-height:1.3; padding:8px 10px;" title="${t.reference || ''}">
             ${t.reference || '-'}
           </td>
-          <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t.description || ''}">
+          <td style="white-space:normal; word-break:break-word; line-height:1.35; padding:8px 10px;" title="${t.description || ''}">
             ${t.description || '-'}
           </td>
           <td style="text-align:right; font-weight:700; color:${debit > 0 ? 'var(--red)' : 'var(--text-dim)'};">
@@ -2508,6 +2508,20 @@ window.BankStatementController = (function() {
   }
   window.highlightRowInTable = highlightRowInTable;
 
+  function waitForElementAndAct(selector, callback, maxTries = 25, delayMs = 100) {
+    let tries = 0;
+    const interval = setInterval(() => {
+      tries++;
+      const el = document.querySelector(selector);
+      if (el) {
+        clearInterval(interval);
+        callback(el);
+      } else if (tries >= maxTries) {
+        clearInterval(interval);
+      }
+    }, delayMs);
+  }
+
   function openLinkedDocument(docRef, targetType = '') {
     if (!docRef) return;
     const ref = docRef.trim().toUpperCase();
@@ -2516,74 +2530,114 @@ window.BankStatementController = (function() {
     // 1. Purchase Recon
     if (type === 'PURCHASE_RECON' || ref.startsWith('PRC')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-purchase-recon');
-      setTimeout(() => {
-        const searchInput = document.getElementById('pr-search-input');
-        if (searchInput) {
-          searchInput.value = docRef;
-          if (window.PurchaseReconController) window.PurchaseReconController.applyFilters();
+      waitForElementAndAct('#pr-search-input', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.PurchaseReconController && typeof window.PurchaseReconController.applyFilters === 'function') {
+          window.PurchaseReconController.applyFilters();
         }
         highlightRowInTable('purchase-recon-tbody', docRef);
-      }, 250);
+      });
     }
-    // 2. Sales Invoice (JI/, INV, SAL, SI/)
+    // 2. Recon Supplier Master
+    else if (type === 'RECON_SUPPLIER' || ref.startsWith('RS-') || ref.startsWith('VEND')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-recon-supplier');
+      waitForElementAndAct('#rs-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.PurchaseReconController && typeof window.PurchaseReconController.loadReconSuppliers === 'function') {
+          window.PurchaseReconController.loadReconSuppliers();
+        }
+        highlightRowInTable('recon-supplier-tbody', docRef);
+      });
+    }
+    // 3. Sales Return / Credit Note
+    else if (type === 'SALES_RETURN' || ref.startsWith('SR-') || ref.startsWith('SR/') || ref.startsWith('CN')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-sales-returns');
+      waitForElementAndAct('#sr-filter-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.ReturnsController && typeof window.ReturnsController.loadReturns === 'function') {
+          window.ReturnsController.loadReturns('SALES RETURN', 0);
+        }
+        highlightRowInTable('returns-table-tbody', docRef);
+      });
+    }
+    // 4. Purchase Return / Debit Note
+    else if (type === 'PURCHASE_RETURN' || ref.startsWith('PR-') || ref.startsWith('DN')) {
+      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-purchase-returns');
+      waitForElementAndAct('#pr-filter-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.ReturnsController && typeof window.ReturnsController.loadReturns === 'function') {
+          window.ReturnsController.loadReturns('PURCHASE RETURN', 0);
+        }
+        highlightRowInTable('returns-table-tbody', docRef);
+      });
+    }
+    // 5. Sales Invoice (JI/, INV, SAL, SI/)
     else if (type === 'SALE' || type === 'INVOICE' || ref.startsWith('JI/') || ref.startsWith('INV') || ref.startsWith('SAL') || ref.startsWith('SI/')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-sales-register');
-      setTimeout(() => {
-        const searchInput = document.getElementById('sales-search');
-        if (searchInput) {
-          searchInput.value = docRef;
-          if (window.SalesController) window.SalesController.applyFilters();
+      waitForElementAndAct('#sr-search-input', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.SalesController) {
+          if (typeof window.SalesController.filterSales === 'function') {
+            window.SalesController.filterSales(docRef);
+          }
+          if (typeof window.SalesController.openInvoiceDrawer === 'function') {
+            setTimeout(() => window.SalesController.openInvoiceDrawer(docRef), 200);
+          }
         }
         highlightRowInTable('sales-table-tbody', docRef);
-      }, 250);
+      });
     }
-    // 3. Purchase Bill (PR/, PUR, PO, BILL)
+    // 6. Purchase Bill (PR/, PUR, PO, BILL)
     else if (type === 'PURCHASE' || type === 'BILL' || ref.startsWith('PR/') || ref.startsWith('PO') || ref.startsWith('PUR') || ref.startsWith('BILL')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-purchase-register');
-      setTimeout(() => {
-        const searchInput = document.getElementById('purchase-search');
-        if (searchInput) {
-          searchInput.value = docRef;
-          if (window.PurchaseController) window.PurchaseController.applyFilters();
+      waitForElementAndAct('#pur-filter-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.PurchaseController) {
+          if (typeof window.PurchaseController.loadPurchases === 'function') {
+            window.PurchaseController.loadPurchases(0);
+          }
+          if (typeof window.PurchaseController.openPurchaseDrawer === 'function') {
+            setTimeout(() => window.PurchaseController.openPurchaseDrawer(docRef), 200);
+          }
         }
         highlightRowInTable('purchase-table-tbody', docRef);
-      }, 250);
+      });
     }
-    // 4. Operating Expense
+    // 7. Operating Expense
     else if (type === 'EXPENSE' || ref.startsWith('EXP') || ref.startsWith('VCH') || ref.startsWith('OPEX')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
-      setTimeout(() => {
-        const searchInput = document.getElementById('exp-search');
-        if (searchInput) {
-          searchInput.value = docRef;
-          searchInput.dispatchEvent(new Event('input'));
-          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
-            window.FinanceController.applyFinanceFilters();
-          }
+      waitForElementAndAct('#exp-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+          window.FinanceController.applyFinanceFilters();
         }
         highlightRowInTable('expense-entry-tbody', docRef);
-      }, 250);
+      });
     }
-    // 5. Bank Journal / Bank Entry
+    // 8. Bank Journal / Bank Entry
     else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN') || ref.startsWith('DEP') || ref.startsWith('WDL')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
-      setTimeout(() => {
-        const searchInput = document.getElementById('bank-search');
-        if (searchInput) {
-          searchInput.value = docRef;
-          searchInput.dispatchEvent(new Event('input'));
-          if (window.FinanceController && window.FinanceController.applyFinanceFilters) {
-            window.FinanceController.applyFinanceFilters();
-          }
+      waitForElementAndAct('#bank-search', (searchInput) => {
+        searchInput.value = docRef;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+          window.FinanceController.applyFinanceFilters();
         }
         highlightRowInTable('bank-entry-tbody', docRef);
-      }, 250);
+      });
     }
-    // 6. Payment Receipt
+    // 9. Payment Receipt
     else if (type === 'PAYMENT' || ref.startsWith('PAY') || ref.startsWith('REC')) {
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-record-payment');
     }
-    // 7. Fallback: inspect ref pattern
+    // 10. Fallback: inspect ref pattern
     else {
       if (window.AppDialogService) window.AppDialogService.toastInfo(`Linked document: ${docRef}`);
     }

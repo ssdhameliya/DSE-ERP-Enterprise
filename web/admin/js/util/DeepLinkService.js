@@ -2,13 +2,13 @@
  * Jasvi Industries ERP - DeepLinkService
  * Universal Cross-Module Transaction Deep-Linking Engine (Pillar 7).
  *
- * Enables seamless one-click navigation between related transactions across:
+ * Enables seamless one-click navigation and record isolation across:
  * General Ledger <-> Bank Statements <-> Sales Invoices <-> Purchase Bills <-> Quotations <-> Returns
  *
  * Automatically:
  * 1. Resets date filters to 'ALL' so target document is never filtered out.
  * 2. Navigates to the appropriate register view.
- * 3. Populates live register search bar.
+ * 3. Waits asynchronously for view injection and mounts live register search bar.
  * 4. Highlights target row with glowing pulse animation (row-highlight-pulse).
  * 5. Opens inspection drawer for immediate transaction analysis.
  */
@@ -19,40 +19,56 @@ window.DeepLinkService = (function() {
     if (!ref) return 'SALES';
     const clean = ref.toString().trim().toUpperCase();
 
+    if (/^(PRC)/.test(clean)) return 'PURCHASE_RECON';
+    if (/^(RS-|VEND)/.test(clean)) return 'RECON_SUPPLIER';
     if (/^(INV|JI|SI|TI|TAX|SALE|SO)/.test(clean)) return 'SALES';
     if (/^(BILL|PUR|PI|PO|PB)/.test(clean)) return 'PURCHASE';
     if (/^(QT|QUO|Q-)/.test(clean)) return 'QUOTATION';
     if (/^(SR|CR|CN|CREDIT)/.test(clean)) return 'SALES_RETURN';
-    if (/^(PR|DR|DN|DEBIT)/.test(clean)) return 'PURCHASE_RETURN';
-    if (/^(PAY|RCP|RCPT|BNK|TXN|UTR)/.test(clean)) return 'BANK_ENTRY';
+    if (/^(PR-|DR|DN|DEBIT)/.test(clean)) return 'PURCHASE_RETURN';
+    if (/^(EXP|VCH|OPEX)/.test(clean)) return 'EXPENSE';
+    if (/^(PAY|RCP|RCPT|BNK|BANK|TXN|UTR|JRN|DEP|WDL)/.test(clean)) return 'BANK_ENTRY';
     if (/^(ITEM|SKU|MAT|PRD)/.test(clean)) return 'ITEM';
     if (/^(CUST|CLIENT)/.test(clean)) return 'CUSTOMER';
-    if (/^(SUPP|VEND)/.test(clean)) return 'SUPPLIER';
+    if (/^(SUPP|SUPPLIER)/.test(clean)) return 'SUPPLIER';
 
     return 'SALES'; // Default fallback
   }
 
-  function highlightAndScrollRow(tableSelector, docRef) {
-    const table = document.querySelector(tableSelector);
-    if (!table) return null;
-
-    const rows = table.querySelectorAll('tbody tr:not(.empty-row)');
-    let matchedRow = null;
-    rows.forEach(r => {
-      const text = r.innerText || r.textContent || '';
-      if (text.includes(docRef)) {
-        matchedRow = r;
+  function pollElement(selector, callback, maxTries = 25, intervalMs = 100) {
+    let tries = 0;
+    const interval = setInterval(() => {
+      tries++;
+      const el = document.querySelector(selector);
+      if (el) {
+        clearInterval(interval);
+        callback(el);
+      } else if (tries >= maxTries) {
+        clearInterval(interval);
       }
-    });
+    }, intervalMs);
+  }
 
-    if (matchedRow) {
-      matchedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      matchedRow.classList.add('row-highlight-pulse', 'active-selected-row');
-      setTimeout(() => {
-        matchedRow.classList.remove('row-highlight-pulse');
-      }, 3000);
-    }
-    return matchedRow;
+  function highlightAndScrollRow(tableSelector, docRef) {
+    pollElement(tableSelector, (table) => {
+      const rows = table.querySelectorAll('tbody tr:not(.empty-row)');
+      let matchedRow = null;
+      rows.forEach(r => {
+        const text = r.innerText || r.textContent || '';
+        if (text.includes(docRef)) {
+          matchedRow = r;
+        }
+      });
+
+      if (matchedRow) {
+        matchedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        matchedRow.classList.add('row-highlight-pulse', 'active-selected-row');
+        setTimeout(() => {
+          matchedRow.classList.remove('row-highlight-pulse');
+        }, 3000);
+      }
+      return matchedRow;
+    }, 15, 120);
   }
 
   function navigateToDocument(docRef, docTypeHint) {
@@ -67,57 +83,48 @@ window.DeepLinkService = (function() {
     console.log(`[DeepLinkService] Navigating to ${type} document: "${ref}"`);
 
     switch (type) {
-      case 'SALES': {
+      case 'SALES':
+      case 'SALE':
+      case 'INVOICE': {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-sales-register');
         }
-        setTimeout(() => {
-          if (window.SalesController) {
-            if (typeof window.SalesController.setPresetDate === 'function') {
-              window.SalesController.setPresetDate('ALL');
-            }
-            const searchInput = document.getElementById('sr-search-input');
-            if (searchInput) {
-              searchInput.value = ref;
-              if (typeof window.SalesController.filterSales === 'function') {
-                window.SalesController.filterSales(ref);
-              }
-            }
-            setTimeout(() => {
-              highlightAndScrollRow('#sales-main-table', ref);
-              if (typeof window.SalesController.openInvoiceDrawer === 'function') {
-                window.SalesController.openInvoiceDrawer(ref);
-              }
-            }, 250);
+        pollElement('#sr-search-input', (searchInput) => {
+          if (window.SalesController && typeof window.SalesController.setPresetDate === 'function') {
+            window.SalesController.setPresetDate('ALL');
           }
-        }, 120);
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.SalesController && typeof window.SalesController.filterSales === 'function') {
+            window.SalesController.filterSales(ref);
+          }
+          highlightAndScrollRow('#bank-statement-table, #sales-main-table, #sales-table-tbody', ref);
+          if (window.SalesController && typeof window.SalesController.openInvoiceDrawer === 'function') {
+            setTimeout(() => window.SalesController.openInvoiceDrawer(ref), 250);
+          }
+        });
         break;
       }
 
-      case 'PURCHASE': {
+      case 'PURCHASE':
+      case 'BILL': {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-purchase-register');
         }
-        setTimeout(() => {
-          if (window.PurchaseController) {
-            if (typeof window.PurchaseController.setPresetDate === 'function') {
-              window.PurchaseController.setPresetDate('ALL');
-            }
-            const searchInput = document.getElementById('pr-search-input');
-            if (searchInput) {
-              searchInput.value = ref;
-              if (typeof window.PurchaseController.filterPurchases === 'function') {
-                window.PurchaseController.filterPurchases(ref);
-              }
-            }
-            setTimeout(() => {
-              highlightAndScrollRow('#purchase-main-table', ref);
-              if (typeof window.PurchaseController.openPurchaseDrawer === 'function') {
-                window.PurchaseController.openPurchaseDrawer(ref);
-              }
-            }, 250);
+        pollElement('#pur-filter-search', (searchInput) => {
+          if (window.PurchaseController && typeof window.PurchaseController.setPresetDate === 'function') {
+            window.PurchaseController.setPresetDate('ALL');
           }
-        }, 120);
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.PurchaseController && typeof window.PurchaseController.loadPurchases === 'function') {
+            window.PurchaseController.loadPurchases(0);
+          }
+          highlightAndScrollRow('#purchase-main-table, #purchase-table-tbody', ref);
+          if (window.PurchaseController && typeof window.PurchaseController.openPurchaseDrawer === 'function') {
+            setTimeout(() => window.PurchaseController.openPurchaseDrawer(ref), 250);
+          }
+        });
         break;
       }
 
@@ -125,23 +132,14 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-quotations');
         }
-        setTimeout(() => {
-          if (window.QuotationController) {
-            const searchInput = document.getElementById('quotation-search-input');
-            if (searchInput) {
-              searchInput.value = ref;
-              if (typeof window.QuotationController.filterQuotations === 'function') {
-                window.QuotationController.filterQuotations(ref);
-              }
-            }
-            setTimeout(() => {
-              highlightAndScrollRow('#quotations-main-table', ref);
-              if (typeof window.QuotationController.showDetails === 'function') {
-                window.QuotationController.showDetails(ref);
-              }
-            }, 250);
+        pollElement('#quote-filter-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.QuotationController && typeof window.QuotationController.loadQuotations === 'function') {
+            window.QuotationController.loadQuotations(0);
           }
-        }, 120);
+          highlightAndScrollRow('#quotations-main-table, #quote-table-tbody', ref);
+        });
         break;
       }
 
@@ -149,18 +147,14 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-sales-returns');
         }
-        setTimeout(() => {
-          if (window.ReturnsController) {
-            const searchInput = document.getElementById('sr-return-search');
-            if (searchInput) searchInput.value = ref;
-            setTimeout(() => {
-              highlightAndScrollRow('#sales-returns-table', ref);
-              if (typeof window.ReturnsController.showDetails === 'function') {
-                window.ReturnsController.showDetails(ref);
-              }
-            }, 250);
+        pollElement('#sr-filter-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.ReturnsController && typeof window.ReturnsController.loadReturns === 'function') {
+            window.ReturnsController.loadReturns('SALES RETURN', 0);
           }
-        }, 120);
+          highlightAndScrollRow('#sales-returns-table, #returns-table-tbody', ref);
+        });
         break;
       }
 
@@ -168,18 +162,44 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-purchase-returns');
         }
-        setTimeout(() => {
-          if (window.ReturnsController) {
-            const searchInput = document.getElementById('pr-return-search');
-            if (searchInput) searchInput.value = ref;
-            setTimeout(() => {
-              highlightAndScrollRow('#purchase-returns-table', ref);
-              if (typeof window.ReturnsController.showDetails === 'function') {
-                window.ReturnsController.showDetails(ref);
-              }
-            }, 250);
+        pollElement('#pr-filter-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.ReturnsController && typeof window.ReturnsController.loadReturns === 'function') {
+            window.ReturnsController.loadReturns('PURCHASE RETURN', 0);
           }
-        }, 120);
+          highlightAndScrollRow('#purchase-returns-table, #returns-table-tbody', ref);
+        });
+        break;
+      }
+
+      case 'PURCHASE_RECON': {
+        if (window.NavigationRouter) {
+          window.NavigationRouter.selectNav('view-purchase-recon');
+        }
+        pollElement('#pr-search-input', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.PurchaseReconController && typeof window.PurchaseReconController.applyFilters === 'function') {
+            window.PurchaseReconController.applyFilters();
+          }
+          highlightAndScrollRow('#purchase-recon-tbody', ref);
+        });
+        break;
+      }
+
+      case 'RECON_SUPPLIER': {
+        if (window.NavigationRouter) {
+          window.NavigationRouter.selectNav('view-recon-supplier');
+        }
+        pollElement('#rs-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.PurchaseReconController && typeof window.PurchaseReconController.loadReconSuppliers === 'function') {
+            window.PurchaseReconController.loadReconSuppliers();
+          }
+          highlightAndScrollRow('#recon-supplier-tbody', ref);
+        });
         break;
       }
 
@@ -187,20 +207,29 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-bank-entry');
         }
-        setTimeout(() => {
-          if (window.BankEntryController) {
-            const searchInput = document.getElementById('be-search-input');
-            if (searchInput) {
-              searchInput.value = ref;
-              if (typeof window.BankEntryController.filterEntries === 'function') {
-                window.BankEntryController.filterEntries(ref);
-              }
-            }
-            setTimeout(() => {
-              highlightAndScrollRow('#bank-entry-table', ref);
-            }, 250);
+        pollElement('#bank-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+            window.FinanceController.applyFinanceFilters();
           }
-        }, 120);
+          highlightAndScrollRow('#bank-entry-tbody', ref);
+        });
+        break;
+      }
+
+      case 'EXPENSE': {
+        if (window.NavigationRouter) {
+          window.NavigationRouter.selectNav('view-expense-entry');
+        }
+        pollElement('#exp-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+            window.FinanceController.applyFinanceFilters();
+          }
+          highlightAndScrollRow('#expense-entry-tbody', ref);
+        });
         break;
       }
 
@@ -208,18 +237,18 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-customers');
         }
-        setTimeout(() => {
+        pollElement('#cust-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
           if (window.PartyController) {
-            const searchInput = document.getElementById('customer-search-input');
-            if (searchInput) searchInput.value = ref;
-            setTimeout(() => {
-              highlightAndScrollRow('#customers-table', ref);
-              if (typeof window.PartyController.openCustomerDrawer === 'function') {
-                window.PartyController.openCustomerDrawer(ref);
-              }
-            }, 250);
+            if (typeof window.PartyController.isolateParty === 'function') {
+              window.PartyController.isolateParty(ref, true);
+            } else if (typeof window.PartyController.filterCustomers === 'function') {
+              window.PartyController.filterCustomers(ref);
+            }
           }
-        }, 120);
+          highlightAndScrollRow('#customers-table', ref);
+        });
         break;
       }
 
@@ -227,18 +256,18 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-suppliers');
         }
-        setTimeout(() => {
+        pollElement('#supp-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
           if (window.PartyController) {
-            const searchInput = document.getElementById('supplier-search-input');
-            if (searchInput) searchInput.value = ref;
-            setTimeout(() => {
-              highlightAndScrollRow('#suppliers-table', ref);
-              if (typeof window.PartyController.openSupplierDrawer === 'function') {
-                window.PartyController.openSupplierDrawer(ref);
-              }
-            }, 250);
+            if (typeof window.PartyController.isolateParty === 'function') {
+              window.PartyController.isolateParty(ref, false);
+            } else if (typeof window.PartyController.filterSuppliers === 'function') {
+              window.PartyController.filterSuppliers(ref);
+            }
           }
-        }, 120);
+          highlightAndScrollRow('#suppliers-table', ref);
+        });
         break;
       }
 
@@ -246,18 +275,18 @@ window.DeepLinkService = (function() {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-item-master');
         }
-        setTimeout(() => {
+        pollElement('#item-search', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
           if (window.ItemMasterController) {
-            const searchInput = document.getElementById('im-search-input');
-            if (searchInput) searchInput.value = ref;
-            setTimeout(() => {
-              highlightAndScrollRow('#item-master-table', ref);
-              if (typeof window.ItemMasterController.openStockHistory === 'function') {
-                window.ItemMasterController.openStockHistory(ref);
-              }
-            }, 250);
+            if (typeof window.ItemMasterController.isolateItem === 'function') {
+              window.ItemMasterController.isolateItem(ref);
+            } else if (typeof window.ItemMasterController.filterItems === 'function') {
+              window.ItemMasterController.filterItems(ref);
+            }
           }
-        }, 120);
+          highlightAndScrollRow('#items-table-tbody', ref);
+        });
         break;
       }
 
@@ -301,6 +330,7 @@ window.DeepLinkService = (function() {
     inferDocumentType,
     navigateToDocument,
     highlightAndScrollRow,
+    pollElement,
     init
   };
 })();

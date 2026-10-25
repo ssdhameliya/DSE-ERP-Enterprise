@@ -38,92 +38,92 @@
 
           <!-- 7 Compact KPI Cards (BankStatement.fxml Parity) -->
           <div class="kpi-grid bank-recon-kpi-panel compact-kpi-ribbon erp-kpi-single-row"
-            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
+            style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden; flex-shrink: 0;">
             <div class="compact-kpi-card theme-indigo" data-erp-kpi-compact-enhanced="true"
               onclick="window.BankStatementController.filterByKpiStatus('ALL')"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box; cursor: pointer;"
               title="Click to show all transactions">
               <div class="kpi-icon-bubble">📊</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Total Txns">TOTAL TXNS</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Total Txns">TOTAL TXNS</span>
                   <span class="kpi-pill-badge pill-neutral">All</span>
                 </div>
-                <div class="kpi-val-text" id="kpiTotal">0</div>
+                <div class="kpi-val-text" id="kpiTotal" style="font-size:1.15rem;font-weight:800;color:#38bdf8;font-family:'JetBrains Mono',monospace;line-height:1.2;">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-crimson" data-erp-kpi-compact-enhanced="true"
               onclick="window.BankStatementController.filterByKpiStatus('UNMATCHED')"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box; cursor: pointer;"
               title="Click to filter Unmatched transactions">
               <div class="kpi-icon-bubble">⚡</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Unmatched">UNMATCHED</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Unmatched">UNMATCHED</span>
                   <span class="kpi-pill-badge pill-danger">Action</span>
                 </div>
-                <div class="kpi-val-text" id="kpiUnmatched" style="color: #f87171;">0</div>
+                <div class="kpi-val-text" id="kpiUnmatched" style="font-size:1.15rem;font-weight:800;color:#f87171;font-family:'JetBrains Mono',monospace;line-height:1.2;">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-amber" data-erp-kpi-compact-enhanced="true"
               onclick="window.BankStatementController.filterByKpiStatus('SUGGESTED')"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box; cursor: pointer;"
               title="Click to filter Suggested transactions">
               <div class="kpi-icon-bubble">💡</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Suggested">SUGGESTED</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Suggested">SUGGESTED</span>
                   <span class="kpi-pill-badge pill-warning">Rule</span>
                 </div>
-                <div class="kpi-val-text" id="kpiSuggested" style="color: #fbbf24;">0</div>
+                <div class="kpi-val-text" id="kpiSuggested" style="font-size:1.15rem;font-weight:800;color:#fbbf24;font-family:'JetBrains Mono',monospace;line-height:1.2;">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-emerald" data-erp-kpi-compact-enhanced="true"
               onclick="window.BankStatementController.filterByKpiStatus('MATCHED')"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box; cursor: pointer;"
               title="Click to filter Matched transactions">
               <div class="kpi-icon-bubble">🔗</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Matched">MATCHED</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Matched">MATCHED</span>
                   <span class="kpi-pill-badge pill-success">Linked</span>
                 </div>
-                <div class="kpi-val-text" id="kpiMatched" style="color: var(--green);">0</div>
+                <div class="kpi-val-text" id="kpiMatched" style="font-size:1.15rem;font-weight:800;color:#4ade80;font-family:'JetBrains Mono',monospace;line-height:1.2;">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-purple" data-erp-kpi-compact-enhanced="true"
               onclick="window.BankStatementController.filterByKpiStatus('EXPENSE')"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box; cursor: pointer;"
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box; cursor: pointer;"
               title="Click to filter Expense transactions">
               <div class="kpi-icon-bubble">📉</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Expenses">EXPENSES</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Expenses">EXPENSES</span>
                   <span class="kpi-pill-badge pill-purple">Expense</span>
                 </div>
-                <div class="kpi-val-text" id="kpiExpense" style="color: var(--purple);">0</div>
+                <div class="kpi-val-text" id="kpiExpense" style="font-size:1.15rem;font-weight:800;color:#c084fc;font-family:'JetBrains Mono',monospace;line-height:1.2;">0</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-cyan" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box;">
               <div class="kpi-icon-bubble">💰</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Credits">CREDITS</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Credits">CREDITS</span>
                   <span class="kpi-pill-badge pill-success">In</span>
                 </div>
-                <div class="kpi-val-text" id="kpiCredits" style="color: var(--green);">₹ 0.00</div>
+                <div class="kpi-val-text" id="kpiCredits" style="font-size:1.15rem;font-weight:800;color:#4ade80;font-family:'JetBrains Mono',monospace;line-height:1.2;">₹ 0.00</div>
               </div>
             </div>
             <div class="compact-kpi-card theme-red" data-erp-kpi-compact-enhanced="true"
-              style="flex: 1 1 0; min-width: 0; height: 58px; min-height: 58px; max-height: 58px; box-sizing: border-box;">
+              style="flex: 1 1 0; min-width: 0; min-height: 60px; height: auto; padding: 8px 12px; box-sizing: border-box;">
               <div class="kpi-icon-bubble">💸</div>
               <div class="kpi-content-box" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;">
-                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:3px;gap:4px;">
-                  <span class="kpi-title-text" title="Debits">DEBITS</span>
+                <div class="kpi-row-top" style="display:flex;justify-content:space-between;align-items:center;line-height:1;margin-bottom:4px;gap:4px;">
+                  <span class="kpi-title-text" style="font-size:0.72rem;font-weight:700;letter-spacing:0.5px;" title="Debits">DEBITS</span>
                   <span class="kpi-pill-badge pill-danger">Out</span>
                 </div>
-                <div class="kpi-val-text" id="kpiDebits" style="color: #f87171;">₹ 0.00</div>
+                <div class="kpi-val-text" id="kpiDebits" style="font-size:1.15rem;font-weight:800;color:#f87171;font-family:'JetBrains Mono',monospace;line-height:1.2;">₹ 0.00</div>
               </div>
             </div>
           </div>
@@ -227,7 +227,7 @@
                 <table class="sales-desktop-table" id="bank-statement-table" style="width: 100%; table-layout: fixed;">
                   <thead>
                     <tr>
-                      <th style="width: 36px; text-align: center;"></th>
+                      <th style="width: 44px; min-width: 44px; max-width: 44px; text-align: center;"></th>
                       <th>Date</th>
                       <th>Value Date</th>
                       <th>Reference / Cheque</th>

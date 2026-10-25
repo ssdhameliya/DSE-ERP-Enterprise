@@ -1,17 +1,17 @@
 {
-    "desktopVersion": "11.0.3",
+    "desktopVersion": "11.0.4",
     "webBuild": 1,
-    "webVersion": "11.0.3.1",
-    "tag": "web-v11.0.3.1",
-    "releaseDate": "2026-10-25T20:15:00+05:30",
+    "webVersion": "11.0.4.01",
+    "tag": "web-v11.0.4.01",
+    "releaseDate": "2026-10-25T22:30:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.3.1 Enterprise Web Client: Financial Drill-Down Modal Overhaul, Bank Auto-Match Suggestions Review, Universal Navigation Record Isolation, Reference Format Live Tokens & Email Transmission Resizing",
+    "summary": "v11.0.4.0 Enterprise Web Client: Dynamic Table Cell Text Wrapping, High-Contrast Themed KPI Metrics, Universal Navigation Isolation & Company Signature Email Transmission Preview",
     "highlights": [
-        "1. Financial Drill-Down Inspection Modal Overhaul: Centralized dynamic modal with sky-blue themed workspace, responsive metric cards strip, real-time transaction search, colored table headers with semantic icons, business date formatting (FormatUtil.formatDate), and color-coded monetary values (orange debit, green credit, cyan balance).",
-        "2. Bank Statement Bulk Auto-Match Review: Added interactive Auto Match Suggestions review modal with top KPI metrics, real-time search filtering, selection checkboxes, confidence score badges, and step-by-step bulk matching execution with payment allocations.",
-        "3. Bank Statement KPI Cards Interactive Filtering: Removed redundant 8th Reconciled KPI card; transformed 5 KPI cards (Total Transactions, Unmatched, Suggested, Matched, Expenses) into clickable filters with pointer cursor to filter statement transactions by status.",
-        "4. Universal Navigation Isolation Across All Registers: Deep-linking and navigation from Global Search and Notification Center to Sales, Purchases, Quotations, Returns, Bank Statements, Items, and Parties isolates and displays only the target record and pre-fills search fields.",
-        "5. Reference Format Token Parity in Master Lookups: Real-time token preview badge in lookup rows, token helper insertion chips ({DD}, {MM}, {YYYY}, {YY}, {XXXX}), and live reference number preview box in Add/Edit lookup modal.",
-        "6. Email Transmission Modal Resizing & Purchase Return Preview: Upgraded email transmission modal (max-width: 760px; width: 95vw;, rows=12, height: 220px;) and integrated Purchase Return pre-send email preview modal, completely replacing fallback browser prompts."
+        "1. Dynamic Table Cell Narration & Reference Text Wrapping: Replaced single-line ellipsis truncation with responsive text wrapping and break-word rules in Bank Statement and Reconciliation registers, enabling complete visibility of full narrations without horizontal clipping.",
+        "2. Compact Selection Checkbox Sizing: Fixed selection checkbox column to strict 44px centered width across all registers, eliminating excessive whitespace.",
+        "3. High-Contrast Themed KPI Metrics: Upgraded KPI ribbon cards across Bank Statement, Bank Entry, and Expense Entry with vibrant theme accents (Cyan, Emerald Green, Coral Red, Amber, Purple) and auto-fitting heights to eliminate overlapping notes.",
+        "4. Universal Navigation Record Isolation: Hardened deep-linking and cross-module routing with asynchronous DOM readiness verification, pre-filling correct search inputs and isolating only the target record.",
+        "5. Email Transmission Signature Preview: Added company signature & stamp attachment card with dedicated modal preview in email transmission workflow across Sales, Purchases, Quotations, and Returns.",
+        "6. Strict Duplicate Statement Import Prevention: Integrated account and statement date period verification to block overlapping statement imports and provide instant redirection to existing batches."
     ]
 }

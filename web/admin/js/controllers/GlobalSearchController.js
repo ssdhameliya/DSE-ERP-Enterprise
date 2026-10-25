@@ -371,66 +371,34 @@ window.GlobalSearchController = (function() {
       const target = (targetFxml || '').toLowerCase();
 
       if (key.includes('SALE') || ref.startsWith('INV') || ref.startsWith('JI/') || target.includes('sale')) {
-        window.NavigationRouter.selectNav('view-sales-register');
-        if (window.SalesController) {
-          window.SalesController.filterSales(ref);
-          window.SalesController.openSaleViewMode(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'SALES');
       } else if (key.includes('PURCHASE') || ref.startsWith('PO') || ref.startsWith('BILL') || target.includes('purchase')) {
-        window.NavigationRouter.selectNav('view-purchase-register');
-        if (window.PurchaseController) {
-          const searchInp = document.getElementById('pur-filter-search');
-          if (searchInp) {
-            searchInp.value = ref;
-            window.PurchaseController.loadPurchases(0);
-          }
-          window.PurchaseController.showDetails(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'PURCHASE');
       } else if (key.includes('CUSTOMER') || target.includes('customer')) {
-        window.NavigationRouter.selectNav('view-customers');
-        if (window.PartyController && window.PartyController.isolateParty) {
-          window.PartyController.isolateParty(ref, true);
-        } else if (window.PartyController && window.PartyController.filterCustomers) {
-          window.PartyController.filterCustomers(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'CUSTOMER');
       } else if (key.includes('SUPPLIER') || target.includes('supplier')) {
-        window.NavigationRouter.selectNav('view-suppliers');
-        if (window.PartyController && window.PartyController.isolateParty) {
-          window.PartyController.isolateParty(ref, false);
-        } else if (window.PartyController && window.PartyController.filterSuppliers) {
-          window.PartyController.filterSuppliers(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'SUPPLIER');
       } else if (key.includes('ITEM') || key.includes('INVENTORY') || target.includes('item')) {
-        window.NavigationRouter.selectNav('view-item-master');
-        if (window.ItemMasterController && window.ItemMasterController.isolateItem) {
-          window.ItemMasterController.isolateItem(ref);
-        } else if (window.ItemMasterController && window.ItemMasterController.filterItems) {
-          window.ItemMasterController.filterItems(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'ITEM');
       } else if (key.includes('QUOTATION') || ref.startsWith('QT') || target.includes('quotation')) {
-        window.NavigationRouter.selectNav('view-quotations');
-        if (window.QuotationController && window.QuotationController.isolateQuotation) {
-          window.QuotationController.isolateQuotation(ref);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'QUOTATION');
       } else if (key.includes('RETURN') || target.includes('return')) {
         const isSalesReturn = !key.includes('PURCHASE');
-        window.NavigationRouter.selectNav(isSalesReturn ? 'view-sales-returns' : 'view-purchase-returns');
-        if (window.ReturnsController && window.ReturnsController.isolateReturn) {
-          window.ReturnsController.isolateReturn(ref, isSalesReturn);
-        }
+        if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, isSalesReturn ? 'SALES_RETURN' : 'PURCHASE_RETURN');
       } else if (key.includes('PAYMENT') || target.includes('payment')) {
-        window.NavigationRouter.selectNav('view-payment-receipt');
+        window.NavigationRouter.selectNav('view-record-payment');
       } else if (key.includes('BANK') || key.includes('EXPENSE') || target.includes('bank')) {
-        window.NavigationRouter.selectNav('view-bank-statement');
-        if (window.BankStatementController && window.BankStatementController.filterByReference) {
-          window.BankStatementController.filterByReference(ref);
+        if (ref.startsWith('EXP') || key.includes('EXPENSE')) {
+          if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'EXPENSE');
+        } else {
+          if (window.DeepLinkService) window.DeepLinkService.navigateToDocument(ref, 'BANK_ENTRY');
         }
       } else if (key.includes('REMINDER') || target.includes('reminder')) {
         window.NavigationRouter.selectNav('view-reminders');
       } else if (key.includes('COMMUNICATION') || target.includes('communication')) {
         window.NavigationRouter.selectNav('view-communication');
       } else {
-        window.AppDialogService.showToast(`Navigating to ${reference}...`, 'info');
+        if (window.AppDialogService) window.AppDialogService.showToast(`Navigating to ${reference}...`, 'info');
       }
     },
 

@@ -2878,6 +2878,13 @@ window.SalesController = {
     }
 
     window.AppDialogService.openModal('modal-email-invoice');
+    setTimeout(() => {
+      if (inpBody) {
+        inpBody.scrollTop = 0;
+        inpBody.setSelectionRange(0, 0);
+        inpBody.focus();
+      }
+    }, 50);
   },
 
   async submitEmailInvoice(event) {
@@ -3142,6 +3149,10 @@ window.SalesController = {
       }
     }
     if (window.AppDialogService) window.AppDialogService.showToast('Could not preview PDF document', 'error');
+  },
+
+  previewSignatureImage() {
+    window.AppDialogService.openModal('modal-preview-signature');
   },
 
   buildSalesInvoiceJsPdf(saleObj) {

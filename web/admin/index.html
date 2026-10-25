@@ -3801,12 +3801,13 @@
 
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label">Message Body</label>
-            <textarea id="mei-body" class="form-input" rows="12"
-              style="height: 220px; min-height: 200px; resize: vertical; font-size: 0.84rem; font-family: inherit; line-height: 1.5; padding: 10px 12px;"></textarea>
+            <textarea id="mei-body" class="form-input" rows="10"
+              style="height: 200px; min-height: 180px; resize: vertical; font-size: 0.84rem; font-family: inherit; line-height: 1.5; padding: 10px 12px; color: #f8fafc; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-subtle); overflow-y: auto;"></textarea>
           </div>
 
+          <!-- Tax Invoice Attachment Card -->
           <div
-            style="display: flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px;">
+            style="display: flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
             <span style="font-size: 1.1rem;">&#128206;</span>
             <div style="flex: 1;">
               <div style="font-size: 0.78rem; font-weight: 600; color: var(--cyan);" id="mei-attachment-name">
@@ -3820,12 +3821,59 @@
               style="background: rgba(52, 211, 153, 0.2); color: #34d399; font-size: 0.7rem;">ATTACHED</span>
           </div>
 
+          <!-- Company Signature & Stamp Attachment Card (Parity with Desktop EmailTransmissionDialog) -->
+          <div
+            style="display: flex; align-items: center; gap: 8px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px;">
+            <span style="font-size: 1.1rem;">✍️</span>
+            <div style="flex: 1;">
+              <div style="font-size: 0.78rem; font-weight: 600; color: var(--purple);" id="mei-signature-name">
+                Jasvi_Industries_Authorized_Signatory.png</div>
+              <div style="font-size: 0.70rem; color: var(--text-dim);">Authorized company signature &amp; commercial stamp attached</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.SalesController.previewSignatureImage()"
+              style="font-size: 0.72rem; padding: 3px 8px;">&#128065; Preview Signature</button>
+            <span class="badge"
+              style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.7rem;">SIGNED</span>
+          </div>
+
           <div class="modal-footer"
             style="padding: 12px 0 0 0; background: transparent; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
             <button type="button" class="btn btn-secondary" onclick="closeModal('modal-email-invoice')">Cancel</button>
             <button type="submit" class="btn btn-primary" id="mei-send-btn">&#9992; Send Tax Invoice</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SIGNATURE PREVIEW (Desktop Parity) -->
+  <div class="modal-overlay" id="modal-preview-signature" style="z-index: 100010;">
+    <div class="modal-card" style="max-width: 480px; width: 92vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; padding: 0;">
+      <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.2rem;">✍️</span>
+          <h3 style="margin: 0; font-size: 1.05rem;">Company Signature &amp; Stamp Preview</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-preview-signature')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 24px; text-align: center; background: #ffffff;">
+        <div style="border: 2px dashed #94a3b8; border-radius: 8px; padding: 20px; display: inline-block; background: #ffffff; min-width: 280px;">
+          <!-- High-definition SVG of Jasvi Industries Authorized Stamp & Signature -->
+          <svg width="260" height="130" viewBox="0 0 260 130" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="130" cy="65" rx="120" ry="55" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="6,3" />
+            <ellipse cx="130" cy="65" rx="112" ry="48" fill="none" stroke="#1e3a8a" stroke-width="1.2" />
+            <text x="130" y="38" font-family="'Space Grotesk', 'Arial', sans-serif" font-size="12" font-weight="900" fill="#1e3a8a" text-anchor="middle" letter-spacing="1">JASVI INDUSTRIES</text>
+            <text x="130" y="50" font-family="'Arial', sans-serif" font-size="8" font-weight="700" fill="#2563eb" text-anchor="middle" letter-spacing="0.5">AHMEDABAD &bull; GUJARAT</text>
+            <path d="M 60 78 Q 80 50 100 82 T 140 68 T 175 75 Q 195 82 205 70" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 85 85 Q 120 95 180 82" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round" />
+            <text x="130" y="102" font-family="'Arial', sans-serif" font-size="9" font-weight="800" fill="#1e3a8a" text-anchor="middle" letter-spacing="0.5">AUTHORIZED SIGNATORY</text>
+          </svg>
+        </div>
+        <div style="margin-top: 14px; font-size: 0.85rem; font-weight: 800; color: #111827;">For, JASVI INDUSTRIES</div>
+        <div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">Digitally Attached to Outgoing Commercial Invoices &amp; Estimates</div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 18px; display: flex; justify-content: flex-end; background: var(--bg-card); border-top: 1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-preview-signature')">Close Preview</button>
       </div>
     </div>
   </div>
