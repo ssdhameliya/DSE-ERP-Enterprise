@@ -125,6 +125,10 @@ window.ReconService = {
     return window.ApiService.get(`/api/purchase-recon/suppliers/${id}`);
   },
 
+  async getNextSupplierReference() {
+    return window.ApiService.get('/api/purchase-recon/suppliers/next-reference');
+  },
+
   async createReconSupplier(payload) {
     return window.ApiService.post('/api/purchase-recon/suppliers', payload);
   },

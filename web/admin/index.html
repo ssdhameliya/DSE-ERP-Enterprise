@@ -5958,6 +5958,210 @@
     </div>
   </div>
 
+  <!-- MODAL: BANK STATEMENT IMPORT PROGRESS (Desktop LiveOperationDialog Parity) -->
+  <div id="modal-bank-import-progress" class="modal-overlay" style="display: none; z-index: 100050;">
+    <div class="modal-card" style="max-width: 480px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">📥</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.05rem; color: #fff;">Importing Bank Statement</h3>
+            <div id="mbip-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Processing statement data &amp; reconciliations</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 22px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span id="mbip-stage-text" style="font-size: 0.82rem; font-weight: 600; color: var(--cyan);">Parsing CSV statement rows...</span>
+          <span id="mbip-percent-text" style="font-size: 0.82rem; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace;">25%</span>
+        </div>
+        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; margin-bottom: 14px;">
+          <div id="mbip-progress-bar" style="width: 25%; height: 100%; background: linear-gradient(90deg, var(--cyan) 0%, #3b82f6 100%); transition: width 0.3s ease;"></div>
+        </div>
+        <div id="mbip-detail-text" style="font-size: 0.75rem; color: var(--text-dim); text-align: center;">Calculating SHA256 integrity fingerprints...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BANK STATEMENT IMPORT SUMMARY (Desktop v11.0.5 Parity) -->
+  <div id="modal-bank-import-summary" class="modal-overlay" style="display: none; z-index: 100040;">
+    <div class="modal-card" style="max-width: 680px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">📑</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Bank Statement Import Summary</h3>
+            <div id="mbis-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Statement import audit report</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.BankStatementController.closeModal('modal-bank-import-summary')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px;">
+        <div id="mbis-account-detail" style="font-size: 0.82rem; font-weight: 600; color: var(--cyan); margin-bottom: 14px; background: rgba(56,189,248,0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.2);">
+          Bank Account &bull; Statement Period
+        </div>
+        <!-- 4 Metric Cards -->
+        <div class="kpi-grid erp-kpi-single-row" style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <div class="compact-kpi-card" style="flex: 1; padding: 10px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">TOTAL ROWS</div>
+            <div id="mbis-total" style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-top: 3px;">0</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 10px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(74,222,128,0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">IMPORTED</div>
+            <div id="mbis-imported" style="font-size: 1.25rem; font-weight: 800; color: #4ade80; font-family: 'JetBrains Mono', monospace; margin-top: 3px;">0</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 10px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">DUPLICATES SKIPPED</div>
+            <div id="mbis-skipped" style="font-size: 1.25rem; font-weight: 800; color: #fbbf24; font-family: 'JetBrains Mono', monospace; margin-top: 3px;">0</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 10px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(248,113,113,0.25); border-radius: 8px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">ERRORS</div>
+            <div id="mbis-errors" style="font-size: 1.25rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; margin-top: 3px;">0</div>
+          </div>
+        </div>
+
+        <div id="mbis-status-msg" style="font-size: 0.82rem; line-height: 1.5; color: var(--text-main); margin-bottom: 18px; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-subtle);">
+          Statement import finished.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; pt: 12px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn btn-secondary" id="mbis-btn-download" onclick="window.BankStatementController.downloadImportAuditReport()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span>📊</span> Download Import Report (Excel / CSV)
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary" onclick="window.BankStatementController.closeModal('modal-bank-import-summary')">Close</button>
+            <button type="button" class="btn btn-primary" id="mbis-btn-open" onclick="window.BankStatementController.openImportedBatch()">Open Statement</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECON SUPPLIER RECORDS (Desktop ReconSupplierRecordsDialog.java Parity) -->
+  <div id="modal-recon-supplier-records" class="modal-overlay" style="display: none; z-index: 100030;">
+    <div class="modal-card" style="max-width: 950px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🏢</span>
+          <div>
+            <h3 id="mrsr-title" style="margin: 0; font-size: 1.1rem; color: #fff;">Recon Supplier Records</h3>
+            <div id="mrsr-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Purchase Reconciliation invoices linked to supplier</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.PurchaseReconController.closeModal('modal-recon-supplier-records')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <!-- KPI Strip -->
+        <div class="kpi-grid erp-kpi-single-row" style="display: flex; gap: 10px; margin-bottom: 14px;">
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">TOTAL INVOICES</div>
+            <div id="mrsr-kpi-count" style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">0</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">TOTAL VALUE</div>
+            <div id="mrsr-kpi-total" style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(74,222,128,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">LINKED / RECONCILED</div>
+            <div id="mrsr-kpi-linked" style="font-size: 1.15rem; font-weight: 800; color: #4ade80; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(248,113,113,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">OUTSTANDING</div>
+            <div id="mrsr-kpi-balance" style="font-size: 1.15rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+        </div>
+
+        <!-- Records Table -->
+        <div style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 6px;">
+          <table class="data-table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Recon Ref</th>
+                <th>Invoice Date</th>
+                <th>Invoice No</th>
+                <th style="text-align: right;">Invoice Value (₹)</th>
+                <th style="text-align: right;">Linked Amount (₹)</th>
+                <th style="text-align: center;">Status</th>
+                <th style="text-align: center; width: 100px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="mrsr-tbody">
+              <tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-dim);">Loading supplier records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 14px; pt: 10px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn btn-secondary" onclick="window.PurchaseReconController.closeModal('modal-recon-supplier-records')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FINANCIAL STATEMENT DRILL-DOWN (Desktop FinancialStatements.fxml Parity) -->
+  <div id="modal-fs-drilldown" class="modal-overlay" style="display: none; z-index: 100030;">
+    <div class="modal-card" style="max-width: 950px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🔍</span>
+          <div>
+            <h3 id="mfsd-title" style="margin: 0; font-size: 1.1rem; color: #fff;">Financial Statement Drill-Down</h3>
+            <div id="mfsd-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Underlying General Ledger Vouchers</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="window.FinanceController.closeModal('modal-fs-drilldown')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <!-- KPI Ribbon -->
+        <div class="kpi-grid erp-kpi-single-row" style="display: flex; gap: 10px; margin-bottom: 14px;">
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">TOTAL VOUCHERS</div>
+            <div id="mfsd-kpi-count" style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">0</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(248,113,113,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">TOTAL DEBITS</div>
+            <div id="mfsd-kpi-debits" style="font-size: 1.15rem; font-weight: 800; color: #f87171; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(74,222,128,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">TOTAL CREDITS</div>
+            <div id="mfsd-kpi-credits" style="font-size: 1.15rem; font-weight: 800; color: #4ade80; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+          <div class="compact-kpi-card" style="flex: 1; padding: 8px 12px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">NET IMPACT</div>
+            <div id="mfsd-kpi-net" style="font-size: 1.15rem; font-weight: 800; color: var(--cyan); font-family: 'JetBrains Mono', monospace; margin-top: 2px;">₹ 0.00</div>
+          </div>
+        </div>
+
+        <div style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 6px;">
+          <table class="data-table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Voucher Date</th>
+                <th>Voucher No</th>
+                <th>Type</th>
+                <th>Account / Party</th>
+                <th>Description / Ref</th>
+                <th style="text-align: right;">Debit (₹)</th>
+                <th style="text-align: right;">Credit (₹)</th>
+                <th style="text-align: center; width: 90px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="mfsd-tbody">
+              <tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-dim);">Loading drill-down vouchers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; pt: 10px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn btn-secondary" onclick="window.FinanceController.exportDrilldownExcel()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span>📊</span> Export to Excel
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="window.FinanceController.closeModal('modal-fs-drilldown')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Central Semantic Dialog Modal matching desktop AppDialogRenderer.java -->
   <div id="modal-app-dialog" class="modal-overlay app-dialog-overlay" style="display: none;">
     <div class="app-dialog-card" role="dialog" aria-modal="true">

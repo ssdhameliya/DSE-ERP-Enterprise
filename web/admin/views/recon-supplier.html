@@ -156,9 +156,15 @@
       </div>
 
       <div class="modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="form-group">
-          <label class="form-label">Trade / Legal Name *</label>
-          <input type="text" id="rs-editor-name" class="form-input" required placeholder="e.g. Acme Components Pvt Ltd">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Supplier Code (Auto)</label>
+            <input type="text" id="rs-editor-code" class="form-input" readonly placeholder="RS-0001" style="background: rgba(255,255,255,0.05); color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Trade / Legal Name *</label>
+            <input type="text" id="rs-editor-name" class="form-input" required placeholder="e.g. Acme Components Pvt Ltd">
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-group">

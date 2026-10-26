@@ -1167,7 +1167,7 @@ window.BankStatementController = (function() {
             {
               documentType: item.candidate.type,
               documentId: item.candidate.id,
-              amount: Math.min(item.candidate.outstanding, item.bankAmount)
+              amount: item.bankAmount
             }
           ]
         };
@@ -1626,8 +1626,31 @@ window.BankStatementController = (function() {
     await executeStatementImport(chosen.bankName, chosen.accountNumber);
   }
 
+  let currentImportSummary = null;
+
+  function showImportProgress(stage, percent, detail) {
+    const modal = document.getElementById('modal-bank-import-progress');
+    if (!modal) return;
+    const stageEl = document.getElementById('mbip-stage-text');
+    const pctEl = document.getElementById('mbip-percent-text');
+    const barEl = document.getElementById('mbip-progress-bar');
+    const detEl = document.getElementById('mbip-detail-text');
+    if (stageEl) stageEl.innerText = stage;
+    if (pctEl) pctEl.innerText = percent + '%';
+    if (barEl) barEl.style.width = percent + '%';
+    if (detEl) detEl.innerText = detail || '';
+    modal.style.display = 'flex';
+  }
+
+  function hideImportProgress() {
+    const modal = document.getElementById('modal-bank-import-progress');
+    if (modal) modal.style.display = 'none';
+  }
+
   async function executeStatementImport(bankName, bankAccount) {
     if (!pendingImportParsedData) return;
+
+    showImportProgress('Uploading & Deduplicating Statement...', 70, 'Submitting transactions to ERP reconciliation engine...');
 
     const payload = {
       ...pendingImportParsedData,
@@ -1638,38 +1661,161 @@ window.BankStatementController = (function() {
     };
 
     try {
-      if (window.AppDialogService) window.AppDialogService.toastInfo('Importing statement transactions...');
       const res = await window.ReconService.importStatement(payload);
+      showImportProgress('Finishing statement import...', 95, 'Preparing reconciliation audit summary...');
 
-      if (res?.alreadyImported && res?.batch) {
-        let openExisting = false;
-        if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
-          openExisting = await window.AppDialogService.confirm(
-            'Statement Already Imported',
-            'Duplicate Statement Detected',
-            `This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`,
-            'Open Statement',
-            'Cancel'
-          );
-        } else {
-          openExisting = confirm(`This exact bank statement was already imported on ${formatDate(res.batch.importedAt)}.\n\nOpen the existing statement instead?`);
+      const totalRows = payload.rows.length;
+      const importedRows = res.importedRows != null ? res.importedRows : (res.batch ? totalRows : 0);
+      const duplicateRows = res.duplicateRows != null ? res.duplicateRows : (res.alreadyImported ? totalRows : Math.max(0, totalRows - importedRows));
+      const errorRows = (pendingImportParsedData && pendingImportParsedData.invalidCount) || 0;
+
+      // Construct row-level audit items for Excel/CSV export (Desktop ImportAuditItem parity)
+      const auditItems = [];
+      payload.rows.forEach((r, idx) => {
+        let status = 'IMPORTED';
+        let remarks = 'Successfully imported into statement batch';
+        if (res.alreadyImported) {
+          status = 'DUPLICATE_SKIPPED';
+          remarks = 'Statement batch was already imported on ' + formatDate(res.batch?.importedAt);
+        } else if (idx >= importedRows) {
+          status = 'DUPLICATE_SKIPPED';
+          remarks = 'Duplicate transaction fingerprint skipped';
         }
-        if (openExisting) {
-          loadStatementWorkspace(res.batch.id);
-        }
-      } else if (res?.batch) {
-        if (window.AppDialogService) {
-          window.AppDialogService.toastSuccess(`Imported: ${res.importedRows || payload.rows.length} transactions.\nDuplicates skipped: ${res.duplicateRows || 0}`);
-        }
-        loadStatementWorkspace(res.batch.id);
-      } else {
-        alert('All transactions in this statement were already present, so no new statement batch was created.');
-      }
+        auditItems.push({
+          lineNo: r.sourceRowNumber || (idx + 1),
+          sourceIndex: idx + 1,
+          date: r.transactionDate,
+          valueDate: r.valueDate || r.transactionDate,
+          description: r.description,
+          reference: r.reference,
+          debit: r.debit || 0,
+          credit: r.credit || 0,
+          balance: r.balance || 0,
+          status: status,
+          remarks: remarks
+        });
+      });
+
+      currentImportSummary = {
+        fileName: payload.sourceFileName || 'Statement.csv',
+        bankName: bankName,
+        accountNumber: bankAccount,
+        statementFrom: payload.statementFrom || '',
+        statementTo: payload.statementTo || '',
+        totalRows: totalRows + errorRows,
+        importedRows: importedRows,
+        duplicateRows: duplicateRows,
+        errorRows: errorRows,
+        alreadyImported: Boolean(res.alreadyImported),
+        batch: res.batch || null,
+        items: auditItems
+      };
+
+      hideImportProgress();
+      showImportSummary(currentImportSummary);
     } catch (err) {
+      hideImportProgress();
       console.error('Import statement failed:', err);
       alert('Import statement failed: ' + (err.message || 'Server error'));
     } finally {
       pendingImportParsedData = null;
+    }
+  }
+
+  function showImportSummary(summary) {
+    if (!summary) return;
+    const modal = document.getElementById('modal-bank-import-summary');
+    if (!modal) return;
+
+    const sub = document.getElementById('mbis-sub');
+    if (sub) sub.innerText = `Import Summary: ${summary.fileName}`;
+
+    const acc = document.getElementById('mbis-account-detail');
+    if (acc) {
+      acc.innerText = `${summary.bankName} (${maskAccount(summary.accountNumber)}) • ${formatDate(summary.statementFrom)} to ${formatDate(summary.statementTo)}`;
+    }
+
+    const elTotal = document.getElementById('mbis-total');
+    if (elTotal) elTotal.innerText = summary.totalRows;
+
+    const elImported = document.getElementById('mbis-imported');
+    if (elImported) elImported.innerText = summary.importedRows;
+
+    const elSkipped = document.getElementById('mbis-skipped');
+    if (elSkipped) elSkipped.innerText = summary.duplicateRows;
+
+    const elErrors = document.getElementById('mbis-errors');
+    if (elErrors) elErrors.innerText = summary.errorRows;
+
+    const statusMsg = document.getElementById('mbis-status-msg');
+    if (statusMsg) {
+      if (summary.alreadyImported) {
+        statusMsg.innerHTML = `<span style="color:var(--yellow); font-weight:700;">Notice:</span> This exact bank statement was already imported on ${formatDate(summary.batch?.importedAt)}. No duplicate records were re-created.`;
+      } else if (summary.errorRows > 0) {
+        statusMsg.innerHTML = `<span style="color:var(--red); font-weight:700;">Warning:</span> Found ${summary.errorRows} transaction row(s) with validation errors. Download the audit report to inspect individual issues.`;
+      } else if (summary.importedRows > 0) {
+        statusMsg.innerHTML = `<span style="color:var(--green); font-weight:700;">Success:</span> Statement imported successfully. ${summary.importedRows} new transactions added to reconciliation workspace.`;
+      } else {
+        statusMsg.innerText = 'All transactions in this statement were already present in ERP records.';
+      }
+    }
+
+    const btnOpen = document.getElementById('mbis-btn-open');
+    if (btnOpen) {
+      btnOpen.disabled = !summary.batch;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function openImportedBatch() {
+    closeModal('modal-bank-import-summary');
+    if (currentImportSummary?.batch?.id) {
+      loadStatementWorkspace(currentImportSummary.batch.id);
+    }
+  }
+
+  function downloadImportAuditReport() {
+    if (!currentImportSummary || !currentImportSummary.items || currentImportSummary.items.length === 0) {
+      alert('No audit items available to export.');
+      return;
+    }
+    const headers = ['Line #', 'Tx #', 'Date', 'Value Date', 'Description / Narration', 'Reference / Cheque', 'Debit (INR)', 'Credit (INR)', 'Balance (INR)', 'Import Status', 'Audit Remarks'];
+    const data = [headers];
+
+    currentImportSummary.items.forEach(it => {
+      data.push([
+        it.lineNo,
+        it.sourceIndex,
+        it.date,
+        it.valueDate,
+        it.description,
+        it.reference,
+        it.debit,
+        it.credit,
+        it.balance,
+        it.status,
+        it.remarks
+      ]);
+    });
+
+    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
+      const ws = window.XLSX.utils.aoa_to_sheet(data);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Import Audit');
+      const safeName = (currentImportSummary.fileName || 'Statement').replace(/[^a-zA-Z0-9_-]/g, '_');
+      window.XLSX.writeFile(wb, `Import_Report_${safeName}_${Date.now()}.xlsx`);
+    } else {
+      // CSV Fallback
+      const csv = data.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Import_Report_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   }
 
@@ -2611,27 +2757,39 @@ window.BankStatementController = (function() {
     }
     // 7. Operating Expense
     else if (type === 'EXPENSE' || ref.startsWith('EXP') || ref.startsWith('VCH') || ref.startsWith('OPEX')) {
-      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
-      waitForElementAndAct('#exp-search', (searchInput) => {
-        searchInput.value = docRef;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
-          window.FinanceController.applyFinanceFilters();
-        }
-        highlightRowInTable('expense-entry-tbody', docRef);
-      });
+      const m = docRef.match(/\d+/);
+      const fid = m ? parseInt(m[0], 10) : null;
+      if (window.FinanceController && typeof window.FinanceController.requestLinkedEntry === 'function' && fid) {
+        window.FinanceController.requestLinkedEntry('EXPENSE', fid, docRef);
+      } else {
+        if (window.NavigationRouter) window.NavigationRouter.selectNav('view-expense-entry');
+        waitForElementAndAct('#exp-search', (searchInput) => {
+          searchInput.value = docRef;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+            window.FinanceController.applyFinanceFilters();
+          }
+          highlightRowInTable('expense-entry-tbody', docRef);
+        });
+      }
     }
     // 8. Bank Journal / Bank Entry
     else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN') || ref.startsWith('DEP') || ref.startsWith('WDL')) {
-      if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
-      waitForElementAndAct('#bank-search', (searchInput) => {
-        searchInput.value = docRef;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
-          window.FinanceController.applyFinanceFilters();
-        }
-        highlightRowInTable('bank-entry-tbody', docRef);
-      });
+      const m = docRef.match(/\d+/);
+      const fid = m ? parseInt(m[0], 10) : null;
+      if (window.FinanceController && typeof window.FinanceController.requestLinkedEntry === 'function' && fid) {
+        window.FinanceController.requestLinkedEntry('BANK', fid, docRef);
+      } else {
+        if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-entry');
+        waitForElementAndAct('#bank-search', (searchInput) => {
+          searchInput.value = docRef;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.FinanceController && typeof window.FinanceController.applyFinanceFilters === 'function') {
+            window.FinanceController.applyFinanceFilters();
+          }
+          highlightRowInTable('bank-entry-tbody', docRef);
+        });
+      }
     }
     // 9. Payment Receipt
     else if (type === 'PAYMENT' || ref.startsWith('PAY') || ref.startsWith('REC')) {
@@ -2696,6 +2854,8 @@ window.BankStatementController = (function() {
     importStatement,
     onCsvFileSelected,
     confirmAccountAndImport,
+    downloadImportAuditReport,
+    openImportedBatch,
 
     toggleStatementHistory,
     loadStatementHistory,

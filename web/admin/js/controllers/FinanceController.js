@@ -42,9 +42,12 @@ window.FinanceController = {
 
   initDateFilters(force = false) {
     const now = new Date();
-    const year = now.getFullYear();
-    const fromStr = `${year}-01-01`;
-    const toStr = `${year}-12-31`;
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1; // 1-12
+    const startYear = curMonth >= 4 ? curYear : curYear - 1;
+    const endYear = startYear + 1;
+    const fromStr = `${startYear}-04-01`;
+    const toStr = `${endYear}-03-31`;
 
     const bfFrom = document.getElementById('bank-filter-from');
     const bfTo = document.getElementById('bank-filter-to');
@@ -241,7 +244,9 @@ window.FinanceController = {
 
   applyFinanceFilters() {
     const isBank = this.currentMode === 'BANK';
-    const q = (document.getElementById(isBank ? 'bank-search' : 'exp-search')?.value || '').toLowerCase().trim();
+    const rawSearch = (document.getElementById(isBank ? 'bank-search' : 'exp-search')?.value || '').trim();
+    const q = rawSearch.toLowerCase();
+    const cleanQ = q.replace(/expense\s*#/i, '').replace(/bank\s*entry\s*#/i, '').replace(/#/g, '').trim();
     const typeFilter = document.getElementById('bank-type-filter')?.value || 'ALL';
     const catFilter = document.getElementById('exp-category-filter')?.value || 'ALL';
     const fromDate = document.getElementById(isBank ? 'bank-filter-from' : 'exp-filter-from')?.value || '';
@@ -255,10 +260,20 @@ window.FinanceController = {
 
       if (!isBankType) return false;
 
+      const vId = v.id ? String(v.id) : '';
       const vNo = (v.voucherNo || '').toLowerCase();
       const party = (v.partyName || v.accountName || '').toLowerCase();
       const narr = (v.narration || v.notes || '').toLowerCase();
-      const matchesQ = !q || vNo.includes(q) || party.includes(q) || narr.includes(q);
+      const refNo = (v.referenceNo || '').toLowerCase();
+      const cat = (v.category || (v.narration || '').split('|')[0] || '').toLowerCase();
+
+      const matchesQ = !q ||
+        vNo.includes(q) ||
+        party.includes(q) ||
+        narr.includes(q) ||
+        refNo.includes(q) ||
+        cat.includes(q) ||
+        (vId && (vId === q || vId === cleanQ || ('expense #' + vId).includes(q) || ('bank entry #' + vId).includes(q) || ('#' + vId) === q));
 
       let matchesType = true;
       if (isBank && typeFilter !== 'ALL') {
@@ -270,8 +285,8 @@ window.FinanceController = {
           matchesType = rawType.includes('CONTRA');
         }
       } else if (!isBank && catFilter !== 'ALL') {
-        const cat = v.category || (v.narration || '').split('|')[0]?.trim();
-        matchesType = (cat || '').toUpperCase() === catFilter.toUpperCase();
+        const catVal = v.category || (v.narration || '').split('|')[0]?.trim();
+        matchesType = (catVal || '').toUpperCase() === catFilter.toUpperCase();
       }
 
       let matchesDate = true;
@@ -288,6 +303,70 @@ window.FinanceController = {
       this.renderBankTable(this.filteredVouchers);
     } else {
       this.renderExpenseTable(this.filteredVouchers);
+    }
+  },
+
+  async requestLinkedEntry(mode, id, docRef = '') {
+    const isExpense = mode === 'EXPENSE' || (docRef && docRef.toUpperCase().includes('EXPENSE'));
+    const targetNav = isExpense ? 'view-expense-entry' : 'view-bank-entry';
+    if (window.NavigationRouter && typeof window.NavigationRouter.selectNav === 'function') {
+      window.NavigationRouter.selectNav(targetNav);
+    }
+    if (isExpense) {
+      this.loadExpenseMode();
+    } else {
+      this.loadBankMode();
+    }
+
+    // 1. Try finding in loaded cache first
+    let entry = this.vouchersCache.find(x => x.id === id);
+
+    // 2. Direct fetch by ID (Desktop BankExpenseController.java:213 parity)
+    if (!entry && id && window.OperationsService && typeof window.OperationsService.getFinanceById === 'function') {
+      try {
+        entry = await window.OperationsService.getFinanceById(id);
+        if (entry) {
+          this.vouchersCache.unshift(entry);
+        }
+      } catch (err) {
+        console.warn('Unable to load finance entry #' + id, err);
+      }
+    }
+
+    if (entry) {
+      // Isolate record exactly like Desktop (BankExpenseController.java:216)
+      this.filteredVouchers = [entry];
+      const tbodyId = isExpense ? 'expense-entry-tbody' : 'bank-entry-tbody';
+      const searchInputId = isExpense ? 'exp-search' : 'bank-search';
+      const searchEl = document.getElementById(searchInputId);
+      if (searchEl) searchEl.value = docRef || (isExpense ? `Expense #${id}` : `Bank Entry #${id}`);
+
+      if (isExpense) {
+        this.renderExpenseTable(this.filteredVouchers);
+        this.selectedExpenseId = entry.id;
+      } else {
+        this.renderBankTable(this.filteredVouchers);
+        this.selectedBankId = entry.id;
+      }
+
+      // Highlight row and scroll into view with pulsing cyan focus
+      setTimeout(() => {
+        const row = document.querySelector(`#${tbodyId} tr[data-id="${entry.id}"]`) || document.querySelector(`#${tbodyId} tr`);
+        if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          row.classList.add('table-row-selected');
+          row.style.outline = '2px solid var(--cyan)';
+          row.style.background = 'rgba(56, 189, 248, 0.2)';
+        }
+      }, 120);
+    } else {
+      // Fallback: put query into search and apply filter
+      const searchInputId = isExpense ? 'exp-search' : 'bank-search';
+      const searchEl = document.getElementById(searchInputId);
+      if (searchEl) {
+        searchEl.value = docRef || String(id || '');
+        this.applyFinanceFilters();
+      }
     }
   },
 
@@ -2541,12 +2620,17 @@ window.FinanceController = {
   },
 
   exportDrillDownCsv() {
+    this.exportDrilldownExcel();
+  },
+
+  exportDrilldownExcel() {
     const rows = this.currentDrillDownRows || [];
     if (!rows.length) {
       if (window.AppDialogService) window.AppDialogService.toastWarning('No transactions to export.');
       return;
     }
 
+    const cat = this.currentDrillDownCategory || 'LEDGER';
     const fmtDate = (d) => {
       if (window.FormatUtil && typeof window.FormatUtil.formatDate === 'function') {
         return window.FormatUtil.formatDate(d);
@@ -2554,37 +2638,61 @@ window.FinanceController = {
       return d || '-';
     };
 
-    const headers = ['Date', 'Voucher / Ref', 'Party / Account', 'Description', 'Debit (INR)', 'Credit (INR)', 'Balance (INR)'];
-    const csvLines = [headers.join(',')];
+    if (window.XLSX) {
+      const mapped = rows.map(r => ({
+        'Date': fmtDate(r.date),
+        'Voucher / Ref': r.voucherNo || '',
+        'Party / Account': r.partyOrAccount || '',
+        'Description': r.description || '',
+        'Debit (₹)': Number(r.debit || 0),
+        'Credit (₹)': Number(r.credit || 0),
+        'Balance (₹)': Number(r.balance || 0)
+      }));
+      const ws = window.XLSX.utils.json_to_sheet(mapped);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, cat);
+      window.XLSX.writeFile(wb, `Financial_Drilldown_${cat}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported drill-down Excel successfully.');
+    } else {
+      const headers = ['Date', 'Voucher / Ref', 'Party / Account', 'Description', 'Debit (INR)', 'Credit (INR)', 'Balance (INR)'];
+      const csvLines = [headers.join(',')];
 
-    rows.forEach(r => {
-      const line = [
-        `"${fmtDate(r.date)}"`,
-        `"${(r.voucherNo || '').replace(/"/g, '""')}"`,
-        `"${(r.partyOrAccount || '').replace(/"/g, '""')}"`,
-        `"${(r.description || '').replace(/"/g, '""')}"`,
-        (parseFloat(r.debit) || 0).toFixed(2),
-        (parseFloat(r.credit) || 0).toFixed(2),
-        (parseFloat(r.balance) || 0).toFixed(2)
-      ];
-      csvLines.push(line.join(','));
-    });
+      rows.forEach(r => {
+        const line = [
+          `"${fmtDate(r.date)}"`,
+          `"${(r.voucherNo || '').replace(/"/g, '""')}"`,
+          `"${(r.partyOrAccount || '').replace(/"/g, '""')}"`,
+          `"${(r.description || '').replace(/"/g, '""')}"`,
+          (parseFloat(r.debit) || 0).toFixed(2),
+          (parseFloat(r.credit) || 0).toFixed(2),
+          (parseFloat(r.balance) || 0).toFixed(2)
+        ];
+        csvLines.push(line.join(','));
+      });
 
-    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Financial_Drilldown_${this.currentDrillDownCategory || 'LEDGER'}_${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported drill-down CSV successfully.');
+      const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Financial_Drilldown_${cat}_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Exported drill-down CSV successfully.');
+    }
   },
 
   closeDrillDownModal() {
-    const modal = document.getElementById('modal-financial-drilldown');
-    if (modal) modal.style.display = 'none';
+    const m1 = document.getElementById('modal-financial-drilldown');
+    if (m1) m1.style.display = 'none';
+    const m2 = document.getElementById('modal-fs-drilldown');
+    if (m2) m2.style.display = 'none';
+  },
+
+  closeModal(id) {
+    const el = document.getElementById(id || 'modal-financial-drilldown');
+    if (el) el.style.display = 'none';
   },
 
   // ==========================================

@@ -859,6 +859,7 @@ window.PurchaseReconController = (function() {
                 Actions
               </button>
               <div id="supplier-action-menu-${s.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.PurchaseReconController.showSupplierRecords(${s.id})"><span style="margin-right:8px;">📋</span> View Recon Records</div>
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">👁️</span> View Supplier</div>
                 <div class="action-menu-item" onclick="window.PurchaseReconController.openEditSupplier(${s.id})"><span style="margin-right:8px;">✏️</span> Edit Supplier</div>
                 <div class="action-menu-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
@@ -880,7 +881,7 @@ window.PurchaseReconController = (function() {
     openEditSupplier(id);
   }
 
-  function openNewSupplier() {
+  async function openNewSupplier() {
     activeEditingSupplierId = null;
     editingRowVersion = 0;
 
@@ -893,6 +894,16 @@ window.PurchaseReconController = (function() {
 
     const titleEl = document.getElementById('rs-editor-title');
     if (titleEl) titleEl.innerText = 'New Recon Supplier';
+    const codeEl = document.getElementById('rs-editor-code');
+    if (codeEl) {
+      codeEl.value = 'Loading...';
+      try {
+        const res = await window.ReconService.getNextSupplierReference();
+        codeEl.value = (res && res.reference) ? res.reference : 'RS-0001';
+      } catch (e) {
+        codeEl.value = 'RS-0001';
+      }
+    }
     const nameEl = document.getElementById('rs-editor-name');
     if (nameEl) nameEl.value = '';
     const gstinEl = document.getElementById('rs-editor-gstin');
@@ -930,6 +941,8 @@ window.PurchaseReconController = (function() {
       editingRowVersion = s.rowVersion || 0;
       const titleEl = document.getElementById('rs-editor-title');
       if (titleEl) titleEl.innerText = 'Edit Recon Supplier';
+      const codeEl = document.getElementById('rs-editor-code');
+      if (codeEl) codeEl.value = s.supplierCode || s.reference || ('RS-' + String(s.id).padStart(4, '0'));
       const nameEl = document.getElementById('rs-editor-name');
       if (nameEl) nameEl.value = s.legalName || '';
       const gstinEl = document.getElementById('rs-editor-gstin');
@@ -950,6 +963,121 @@ window.PurchaseReconController = (function() {
       showModal('modal-recon-supplier-editor');
     } catch (e) {
       alert('Failed to load supplier: ' + e.message);
+    }
+  }
+
+  let activeSupplierRecordsData = null;
+
+  async function showSupplierRecords(supplierId) {
+    const modal = document.getElementById('modal-recon-supplier-records');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('mrsr-title');
+    const subEl = document.getElementById('mrsr-sub');
+    const tbody = document.getElementById('mrsr-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">Loading supplier records...</td></tr>';
+    showModal('modal-recon-supplier-records');
+
+    try {
+      const s = await window.ReconService.getReconSupplier(supplierId);
+      if (titleEl) titleEl.innerText = 'Purchase Recon Records - ' + (s.legalName || 'Supplier');
+      if (subEl) {
+        subEl.innerText = `${s.legalName || ''} • Ref: ${s.reference || s.supplierCode || 'N/A'} • GSTIN: ${s.gstin || 'Unregistered'}`;
+      }
+
+      const all = await window.ReconService.getReconRecords();
+      const records = Array.isArray(all) ? all.filter(r => {
+        return r.supplierId === supplierId || (r.supplierName && s.legalName && r.supplierName.trim().toLowerCase() === s.legalName.trim().toLowerCase());
+      }) : [];
+
+      activeSupplierRecordsData = { supplier: s, records };
+
+      let totalVal = 0;
+      let linkedVal = 0;
+      records.forEach(r => {
+        totalVal += Number(r.invoiceAmount || r.invoiceValue || r.totalAmount || 0);
+        linkedVal += Number(r.linkedAmount || r.reconciledAmount || 0);
+      });
+      const balance = Math.max(0, totalVal - linkedVal);
+
+      const kpiCount = document.getElementById('mrsr-kpi-count');
+      const kpiTotal = document.getElementById('mrsr-kpi-total');
+      const kpiLinked = document.getElementById('mrsr-kpi-linked');
+      const kpiBal = document.getElementById('mrsr-kpi-balance');
+
+      if (kpiCount) kpiCount.innerText = records.length;
+      if (kpiTotal) kpiTotal.innerText = window.FormatUtil ? window.FormatUtil.formatCurrency(totalVal) : `₹ ${totalVal.toFixed(2)}`;
+      if (kpiLinked) kpiLinked.innerText = window.FormatUtil ? window.FormatUtil.formatCurrency(linkedVal) : `₹ ${linkedVal.toFixed(2)}`;
+      if (kpiBal) kpiBal.innerText = window.FormatUtil ? window.FormatUtil.formatCurrency(balance) : `₹ ${balance.toFixed(2)}`;
+
+      if (tbody) {
+        if (records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No Purchase Recon records found for this supplier.</td></tr>';
+        } else {
+          tbody.innerHTML = records.map(r => {
+            const iv = Number(r.invoiceAmount || r.invoiceValue || r.totalAmount || 0);
+            const lv = Number(r.linkedAmount || r.reconciledAmount || 0);
+            const dStr = window.FormatUtil ? window.FormatUtil.formatDate(r.invoiceDate) : (r.invoiceDate || '-');
+            const st = (r.status || 'PENDING').toUpperCase();
+            let badgeClass = 'pill-neutral';
+            if (st === 'RECONCILED') badgeClass = 'pill-success';
+            else if (st === 'PARTIALLY_RECONCILED') badgeClass = 'pill-warning';
+
+            return `
+              <tr>
+                <td style="font-weight:700; color:var(--cyan); font-family:monospace;">
+                  <a href="#" onclick="window.PurchaseReconController.openEditRecon(${r.id}); return false;" style="color:var(--cyan); text-decoration:none;">${r.reference || ('PR-' + r.id)}</a>
+                </td>
+                <td>${dStr}</td>
+                <td style="font-weight:600; color:var(--text-main);">${r.invoiceNumber || r.invoiceNo || '-'}</td>
+                <td style="text-align:right; font-family:'JetBrains Mono',monospace;">${window.FormatUtil ? window.FormatUtil.formatCurrency(iv) : `₹ ${iv.toFixed(2)}`}</td>
+                <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:var(--green);">${window.FormatUtil ? window.FormatUtil.formatCurrency(lv) : `₹ ${lv.toFixed(2)}`}</td>
+                <td style="text-align:center;"><span class="pill-badge ${badgeClass}">${st}</span></td>
+                <td style="text-align:center;">
+                  <button class="btn btn-sm btn-outline-cyan" onclick="window.PurchaseReconController.openEditRecon(${r.id})" style="padding:2px 8px; font-size:0.75rem;">View</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red); padding:20px;">Failed to load records: ${err.message}</td></tr>`;
+    }
+  }
+
+  function downloadSupplierRecordsExcel() {
+    if (!activeSupplierRecordsData || !activeSupplierRecordsData.records) {
+      alert('No supplier records available to export.');
+      return;
+    }
+    const s = activeSupplierRecordsData.supplier;
+    const recs = activeSupplierRecordsData.records;
+    const rows = recs.map(r => ({
+      'Recon Reference': r.reference || ('PR-' + r.id),
+      'Invoice Date': r.invoiceDate || '',
+      'Invoice Number': r.invoiceNumber || r.invoiceNo || '',
+      'Supplier Name': s.legalName || '',
+      'GSTIN': s.gstin || '',
+      'Invoice Amount (₹)': Number(r.invoiceAmount || r.invoiceValue || r.totalAmount || 0),
+      'Linked Amount (₹)': Number(r.linkedAmount || r.reconciledAmount || 0),
+      'Balance (₹)': Math.max(0, Number(r.invoiceAmount || r.invoiceValue || r.totalAmount || 0) - Number(r.linkedAmount || r.reconciledAmount || 0)),
+      'Status': r.status || 'PENDING'
+    }));
+
+    if (window.XLSX) {
+      const ws = window.XLSX.utils.json_to_sheet(rows);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Recon Records');
+      window.XLSX.writeFile(wb, `Supplier_Recon_${(s.reference || s.id)}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    } else {
+      const headers = Object.keys(rows[0] || {});
+      const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Supplier_Recon_${(s.reference || s.id)}_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
     }
   }
 
@@ -1099,7 +1227,10 @@ window.PurchaseReconController = (function() {
     firstSupplierPage,
     prevSupplierPage,
     nextSupplierPage,
-    lastSupplierPage
+    lastSupplierPage,
+    showSupplierRecords,
+    downloadSupplierRecordsExcel,
+    closeModal(id) { hideModal(id); }
   };
 })();
 

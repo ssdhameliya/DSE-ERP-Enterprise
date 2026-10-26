@@ -3,21 +3,21 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.4.01",
-  desktopVersion: "11.0.4",
+  version: "11.0.5.01",
+  desktopVersion: "11.0.5",
   webBuild: 1,
-  webVersion: "11.0.4.01",
-  tag: "web-v11.0.4.01",
-  releaseDate: "2026-10-25T22:30:00+05:30",
+  webVersion: "11.0.5.01",
+  tag: "web-v11.0.5.01",
+  releaseDate: "2026-10-26T10:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.4.0 Enterprise Web Client: Dynamic Table Cell Text Wrapping, High-Contrast Themed KPI Metrics, Universal Navigation Isolation & Company Signature Email Transmission Preview",
+  summary: "v11.0.5.01 Enterprise Web Parity: Linked Entry Navigation By ID, Live Bank Statement Import Progress & Audit Export, Recon Supplier Records Dialog, Financial Statements Drilldown, and Centralized Date Policy",
   highlights: [
-    "1. Dynamic Table Cell Narration & Reference Text Wrapping: Replaced single-line ellipsis truncation with responsive text wrapping and break-word rules in Bank Statement and Reconciliation registers, enabling complete visibility of full narrations without horizontal clipping.",
-    "2. Compact Selection Checkbox Sizing: Fixed selection checkbox column to strict 44px centered width across all registers, eliminating excessive whitespace.",
-    "3. High-Contrast Themed KPI Metrics: Upgraded KPI ribbon cards across Bank Statement, Bank Entry, and Expense Entry with vibrant theme accents (Cyan, Emerald Green, Coral Red, Amber, Purple) and auto-fitting heights to eliminate overlapping notes.",
-    "4. Universal Navigation Record Isolation: Hardened deep-linking and cross-module routing with asynchronous DOM readiness verification, pre-filling correct search inputs and isolating only the target record.",
-    "5. Email Transmission Signature Preview: Added company signature & stamp attachment card with dedicated modal preview in email transmission workflow across Sales, Purchases, Quotations, and Returns.",
-    "6. Strict Duplicate Statement Import Prevention: Integrated account and statement date period verification to block overlapping statement imports and provide instant redirection to existing batches."
+    "1. Linked Entry Direct Navigation by Entity ID: Clicking 🔗 Expense #... or 🔗 Bank Entry #... in Bank Statement now extracts the exact numeric ID and directly loads the entity from the server, isolates the record in the register, applies a pulsing highlight, and auto-scrolls into view (100% Desktop v11.0.5 parity).",
+    "2. Live Bank Statement Import Progress & Audit Summary: Added visual multi-stage progress dialog during CSV import, followed by a 4-KPI summary card modal (Total Rows, Imported, Duplicates Skipped, Invalid/Errors) and downloadable row-by-row Excel/CSV audit log.",
+    "3. Auto-Match Decimal Tolerance Parity: Updated auto-match allocation to allocate the full bank amount, absorbing sub-rupee rounding differences (e.g. ₹0.50) into reconciled vouchers.",
+    "4. Purchase Recon Supplier Auto-Reference & Records Drilldown: Added automated RS-%04d supplier reference assignment and integrated the Recon Supplier Records dialog showing supplier summary KPIs (Total Invoices, Total Value, Linked Amount, Outstanding) and invoice line table with Excel export.",
+    "5. Financial Statements Voucher Drilldown & Excel Export: Enabled interactive drill-down on Profit & Loss and Balance Sheet rows, displaying underlying General Ledger vouchers with category debits/credits KPI ribbon and formatted XLSX export.",
+    "6. Centralized Date Formatting & Standard Action Toolbars: Enforced FormatUtil.formatDate synchronized with Settings Studio across all register tables, alongside standardized Search, Reset (to Financial Year Apr 1 - Mar 31), and Refresh toolbars."
   ]
 };
 
