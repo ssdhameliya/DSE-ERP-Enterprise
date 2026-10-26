@@ -7,6 +7,10 @@
     <div class="view-actions">
       <button class="btn btn-secondary" onclick="window.NavigationRouter.selectNav('view-purchase-recon')">Purchase Recon</button>
       <button class="btn btn-secondary" onclick="window.PurchaseReconController.loadReconSuppliers()">&#8635; Refresh</button>
+      <button class="btn btn-secondary" onclick="window.PurchaseReconController.exportReconSuppliersExcel()"
+        style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>📊</span> Export Excel
+      </button>
       <button class="btn btn-primary" onclick="window.PurchaseReconController.openNewSupplier()">+ New Recon Supplier</button>
     </div>
   </div>
@@ -98,6 +102,8 @@
           style="height: 32px; font-size: 0.75rem;">Reset</button>
         <button type="button" id="rs-btn-refresh" class="btn btn-action-3d role-refresh btn-sm" onclick="window.PurchaseReconController.loadReconSuppliers()"
           style="height: 32px; font-size: 0.75rem;">&#8635; Refresh</button>
+        <button type="button" id="rs-btn-export" class="btn btn-action-3d role-secondary btn-sm" onclick="window.PurchaseReconController.exportReconSuppliersExcel()"
+          style="height: 32px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><span>📊</span> Export</button>
       </div>
     </div>
   </div>

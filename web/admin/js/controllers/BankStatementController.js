@@ -206,7 +206,7 @@ window.BankStatementController = (function() {
     }
   }
 
-  function renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink) {
+  function renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink, targets = []) {
     const isUnmatchedGroup = ['UNMATCHED', 'SUGGESTED', 'REVIEW'].includes(status);
     let html = `
       <!-- Category: VIEW -->
@@ -236,11 +236,13 @@ window.BankStatementController = (function() {
         <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
         <!-- Category: RECONCILIATION -->
         <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
-        ${hasMultiAlloc ? `
-          <div class="action-menu-item" onclick="window.BankStatementController.showLinkedAllocations(${t.id})"><span style="margin-right:8px;">🔗</span> View Match / Linked Record (${t.linkedAllocations.length})</div>
+        ${targets.length > 1 ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.showLinkedAllocations(${t.id})"><span style="margin-right:8px;">🔗</span> View Linked Targets (${targets.length})</div>
+        ` : (targets.length === 1 ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${targets[0].documentNo.replace(/'/g, "\\'")}', '${targets[0].rawType || ''}')"><span style="margin-right:8px;">🔗</span> View Linked Record (${targets[0].documentNo})</div>
         ` : (docLink ? `
-          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🔗</span> View Match / Linked Record</div>
-        ` : '')}
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🔗</span> View Linked Record</div>
+        ` : ''))}
         ${docLink && (docLink.startsWith('BANK') || t.linkedTargetType === 'BANK_ENTRY') ? `
           <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">🏦</span> View Bank Entry</div>
         ` : ''}
@@ -255,9 +257,11 @@ window.BankStatementController = (function() {
         <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
         <!-- Category: RECONCILIATION -->
         <div class="action-menu-header" style="font-size:0.68rem; font-weight:800; color:var(--cyan); padding:4px 12px; text-transform:uppercase; letter-spacing:0.5px;">RECONCILIATION</div>
-        ${docLink ? `
-          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}')"><span style="margin-right:8px;">💸</span> View Expense</div>
-        ` : ''}
+        ${targets.length > 0 ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${targets[0].documentNo.replace(/'/g, "\\'")}', 'EXPENSE')"><span style="margin-right:8px;">💸</span> View Expense (${targets[0].documentNo})</div>
+        ` : (docLink ? `
+          <div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}', 'EXPENSE')"><span style="margin-right:8px;">💸</span> View Expense</div>
+        ` : '')}
 
         <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
         <!-- Category: REVERSAL -->
@@ -299,8 +303,33 @@ window.BankStatementController = (function() {
       else if (status === 'IGNORED') badgeClass = 'pill-neutral';
       else badgeClass = 'pill-danger';
 
-      const hasMultiAlloc = t.linkedAllocations && t.linkedAllocations.length > 1;
+      const targets = collectLinkedTargets(t);
+      const hasMultiAlloc = targets.length > 1;
       const docLink = t.linkedDocumentNo || t.matchLink;
+
+      let matchHtml = '<span style="color:var(--text-dim); font-size:0.75rem;">-</span>';
+      if (targets.length > 1) {
+        matchHtml = `
+          <span class="pill-badge pill-purple clickable" onclick="event.stopPropagation(); window.BankStatementController.showLinkedAllocations(${t.id})" title="Click to view all ${targets.length} linked targets (${targets.map(x => x.documentNo).join(', ')})" style="display:inline-flex; align-items:center; gap:5px; font-weight:700; cursor:pointer;">
+            <span>🔗</span> Multi (${targets.length} linked)
+          </span>
+        `;
+      } else if (targets.length === 1) {
+        const tgt = targets[0];
+        matchHtml = `
+          <span class="pill-badge ${tgt.badgeClass} clickable" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${tgt.documentNo.replace(/'/g, "\\'")}', '${tgt.rawType || ''}')" title="Click to navigate to ${tgt.documentNo}" style="display:inline-flex; align-items:center; gap:5px; font-weight:600; cursor:pointer; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <span>${tgt.icon}</span> ${tgt.documentNo}
+          </span>
+        `;
+      } else if (docLink) {
+        matchHtml = `
+          <span class="pill-badge pill-cyan clickable" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}', '${t.linkedTargetType || ''}')" title="Click to navigate to ${docLink}" style="display:inline-flex; align-items:center; gap:5px; font-weight:600; cursor:pointer; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <span>🔗</span> ${docLink}
+          </span>
+        `;
+      } else if (t.suggestedConfidence) {
+        matchHtml = `<span class="pill-badge pill-warning" style="font-size:0.72rem; display:inline-flex; align-items:center; gap:4px;">💡 ${t.suggestedConfidence.toFixed(0)}% match</span>`;
+      }
 
       return `
         <tr data-stmt-id="${t.id}" onclick="window.BankStatementController.onTxnRowClick(${t.id}, event)" style="cursor:pointer; ${isSelected ? 'background:rgba(56,189,248,0.06);' : ''}">
@@ -327,16 +356,8 @@ window.BankStatementController = (function() {
           <td style="text-align:center;">
             <span class="pill-badge ${badgeClass}">${status}</span>
           </td>
-          <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--purple);" title="${docLink || ''}">
-            ${hasMultiAlloc ? `
-              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.showLinkedAllocations(${t.id})" style="color:var(--cyan); text-decoration:underline; font-weight:700;">
-                🔗 Multi (${t.linkedAllocations.length} linked)
-              </a>
-            ` : (docLink ? `
-              <a href="javascript:void(0)" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${docLink.replace(/'/g, "\\'")}', '${t.linkedTargetType || ''}')" style="color:var(--cyan); text-decoration:underline; font-weight:600;">
-                🔗 ${docLink}
-              </a>
-            ` : (t.suggestedConfidence ? `💡 ${t.suggestedConfidence.toFixed(0)}% match` : '-'))}
+          <td style="width:230px; min-width:210px; padding:6px 10px; font-size:0.75rem;" title="${docLink || ''}">
+            ${matchHtml}
           </td>
           <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
@@ -344,7 +365,7 @@ window.BankStatementController = (function() {
                 Actions <span style="font-size:0.65rem;">▼</span>
               </button>
               <div id="bs-action-menu-${t.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:230px; white-space:nowrap; padding:6px 0; text-align:left;">
-                ${renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink)}
+                ${renderActionMenuItems(t, status, debit, credit, hasMultiAlloc, docLink, targets)}
               </div>
             </div>
           </td>
@@ -1820,8 +1841,112 @@ window.BankStatementController = (function() {
   }
 
   // ==========================================
-  // 5. SCREENSHOT 5: LINKED TRANSACTIONS MODAL
+  // 5. SCREENSHOT 5: LINKED TRANSACTIONS MODAL (Desktop Parity 980px, 6 Columns)
   // ==========================================
+
+  function collectLinkedTargets(t) {
+    if (!t) return [];
+    const targets = [];
+    const seen = new Set();
+
+    function addTarget(docNo, typeHint, amount, roundOff, details) {
+      if (!docNo) return;
+      const cleanDoc = String(docNo).trim();
+      if (!cleanDoc || cleanDoc === '-' || seen.has(cleanDoc)) return;
+      seen.add(cleanDoc);
+
+      let targetType = typeHint;
+      if (!targetType) {
+        if (window.DeepLinkService && typeof window.DeepLinkService.inferDocumentType === 'function') {
+          targetType = window.DeepLinkService.inferDocumentType(cleanDoc);
+        } else {
+          const upper = cleanDoc.toUpperCase();
+          if (upper.startsWith('PRC')) targetType = 'PURCHASE_RECON';
+          else if (upper.startsWith('RS-')) targetType = 'RECON_SUPPLIER';
+          else if (upper.startsWith('INV') || upper.startsWith('SI') || upper.startsWith('JI')) targetType = 'SALES';
+          else if (upper.startsWith('BILL') || upper.startsWith('PUR') || upper.startsWith('PI')) targetType = 'PURCHASE';
+          else if (upper.startsWith('EXP') || upper.startsWith('OPEX')) targetType = 'EXPENSE';
+          else if (upper.startsWith('BE') || upper.startsWith('BSE') || upper.startsWith('PAY') || upper.startsWith('RCP')) targetType = 'BANK_ENTRY';
+          else targetType = 'ERP Document';
+        }
+      }
+
+      // Friendly display label & badge styling
+      let typeLabel = targetType;
+      let badgeClass = 'pill-neutral';
+      let icon = '📄';
+
+      const upperType = String(targetType).toUpperCase();
+      if (upperType.includes('SALE') || upperType.includes('INV')) {
+        typeLabel = 'Sales Invoice';
+        badgeClass = 'pill-cyan';
+        icon = '📄';
+      } else if (upperType.includes('PURCHASE_RECON') || upperType.startsWith('PRC')) {
+        typeLabel = 'Purchase Recon';
+        badgeClass = 'pill-purple';
+        icon = '📋';
+      } else if (upperType.includes('PURCHASE') || upperType.includes('BILL')) {
+        typeLabel = 'Purchase Bill';
+        badgeClass = 'pill-orange';
+        icon = '📥';
+      } else if (upperType.includes('EXPENSE') || upperType.includes('OPEX')) {
+        typeLabel = 'Operating Expense';
+        badgeClass = 'pill-purple';
+        icon = '💸';
+      } else if (upperType.includes('BANK_ENTRY') || upperType.startsWith('BE') || upperType.startsWith('BSE')) {
+        typeLabel = 'Bank Entry';
+        badgeClass = 'pill-teal';
+        icon = '🏛️';
+      } else if (upperType.includes('RECON_SUPPLIER') || upperType.startsWith('RS-')) {
+        typeLabel = 'Recon Supplier';
+        badgeClass = 'pill-blue';
+        icon = '🤝';
+      }
+
+      const bankAmt = t.debit > 0 ? parseFloat(t.debit) : parseFloat(t.credit || 0);
+
+      targets.push({
+        documentNo: cleanDoc,
+        targetType: typeLabel,
+        rawType: targetType,
+        badgeClass: badgeClass,
+        icon: icon,
+        allocatedAmount: amount !== undefined && amount !== null ? parseFloat(amount) : bankAmt,
+        roundingAdjustment: roundOff !== undefined && roundOff !== null ? parseFloat(roundOff) : 0,
+        details: details || t.description || t.narration || '-'
+      });
+    }
+
+    // 1. Explicit multi-allocations if present
+    if (Array.isArray(t.linkedAllocations) && t.linkedAllocations.length > 0) {
+      t.linkedAllocations.forEach(a => {
+        addTarget(a.documentNo || a.refNo || a.reference, a.targetType || a.documentType, a.allocatedAmount, a.roundingAdjustment, a.narration || a.notes);
+      });
+    }
+
+    // 2. linkedDocumentNo
+    if (t.linkedDocumentNo) {
+      addTarget(t.linkedDocumentNo, t.linkedTargetType, t.allocatedAmount, t.roundingAdjustment);
+    }
+
+    // 3. matchLink (can be comma / semicolon separated)
+    if (t.matchLink && typeof t.matchLink === 'string') {
+      const parts = t.matchLink.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+      parts.forEach(p => addTarget(p));
+    }
+
+    // 4. financeVoucherNo
+    if (t.financeVoucherNo) {
+      addTarget(t.financeVoucherNo, 'BANK_ENTRY');
+    }
+
+    // 5. matchedRecordId / matchedRecordType
+    if (t.matchedRecordType && t.matchedRecordId) {
+      addTarget(`${t.matchedRecordType} #${t.matchedRecordId}`, t.matchedRecordType);
+    }
+
+    return targets;
+  }
 
   function showLinkedAllocations(txnId) {
     const t = currentTransactions.find(x => x.id === txnId);
@@ -1831,32 +1956,22 @@ window.BankStatementController = (function() {
     const modal = document.getElementById('modal-linked-allocations');
     if (!modal) return;
 
-    const bankAmount = t.debit > 0 ? parseFloat(t.debit) : parseFloat(t.credit);
-    const allocations = (t.linkedAllocations && t.linkedAllocations.length > 0)
-      ? t.linkedAllocations
-      : (t.linkedDocumentNo || t.matchLink ? [
-          {
-            id: t.id,
-            documentNo: t.linkedDocumentNo || t.matchLink,
-            targetType: (t.linkedDocumentNo || '').startsWith('INV') ? 'Sales Invoice' : ((t.linkedDocumentNo || '').startsWith('EXP') ? 'Operating Expense' : 'Bank Entry'),
-            allocatedAmount: bankAmount,
-            roundingAdjustment: 0
-          }
-        ] : []);
+    const bankAmount = t.debit > 0 ? parseFloat(t.debit) : parseFloat(t.credit || 0);
+    const targets = collectLinkedTargets(t);
 
     let totalLinked = 0;
     let totalRound = 0;
-    allocations.forEach(a => {
+    targets.forEach(a => {
       totalLinked += parseFloat(a.allocatedAmount) || 0;
       totalRound += parseFloat(a.roundingAdjustment) || 0;
     });
     const diff = bankAmount - totalLinked;
 
     const elRef = document.getElementById('mla-bank-ref');
-    if (elRef) elRef.innerText = t.reference || ('Bank #' + t.id);
+    if (elRef) elRef.innerText = t.reference || t.chequeNo || ('Txn #' + t.id);
 
     const elCnt = document.getElementById('mla-linked-count');
-    if (elCnt) elCnt.innerText = allocations.length;
+    if (elCnt) elCnt.innerText = targets.length;
 
     const elLnk = document.getElementById('mla-bank-linked');
     if (elLnk) elLnk.innerText = formatMoney(totalLinked);
@@ -1875,17 +1990,32 @@ window.BankStatementController = (function() {
 
     const tbody = document.getElementById('mla-tbody');
     if (tbody) {
-      if (allocations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">No linked allocations found.</td></tr>';
+      if (targets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No linked target records found for this transaction.</td></tr>';
       } else {
-        tbody.innerHTML = allocations.map(a => `
+        tbody.innerHTML = targets.map(tgt => `
           <tr>
-            <td style="font-family:monospace; font-weight:700; color:var(--cyan);">${a.documentNo || ('#' + a.id)}</td>
-            <td><span class="pill-badge pill-neutral">${a.targetType || 'ERP Document'}</span></td>
-            <td style="text-align:right; font-weight:700; color:var(--text-main);">${formatMoney(a.allocatedAmount)}</td>
-            <td style="text-align:right; color:var(--text-muted);">${formatMoney(a.roundingAdjustment || 0)}</td>
-            <td style="text-align:center;">
-              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openLinkedDocument('${(a.documentNo || '').replace(/'/g, "\\'")}')" style="padding:2px 8px; font-size:0.75rem;">👁️ View</button>
+            <td style="white-space: nowrap;">
+              <span class="pill-badge ${tgt.badgeClass}" style="display:inline-flex; align-items:center; gap:5px; font-weight:600;">
+                <span>${tgt.icon}</span> ${tgt.targetType}
+              </span>
+            </td>
+            <td style="font-family:monospace; font-weight:700; color:var(--cyan); white-space: nowrap;">
+              ${tgt.documentNo}
+            </td>
+            <td style="color:var(--text-main); font-size:0.8rem; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${tgt.details}">
+              ${tgt.details}
+            </td>
+            <td style="text-align:right; font-weight:700; color:var(--text-main); font-family:monospace; white-space: nowrap;">
+              ${formatMoney(tgt.allocatedAmount)}
+            </td>
+            <td style="text-align:right; color:${tgt.roundingAdjustment === 0 ? 'var(--text-muted)' : (tgt.roundingAdjustment > 0 ? 'var(--green)' : 'var(--red)')}; font-family:monospace; white-space: nowrap;">
+              ${(tgt.roundingAdjustment >= 0 ? '+ ' : '') + formatMoney(tgt.roundingAdjustment)}
+            </td>
+            <td style="text-align:center; white-space: nowrap;">
+              <button class="btn btn-secondary btn-sm" onclick="window.BankStatementController.openLinkedDocument('${tgt.documentNo.replace(/'/g, "\\'")}', '${tgt.rawType || ''}')" style="padding:3px 10px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                👁️ View
+              </button>
             </td>
           </tr>
         `).join('');
@@ -1894,10 +2024,77 @@ window.BankStatementController = (function() {
 
     const footerText = document.getElementById('mla-footer-text');
     if (footerText) {
-      footerText.innerText = `${allocations.length} linked transaction${allocations.length !== 1 ? 's' : ''} • Use View to open the existing linked workflow.`;
+      footerText.innerText = `${targets.length} linked record${targets.length !== 1 ? 's' : ''} • Click View on any record to travel to its workspace.`;
     }
 
     modal.style.display = 'flex';
+  }
+
+  function exportStatementExcel() {
+    const list = (currentTransactions && currentTransactions.length > 0)
+      ? currentTransactions
+      : [];
+
+    if (list.length === 0) {
+      if (window.AppDialogService && typeof window.AppDialogService.toastWarning === 'function') {
+        window.AppDialogService.toastWarning('No statement transactions available to export.');
+      } else {
+        alert('No statement transactions available to export.');
+      }
+      return;
+    }
+
+    const headers = [
+      'Txn ID', 'Txn Date', 'Value Date', 'Reference / Cheque', 'Narration / Description',
+      'Debit (₹)', 'Credit (₹)', 'Balance (₹)', 'Status', 'Match / Link Ref', 'Rule Code', 'Audit Remarks'
+    ];
+
+    const data = [headers];
+    list.forEach(t => {
+      const targets = collectLinkedTargets(t);
+      const matchText = targets.length > 0
+        ? targets.map(tgt => tgt.documentNo).join('; ')
+        : (t.linkedDocumentNo || t.matchLink || t.reference || '');
+
+      data.push([
+        t.id || '',
+        formatDate(t.transactionDate),
+        formatDate(t.valueDate || t.transactionDate),
+        t.reference || t.chequeNo || '',
+        t.description || t.narration || '',
+        parseFloat(t.debit || 0),
+        parseFloat(t.credit || 0),
+        parseFloat(t.balance || 0),
+        t.status || 'UNMATCHED',
+        matchText,
+        t.ruleCode || '',
+        t.remarks || t.notes || ''
+      ]);
+    });
+
+    const activeBatchName = (currentBatch && (currentBatch.accountNumber || currentBatch.batchName || currentBatch.statementName))
+      ? String(currentBatch.accountNumber || currentBatch.batchName).replace(/[^a-zA-Z0-9_-]/g, '_')
+      : 'Statement';
+
+    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
+      const ws = window.XLSX.utils.aoa_to_sheet(data);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Bank Statement');
+      window.XLSX.writeFile(wb, `Bank_Statement_${activeBatchName}_${Date.now()}.xlsx`);
+      if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Bank statement exported to Excel.');
+    } else {
+      const csv = data.map(row => row.map(cell => `"${String(cell !== undefined && cell !== null ? cell : '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bank_Statement_${activeBatchName}_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      if (window.AppDialogService) window.AppDialogService.toastSuccess('Bank statement exported to CSV.');
+    }
   }
 
   // ==========================================
@@ -2670,6 +2867,14 @@ window.BankStatementController = (function() {
 
   function openLinkedDocument(docRef, targetType = '') {
     if (!docRef) return;
+    const modal = document.getElementById('modal-linked-allocations');
+    if (modal) modal.style.display = 'none';
+
+    if (window.DeepLinkService && typeof window.DeepLinkService.navigateToDocument === 'function') {
+      window.DeepLinkService.navigateToDocument(docRef, targetType);
+      return;
+    }
+
     const ref = docRef.trim().toUpperCase();
     const type = (targetType || '').trim().toUpperCase();
 
@@ -2774,7 +2979,7 @@ window.BankStatementController = (function() {
       }
     }
     // 8. Bank Journal / Bank Entry
-    else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN') || ref.startsWith('DEP') || ref.startsWith('WDL')) {
+    else if (type === 'BANK_ENTRY' || ref.startsWith('BANK') || ref.startsWith('JRN') || ref.startsWith('DEP') || ref.startsWith('WDL') || ref.startsWith('BE/') || ref.startsWith('BE-') || ref.startsWith('BSE-')) {
       const m = docRef.match(/\d+/);
       const fid = m ? parseInt(m[0], 10) : null;
       if (window.FinanceController && typeof window.FinanceController.requestLinkedEntry === 'function' && fid) {
@@ -2876,6 +3081,9 @@ window.BankStatementController = (function() {
 
     // Modals & Actions (Parity)
     showLinkedAllocations,
+    showLinkedTargetsModal: showLinkedAllocations,
+    collectLinkedTargets,
+    exportStatementExcel,
     openTxnDetailsDialog,
     saveTxnNotes,
     viewStatementSource,

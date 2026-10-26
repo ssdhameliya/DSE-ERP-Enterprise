@@ -5669,70 +5669,67 @@
 
   <!-- MODAL: LINKED TRANSACTIONS (Screenshot 5 / BankStatement.fxml Parity) -->
   <div id="modal-linked-allocations" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 900px; width: 95%;">
+    <div class="modal-card" style="max-width: 980px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.3rem;">&#8377;</span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.4rem;">🔗</span>
           <div>
-            <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Information</h3>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">View all ERP transactions linked
-              to this bank entry.</div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff;">🔗 Linked Target Records</h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Review all ERP invoices, purchase recons, and bank vouchers linked to this bank transaction. Click View on any target to travel to its workspace.</div>
           </div>
         </div>
         <button class="modal-close"
           onclick="window.BankStatementController.closeModal('modal-linked-allocations')">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 16px;">
+      <div class="modal-body" style="padding: 16px; display: flex; flex-direction: column; overflow: hidden; flex: 1 1 auto;">
         <!-- 5 Top Metric Cards -->
-        <div class="kpi-grid erp-kpi-single-row erp-kpi-density-compact" style="display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px; margin-bottom:16px; width:100%; overflow:hidden;">
+        <div class="kpi-grid erp-kpi-single-row erp-kpi-density-compact" style="display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px; margin-bottom:16px; width:100%; overflow:hidden; flex-shrink: 0;">
           <div class="kpi-card"
-            style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            style="flex: 1 1 0; min-width: 0; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Ref</div>
-            <div id="mla-bank-ref" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">-
-            </div>
+            <div id="mla-bank-ref" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
           </div>
           <div class="kpi-card"
-            style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
-            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Linked Count</div>
+            style="flex: 1 1 0; min-width: 0; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Linked Targets</div>
             <div id="mla-linked-count"
               style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">0</div>
           </div>
           <div class="kpi-card"
-            style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
-            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Bank Linked</div>
+            style="flex: 1 1 0; min-width: 0; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Total Allocated</div>
             <div id="mla-bank-linked"
               style="font-size: 1.05rem; font-weight: 700; color: var(--green); margin-top: 2px;">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
-            style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            style="flex: 1 1 0; min-width: 0; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Round-off</div>
             <div id="mla-round-off"
               style="font-size: 1.05rem; font-weight: 700; color: var(--yellow); margin-top: 2px;">&#8377; 0.00</div>
           </div>
           <div class="kpi-card"
-            style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
+            style="flex: 1 1 0; min-width: 0; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px;">
             <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Difference</div>
-            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">&#8377; 0.00
-            </div>
+            <div id="mla-diff" style="font-size: 1.05rem; font-weight: 700; color: var(--cyan); margin-top: 2px;">&#8377; 0.00</div>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="data-panel" style="max-height: 360px; overflow-y: auto;">
-          <table class="data-table">
+        <!-- Table (6 Columns, Non-clipped, Scrollable) -->
+        <div class="data-panel" style="flex: 1 1 auto; max-height: 420px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 6px;">
+          <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 780px;">
             <thead>
               <tr>
-                <th>Document No</th>
-                <th>Transaction Type</th>
-                <th style="text-align: right;">Bank Amount</th>
-                <th style="text-align: right;">Round-off</th>
-                <th style="text-align: center; width: 130px;">Action</th>
+                <th style="width: 150px; min-width: 140px;">🏷️ Target Type</th>
+                <th style="width: 180px; min-width: 160px;">📄 Document No</th>
+                <th style="min-width: 220px;">📝 Details / Narration</th>
+                <th style="width: 140px; text-align: right;">💰 Amount (₹)</th>
+                <th style="width: 130px; text-align: right;">⚖️ Round-off (₹)</th>
+                <th style="width: 120px; text-align: center;">⚡ Action</th>
               </tr>
             </thead>
             <tbody id="mla-tbody">
               <tr>
-                <td colspan="5" style="text-align:center; padding:20px; color:var(--text-dim);">No linked allocations
-                  found.</td>
+                <td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No linked allocations found.</td>
               </tr>
             </tbody>
           </table>
@@ -5740,8 +5737,8 @@
 
         <!-- Footer -->
         <div
-          style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
-          <div id="mla-footer-text" style="font-size: 0.78rem; color: var(--text-muted);">0 linked transactions &bull; Use
+          style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
+          <div id="mla-footer-text" style="font-size: 0.8rem; color: var(--text-muted);">0 linked transactions &bull; Use
             View to open the existing linked workflow.</div>
           <button type="button" class="btn btn-secondary"
             onclick="window.BankStatementController.closeModal('modal-linked-allocations')">&#10006; Close</button>

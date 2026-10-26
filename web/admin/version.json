@@ -1,17 +1,16 @@
 {
-    "desktopVersion": "11.0.5",
+    "desktopVersion": "11.0.6",
     "webBuild": 1,
-    "webVersion": "11.0.5.01",
-    "tag": "web-v11.0.5.01",
-    "releaseDate": "2026-10-26T10:30:00+05:30",
+    "webVersion": "11.0.6.01",
+    "tag": "web-v11.0.6.01",
+    "releaseDate": "2026-10-27T01:15:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.5.01 Enterprise Web Parity: Linked Entry Navigation By ID, Live Bank Statement Import Progress & Audit Export, Recon Supplier Records Dialog, Financial Statements Drilldown, and Centralized Date Policy",
+    "summary": "v11.0.6.01 Enterprise Web Parity: Universal Excel Export Across All 5 Bank & Expense Screens, 980px Multi-Target Chooser Dialog Parity (6 Columns & KPI Ribbon), Full 12-Reference Cross-Module Navigation, and Non-Clipped Colorful Badge Chips",
     "highlights": [
-        "1. Linked Entry Direct Navigation by Entity ID: Clicking 🔗 Expense #... or 🔗 Bank Entry #... in Bank Statement now extracts the exact numeric ID and directly loads the entity from the server, isolates the record in the register, applies a pulsing highlight, and auto-scrolls into view (100% Desktop v11.0.5 parity).",
-        "2. Live Bank Statement Import Progress & Audit Summary: Added visual multi-stage progress dialog during CSV import, followed by a 4-KPI summary card modal (Total Rows, Imported, Duplicates Skipped, Invalid/Errors) and downloadable row-by-row Excel/CSV audit log.",
-        "3. Auto-Match Decimal Tolerance Parity: Updated auto-match allocation to allocate the full bank amount, absorbing sub-rupee rounding differences (e.g. ₹0.50) into reconciled vouchers.",
-        "4. Purchase Recon Supplier Auto-Reference & Records Drilldown: Added automated RS-%04d supplier reference assignment and integrated the Recon Supplier Records dialog showing supplier summary KPIs (Total Invoices, Total Value, Linked Amount, Outstanding) and invoice line table with Excel export.",
-        "5. Financial Statements Voucher Drilldown & Excel Export: Enabled interactive drill-down on Profit & Loss and Balance Sheet rows, displaying underlying General Ledger vouchers with category debits/credits KPI ribbon and formatted XLSX export.",
-        "6. Centralized Date Formatting & Standard Action Toolbars: Enforced FormatUtil.formatDate synchronized with Settings Studio across all register tables, alongside standardized Search, Reset (to Financial Year Apr 1 - Mar 31), and Refresh toolbars."
+        "1. Universal Excel Export Across All 5 Bank Screens: Implemented one-click XLSX/CSV export in Bank Entry, Expense Entry, Bank Statement, Purchase Recon, and Recon Supplier Master with standard financial table formatting and headers.",
+        "2. 980px Multi-Target Chooser Dialog Parity: Upgraded #modal-linked-allocations to 980px with a 5-KPI summary ribbon (Bank Ref, Linked Targets, Total Allocated, Round-off, Difference) and 6-column non-clipped table (Target Type, Document No, Details / Narration, Amount, Round-off, Action) featuring individual View buttons.",
+        "3. Complete 12-Reference Cross-Module Navigation: Enhanced DeepLinkService and BankStatementController to recognize all 12 bank-related references (BE/..., BSE-..., PRC-..., RS-..., STM-..., EXP-..., VCH-..., etc.) with intelligent mode switching and register highlighting.",
+        "4. Side Drawer Suppression: Suppressed automatic opening of bank and expense side drawers during linked entry travel so records are cleanly focused in the main viewport table without obstructing the workspace.",
+        "5. Expanded Column Widths & Colorful Badge Chips: Expanded Match / Link table headers to 220px-230px and added vibrant pill styles (pill-purple, pill-cyan, pill-teal, pill-blue, pill-orange) eliminating all text and badge clipping across desktop and laptop displays."
     ]
 }

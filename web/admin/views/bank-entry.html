@@ -103,6 +103,10 @@
               style="height: 34px; white-space: nowrap; flex-shrink: 0;">Reset</button>
             <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.loadBankMode()"
               style="height: 34px; white-space: nowrap; flex-shrink: 0;">&#8635; Refresh</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.exportBankEntriesExcel()"
+              style="height: 34px; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;">
+              <span>📊</span> Export Excel
+            </button>
             <button class="btn btn-primary btn-sm" onclick="window.FinanceController.openNewBankEntryModal('DEPOSIT')"
               style="height: 34px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">+ Add Entry</button>
           </div>
@@ -114,15 +118,15 @@
                 <table class="sales-desktop-table" id="bank-entry-table" style="width: 100%; table-layout: fixed;">
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Type</th>
+                      <th style="width: 100px;">Date</th>
+                      <th style="width: 100px;">Type</th>
                       <th>Description / Narration</th>
-                      <th>Bank Account</th>
-                      <th id="th-bank-mode">Mode</th>
-                      <th>Reference / UTR</th>
-                      <th style="text-align: right;">Amount (₹)</th>
-                      <th>Match / Link</th>
-                      <th style="text-align: center;">Actions</th>
+                      <th style="width: 140px;">Bank Account</th>
+                      <th id="th-bank-mode" style="width: 90px;">Mode</th>
+                      <th style="width: 150px;">Reference / UTR</th>
+                      <th style="text-align: right; width: 130px;">Amount (₹)</th>
+                      <th style="width: 220px; min-width: 200px;">Match / Link</th>
+                      <th style="text-align: center; width: 100px;">Actions</th>
                     </tr>
                   </thead>
                   <tbody id="bank-entry-tbody">

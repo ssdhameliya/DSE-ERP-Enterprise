@@ -1079,6 +1079,95 @@ window.PurchaseReconController = (function() {
       link.download = `Supplier_Recon_${(s.reference || s.id)}_${new Date().toISOString().slice(0,10)}.csv`;
       link.click();
     }
+  function exportPurchaseReconExcel() {
+    try {
+      const list = (reconRecords && reconRecords.length > 0) ? reconRecords : [];
+      if (!list || list.length === 0) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('No purchase recon records available to export.');
+        return;
+      }
+
+      const rows = list.map(r => ({
+        'System Ref': r.systemReference || ('PRC-' + r.id),
+        'Date': formatDate(r.invoiceDate || r.date),
+        'Supplier Code': r.supplierCode || '',
+        'Supplier Name': r.supplierName || '',
+        'Supplier Invoice No': r.supplierInvoiceNo || r.invoiceNo || '',
+        'Invoice Value (₹)': parseFloat(r.invoiceValue || r.amount) || 0,
+        'Status': (r.status || 'OPEN').toUpperCase(),
+        'Linked Amount (₹)': parseFloat(r.linkedAmount) || 0,
+        'Outstanding (₹)': parseFloat(r.outstandingAmount) || ((parseFloat(r.invoiceValue || r.amount) || 0) - (parseFloat(r.linkedAmount) || 0)),
+        'Bank Reference': r.bankReference || '-',
+        'Payment Mode': r.paymentMode || ''
+      }));
+
+      if (window.XLSX) {
+        const ws = window.XLSX.utils.json_to_sheet(rows);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Purchase Recon');
+        const filename = `Purchase_Recon_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        window.XLSX.writeFile(wb, filename);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon records exported to Excel successfully.');
+      } else {
+        const headers = Object.keys(rows[0] || {});
+        const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Purchase_Recon_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Purchase recon records exported to CSV successfully.');
+      }
+    } catch (err) {
+      console.error('Export purchase recon error:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export purchase recon: ' + err.message);
+    }
+  }
+
+  function exportReconSuppliersExcel() {
+    try {
+      const list = (reconSuppliers && reconSuppliers.length > 0) ? reconSuppliers : [];
+      if (!list || list.length === 0) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('No recon suppliers available to export.');
+        return;
+      }
+
+      const rows = list.map(s => ({
+        'Supplier Code': s.reference || s.supplierCode || ('RSP-' + s.id),
+        'Legal / Trade Name': s.legalName || s.supplierName || '',
+        'GSTIN': s.gstin || '',
+        'Contact Person': s.contactPerson || '',
+        'Mobile / Phone': s.phone || '',
+        'Email': s.email || '',
+        'PAN': s.pan || '',
+        'Status': s.status || (s.active !== false ? 'ACTIVE' : 'INACTIVE'),
+        'Source': s.source || 'MANUAL',
+        'Linked Recons': s.reconCount != null ? s.reconCount : 0
+      }));
+
+      if (window.XLSX) {
+        const ws = window.XLSX.utils.json_to_sheet(rows);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Recon Suppliers');
+        const filename = `Recon_Suppliers_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        window.XLSX.writeFile(wb, filename);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon suppliers exported to Excel successfully.');
+      } else {
+        const headers = Object.keys(rows[0] || {});
+        const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Recon_Suppliers_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Recon suppliers exported to CSV successfully.');
+      }
+    } catch (err) {
+      console.error('Export recon suppliers error:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export recon suppliers: ' + err.message);
+    }
   }
 
   async function saveSupplier() {
@@ -1152,6 +1241,10 @@ window.PurchaseReconController = (function() {
 
   function openLinkedBankEntry(ref, reconId) {
     if (!ref || ref === '-') return;
+    if (window.DeepLinkService && typeof window.DeepLinkService.navigateToDocument === 'function') {
+      window.DeepLinkService.navigateToDocument(ref);
+      return;
+    }
     if (ref.startsWith('STM-')) {
       const stmId = ref.replace('STM-', '');
       if (window.NavigationRouter) window.NavigationRouter.selectNav('view-bank-statement');
@@ -1193,6 +1286,118 @@ window.PurchaseReconController = (function() {
     }
   }
 
+  function exportPurchaseReconExcel() {
+    const list = reconRecords || [];
+    if (list.length === 0) {
+      if (window.AppDialogService && typeof window.AppDialogService.toastInfo === 'function') {
+        window.AppDialogService.toastInfo('No purchase recon records to export.');
+      } else {
+        alert('No purchase recon records to export.');
+      }
+      return;
+    }
+
+    const headers = [
+      'Record ID', 'Supplier Name', 'GSTIN', 'Invoice No', 'Invoice Date',
+      'Taxable (₹)', 'CGST (₹)', 'SGST (₹)', 'IGST (₹)', 'Other Adj (₹)',
+      'Invoice Value (₹)', 'Linked Amount (₹)', 'Balance (₹)', 'Status', 'Match / Link Ref', 'Notes'
+    ];
+
+    const data = [headers];
+    list.forEach(r => {
+      data.push([
+        r.id || '',
+        r.supplierName || '',
+        r.gstin || '',
+        r.supplierInvoiceNo || '',
+        formatDate(r.invoiceDate),
+        parseFloat(r.taxableValue || 0),
+        parseFloat(r.cgst || 0),
+        parseFloat(r.sgst || 0),
+        parseFloat(r.igst || 0),
+        parseFloat(r.otherAdjustment || 0),
+        parseFloat(r.invoiceValue || 0),
+        parseFloat(r.linkedAmount || 0),
+        parseFloat(r.balance || 0),
+        r.status || 'OPEN',
+        r.matchLinkRef || r.bankEntryRef || '',
+        r.notes || ''
+      ]);
+    });
+
+    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
+      const ws = window.XLSX.utils.aoa_to_sheet(data);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Purchase Recon');
+      window.XLSX.writeFile(wb, `Purchase_Recon_${Date.now()}.xlsx`);
+    } else {
+      const csv = data.map(row => row.map(cell => `"${String(cell !== undefined && cell !== null ? cell : '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Purchase_Recon_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+
+  function exportReconSuppliersExcel() {
+    const list = reconSuppliers || [];
+    if (list.length === 0) {
+      if (window.AppDialogService && typeof window.AppDialogService.toastInfo === 'function') {
+        window.AppDialogService.toastInfo('No recon suppliers to export.');
+      } else {
+        alert('No recon suppliers to export.');
+      }
+      return;
+    }
+
+    const headers = [
+      'Supplier ID', 'Supplier Name', 'GSTIN', 'PAN', 'State', 'State Code',
+      'Contact Person', 'Phone', 'Email', 'Active', 'Created Date'
+    ];
+
+    const data = [headers];
+    list.forEach(s => {
+      data.push([
+        s.id || '',
+        s.name || s.supplierName || '',
+        s.gstin || '',
+        s.pan || '',
+        s.state || '',
+        s.stateCode || '',
+        s.contactPerson || '',
+        s.phone || '',
+        s.email || '',
+        s.active !== false ? 'Yes' : 'No',
+        formatDate(s.createdAt || s.createdDate)
+      ]);
+    });
+
+    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
+      const ws = window.XLSX.utils.aoa_to_sheet(data);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Recon Suppliers');
+      window.XLSX.writeFile(wb, `Recon_Suppliers_${Date.now()}.xlsx`);
+    } else {
+      const csv = data.map(row => row.map(cell => `"${String(cell !== undefined && cell !== null ? cell : '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Recon_Suppliers_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+
+  function downloadSupplierRecordsExcel(suppId) {
+    exportPurchaseReconExcel();
+  }
+
   return {
     loadPurchaseRecon,
     openNewRecon,
@@ -1230,6 +1435,8 @@ window.PurchaseReconController = (function() {
     lastSupplierPage,
     showSupplierRecords,
     downloadSupplierRecordsExcel,
+    exportPurchaseReconExcel,
+    exportReconSuppliersExcel,
     closeModal(id) { hideModal(id); }
   };
 })();

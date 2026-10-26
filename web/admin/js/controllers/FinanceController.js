@@ -314,8 +314,10 @@ window.FinanceController = {
     }
     if (isExpense) {
       this.loadExpenseMode();
+      this.closeExpenseDrawer();
     } else {
       this.loadBankMode();
+      this.closeBankDrawer();
     }
 
     // 1. Try finding in loaded cache first
@@ -342,9 +344,13 @@ window.FinanceController = {
       if (searchEl) searchEl.value = docRef || (isExpense ? `Expense #${id}` : `Bank Entry #${id}`);
 
       if (isExpense) {
+        this.closeExpenseDrawer();
+        this.closeBankDrawer();
         this.renderExpenseTable(this.filteredVouchers);
         this.selectedExpenseId = entry.id;
       } else {
+        this.closeBankDrawer();
+        this.closeExpenseDrawer();
         this.renderBankTable(this.filteredVouchers);
         this.selectedBankId = entry.id;
       }
@@ -448,7 +454,7 @@ window.FinanceController = {
       const stmId = v.statementTransactionId || v.statementId;
       const matchBadge = v.reconciled 
         ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
-        : (stmId ? `<span class="pill-badge pill-purple" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">Matched #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Unmatched</span>');
+        : (stmId ? `<span class="pill-badge pill-purple clickable" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">🏛️ Bank Statement #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Unmatched</span>');
 
       return `
         <tr data-bank-id="${v.id}" onclick="window.FinanceController.onBankRowClick(${v.id}, event)" style="cursor:pointer;">
@@ -459,7 +465,7 @@ window.FinanceController = {
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
           <td style="font-family:monospace; color:var(--text-muted); font-size:0.78rem;">${ref}</td>
           <td style="font-weight:700; text-align:right; color:${isDeposit ? 'var(--green)' : 'var(--red)'};">${this.formatMoney(amt)}</td>
-          <td>${matchBadge}</td>
+          <td style="width:220px; min-width:200px;">${matchBadge}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.FinanceController.toggleRowActionsMenu(${v.id}, 'BANK', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Bank Entry Actions">
@@ -468,7 +474,8 @@ window.FinanceController = {
               <div id="bank-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.FinanceController.showBankDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Entry</div>
-                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🔗</span> View Bank Statement</div>` : ''}
+                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🏛️</span> View Bank Statement</div>` : ''}
+                ${(v.targetType === 'SALE' || v.targetType === 'PURCHASE' || v.targetType === 'PURCHASE_RECON') && v.targetId ? `<div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${(v.documentNo || '').replace(/'/g, "\\'")}', '${v.targetType}')"><span style="margin-right:8px;">🔗</span> Open Linked ERP Record</div>` : ''}
                 <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('BANK_ENTRY', ${v.id}, '${(v.voucherNo || v.referenceNo || '').replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>
                 <div class="action-menu-item danger" onclick="window.FinanceController.deleteFinanceEntry(${v.id})"><span style="margin-right:8px;">🗑️</span> Delete Entry</div>
@@ -601,6 +608,110 @@ window.FinanceController = {
     }
   },
 
+  exportBankEntriesExcel() {
+    try {
+      const list = (this.filteredVouchers && this.filteredVouchers.length > 0)
+        ? this.filteredVouchers
+        : (this.vouchersCache || []).filter(v => {
+            const raw = (v.voucherType || v.type || '').toUpperCase();
+            return raw.includes('BANK') || raw.includes('DEPOSIT') || raw.includes('WITHDRAW') || raw === 'RECEIPT' || raw === 'PAYMENT' || raw.includes('CONTRA');
+          });
+
+      if (!list || list.length === 0) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('No bank entries available to export.');
+        return;
+      }
+
+      const rows = list.map(v => {
+        const isDeposit = (v.voucherType || '').toUpperCase().includes('DEPOSIT') || v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
+        return {
+          'Voucher No': v.voucherNo || ('BE-' + v.id),
+          'Date': window.FormatUtil ? window.FormatUtil.formatDate(v.voucherDate || v.date) : (v.voucherDate || v.date || ''),
+          'Type': isDeposit ? 'DEPOSIT' : 'WITHDRAWAL',
+          'Narration / Description': v.notes || v.narration || '',
+          'Bank Account': v.accountName || v.bankAccount || 'Main Bank',
+          'Payment Mode': v.paymentMode || 'NEFT',
+          'Reference / UTR': v.referenceNo || '',
+          'Amount (₹)': parseFloat(v.amount) || 0,
+          'Reconciled': v.reconciled ? 'YES' : 'NO',
+          'Statement Link': v.statementTransactionId ? ('STM-' + v.statementTransactionId) : ''
+        };
+      });
+
+      if (window.XLSX) {
+        const ws = window.XLSX.utils.json_to_sheet(rows);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Bank Entries');
+        const filename = `Bank_Entries_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        window.XLSX.writeFile(wb, filename);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Bank entries exported to Excel successfully.');
+      } else {
+        const headers = Object.keys(rows[0] || {});
+        const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Bank_Entries_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Bank entries exported to CSV successfully.');
+      }
+    } catch (err) {
+      console.error('Export bank entries error:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export bank entries: ' + err.message);
+    }
+  },
+
+  exportExpenseEntriesExcel() {
+    try {
+      const list = (this.filteredVouchers && this.filteredVouchers.length > 0)
+        ? this.filteredVouchers
+        : (this.vouchersCache || []).filter(v => {
+            const raw = (v.voucherType || v.type || '').toUpperCase();
+            return raw.includes('EXPENSE') || (!raw.includes('BANK') && !raw.includes('DEPOSIT') && !raw.includes('CONTRA'));
+          });
+
+      if (!list || list.length === 0) {
+        if (window.AppDialogService) window.AppDialogService.toastWarning('No operating expense vouchers available to export.');
+        return;
+      }
+
+      const rows = list.map(v => ({
+        'Voucher No': v.voucherNo || ('EXP-' + v.id),
+        'Date': window.FormatUtil ? window.FormatUtil.formatDate(v.voucherDate || v.date) : (v.voucherDate || v.date || ''),
+        'Category': v.category || (v.narration || '').split('|')[0]?.trim() || 'General Expense',
+        'Description': v.notes || v.narration || '',
+        'Payee / Paid To': v.partyName || v.accountName || '',
+        'Payment Mode': v.paymentMode || 'NEFT',
+        'Amount (₹)': parseFloat(v.amount) || 0,
+        'Reconciled': v.reconciled ? 'YES' : 'NO',
+        'Statement Link': v.statementTransactionId ? ('STM-' + v.statementTransactionId) : ''
+      }));
+
+      if (window.XLSX) {
+        const ws = window.XLSX.utils.json_to_sheet(rows);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Operating Expenses');
+        const filename = `Operating_Expenses_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        window.XLSX.writeFile(wb, filename);
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Operating expenses exported to Excel successfully.');
+      } else {
+        const headers = Object.keys(rows[0] || {});
+        const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Operating_Expenses_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Operating expenses exported to CSV successfully.');
+      }
+    } catch (err) {
+      console.error('Export expense entries error:', err);
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to export operating expenses: ' + err.message);
+    }
+  },
+
   renderExpenseTable(rows) {
     const tbody = document.getElementById('expense-entry-tbody');
     if (!tbody) return;
@@ -621,7 +732,7 @@ window.FinanceController = {
       const billUrl = v.billAttachmentUrl || v.attachmentUrl;
       const matchBadge = v.reconciled 
         ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
-        : (stmId ? `<span class="pill-badge pill-purple" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">Matched #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Direct</span>');
+        : (stmId ? `<span class="pill-badge pill-purple clickable" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">🏛️ Bank Statement #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Direct</span>');
 
       return `
         <tr data-exp-id="${v.id}" onclick="window.FinanceController.onExpenseRowClick(${v.id}, event)" style="cursor:pointer;">
@@ -635,7 +746,7 @@ window.FinanceController = {
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
           <td style="font-family:monospace; color:var(--cyan); font-size:0.78rem;">${vNo}</td>
           <td style="font-weight:700; text-align:right; color:var(--red);">${this.formatMoney(amt)}</td>
-          <td>${matchBadge}</td>
+          <td style="width:220px; min-width:200px;">${matchBadge}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.FinanceController.toggleRowActionsMenu(${v.id}, 'EXPENSE', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Expense Entry Actions">
@@ -644,7 +755,8 @@ window.FinanceController = {
               <div id="expense-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
                 <div class="action-menu-item" onclick="window.FinanceController.showExpenseDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Expense</div>
-                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🔗</span> View Bank Statement</div>` : ''}
+                ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🏛️</span> View Bank Statement</div>` : ''}
+                ${(v.targetType === 'SALE' || v.targetType === 'PURCHASE' || v.targetType === 'PURCHASE_RECON') && v.targetId ? `<div class="action-menu-item" onclick="window.BankStatementController.openLinkedDocument('${(v.documentNo || '').replace(/'/g, "\\'")}', '${v.targetType}')"><span style="margin-right:8px;">🔗</span> Open Linked ERP Record</div>` : ''}
                 ${billUrl ? `<div class="action-menu-item" onclick="window.open('${billUrl}', '_blank')"><span style="margin-right:8px;">📎</span> View Attached Bill</div>` : ''}
                 <div class="action-menu-item" onclick="window.AppDialogService && window.AppDialogService.showActivityTimeline ? window.AppDialogService.showActivityTimeline('EXPENSE_ENTRY', ${v.id}, '${(v.voucherNo || ('EXP-' + v.id)).replace(/'/g, "\\'")}') : null"><span style="margin-right:8px;">📜</span> Audit Trail</div>
                 <div class="action-menu-divider" style="height:1px; background:rgba(255,255,255,0.06); margin:4px 0;"></div>

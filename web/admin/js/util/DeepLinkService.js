@@ -21,13 +21,14 @@ window.DeepLinkService = (function() {
 
     if (/^(PRC)/.test(clean)) return 'PURCHASE_RECON';
     if (/^(RS-|VEND)/.test(clean)) return 'RECON_SUPPLIER';
+    if (/^(STM-|BS-|STATEMENT)/.test(clean)) return 'BANK_STATEMENT';
     if (/^(INV|JI|SI|TI|TAX|SALE|SO)/.test(clean)) return 'SALES';
     if (/^(BILL|PUR|PI|PO|PB)/.test(clean)) return 'PURCHASE';
     if (/^(QT|QUO|Q-)/.test(clean)) return 'QUOTATION';
     if (/^(SR|CR|CN|CREDIT)/.test(clean)) return 'SALES_RETURN';
     if (/^(PR-|DR|DN|DEBIT)/.test(clean)) return 'PURCHASE_RETURN';
-    if (/^(EXP|VCH|OPEX)/.test(clean)) return 'EXPENSE';
-    if (/^(PAY|RCP|RCPT|BNK|BANK|TXN|UTR|JRN|DEP|WDL)/.test(clean)) return 'BANK_ENTRY';
+    if (/^(EXP|OPEX)/.test(clean)) return 'EXPENSE';
+    if (/^(BE\/|BE-|BSE-|PAY|RCP|RCPT|BNK|BANK|TXN|UTR|JRN|DEP|WDL|VCH)/.test(clean)) return 'BANK_ENTRY';
     if (/^(ITEM|SKU|MAT|PRD)/.test(clean)) return 'ITEM';
     if (/^(CUST|CLIENT)/.test(clean)) return 'CUSTOMER';
     if (/^(SUPP|SUPPLIER)/.test(clean)) return 'SUPPLIER';
@@ -203,9 +204,32 @@ window.DeepLinkService = (function() {
         break;
       }
 
+      case 'BANK_STATEMENT':
+      case 'STATEMENT': {
+        if (window.NavigationRouter) {
+          window.NavigationRouter.selectNav('view-bank-statement');
+        }
+        pollElement('#txtSearch', (searchInput) => {
+          searchInput.value = ref;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          if (window.BankStatementController && typeof window.BankStatementController.applyFilters === 'function') {
+            window.BankStatementController.applyFilters();
+          }
+          highlightAndScrollRow('#bank-statement-tbody', ref);
+        });
+        break;
+      }
+
       case 'BANK_ENTRY': {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-bank-entry');
+        }
+        if (window.FinanceController) {
+          if (typeof window.FinanceController.closeBankDrawer === 'function') window.FinanceController.closeBankDrawer();
+          if (typeof window.FinanceController.closeExpenseDrawer === 'function') window.FinanceController.closeExpenseDrawer();
+          if (window.FinanceController.currentMode !== 'BANK' && typeof window.FinanceController.loadBankMode === 'function') {
+            window.FinanceController.loadBankMode();
+          }
         }
         pollElement('#bank-search', (searchInput) => {
           searchInput.value = ref;
@@ -221,6 +245,13 @@ window.DeepLinkService = (function() {
       case 'EXPENSE': {
         if (window.NavigationRouter) {
           window.NavigationRouter.selectNav('view-expense-entry');
+        }
+        if (window.FinanceController) {
+          if (typeof window.FinanceController.closeExpenseDrawer === 'function') window.FinanceController.closeExpenseDrawer();
+          if (typeof window.FinanceController.closeBankDrawer === 'function') window.FinanceController.closeBankDrawer();
+          if (window.FinanceController.currentMode !== 'EXPENSE' && typeof window.FinanceController.loadExpenseMode === 'function') {
+            window.FinanceController.loadExpenseMode();
+          }
         }
         pollElement('#exp-search', (searchInput) => {
           searchInput.value = ref;
