@@ -86,7 +86,8 @@ window.PurchaseReconController = (function() {
       updateReconKpis(metrics);
 
       // 2. Fetch suppliers cache for dropdowns
-      reconSuppliers = await window.ReconService.getReconSuppliers('', 100) || [];
+      const rawSupps = await window.ReconService.getReconSuppliers('', 100);
+      reconSuppliers = Array.isArray(rawSupps) ? rawSupps : (rawSupps?.rows || rawSupps?.content || []);
       populateReconSupplierDropdown();
 
       // Initialize default date range to Start of Financial Year -> Today if not set
@@ -667,8 +668,9 @@ window.PurchaseReconController = (function() {
     try {
       const q = document.getElementById('rs-search')?.value?.trim() || '';
       const status = document.getElementById('rs-status-filter')?.value || '';
-      let list = await window.ReconService.getReconSuppliers(q, 100) || [];
-      if (Array.isArray(list) && status) {
+      const rawSuppliers = await window.ReconService.getReconSuppliers(q, 100);
+      let list = Array.isArray(rawSuppliers) ? rawSuppliers : (rawSuppliers?.rows || rawSuppliers?.content || []);
+      if (status) {
         list = list.filter(s => (s.status || 'ACTIVE').toUpperCase() === status.toUpperCase());
       }
       reconSuppliers = list;
@@ -1079,6 +1081,8 @@ window.PurchaseReconController = (function() {
       link.download = `Supplier_Recon_${(s.reference || s.id)}_${new Date().toISOString().slice(0,10)}.csv`;
       link.click();
     }
+  }
+
   function exportPurchaseReconExcel() {
     try {
       const list = (reconRecords && reconRecords.length > 0) ? reconRecords : [];
@@ -1284,118 +1288,6 @@ window.PurchaseReconController = (function() {
         }
       }, 300);
     }
-  }
-
-  function exportPurchaseReconExcel() {
-    const list = reconRecords || [];
-    if (list.length === 0) {
-      if (window.AppDialogService && typeof window.AppDialogService.toastInfo === 'function') {
-        window.AppDialogService.toastInfo('No purchase recon records to export.');
-      } else {
-        alert('No purchase recon records to export.');
-      }
-      return;
-    }
-
-    const headers = [
-      'Record ID', 'Supplier Name', 'GSTIN', 'Invoice No', 'Invoice Date',
-      'Taxable (₹)', 'CGST (₹)', 'SGST (₹)', 'IGST (₹)', 'Other Adj (₹)',
-      'Invoice Value (₹)', 'Linked Amount (₹)', 'Balance (₹)', 'Status', 'Match / Link Ref', 'Notes'
-    ];
-
-    const data = [headers];
-    list.forEach(r => {
-      data.push([
-        r.id || '',
-        r.supplierName || '',
-        r.gstin || '',
-        r.supplierInvoiceNo || '',
-        formatDate(r.invoiceDate),
-        parseFloat(r.taxableValue || 0),
-        parseFloat(r.cgst || 0),
-        parseFloat(r.sgst || 0),
-        parseFloat(r.igst || 0),
-        parseFloat(r.otherAdjustment || 0),
-        parseFloat(r.invoiceValue || 0),
-        parseFloat(r.linkedAmount || 0),
-        parseFloat(r.balance || 0),
-        r.status || 'OPEN',
-        r.matchLinkRef || r.bankEntryRef || '',
-        r.notes || ''
-      ]);
-    });
-
-    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
-      const ws = window.XLSX.utils.aoa_to_sheet(data);
-      const wb = window.XLSX.utils.book_new();
-      window.XLSX.utils.book_append_sheet(wb, ws, 'Purchase Recon');
-      window.XLSX.writeFile(wb, `Purchase_Recon_${Date.now()}.xlsx`);
-    } else {
-      const csv = data.map(row => row.map(cell => `"${String(cell !== undefined && cell !== null ? cell : '').replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Purchase_Recon_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  }
-
-  function exportReconSuppliersExcel() {
-    const list = reconSuppliers || [];
-    if (list.length === 0) {
-      if (window.AppDialogService && typeof window.AppDialogService.toastInfo === 'function') {
-        window.AppDialogService.toastInfo('No recon suppliers to export.');
-      } else {
-        alert('No recon suppliers to export.');
-      }
-      return;
-    }
-
-    const headers = [
-      'Supplier ID', 'Supplier Name', 'GSTIN', 'PAN', 'State', 'State Code',
-      'Contact Person', 'Phone', 'Email', 'Active', 'Created Date'
-    ];
-
-    const data = [headers];
-    list.forEach(s => {
-      data.push([
-        s.id || '',
-        s.name || s.supplierName || '',
-        s.gstin || '',
-        s.pan || '',
-        s.state || '',
-        s.stateCode || '',
-        s.contactPerson || '',
-        s.phone || '',
-        s.email || '',
-        s.active !== false ? 'Yes' : 'No',
-        formatDate(s.createdAt || s.createdDate)
-      ]);
-    });
-
-    if (window.XLSX && typeof window.XLSX.utils !== 'undefined') {
-      const ws = window.XLSX.utils.aoa_to_sheet(data);
-      const wb = window.XLSX.utils.book_new();
-      window.XLSX.utils.book_append_sheet(wb, ws, 'Recon Suppliers');
-      window.XLSX.writeFile(wb, `Recon_Suppliers_${Date.now()}.xlsx`);
-    } else {
-      const csv = data.map(row => row.map(cell => `"${String(cell !== undefined && cell !== null ? cell : '').replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Recon_Suppliers_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  }
-
-  function downloadSupplierRecordsExcel(suppId) {
-    exportPurchaseReconExcel();
   }
 
   return {
