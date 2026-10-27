@@ -1025,6 +1025,49 @@
       transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .side-drawer.open { right: 0; }
+    .side-drawer.document-inspection-window-modal {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translate(-50%, -50%) scale(0.96);
+      width: 88vw !important;
+      max-width: 1760px !important;
+      min-width: 1080px !important;
+      height: 88vh !important;
+      max-height: 980px !important;
+      min-height: 680px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.15) !important;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      z-index: 100050 !important;
+      overflow: hidden;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .side-drawer.document-inspection-window-modal.open {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transform: translate(-50%, -50%) scale(1) !important;
+    }
+    .side-drawer.document-inspection-window-modal table.data-table th {
+      white-space: nowrap !important;
+      padding: 10px 14px !important;
+      font-size: 0.82rem !important;
+      letter-spacing: 0.02em;
+    }
+    .side-drawer.document-inspection-window-modal table.data-table td {
+      white-space: nowrap !important;
+      padding: 9px 14px !important;
+      font-size: 0.84rem !important;
+    }
+    .side-drawer-overlay {
+      z-index: 100040 !important;
+    }
     .drawer-tabs-bar {
       display: flex; gap: 4px; padding: 0 16px; background: rgba(10, 18, 34, 0.85);
       border-bottom: 1px solid var(--border-subtle); overflow-x: auto;
@@ -1991,7 +2034,9 @@
     }
     .register-table-panel,
     .sales-table-panel {
-      flex: 1;
+      flex: 1 1 100% !important;
+      width: 100% !important;
+      max-width: 100% !important;
       min-width: 0;
       min-height: 0 !important;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1999,7 +2044,7 @@
       flex-direction: column;
     }
 
-    /* Dynamic Table Auto-Fit when Side Drawer Opens (Desktop DynamicTableLayoutManager Parity) */
+    /* Dynamic Table Auto-Fit (Desktop DynamicTableLayoutManager Parity) */
     .register-workspace.has-open-drawer table.data-table,
     .sales-register-workspace.has-open-drawer table.sales-desktop-table,
     .register-workspace:has(.slide-detail-drawer.open) table.data-table,
@@ -2007,31 +2052,54 @@
       table-layout: auto !important;
       width: 100% !important;
     }
+
+    /* CENTERED FLOATING MODAL INSPECTION WINDOWS (Replaces docked side drawers application-wide) */
     .slide-detail-drawer,
     .register-inline-drawer,
-    .sales-inline-drawer {
-      position: static !important;
-      width: 380px !important;
+    .sales-inline-drawer,
+    .erp-global-detail-drawer,
+    .side-drawer {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translate(-50%, -50%) !important;
+      width: 760px !important;
       min-width: 360px !important;
-      max-width: 420px !important;
+      max-width: 92vw !important;
+      max-height: 88vh !important;
       flex-shrink: 0 !important;
       display: none;
       flex-direction: column;
       background: rgba(15, 23, 42, 0.98) !important;
       border: 1px solid var(--border-subtle) !important;
-      border-radius: 10px !important;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
       overflow-y: auto !important;
-      max-height: calc(100vh - 270px) !important;
-      transform: none !important;
-      z-index: 10 !important;
+      z-index: 100050 !important;
       backdrop-filter: blur(20px);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .slide-detail-drawer.open,
     .register-inline-drawer.open,
-    .sales-inline-drawer.open {
+    .sales-inline-drawer.open,
+    .erp-global-detail-drawer.open,
+    .side-drawer.open {
       display: flex !important;
+    }
+
+    /* Backdrop Dimming Overlay Activation */
+    body:has(.slide-detail-drawer.open) .side-drawer-overlay,
+    body:has(.register-inline-drawer.open) .side-drawer-overlay,
+    body:has(.sales-inline-drawer.open) .side-drawer-overlay,
+    body:has(.erp-global-detail-drawer.open) .side-drawer-overlay,
+    body:has(.side-drawer.open) .side-drawer-overlay,
+    .side-drawer-overlay.open {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      display: block !important;
+      z-index: 100040 !important;
     }
     .drawer-header {
       padding: 16px 20px;
@@ -5372,30 +5440,34 @@
        3. 3D GLASSMORPHIC UNIVERSAL SIDE DETAIL DRAWER
        -------------------------------------------------------------------------- */
     .erp-global-detail-drawer {
-      position: fixed;
-      top: 58px;
-      right: 0;
-      width: 400px;
-      max-width: 90vw;
-      height: calc(100vh - 98px);
-      background: rgba(13, 20, 36, 0.94);
-      backdrop-filter: blur(20px);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6), inset 1px 0 0 rgba(255, 255, 255, 0.08);
-      z-index: 100005;
-      display: flex;
-      flex-direction: column;
-      transform: translateX(100%);
-      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-      box-sizing: border-box;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translate(-50%, -50%) !important;
+      width: 760px !important;
+      max-width: 92vw !important;
+      max-height: 88vh !important;
+      background: rgba(13, 20, 36, 0.98) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.15) !important;
+      z-index: 100050 !important;
+      display: none !important;
+      flex-direction: column !important;
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      box-sizing: border-box !important;
+      overflow-y: auto !important;
     }
     .erp-global-detail-drawer.open {
-      transform: translateX(0);
+      display: flex !important;
     }
     body.light-theme .erp-global-detail-drawer {
-      background: rgba(255, 255, 255, 0.96) !important;
-      border-left: 1px solid #cbd5e1 !important;
-      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15) !important;
+      background: rgba(255, 255, 255, 0.98) !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25) !important;
     }
 
     .erp-drawer-hero {

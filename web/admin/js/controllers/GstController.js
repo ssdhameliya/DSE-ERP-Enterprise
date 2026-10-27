@@ -42,29 +42,29 @@ window.GstController = {
     }
   },
 
-  populateReturnPeriods() {
-    const sel = document.getElementById('gst-return-period');
-    if (!sel) return;
-    if (sel.options.length > 1) return;
-    const cur = sel.value || 'ALL';
-    sel.innerHTML = '<option value="ALL">All Periods</option>';
-    const now = new Date();
-    for (let i = 0; i < 24; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      const val = `${yyyy}-${mm}`;
-      const label = `${mm}-${yyyy}`;
-      const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = label;
-      sel.appendChild(opt);
+  initDatePickers() {
+    const fromEl = document.getElementById('gst-from-date');
+    const toEl = document.getElementById('gst-to-date');
+    if (!fromEl || !toEl) return;
+    if (!fromEl.value || !toEl.value) {
+      const now = new Date();
+      const fyStartYear = (now.getMonth() + 1) >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+      const fromStr = `${fyStartYear}-04-01`;
+      const toStr = now.toISOString().split('T')[0];
+      if (!fromEl.value) fromEl.value = fromStr;
+      if (!toEl.value) toEl.value = toStr;
     }
-    sel.value = cur;
+  },
+
+  onDateRangeChange() {
+    this.loadGstData();
+  },
+
+  populateReturnPeriods() {
+    this.initDatePickers();
   },
 
   onPeriodChange(val) {
-    this.currentPeriod = val || 'ALL';
     this.loadGstData();
   },
 
@@ -73,12 +73,11 @@ window.GstController = {
   // ==========================================
 
   async loadGstData() {
-    this.populateReturnPeriods();
-    const periodSel = document.getElementById('gst-return-period');
-    if (periodSel && periodSel.value) {
-      this.currentPeriod = periodSel.value;
-    } else if (!this.currentPeriod) {
-      this.currentPeriod = 'ALL';
+    this.initDatePickers();
+    const toVal = document.getElementById('gst-to-date')?.value;
+    if (toVal) {
+      const parts = toVal.split('-');
+      if (parts.length >= 2) this.currentPeriod = `${parts[0]}-${parts[1]}`;
     }
 
     try {
@@ -121,8 +120,31 @@ window.GstController = {
         (window.OperationsService.getSalesPage ? window.OperationsService.getSalesPage(0, 100) : window.OperationsService.getSales(0, 100)).catch(() => ({ rows: [] })),
         (window.OperationsService.getPurchasesPage ? window.OperationsService.getPurchasesPage(0, 100) : window.OperationsService.getPurchases(0, 100)).catch(() => ({ rows: [] }))
       ]);
-      const sales = salesRes?.rows || salesRes?.content || [];
-      const purchases = purRes?.rows || purRes?.content || [];
+      let sales = salesRes?.rows || salesRes?.content || [];
+      let purchases = purRes?.rows || purRes?.content || [];
+
+      const fromVal = document.getElementById('gst-from-date')?.value;
+      const toVal = document.getElementById('gst-to-date')?.value;
+      if (fromVal) {
+        sales = sales.filter(s => {
+          const d = (s.invoiceDate || s.date || '').split('T')[0];
+          return !d || d >= fromVal;
+        });
+        purchases = purchases.filter(p => {
+          const d = (p.invoiceDate || p.date || '').split('T')[0];
+          return !d || d >= fromVal;
+        });
+      }
+      if (toVal) {
+        sales = sales.filter(s => {
+          const d = (s.invoiceDate || s.date || '').split('T')[0];
+          return !d || d <= toVal;
+        });
+        purchases = purchases.filter(p => {
+          const d = (p.invoiceDate || p.date || '').split('T')[0];
+          return !d || d <= toVal;
+        });
+      }
 
       let outwardGst = 0;
       sales.forEach(s => { outwardGst += (parseFloat(s.gstAmount) || 0); });

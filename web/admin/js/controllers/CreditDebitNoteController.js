@@ -364,6 +364,11 @@ window.CreditDebitNoteController = (function() {
 
       drawer.classList.add('open');
       drawer.style.display = 'flex';
+      const overlay = document.getElementById('side-drawer-overlay');
+      if (overlay) {
+        overlay.classList.add('open');
+        overlay.onclick = () => closeDrawer(isCredit);
+      }
       if (window.DynamicTableLayoutManager) {
         window.DynamicTableLayoutManager.reflowAllTables();
         setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
@@ -380,6 +385,8 @@ window.CreditDebitNoteController = (function() {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
     }
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (overlay) overlay.classList.remove('open');
     const tableId = isCredit ? 'tbl-credit-notes-body' : 'tbl-debit-notes-body';
     document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
     selectedNote = null;

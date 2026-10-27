@@ -1,16 +1,15 @@
 {
-    "desktopVersion": "11.0.6",
-    "webBuild": 1,
-    "webVersion": "11.0.6.01",
-    "tag": "web-v11.0.6.01",
-    "releaseDate": "2026-10-27T01:15:00+05:30",
+    "desktopVersion": "11.0.7",
+    "webBuild": 2,
+    "webVersion": "11.0.7.02",
+    "tag": "web-v11.0.7.02",
+    "releaseDate": "2026-10-28T02:00:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.6.01 Enterprise Web Parity: Universal Excel Export Across All 5 Bank & Expense Screens, 980px Multi-Target Chooser Dialog Parity (6 Columns & KPI Ribbon), Full 12-Reference Cross-Module Navigation, and Non-Clipped Colorful Badge Chips",
+    "summary": "v11.0.7.02 Enterprise Web Release: Centered Modal Dialogs for All Drawers (Zero Table Squeeze), Top Toolbar Action Symmetry, Items Master Reset & Full-Width Register Viewports",
     "highlights": [
-        "1. Universal Excel Export Across All 5 Bank Screens: Implemented one-click XLSX/CSV export in Bank Entry, Expense Entry, Bank Statement, Purchase Recon, and Recon Supplier Master with standard financial table formatting and headers.",
-        "2. 980px Multi-Target Chooser Dialog Parity: Upgraded #modal-linked-allocations to 980px with a 5-KPI summary ribbon (Bank Ref, Linked Targets, Total Allocated, Round-off, Difference) and 6-column non-clipped table (Target Type, Document No, Details / Narration, Amount, Round-off, Action) featuring individual View buttons.",
-        "3. Complete 12-Reference Cross-Module Navigation: Enhanced DeepLinkService and BankStatementController to recognize all 12 bank-related references (BE/..., BSE-..., PRC-..., RS-..., STM-..., EXP-..., VCH-..., etc.) with intelligent mode switching and register highlighting.",
-        "4. Side Drawer Suppression: Suppressed automatic opening of bank and expense side drawers during linked entry travel so records are cleanly focused in the main viewport table without obstructing the workspace.",
-        "5. Expanded Column Widths & Colorful Badge Chips: Expanded Match / Link table headers to 220px-230px and added vibrant pill styles (pill-purple, pill-cyan, pill-teal, pill-blue, pill-orange) eliminating all text and badge clipping across desktop and laptop displays."
+        "1. Universal Centered Floating Modals: All register and master detail drawers (Bank Entry, Expense Entry, Purchase Recon, Recon Supplier, Items Master, Inventory, Customers, Suppliers, Master Data) now float as clean centered modals with darkened backdrop overlay, preserving 100% full-width table viewports.",
+        "2. Action Bar Symmetry: Export Excel, Export PDF, and Print buttons moved to the main filter bar before Reset; financial summaries embedded directly into the pagination footer.",
+        "3. Items Master Reset: Complete filter clearing with table refresh.",
+        "4. Responsive 88vw × 88vh Document Inspection: Expansive modal popups across Sales, Purchase, Quotation, and Return registers."
     ]
 }

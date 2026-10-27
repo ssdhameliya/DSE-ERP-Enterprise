@@ -199,7 +199,7 @@ window.PurchaseController = (function() {
       updateKpis(res?.metrics, res?.filteredTotals);
       populateSupplierFilter(res?.suppliers);
       renderTable(purchases);
-      updatePagination(res?.filteredTotals?.total || 0);
+      updatePagination(res?.filteredTotals?.total || 0, res?.filteredTotals);
 
     } catch (err) {
       console.error('Failed to load purchases:', err);
@@ -316,7 +316,7 @@ window.PurchaseController = (function() {
     }).join('');
   }
 
-  function updatePagination(filteredTotal) {
+  function updatePagination(filteredTotal, totalsObj) {
     const infoEl = document.getElementById('pur-pagination-info');
     const pageDisplay = document.getElementById('pur-page-display');
     const firstBtn = document.getElementById('pur-btn-first');
@@ -327,8 +327,15 @@ window.PurchaseController = (function() {
     if (infoEl) {
       const from = totalRows === 0 ? 0 : (currentPage * pageSize) + 1;
       const to = Math.min((currentPage + 1) * pageSize, totalRows);
-      infoEl.innerText = `Showing ${from} to ${to} of ${totalRows} entries • Total: ${formatMoney(filteredTotal)}`;
+      infoEl.innerText = `Showing ${from} to ${to} of ${totalRows} entries`;
     }
+    const sumTotal = document.getElementById('pur-sum-total');
+    const sumPaid = document.getElementById('pur-sum-paid');
+    const sumPending = document.getElementById('pur-sum-pending');
+    if (sumTotal) sumTotal.innerText = formatMoney(totalsObj ? totalsObj.total : filteredTotal);
+    if (sumPaid) sumPaid.innerText = formatMoney(totalsObj ? totalsObj.paid : 0);
+    if (sumPending) sumPending.innerText = formatMoney(totalsObj ? totalsObj.balance : 0);
+
     if (pageDisplay) {
       pageDisplay.innerText = `Page ${currentPage + 1} of ${Math.max(1, totalPages)}`;
     }
@@ -336,6 +343,10 @@ window.PurchaseController = (function() {
     if (prevBtn) prevBtn.disabled = currentPage <= 0;
     if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
     if (lastBtn) lastBtn.disabled = currentPage >= totalPages - 1;
+  }
+
+  function printPurchaseRegister() {
+    window.print();
   }
 
   function onRowClick(invoiceNo, event) {
@@ -396,12 +407,16 @@ window.PurchaseController = (function() {
   }
 
   async function openPurchaseDrawer(invoiceNo) {
-    const drawer = document.getElementById('drawer-purchase-details') || document.getElementById('drawer-purchase-details-inspect');
+    const inlineDrawer = document.getElementById('drawer-purchase-details');
+    if (inlineDrawer) inlineDrawer.style.display = 'none';
+
+    const modalDrawer = document.getElementById('drawer-purchase-details-inspect');
     const overlay = document.getElementById('side-drawer-overlay');
+    const drawer = modalDrawer || inlineDrawer;
     if (!drawer) return;
 
     // Toggle close if clicking active row
-    if ((drawer.classList.contains('open') || drawer.style.display === 'flex' || drawer.style.display === 'block') && selectedDrawerBillNo === invoiceNo) {
+    if (modalDrawer && modalDrawer.classList.contains('open') && selectedDrawerBillNo === invoiceNo) {
       closePurchaseDrawer();
       return;
     }
@@ -425,12 +440,12 @@ window.PurchaseController = (function() {
     currentDrawerPurchase = p;
     populatePurchaseDrawerFields(p);
 
-    drawer.classList.add('open');
-    drawer.style.display = 'flex';
-    if (overlay && drawer.id === 'drawer-purchase-details-inspect') {
+    if (modalDrawer) {
+      modalDrawer.classList.add('open');
+      modalDrawer.style.display = 'flex';
+    }
+    if (overlay) {
       overlay.classList.add('open');
-    } else if (overlay) {
-      overlay.classList.remove('open');
     }
 
     if (window.DynamicTableLayoutManager) {
@@ -620,6 +635,24 @@ window.PurchaseController = (function() {
     if (purPaid) purPaid.innerText = formatMoney(paid);
     const purBalance = document.getElementById('drawer-pur-balance');
     if (purBalance) purBalance.innerText = formatMoney(balance);
+
+    const isDocPaid = (balance <= 0.009) || (paySt === 'PAID');
+    const btnPurRecPayTab = document.getElementById('drawer-pur-btn-record-payment-tab');
+    const btnPurRecPayFooter = document.getElementById('drawer-pur-btn-record-payment');
+    [btnPurRecPayTab, btnPurRecPayFooter].forEach(btn => {
+      if (btn) {
+        btn.disabled = isDocPaid;
+        if (isDocPaid) {
+          btn.title = 'Purchase bill is already fully settled. No further outflow payment needed.';
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+        } else {
+          btn.title = 'Record settlement outflow payment for this bill';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        }
+      }
+    });
   }
 
   function switchPurchaseDrawerTab(tabName) {
@@ -1208,6 +1241,15 @@ window.PurchaseController = (function() {
   }
 
   function recordPaymentForCurrentDrawer() {
+    const p = currentDrawerPurchase;
+    const total = p ? (p.totalAmount != null ? p.totalAmount : (p.amount != null ? p.amount : 0)) : 0;
+    const isPaid = p && (p.paymentStatus || '').toUpperCase() === 'PAID';
+    const paid = p ? (p.paidAmount != null ? p.paidAmount : (isPaid ? total : 0)) : 0;
+    const balance = Math.max(0, total - paid);
+    if (balance <= 0.009 || isPaid) {
+      if (window.AppDialogService) window.AppDialogService.toastInfo('This purchase bill is already fully settled.');
+      return;
+    }
     const invNo = (currentDrawerPurchase && currentDrawerPurchase.invoiceNo) || 
                   (document.getElementById('drawer-pur-no') && document.getElementById('drawer-pur-no').innerText) || 
                   (document.getElementById('pd-invoice-no') && document.getElementById('pd-invoice-no').innerText) || 
@@ -2333,6 +2375,7 @@ window.PurchaseController = (function() {
     loadPurchases,
     showDetails,
     openPurchaseDrawer,
+    openInspectionModal: openPurchaseDrawer,
     closePurchaseDrawer,
     get currentDrawerPurchase() { return currentDrawerPurchase; },
     closeDrawer,
@@ -2381,6 +2424,7 @@ window.PurchaseController = (function() {
     updateChargeSummaryBadge,
     onTransporterChange,
     printPurchaseBill,
+    printPurchaseRegister,
     switchPurchaseDrawerTab,
     auditCurrentPurchase,
     getPurchasesCache() { return purchases; },

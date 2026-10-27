@@ -124,7 +124,7 @@
                       <th style="width: 90px;">Mode</th>
                       <th style="width: 130px;">Voucher #</th>
                       <th style="text-align: right; width: 130px;">Amount (₹)</th>
-                      <th style="width: 220px; min-width: 200px;">Match / Link</th>
+                      <th style="width: 280px; min-width: 260px;">Match / Link</th>
                       <th style="text-align: center; width: 100px;">Actions</th>
                     </tr>
                   </thead>
@@ -138,72 +138,50 @@
               </div>
             </div>
 
-            <!-- Inline Docked Expense Detail Drawer -->
-            <div id="expense-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
+            <!-- Centered Floating Inspection Drawer Modal -->
+            <div id="expense-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display:none;">
               <div class="drawer-header">
                 <div>
-                  <h3 style="margin: 0; font-size: 1rem;" id="eed-voucher">Expense Voucher</h3>
-                  <span id="eed-category" class="pill-badge pill-purple" style="font-size: 0.75rem;">General
-                    Expense</span>
+                  <h3 style="margin:0; font-size:1.05rem;" id="eed-voucher">Expense Entry</h3>
+                  <span id="eed-category" class="pill-badge pill-purple" style="font-size:0.75rem;">General Expense</span>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()"
-                  style="padding: 2px 8px;">&times;</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()" style="padding:2px 8px;">&times;</button>
               </div>
               <div class="drawer-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">STATUS</span>
-                  <span id="eed-status" class="pill-badge pill-success">DISBURSED</span>
-                </div>
-                <div class="drawer-field-grid"
-                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-                  <div
-                    style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
-                    <div style="color: var(--text-muted); font-size: 0.68rem;">Voucher Date:</div>
-                    <div id="eed-date"
-                      style="font-weight: 700; color: var(--text-main); font-size: 0.85rem; margin-top: 2px;">-</div>
+                <div class="drawer-field-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Date:</div>
+                    <div id="eed-date" style="font-weight:700; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
                   </div>
-                  <div
-                    style="padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-subtle);">
-                    <div style="color: var(--text-muted); font-size: 0.68rem;">Payment Mode:</div>
-                    <div id="eed-mode"
-                      style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; margin-top: 2px;">NEFT</div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Payment Mode:</div>
+                    <div id="eed-mode" style="font-weight:700; color:var(--cyan); font-size:0.85rem; margin-top:2px;">NEFT</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Amount:</div>
+                    <div id="eed-amount" style="font-weight:800; color:var(--red); font-size:1.1rem; margin-top:2px; font-family:'JetBrains Mono',monospace;">₹ 0.00</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Payee / Paid To:</div>
+                    <div id="eed-payee" style="font-weight:600; color:var(--text-main); font-size:0.85rem; margin-top:2px;">-</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Expense Head:</div>
+                    <div id="eed-head" style="font-weight:700; color:var(--yellow); font-size:0.85rem; margin-top:2px;">-</div>
+                  </div>
+                  <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle);">
+                    <div style="color:var(--text-muted); font-size:0.68rem;">Reference:</div>
+                    <div id="eed-ref" style="font-weight:600; color:var(--cyan); font-size:0.85rem; margin-top:2px; font-family:monospace;">-</div>
                   </div>
                 </div>
-                <div
-                  style="padding: 10px 12px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 0.75rem; color: var(--red); font-weight: 700;">DISBURSED AMOUNT:</span>
-                  <span id="eed-amount" style="font-weight: 800; color: var(--red); font-size: 1.05rem;">₹ 0.00</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Payee / Paid To:</span><span id="eed-payee"
-                      style="font-weight: 600;">-</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Expense Head:</span><span id="eed-head"
-                      style="font-weight: 600;">-</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span
-                      style="color: var(--text-muted);">Ref / Bill #:</span><span id="eed-ref"
-                      style="font-family: monospace; font-weight: 600; color: var(--cyan);">-</span></div>
-                  <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
-                    <span style="color: var(--text-muted);">Narration / Particulars:</span>
-                    <span id="eed-narration"
-                      style="color: var(--text-dim); background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; font-size: 0.78rem;">-</span>
-                  </div>
+                <div style="padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:12px;">
+                  <div style="color:var(--text-muted); font-size:0.68rem;">Narration / Remarks:</div>
+                  <div id="eed-narration" style="font-weight:500; color:var(--text-dim); font-size:0.82rem; margin-top:2px;">-</div>
                 </div>
               </div>
-              <div class="drawer-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button class="btn btn-primary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">📜 View
-                  In GL</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseAudit()">📋
-                  Audit Trail</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseEdit()">✏️ Edit
-                  Expense</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseDelete()"
-                  style="color: #f87171;">🗑️ Delete</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpensePrint()">🖨️
-                  Print Voucher</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">✖
-                  Close</button>
+              <div class="drawer-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.drawerExpenseLedger()">📖 View Ledger</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.FinanceController.closeExpenseDrawer()">✖ Close</button>
               </div>
             </div>
           </div>

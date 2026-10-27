@@ -225,54 +225,32 @@ window.TableUiEnhancer = (function() {
     const currentView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : '';
 
     if (currentView === 'view-sales-register' && window.SalesController) {
-      if (typeof window.SalesController.openInvoiceDrawer === 'function') {
+      if (typeof window.SalesController.openInspectionModal === 'function') {
+        window.SalesController.openInspectionModal(id);
+      } else if (typeof window.SalesController.openInvoiceDrawer === 'function') {
         window.SalesController.openInvoiceDrawer(id);
-      } else if (typeof window.SalesController.showDetails === 'function') {
-        window.SalesController.showDetails(id);
       }
     } else if (currentView === 'view-purchase-register' && window.PurchaseController) {
-      if (typeof window.PurchaseController.showDetails === 'function') {
+      if (typeof window.PurchaseController.openInspectionModal === 'function') {
+        window.PurchaseController.openInspectionModal(id);
+      } else if (typeof window.PurchaseController.showDetails === 'function') {
         window.PurchaseController.showDetails(id);
-      } else if (typeof window.PurchaseController.openPurchaseDrawer === 'function') {
-        window.PurchaseController.openPurchaseDrawer(id);
       }
     } else if (currentView === 'view-quotations' && window.QuotationController) {
-      if (typeof window.QuotationController.showDetails === 'function') {
+      if (typeof window.QuotationController.openInspectionModal === 'function') {
+        window.QuotationController.openInspectionModal(id);
+      } else if (typeof window.QuotationController.showDetails === 'function') {
         window.QuotationController.showDetails(id);
-      } else if (typeof window.QuotationController.openDrawer === 'function') {
-        window.QuotationController.openDrawer(id);
       }
     } else if ((currentView === 'view-sales-returns' || currentView === 'view-purchase-returns') && window.ReturnsController) {
-      if (typeof window.ReturnsController.showDetails === 'function') {
+      if (typeof window.ReturnsController.openInspectionModal === 'function') {
+        window.ReturnsController.openInspectionModal(id);
+      } else if (typeof window.ReturnsController.showDetails === 'function') {
         window.ReturnsController.showDetails(id);
-      } else if (typeof window.ReturnsController.openDrawer === 'function') {
-        window.ReturnsController.openDrawer(id);
       }
-    } else if (currentView === 'view-item-master' && window.ItemMasterController) {
-      if (typeof window.ItemMasterController.openStockHistory === 'function') {
-        window.ItemMasterController.openStockHistory(id);
-      } else if (typeof window.ItemMasterController.openEditItemModal === 'function') {
-        window.ItemMasterController.openEditItemModal(id);
-      }
-    } else if (currentView === 'view-customers' && window.PartyController) {
-      if (typeof window.PartyController.onCustomerRowClick === 'function') {
-        window.PartyController.onCustomerRowClick(id);
-      } else if (typeof window.PartyController.openCustomerDrawer === 'function') {
-        window.PartyController.openCustomerDrawer(id);
-      }
-    } else if (currentView === 'view-suppliers' && window.PartyController) {
-      if (typeof window.PartyController.onSupplierRowClick === 'function') {
-        window.PartyController.onSupplierRowClick(id);
-      } else if (typeof window.PartyController.openSupplierDrawer === 'function') {
-        window.PartyController.openSupplierDrawer(id);
-      }
-    } else if (currentView === 'view-purchase-recon' && window.PurchaseReconController && window.PurchaseReconController.openDrawer) {
-      window.PurchaseReconController.openDrawer(id);
-    } else if (currentView === 'view-reminders' && window.ReminderCenterController && window.ReminderCenterController.openDrawer) {
-      window.ReminderCenterController.openDrawer(id);
-    } else if (currentView === 'view-notifications' && window.NotificationCenterController && window.NotificationCenterController.openDrawer) {
-      window.NotificationCenterController.openDrawer(id);
     }
+    // Note: Non-core screens (item-master, customers, suppliers, purchase-recon, reminders,
+    // notifications, bank/expense) do NOT open side drawers on row click, maintaining 100% table width.
   }
 
   /**

@@ -3939,17 +3939,8 @@ window.SalesController = {
           }
         }
 
-        // Display the inline drawer docked beside table (Screenshots 3 & 4)
-        inlineDrawer.style.display = 'flex';
-        if (window.DynamicTableLayoutManager) {
-          const tbl = document.getElementById('sales-main-table');
-          if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
-          window.DynamicTableLayoutManager.reflowAllTables();
-          setTimeout(() => {
-            if (tbl) window.DynamicTableLayoutManager.requestLayout(tbl);
-            window.DynamicTableLayoutManager.reflowAllTables();
-          }, 50);
-        }
+        // Keep inline drawer hidden to maintain 100% full table width
+        if (inlineDrawer) inlineDrawer.style.display = 'none';
       }
 
       // Also populate the modal drawer elements if present
@@ -4069,7 +4060,27 @@ window.SalesController = {
           approvalBox.style.display = isPending ? 'flex' : 'none';
         }
 
+        const isDocPaid = (pending <= 0.009) || isPaid;
+        const btnSalePayTab = document.getElementById('drawer-sale-btn-record-payment-tab');
+        const btnSalePayFooter = document.getElementById('drawer-sale-btn-record-payment');
+        [btnSalePayTab, btnSalePayFooter].forEach(btn => {
+          if (btn) {
+            btn.disabled = isDocPaid;
+            if (isDocPaid) {
+              btn.title = 'Invoice is already fully paid. No further payment allocation needed.';
+              btn.style.opacity = '0.5';
+              btn.style.cursor = 'not-allowed';
+            } else {
+              btn.title = 'Record payment allocation for this invoice';
+              btn.style.opacity = '1';
+              btn.style.cursor = 'pointer';
+            }
+          }
+        });
+
         this.switchDrawerTab('summary');
+        modalDrawer.classList.add('open');
+        if (overlay) overlay.classList.add('open');
       }
 
       // Background asynchronous lines loading if not already in memory
@@ -4389,6 +4400,12 @@ window.SalesController = {
     const isCancelled = docStatus === 'CANCELLED';
     const paid = isCancelled ? 0 : (sale ? (sale.paidAmount != null ? sale.paidAmount : (isPaid ? grandTotal : 0)) : 0);
     const pending = isCancelled ? 0 : Math.max(0, grandTotal - paid);
+
+    if (pending <= 0.009 || isPaid) {
+      window.AppDialogService.showToast('This invoice is already fully paid.', 'info');
+      return;
+    }
+
     const custName = (sale && sale.customer && sale.customer.name) || (sale && sale.customerName) || (sale && sale.partyName) || 'Customer';
     const saleId = sale ? (sale.id || 0) : 0;
 

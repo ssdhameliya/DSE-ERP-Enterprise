@@ -6,11 +6,12 @@
             </div>
             <div class="view-header-actions" style="display:flex; gap:10px; align-items:center;">
               <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Return Period:</label>
-                <select id="gst-return-period" class="form-select" style="width:140px; font-weight:700;"
-                  onchange="window.GstController.onPeriodChange(this.value)">
-                  <option value="ALL">All Periods</option>
-                </select>
+                <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">From:</label>
+                <input type="date" id="gst-from-date" class="form-input" style="width:145px; font-weight:600; padding:4px 8px;"
+                  onchange="window.GstController.onDateRangeChange()">
+                <label style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">To:</label>
+                <input type="date" id="gst-to-date" class="form-input" style="width:145px; font-weight:600; padding:4px 8px;"
+                  onchange="window.GstController.onDateRangeChange()">
               </div>
               <input type="file" id="gst-2b-file-input" accept=".json" style="display:none;"
                 onchange="window.GstController.handle2bFileSelected(event)">

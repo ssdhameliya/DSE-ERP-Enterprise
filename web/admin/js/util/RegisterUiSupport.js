@@ -68,6 +68,13 @@ window.RegisterUiSupport = (function() {
     drawer.style.display = 'flex';
     drawer.removeAttribute('hidden');
 
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (overlay) {
+      overlay.classList.add('open');
+      overlay.style.display = 'block';
+      overlay.style.pointerEvents = 'auto';
+    }
+
     if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {
       window.DynamicTableLayoutManager.reflowAllTables();
       setTimeout(() => {
@@ -83,6 +90,16 @@ window.RegisterUiSupport = (function() {
     if (drawer) {
       drawer.classList.remove('open');
       drawer.style.display = 'none';
+    }
+
+    const remainingOpen = document.querySelectorAll('.slide-detail-drawer.open, .register-inline-drawer.open, .sales-inline-drawer.open, .side-drawer.open, .erp-global-detail-drawer.open');
+    if (!remainingOpen || remainingOpen.length === 0) {
+      const overlay = document.getElementById('side-drawer-overlay');
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
+        overlay.style.pointerEvents = 'none';
+      }
     }
 
     if (tableTbodyOrSelector) {
@@ -323,6 +340,25 @@ window.RegisterUiSupport = (function() {
       { label: 'Print / Export', icon: '🖨️', role: 'role-print', handler: `window.print()` },
       { label: 'Delete', icon: '🗑️', role: 'role-danger', handler: `window.AppDialogService && window.AppDialogService.confirmDelete && window.AppDialogService.confirmDelete('Record', () => {})` }
     ];
+  }
+
+  if (typeof document !== 'undefined') {
+    const bindOverlayDismiss = () => {
+      const overlay = document.getElementById('side-drawer-overlay');
+      if (overlay && !overlay.dataset.drawerDismissBound) {
+        overlay.dataset.drawerDismissBound = 'true';
+        overlay.addEventListener('click', () => {
+          document.querySelectorAll('.slide-detail-drawer.open, .register-inline-drawer.open, .sales-inline-drawer.open, .side-drawer.open, .erp-global-detail-drawer.open').forEach(drawer => {
+            hideDrawer(drawer);
+          });
+        });
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindOverlayDismiss);
+    } else {
+      bindOverlayDismiss();
+    }
   }
 
   return {

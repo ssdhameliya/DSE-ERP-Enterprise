@@ -36,6 +36,50 @@ window.FinanceController = {
     }
   },
 
+  referenceFormats: {},
+
+  async ensureReferenceFormatsLoaded() {
+    if (this.referenceFormats && Object.keys(this.referenceFormats).length > 0) return;
+    this.referenceFormats = {};
+    try {
+      if (window.MasterService && typeof window.MasterService.getLookupsByCategoryCode === 'function') {
+        const rows = await window.MasterService.getLookupsByCategoryCode('REFERENCE_FORMAT').catch(() => []);
+        (rows || []).forEach(r => {
+          const code = (r.code || r.lookupCode || '').trim();
+          const val = (r.lookupValue || r.value || '').trim();
+          if (code && val) {
+            this.referenceFormats[code] = val;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Could not load reference formats:', err);
+    }
+  },
+
+  formatBankStatementReference(statementId, date) {
+    if (!statementId) return '';
+    try {
+      const pattern = this.referenceFormats && this.referenceFormats['REF_BANK_STATEMENT'];
+      if (pattern && window.FormatUtil && typeof window.FormatUtil.formatDatedReference === 'function') {
+        return window.FormatUtil.formatDatedReference(pattern, statementId, date || new Date());
+      }
+    } catch (_) {}
+    return 'BST/' + String(statementId).padStart(5, '0');
+  },
+
+  formatDocumentReference(docType, targetId, date) {
+    if (!targetId) return '';
+    try {
+      const key = docType === 'SALE' ? 'REF_SALE_INVOICE' : docType === 'PURCHASE' ? 'REF_PURCHASE_BILL' : docType === 'QUOTATION' ? 'REF_QUOTATION' : ('REF_' + docType);
+      const pattern = this.referenceFormats && this.referenceFormats[key];
+      if (pattern && window.FormatUtil && typeof window.FormatUtil.formatDatedReference === 'function') {
+        return window.FormatUtil.formatDatedReference(pattern, targetId, date || new Date());
+      }
+    } catch (_) {}
+    return (docType || 'DOC') + ' #' + targetId;
+  },
+
   // ==========================================
   // 1. BANK & EXPENSE MODES (BankExpense.fxml)
   // ==========================================
@@ -119,6 +163,7 @@ window.FinanceController = {
     }
 
     try {
+      await this.ensureReferenceFormatsLoaded();
       const q = (document.getElementById(this.currentMode === 'BANK' ? 'bank-search' : 'exp-search')?.value || '').trim();
       const [pageRes, metricsRes] = await Promise.all([
         window.OperationsService.getFinancePage(0, 200, this.currentMode, '', '', q).catch(() => ({ rows: [] })),
@@ -452,9 +497,28 @@ window.FinanceController = {
       const account = v.accountName || v.bankAccount || 'Main Bank';
       const mode = v.paymentMode || 'NEFT';
       const stmId = v.statementTransactionId || v.statementId;
-      const matchBadge = v.reconciled 
-        ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
-        : (stmId ? `<span class="pill-badge pill-purple clickable" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">🏛️ Bank Statement #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Unmatched</span>');
+
+      const hasErp = Boolean((v.targetType === 'SALE' || v.targetType === 'PURCHASE' || v.targetType === 'PURCHASE_RECON' || v.linkedTargetType) && (v.targetId || v.linkedTargetId || v.documentNo || v.linkedDocumentNo));
+      const erpType = (v.linkedTargetType || v.targetType || '').toUpperCase();
+      const erpTargetId = v.linkedTargetId || v.targetId;
+      const erpDocNo = v.linkedDocumentNo || v.documentNo || (erpTargetId ? this.formatDocumentReference(erpType, erpTargetId, v.voucherDate || v.date) : '');
+      const bankRef = stmId ? this.formatBankStatementReference(stmId, v.voucherDate || v.date) : '';
+
+      let matchHtml = '';
+      if (hasErp || stmId) {
+        matchHtml = '<div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow:hidden;">';
+        if (hasErp && erpDocNo) {
+          matchHtml += `<span class="finance-chip clickable" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${erpDocNo.replace(/'/g, "\\'")}', '${erpType}')" title="Linked ERP Document: ${erpDocNo}" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(168,85,247,0.18); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35);"><span style="font-size:0.8rem;">🔗</span> ${erpDocNo}</span>`;
+        }
+        if (stmId) {
+          matchHtml += `<span class="finance-chip clickable" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Linked Bank Statement: ${bankRef}" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(20,184,166,0.18); color:#5eead4; border:1px solid rgba(20,184,166,0.35);"><span style="font-size:0.8rem;">🏛️</span> ${bankRef}</span>`;
+        }
+        matchHtml += '</div>';
+      } else if (v.reconciled) {
+        matchHtml = '<span class="pill-badge pill-success" style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.35);"><span style="font-size:0.8rem;">✓</span> Reconciled</span>';
+      } else {
+        matchHtml = '<span style="color:var(--text-dim); font-size:0.75rem; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);">Direct</span>';
+      }
 
       return `
         <tr data-bank-id="${v.id}" onclick="window.FinanceController.onBankRowClick(${v.id}, event)" style="cursor:pointer;">
@@ -465,13 +529,14 @@ window.FinanceController = {
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
           <td style="font-family:monospace; color:var(--text-muted); font-size:0.78rem;">${ref}</td>
           <td style="font-weight:700; text-align:right; color:${isDeposit ? 'var(--green)' : 'var(--red)'};">${this.formatMoney(amt)}</td>
-          <td style="width:220px; min-width:200px;">${matchBadge}</td>
+          <td style="width:280px; min-width:260px;">${matchHtml}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.FinanceController.toggleRowActionsMenu(${v.id}, 'BANK', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Bank Entry Actions">
                 ::: Actions
               </button>
-              <div id="bank-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+              <div id="bank-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:220px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.FinanceController.openLinkedTransactionsDialog(${v.id}, 'BANK')"><span style="margin-right:8px;">🔗</span> Linked ERP Transactions</div>
                 <div class="action-menu-item" onclick="window.FinanceController.showBankDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Entry</div>
                 ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🏛️</span> View Bank Statement</div>` : ''}
@@ -489,13 +554,193 @@ window.FinanceController = {
 
   onBankRowClick(id, event) {
     if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-    const drawer = document.getElementById('bank-entry-drawer');
-    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
-    if (isDrawerOpen && this.selectedBankId === id) {
-      this.closeBankDrawer();
+    this.selectedBankId = id;
+    const rowEl = document.querySelector(`#bank-entry-tbody tr[data-bank-id="${id}"]`);
+    if (rowEl) {
+      document.querySelectorAll('#bank-entry-tbody tr').forEach(r => r.classList.remove('active-selected-row', 'table-row-selected'));
+      rowEl.classList.add('active-selected-row', 'table-row-selected');
+    }
+  },
+
+  openLinkedTransactionsDialog(id, mode) {
+    const v = (this.vouchersCache || []).find(x => x.id === id);
+    if (!v) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Transaction record not found.');
       return;
     }
-    this.showBankDetails(id);
+
+    const stmId = v.statementTransactionId || v.statementId;
+    const hasErp = Boolean((v.targetType === 'SALE' || v.targetType === 'PURCHASE' || v.targetType === 'PURCHASE_RECON' || v.linkedTargetType) && (v.targetId || v.linkedTargetId || v.documentNo || v.linkedDocumentNo));
+    const erpType = (v.linkedTargetType || v.targetType || '').toUpperCase();
+    const erpTargetId = v.linkedTargetId || v.targetId;
+    const erpDocNo = v.linkedDocumentNo || v.documentNo || (erpTargetId ? this.formatDocumentReference(erpType, erpTargetId, v.voucherDate || v.date) : '');
+    const bankRef = stmId ? this.formatBankStatementReference(stmId, v.voucherDate || v.date) : '';
+
+    const targets = [];
+    if (hasErp && erpDocNo) {
+      const typeLabel = erpType === 'SALE' ? 'Sales Invoice' : erpType === 'PURCHASE' ? 'Purchase Bill' : erpType === 'PURCHASE_RECON' ? 'Purchase Recon' : erpType;
+      const chipClass = erpType === 'SALE' ? 'pill-success' : erpType === 'PURCHASE' ? 'pill-purple' : 'pill-cyan';
+      targets.push({
+        role: 'ERP Document',
+        documentNo: erpDocNo,
+        type: erpType,
+        typeLabel: typeLabel,
+        amount: parseFloat(v.amount) || 0,
+        icon: '🔗',
+        chipClass: chipClass,
+        onNavigate: () => {
+          if (window.BankStatementController && typeof window.BankStatementController.openLinkedDocument === 'function') {
+            window.BankStatementController.openLinkedDocument(erpDocNo, erpType);
+          }
+        }
+      });
+    }
+
+    if (stmId) {
+      targets.push({
+        role: 'Bank Statement',
+        documentNo: bankRef,
+        type: 'BANK_STATEMENT',
+        typeLabel: 'Bank Statement Transaction',
+        amount: parseFloat(v.amount) || 0,
+        icon: '🏛️',
+        chipClass: 'pill-purple',
+        onNavigate: () => {
+          this.openBankStatement(stmId);
+        }
+      });
+    }
+
+    if (targets.length === 0) {
+      if (window.AppDialogService) {
+        window.AppDialogService.toastInfo('No linked ERP or Bank Statement transaction is available for this entry.');
+      } else {
+        alert('No linked ERP or Bank Statement transaction is available for this entry.');
+      }
+      return;
+    }
+
+    const voucherRef = v.voucherNo || (mode === 'EXPENSE' ? `EXP-${v.id}` : `BE-${v.id}`);
+    const isDeposit = (v.voucherType || '').toUpperCase().includes('DEPOSIT') || v.voucherType === 'RECEIPT' || v.voucherType === 'CONTRA_IN';
+    const reconStatus = v.reconciled ? 'RECONCILED' : (stmId ? 'MATCHED' : 'UNMATCHED');
+    const reconColor = v.reconciled ? 'var(--green)' : (stmId ? '#38bdf8' : 'var(--text-dim)');
+
+    const modalId = 'linked-txns-dialog-modal';
+    const oldModal = document.getElementById(modalId);
+    if (oldModal) oldModal.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.className = 'modal-backdrop';
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:100050; background:rgba(0,0,0,0.78); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease;';
+
+    const rowsHtml = targets.map((t, idx) => `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.06); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+        <td style="padding:10px 14px;">
+          <span class="pill-badge ${t.role === 'ERP Document' ? 'pill-purple' : 'pill-cyan'}" style="display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:0.75rem;">
+            <span>${t.icon}</span> ${t.role}
+          </span>
+        </td>
+        <td style="padding:10px 14px; font-weight:700; color:var(--text-main); font-family:monospace; font-size:0.85rem;" title="${t.documentNo}">
+          ${t.documentNo}
+        </td>
+        <td style="padding:10px 14px;">
+          <span class="pill-badge ${t.chipClass}" style="font-size:0.75rem; font-weight:600;">
+            ${t.typeLabel}
+          </span>
+        </td>
+        <td style="padding:10px 14px; text-align:right; font-weight:700; color:#38bdf8; font-size:0.88rem;">
+          ${this.formatMoney(t.amount)}
+        </td>
+        <td style="padding:10px 14px; text-align:center;">
+          <button class="btn btn-primary btn-sm" id="btn-linked-nav-${idx}" style="padding:4px 12px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+            <span>👁️</span> View
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="modal-card" style="background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:12px; width:920px; max-width:94vw; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.85); overflow:hidden;">
+        <div style="padding:16px 20px; background:rgba(30,41,59,0.7); border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h2 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+              <span>🔗</span> Linked ERP & Finance Transactions - <span style="color:var(--cyan); font-family:monospace;">${voucherRef}</span>
+            </h2>
+            <p style="margin:4px 0 0; font-size:0.78rem; color:var(--text-muted);">
+              View and navigate to all ERP & Finance records linked to this ${mode === 'EXPENSE' ? 'expense voucher' : 'bank entry'}.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="close-linked-txns-modal" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; border-radius:6px; cursor:pointer;">&times;</button>
+        </div>
+
+        <div style="padding:16px 20px 8px; display:grid; grid-template-columns:repeat(5, 1fr); gap:12px;">
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:5px;"><span>📄</span> Voucher Ref</div>
+            <div style="font-size:0.92rem; font-weight:800; color:var(--cyan); margin-top:4px; font-family:monospace; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${voucherRef}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:5px;"><span>📅</span> Posting Date</div>
+            <div style="font-size:0.88rem; font-weight:700; color:var(--text-main); margin-top:4px;">${this.formatDate(v.voucherDate || v.date)}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:5px;"><span>🔗</span> Linked Count</div>
+            <div style="font-size:0.95rem; font-weight:800; color:#d8b4fe; margin-top:4px;">${targets.length}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:5px;"><span>💰</span> Entry Amount</div>
+            <div style="font-size:0.92rem; font-weight:800; color:${isDeposit ? 'var(--green)' : 'var(--red)'}; margin-top:4px;">${this.formatMoney(v.amount)}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:5px;"><span>⚖️</span> Reconciliation</div>
+            <div style="font-size:0.85rem; font-weight:800; color:${reconColor}; margin-top:4px;">${reconStatus}</div>
+          </div>
+        </div>
+
+        <div style="padding:12px 20px; flex:1; min-height:0; overflow-y:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden;">
+            <thead>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">
+                <th style="padding:10px 14px; width:150px;">Category</th>
+                <th style="padding:10px 14px;">Document / Voucher No</th>
+                <th style="padding:10px 14px; width:200px;">Transaction Type</th>
+                <th style="padding:10px 14px; width:150px; text-align:right;">Amount (₹)</th>
+                <th style="padding:10px 14px; width:110px; text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="padding:12px 20px; background:rgba(15,23,42,0.9); border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.76rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+            <span>ℹ️</span> ${targets.length} linked record(s) found • Click View to navigate directly to the linked transaction.
+          </div>
+          <button class="btn btn-secondary btn-sm" id="close-linked-txns-btn" style="padding:6px 18px; font-weight:700;">Close</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+    document.getElementById('close-linked-txns-modal').addEventListener('click', closeModal);
+    document.getElementById('close-linked-txns-btn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    targets.forEach((t, idx) => {
+      const btn = document.getElementById(`btn-linked-nav-${idx}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          closeModal();
+          t.onNavigate();
+        });
+      }
+    });
   },
 
   showBankDetails(id) {
@@ -730,9 +975,28 @@ window.FinanceController = {
       const vNo = v.voucherNo || ('EXP-' + v.id);
       const stmId = v.statementTransactionId || v.statementId;
       const billUrl = v.billAttachmentUrl || v.attachmentUrl;
-      const matchBadge = v.reconciled 
-        ? '<span class="pill-badge pill-success" title="Reconciled with Bank Statement">Reconciled</span>'
-        : (stmId ? `<span class="pill-badge pill-purple clickable" style="cursor:pointer;" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Click to view Bank Statement record">🏛️ Bank Statement #STM-${stmId}</span>` : '<span style="color:var(--text-dim); font-size:0.75rem;">Direct</span>');
+
+      const hasErp = Boolean((v.targetType === 'SALE' || v.targetType === 'PURCHASE' || v.targetType === 'PURCHASE_RECON' || v.linkedTargetType) && (v.targetId || v.linkedTargetId || v.documentNo || v.linkedDocumentNo));
+      const erpType = (v.linkedTargetType || v.targetType || '').toUpperCase();
+      const erpTargetId = v.linkedTargetId || v.targetId;
+      const erpDocNo = v.linkedDocumentNo || v.documentNo || (erpTargetId ? this.formatDocumentReference(erpType, erpTargetId, v.voucherDate || v.date) : '');
+      const bankRef = stmId ? this.formatBankStatementReference(stmId, v.voucherDate || v.date) : '';
+
+      let matchHtml = '';
+      if (hasErp || stmId) {
+        matchHtml = '<div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow:hidden;">';
+        if (hasErp && erpDocNo) {
+          matchHtml += `<span class="finance-chip clickable" onclick="event.stopPropagation(); window.BankStatementController.openLinkedDocument('${erpDocNo.replace(/'/g, "\\'")}', '${erpType}')" title="Linked ERP Document: ${erpDocNo}" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(168,85,247,0.18); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35);"><span style="font-size:0.8rem;">🔗</span> ${erpDocNo}</span>`;
+        }
+        if (stmId) {
+          matchHtml += `<span class="finance-chip clickable" onclick="event.stopPropagation(); window.FinanceController.openBankStatement(${stmId})" title="Linked Bank Statement: ${bankRef}" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(20,184,166,0.18); color:#5eead4; border:1px solid rgba(20,184,166,0.35);"><span style="font-size:0.8rem;">🏛️</span> ${bankRef}</span>`;
+        }
+        matchHtml += '</div>';
+      } else if (v.reconciled) {
+        matchHtml = '<span class="pill-badge pill-success" style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.35);"><span style="font-size:0.8rem;">✓</span> Reconciled</span>';
+      } else {
+        matchHtml = '<span style="color:var(--text-dim); font-size:0.75rem; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);">Direct</span>';
+      }
 
       return `
         <tr data-exp-id="${v.id}" onclick="window.FinanceController.onExpenseRowClick(${v.id}, event)" style="cursor:pointer;">
@@ -746,13 +1010,14 @@ window.FinanceController = {
           <td><span class="badge badge-neutral" style="font-size:0.72rem;">${mode}</span></td>
           <td style="font-family:monospace; color:var(--cyan); font-size:0.78rem;">${vNo}</td>
           <td style="font-weight:700; text-align:right; color:var(--red);">${this.formatMoney(amt)}</td>
-          <td style="width:220px; min-width:200px;">${matchBadge}</td>
+          <td style="width:280px; min-width:260px;">${matchHtml}</td>
           <td style="text-align:center;" onclick="event.stopPropagation();">
             <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
               <button class="btn-purple" onclick="window.FinanceController.toggleRowActionsMenu(${v.id}, 'EXPENSE', event)" style="padding:3px 10px; font-size:0.74rem; font-weight:700; border-radius:4px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Expense Entry Actions">
                 ::: Actions
               </button>
-              <div id="expense-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:210px; white-space:nowrap; padding:6px 0; text-align:left;">
+              <div id="expense-action-menu-${v.id}" class="action-dropdown-menu" style="display:none; position:fixed; z-index:100005; background:#0b1324; border:1px solid rgba(255,255,255,0.14); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.7); min-width:220px; white-space:nowrap; padding:6px 0; text-align:left;">
+                <div class="action-menu-item" onclick="window.FinanceController.openLinkedTransactionsDialog(${v.id}, 'EXPENSE')"><span style="margin-right:8px;">🔗</span> Linked ERP Transactions</div>
                 <div class="action-menu-item" onclick="window.FinanceController.showExpenseDetails(${v.id})"><span style="margin-right:8px;">👁️</span> View Details</div>
                 <div class="action-menu-item" onclick="window.FinanceController.openEditFinanceEntry(${v.id})"><span style="margin-right:8px;">✏️</span> Edit Expense</div>
                 ${stmId ? `<div class="action-menu-item" onclick="window.FinanceController.openBankStatement(${stmId})"><span style="margin-right:8px;">🏛️</span> View Bank Statement</div>` : ''}
@@ -771,13 +1036,12 @@ window.FinanceController = {
 
   onExpenseRowClick(id, event) {
     if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
-    const drawer = document.getElementById('expense-detail-drawer');
-    const isDrawerOpen = drawer && (drawer.classList.contains('open') || drawer.style.display === 'flex');
-    if (isDrawerOpen && this.selectedExpenseId === id) {
-      this.closeExpenseDrawer();
-      return;
+    this.selectedExpenseId = id;
+    const rowEl = document.querySelector(`#expense-entry-tbody tr[data-exp-id="${id}"]`);
+    if (rowEl) {
+      document.querySelectorAll('#expense-entry-tbody tr').forEach(r => r.classList.remove('active-selected-row', 'table-row-selected'));
+      rowEl.classList.add('active-selected-row', 'table-row-selected');
     }
-    this.showExpenseDetails(id);
   },
 
   showExpenseDetails(id) {

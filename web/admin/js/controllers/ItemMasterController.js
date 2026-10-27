@@ -1478,6 +1478,12 @@ window.ItemMasterController = (function() {
     importItems() {
       this.importItemsExcel();
     },
+    resetFilters() {
+      const searchInput = document.getElementById('item-search');
+      if (searchInput) searchInput.value = '';
+      selectedItemCode = null;
+      loadItems();
+    },
     isolateItem
   };
 })();
