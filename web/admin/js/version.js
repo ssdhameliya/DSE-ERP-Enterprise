@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.7.05",
-  desktopVersion: "11.0.7",
-  webBuild: 5,
-  webVersion: "11.0.7.05",
-  tag: "web-v11.0.7.05",
-  releaseDate: "2026-10-28T10:55:00+05:30",
+  version: "11.0.8.01",
+  desktopVersion: "11.0.8",
+  webBuild: 1,
+  webVersion: "11.0.8.01",
+  tag: "web-v11.0.8.01",
+  releaseDate: "2026-10-28T11:00:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.7.05 Enterprise Release: All 6 Company Business Images Real-Time Synchronization & Preview (UPI QR, Banner Wallpaper, Application Splash Mark, Invoice Logo, Authorized Signature, Email Signature)",
+  summary: "v11.0.8.01 Enterprise Web Release: All 6 Company Business Images Real-Time Synchronization & Preview (UPI QR, Banner Wallpaper, Application Splash Mark, Invoice Logo, Authorized Signature, Email Signature)",
   highlights: [
     "1. Isolated Email Signature Image: Separated email.signature.image from company.signaturePath & invoice.digital.seal to prevent cross-overwriting and accidental deletions between email signatures and invoice seals.",
     "2. Added Company Email Signature Preview: Added a dedicated Preview button in both Web and Desktop Settings with full image preview capabilities.",
