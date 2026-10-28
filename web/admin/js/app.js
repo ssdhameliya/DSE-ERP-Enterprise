@@ -370,6 +370,10 @@ window.App = (function() {
         const activeView = window.NavigationRouter ? window.NavigationRouter.getCurrentView() : 'view-dashboard';
         if (activeView === 'view-dashboard' && window.DashboardController) {
           await window.DashboardController.refresh();
+        } else if (activeView === 'view-sales-returns' && window.ReturnsController) {
+          await window.ReturnsController.loadReturns('SALES RETURN', 0);
+        } else if (activeView === 'view-purchase-returns' && window.ReturnsController) {
+          await window.ReturnsController.loadReturns('PURCHASE RETURN', 0);
         }
       }
     },

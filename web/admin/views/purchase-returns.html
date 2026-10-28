@@ -96,10 +96,9 @@
                   </thead>
                   <tbody id="tbl-purchase-returns-body">
                     <tr>
-                      <td colspan="10"
-                        style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;"><span
-                          style="font-size:1.4rem; display:block; margin-bottom:6px;">🔄</span>No purchase returns on
-                        record. Click "+ Create Purchase Return" to issue a debit memo.</td>
+                      <td colspan="10" style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;">
+                        <span class="loading-spinner" style="display:inline-block; margin-right:8px;"></span> Loading purchase returns from database...
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -180,3 +179,4 @@
             </div>
           </div>
         </div>
+<img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>" style="display:none;" onload="if(window.ReturnsController && typeof window.ReturnsController.loadReturns==='function') window.ReturnsController.loadReturns('PURCHASE RETURN', 0);">

@@ -95,10 +95,9 @@
                   </thead>
                   <tbody id="tbl-sales-returns-body">
                     <tr>
-                      <td colspan="10"
-                        style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;"><span
-                          style="font-size:1.4rem; display:block; margin-bottom:6px;">🔄</span>No sales returns on
-                        record. Click "+ Create Sales Return" to issue a credit memo.</td>
+                      <td colspan="10" style="text-align:center; padding:36px; color:var(--text-dim); font-size:0.85rem;">
+                        <span class="loading-spinner" style="display:inline-block; margin-right:8px;"></span> Loading sales returns from database...
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -179,3 +178,4 @@
             </div>
           </div>
         </div>
+<img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>" style="display:none;" onload="if(window.ReturnsController && typeof window.ReturnsController.loadReturns==='function') window.ReturnsController.loadReturns('SALES RETURN', 0);">

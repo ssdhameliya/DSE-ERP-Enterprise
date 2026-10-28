@@ -752,10 +752,10 @@ window.PurchaseController = (function() {
     const purRemarks = document.getElementById('drawer-pur-remarks');
     if (purRemarks) purRemarks.innerText = p.notes || p.remarks || 'No remarks recorded.';
 
-    const approvalBox = document.getElementById('drawer-pur-approval-box');
-    if (approvalBox) {
+    const drawerApprovalBox = document.getElementById('drawer-pur-approval-box');
+    if (drawerApprovalBox) {
       const isPending = (docSt === 'PENDING_APPROVAL' || docSt === 'PENDING APPROVAL' || docSt === 'PENDING');
-      approvalBox.style.display = isPending ? 'flex' : 'none';
+      drawerApprovalBox.style.display = isPending ? 'flex' : 'none';
     }
 
     const isDocPaid = (balance <= 0.009) || (paySt === 'PAID');

@@ -753,28 +753,6 @@ window.ReturnsController = (function () {
     }
     if (!email) return;
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending ${currentType} ${no} to ${email}...`);
-  }
-
-  async function isolateReturn(ref, isSales = true) {
-    const searchId = isSales ? 'sr-filter-search' : 'pr-filter-search';
-    const searchEl = document.getElementById(searchId);
-    if (searchEl) {
-      searchEl.value = ref || '';
-    }
-    const partyEl = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier');
-    if (partyEl) partyEl.value = '';
-    const statusEl = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status');
-    if (statusEl) statusEl.value = '';
-
-    await loadReturns(isSales ? 'SALES RETURN' : 'PURCHASE RETURN', 0);
-
-    const found = (returnsList || []).find(r => (r.no || r.returnNo || '').toUpperCase() === (ref || '').toUpperCase());
-    if (found) {
-      setTimeout(() => {
-        showDetails(found.no || found.returnNo);
-      }, 150);
-    }
-  }
 
     let attachmentBase64 = null;
     try {
@@ -832,6 +810,28 @@ window.ReturnsController = (function () {
       else alert(errMsg);
     });
   }
+
+  async function isolateReturn(ref, isSales = true) {
+    const searchId = isSales ? 'sr-filter-search' : 'pr-filter-search';
+    const searchEl = document.getElementById(searchId);
+    if (searchEl) {
+      searchEl.value = ref || '';
+    }
+    const partyEl = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier');
+    if (partyEl) partyEl.value = '';
+    const statusEl = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status');
+    if (statusEl) statusEl.value = '';
+
+    await loadReturns(isSales ? 'SALES RETURN' : 'PURCHASE RETURN', 0);
+
+    const found = (returnsList || []).find(r => (r.no || r.returnNo || '').toUpperCase() === (ref || '').toUpperCase());
+    if (found) {
+      setTimeout(() => {
+        showDetails(found.no || found.returnNo);
+      }, 150);
+    }
+  }
+
 
   async function sendWhatsappPrompt(no) {
     const isSales = currentType === 'SALES RETURN';

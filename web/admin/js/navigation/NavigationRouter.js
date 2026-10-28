@@ -250,8 +250,11 @@ window.NavigationRouter = (function() {
           }
         }
 
-        // Dispatch controller onMount lifecycle only if authenticated
-        if (window.AuthService && window.AuthService.isAuthenticated()) {
+        // Dispatch controller onMount lifecycle if authenticated
+        const isAuth = (window.AuthService && typeof window.AuthService.isAuthenticated === 'function')
+          ? window.AuthService.isAuthenticated()
+          : !!localStorage.getItem('dse_access_token');
+        if (isAuth) {
           this.dispatchLifecycle(viewId);
         }
 

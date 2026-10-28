@@ -1,15 +1,16 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 5,
-    "webVersion": "11.0.8.05",
-    "tag": "web-v11.0.8.05",
-    "releaseDate": "2026-10-29T01:30:00+05:30",
+    "webBuild": 6,
+    "webVersion": "11.0.8.06",
+    "tag": "web-v11.0.8.06",
+    "releaseDate": "2026-10-29T02:15:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.05 Enterprise Web Release: Fix Sales Return Live Register, Create Return Line Preloading, and Audit Trail Drawer Resolution",
+    "summary": "v11.0.8.06 Enterprise Web Release: Eliminate Runtime Syntax Errors in ReturnsController, PurchaseController & ButtonIconEnhancer; Restore Returns Register Live Data & Create Return Modal Line Loading",
     "highlights": [
-        "1. Returns Register Auto-Loading & Live Parity: Replaced static placeholder with live data rendering, dynamic 6-month date range, automatic DatePickerFormatter binding on view mounting, and instant line item preloading.",
-        "2. Create Return Modal Pre-fill & Line Resolution: Passed resolved invoice number from drawer actions, added immediate pre-selection in dropdown before network calls, and enabled instant fallback to in-memory invoice lines.",
-        "3. Authoritative Audit Trail & Action Robustness: Enhanced drawer-inv-no DOM resolution in Sales & Purchase inspection drawers so audit timeline, email, payment, barcode, and return actions never throw 'Please select an invoice first'.",
-        "4. ViewLoader Dynamic Cache-Busting: Switched cache-busting to dynamic window.DSE_VERSION.webVersion and exposed window.AppVersion globally to eliminate stale view caching."
+        "1. ReturnsController Syntax Restoration: Resolved misplaced isolateReturn function that prematurely truncated sendEmailPrompt and caused an invalid await SyntaxError, restoring window.ReturnsController and all return actions across the application.",
+        "2. PurchaseController Variable Redeclaration Fix: Renamed duplicate approvalBox declaration in showPurchaseDrawer to drawerApprovalBox, restoring PurchaseController initialization and eliminate all syntax failures.",
+        "3. ButtonIconEnhancer Regex Group Completion: Fixed unterminated regex capture group in EMOJI_REGEX, restoring ButtonIconEnhancer without crashing startup scripts.",
+        "4. Live Sales & Purchase Return Registers: Replaced static empty placeholders with live loading states, added automated inline img DOM mount triggers, and linked NavigationRouter/app.js boot lifecycle for instantaneous data rendering.",
+        "5. Create Return Modal Line Item Population: Restored synchronous options pre-population from active sales cache, enabled automatic return date formatting via DatePickerFormatter, and guaranteed item line preloading on modal launch."
     ]
 }
