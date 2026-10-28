@@ -2171,17 +2171,22 @@
       display: flex !important;
     }
 
-    /* Backdrop Dimming Overlay Activation */
-    body:has(.slide-detail-drawer.open) .side-drawer-overlay,
-    body:has(.register-inline-drawer.open) .side-drawer-overlay,
-    body:has(.sales-inline-drawer.open) .side-drawer-overlay,
-    body:has(.erp-global-detail-drawer.open) .side-drawer-overlay,
-    body:has(.side-drawer.open) .side-drawer-overlay,
+    /* Backdrop Dimming Overlay Activation - Modal Drawers Only */
+    body:has(.side-drawer.open:not(.register-inline-drawer):not(.sales-inline-drawer)) .side-drawer-overlay,
     .side-drawer-overlay.open {
       opacity: 1 !important;
       pointer-events: auto !important;
       display: block !important;
       z-index: 100015 !important;
+    }
+
+    /* When any modal dialog or popup is active, strictly dismiss the side-drawer-overlay so it never absorbs clicks */
+    body:has(.modal.active) .side-drawer-overlay,
+    body:has(.modal-overlay.active) .side-drawer-overlay,
+    body:has(.modal-backdrop.active) .side-drawer-overlay {
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
     .drawer-header {
       padding: 16px 20px;

@@ -778,7 +778,7 @@ window.AppDialogService = (function() {
       if (!modal) return;
 
       // 1. Automatically close any open inspection drawers so overlays never collide
-      document.querySelectorAll('.slide-detail-drawer.open, .register-inline-drawer.open, .sales-inline-drawer.open, .side-drawer.open, .erp-global-detail-drawer.open').forEach(drawer => {
+      document.querySelectorAll('.slide-detail-drawer, .register-inline-drawer, .sales-inline-drawer, .side-drawer, .erp-global-detail-drawer, #drawer-invoice-details, #drawer-purchase-details-inspect, #drawer-purchase-details, #user-detail-drawer, #sales-inline-drawer').forEach(drawer => {
         drawer.classList.remove('open');
         drawer.style.display = 'none';
       });
@@ -786,6 +786,7 @@ window.AppDialogService = (function() {
       if (sideOverlay) {
         sideOverlay.classList.remove('open');
         sideOverlay.style.display = 'none';
+        sideOverlay.style.pointerEvents = 'none';
       }
 
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();

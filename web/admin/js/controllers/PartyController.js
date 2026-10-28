@@ -1829,7 +1829,87 @@ window.PartyController = (function() {
     }
   }
 
+
+  function switch360Tab(btnId, paneId) {
+    const isCust = (btnId || '').startsWith('c360-');
+    const container = document.getElementById(isCust ? 'view-customer-360' : 'view-supplier-360') || document;
+    const tabBtns = container.querySelectorAll(isCust ? '#c360-subtabs-bar .sub-tab-btn' : '#s360-subtabs-bar .sub-tab-btn');
+    tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.id === btnId);
+    });
+    const panes = container.querySelectorAll(isCust ? '[id^="c360-pane-"]' : '[id^="s360-pane-"]');
+    panes.forEach(p => {
+      p.style.display = (p.id === paneId) ? 'block' : 'none';
+    });
+
+    const partyId = isCust ? active360PartyId : active360SupplierId;
+    if (partyId) {
+      if (paneId === 'c360-pane-invoices') loadCustomer360Invoices(partyId);
+      else if (paneId === 'c360-pane-quotes') loadCustomer360Quotations(partyId);
+      else if (paneId === 'c360-pane-payments') loadCustomer360Payments(partyId);
+      else if (paneId === 'c360-pane-contacts') loadCustomer360Contacts(partyId);
+      else if (paneId === 'c360-pane-notes') loadCustomer360Notes(partyId);
+      else if (paneId === 's360-pane-bills') loadSupplier360Bills(partyId);
+      else if (paneId === 's360-pane-payments') loadSupplier360Payments(partyId);
+      else if (paneId === 's360-pane-contacts') loadSupplier360Contacts(partyId);
+      else if (paneId === 's360-pane-notes') loadSupplier360Notes(partyId);
+    }
+  }
+
+  async function addCustomerNote() {
+    const input = document.getElementById('c360-note-input');
+    const noteText = input ? input.value.trim() : '';
+    const partyId = active360PartyId || selectedCustomerId;
+    if (!partyId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a customer first.');
+      return;
+    }
+    if (!noteText) {
+      openAddNoteModal('CUSTOMER');
+      return;
+    }
+    try {
+      if (window.ReportService) {
+        await window.ReportService.saveCustomerNote(partyId, { note: noteText });
+        if (input) input.value = '';
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
+        loadCustomer360Notes(partyId);
+      }
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to add note: ' + err.message);
+    }
+  }
+
+  async function addSupplierNote() {
+    const input = document.getElementById('s360-note-input');
+    const noteText = input ? input.value.trim() : '';
+    const partyId = active360SupplierId || selectedSupplierId;
+    if (!partyId) {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a supplier first.');
+      return;
+    }
+    if (!noteText) {
+      openAddNoteModal('SUPPLIER');
+      return;
+    }
+    try {
+      if (window.ReportService) {
+        await window.ReportService.saveSupplierNote(partyId, { note: noteText });
+        if (input) input.value = '';
+        if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
+        if (window.AppDialogService) window.AppDialogService.toastSuccess('Note added successfully.');
+        loadSupplier360Notes(partyId);
+      }
+    } catch (err) {
+      if (window.AppDialogService) window.AppDialogService.toastError('Failed to add note: ' + err.message);
+    }
+  }
+
   return {
+    switch360Tab,
+    addCustomerNote,
+    addSupplierNote,
     loadCustomers,
     filterCustomers,
     selectCustomerRow,

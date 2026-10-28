@@ -1,15 +1,15 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 3,
-    "webVersion": "11.0.8.03",
-    "tag": "web-v11.0.8.03",
-    "releaseDate": "2026-10-28T23:25:00+05:30",
+    "webBuild": 4,
+    "webVersion": "11.0.8.04",
+    "tag": "web-v11.0.8.04",
+    "releaseDate": "2026-10-29T00:20:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.03 Enterprise Web Release: Resolve Modal Z-Index Hierarchy, Eliminate Screen Freezes, Auto-Tuck Drawers and Re-selection Reset",
+    "summary": "v11.0.8.04 Enterprise Web Release: Eliminate Screen Freezes, Fix Audit Trail & Return Register, Wire All Dead Buttons, and Solidify Image Uploads",
     "highlights": [
-        "1. Universal Modal Stacking Realignment: Raised action modals to z-index 100060 and dialogs to 100080, lowering inspection windows to 100020, completely eliminating background modal traps.",
-        "2. Auto-Tuck Inspection Drawers: Automatically dismiss floating inspection windows upon initiating Create Return, Record Payment, Send Email, and Barcode actions.",
-        "3. Navigation Backstop Cleanup: NavigationRouter dismisses all active modals and lingering backdrops on route transitions to prevent click-interception freezes.",
-        "4. Image Re-selection & File Input Reset: Auto-cleared file inputs upon selection to ensure continuous image changes and file replacements reliably fire onchange."
+        "1. Audit Trail & Invoice Action Fix: Extract invoice details prior to drawer closure, resolving 'Please select an invoice first' warnings on audit history, email, and barcode dispatch.",
+        "2. Returns Register Data & Freeze Elimination: Fixed backend CTE query to match both 'SALE RETURN' and 'SALES RETURN'; converted create return modal to AppDialogService with automatic backdrop suppression, resolving screen freezing.",
+        "3. Zero Dead Buttons (855/855 Wired): Implemented missing Party 360 sub-tab switches and client/vendor quick notes, eliminating all unwired handlers across the application.",
+        "4. Settings Studio Image Upload Parity: Ensured extensionless images receive guaranteed image MIME blobs and persistent data URLs so uploaded banners display immediately without rendering blanks."
     ]
 }

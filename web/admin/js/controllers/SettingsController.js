@@ -355,24 +355,32 @@ window.SettingsController = (function() {
         values[aliasKey] = 'server-resource:' + resKey;
         await window.ApiService.put('/api/support/settings', { values });
 
-        // 3. Set preview directly using ObjectURL
-        const objectUrl = URL.createObjectURL(file);
+        // 3. Set preview directly using ObjectURL with guaranteed image MIME
+        const mimeType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/png';
+        const imgBlob = new Blob([arrayBuffer], { type: mimeType });
+        const objectUrl = URL.createObjectURL(imgBlob);
         setAssetPreview(previewImgId, placeholderId, objectUrl, null, statusId, canonicalKey);
 
-        if (canonicalKey === 'application.brandImagePath') {
-          const authBanner = document.getElementById('auth-brand-banner-img');
-          const authBannerBox = document.getElementById('auth-brand-banner-box');
-          if (authBanner) authBanner.src = objectUrl;
-          if (authBannerBox) authBannerBox.style.display = 'block';
-          localStorage.setItem('dse_brand_banner_url', objectUrl);
-        } else if (canonicalKey === 'application.markImagePath') {
-          const authMark = document.getElementById('auth-brand-mark-img');
-          const authMarkBox = document.getElementById('auth-brand-mark-box');
-          if (authMark) authMark.src = objectUrl;
-          if (authMarkBox) authMarkBox.style.display = 'block';
-          localStorage.setItem('dse_brand_mark_url', objectUrl);
-          localStorage.setItem('dse_brand_mark_active', 'true');
-        }
+        // Convert to persistent DataURL for instant local caching without expired blob URLs
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          if (canonicalKey === 'application.brandImagePath') {
+            const authBanner = document.getElementById('auth-brand-banner-img');
+            const authBannerBox = document.getElementById('auth-brand-banner-box');
+            if (authBanner) authBanner.src = dataUrl;
+            if (authBannerBox) authBannerBox.style.display = 'block';
+            localStorage.setItem('dse_brand_banner_url', dataUrl);
+          } else if (canonicalKey === 'application.markImagePath') {
+            const authMark = document.getElementById('auth-brand-mark-img');
+            const authMarkBox = document.getElementById('auth-brand-mark-box');
+            if (authMark) authMark.src = dataUrl;
+            if (authMarkBox) authMarkBox.style.display = 'block';
+            localStorage.setItem('dse_brand_mark_url', dataUrl);
+            localStorage.setItem('dse_brand_mark_active', 'true');
+          }
+        };
+        reader.readAsDataURL(imgBlob);
 
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
         window.AppDialogService.showToast(`Asset "${canonicalKey}" saved to server!`, 'success');

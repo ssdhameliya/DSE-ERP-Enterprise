@@ -68,11 +68,17 @@ window.RegisterUiSupport = (function() {
     drawer.style.display = 'flex';
     drawer.removeAttribute('hidden');
 
-    const overlay = document.getElementById('side-drawer-overlay');
-    if (overlay) {
-      overlay.classList.add('open');
-      overlay.style.display = 'block';
-      overlay.style.pointerEvents = 'auto';
+    // Only activate modal overlay for actual flyout side drawers, never for inline docked drawers
+    const isInline = drawer.classList.contains('register-inline-drawer') ||
+                     drawer.classList.contains('sales-inline-drawer') ||
+                     drawer.classList.contains('slide-detail-drawer');
+    if (!isInline) {
+      const overlay = document.getElementById('side-drawer-overlay');
+      if (overlay) {
+        overlay.classList.add('open');
+        overlay.style.display = 'block';
+        overlay.style.pointerEvents = 'auto';
+      }
     }
 
     if (window.DynamicTableLayoutManager && window.DynamicTableLayoutManager.reflowAllTables) {

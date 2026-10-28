@@ -861,10 +861,16 @@ window.ReturnsController = (function () {
     }
     closeDrawer();
     if (typeOverride) currentType = typeOverride;
-    const modal = document.getElementById('modal-create-return');
-    if (!modal) return;
-    modal.style.zIndex = '100060';
-    modal.classList.add('active');
+    if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
+      window.AppDialogService.openModal('modal-create-return');
+    } else {
+      const modal = document.getElementById('modal-create-return');
+      if (modal) {
+        modal.style.zIndex = '100060';
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+      }
+    }
 
     const isSales = currentType === 'SALES RETURN';
     document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
@@ -904,7 +910,11 @@ window.ReturnsController = (function () {
       }
     }
 
-    modal.style.display = 'flex';
+    const m = document.getElementById('modal-create-return');
+    if (m) {
+      m.style.display = 'flex';
+      m.classList.add('active');
+    }
 
     if (prefillInvoice) {
       await loadReturnableLines(prefillInvoice);
@@ -943,8 +953,9 @@ window.ReturnsController = (function () {
       if (isSales) {
         let sale = null;
         try { sale = await window.OperationsService.getSaleByInvoice(inv); } catch (_) { }
-        if (!sale && window.SalesController && window.SalesController.sales) {
-          sale = window.SalesController.sales.find(s => (s.invoiceNo || s.number) === inv);
+        if (!sale && window.SalesController) {
+          const sList = window.SalesController.salesCache || window.SalesController.sales || [];
+          sale = sList.find(s => (s.invoiceNo || s.number) === inv);
         }
         if (sale) {
           currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
@@ -952,8 +963,9 @@ window.ReturnsController = (function () {
       } else {
         let pur = null;
         try { pur = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) { }
-        if (!pur && window.PurchaseController && window.PurchaseController.purchases) {
-          pur = window.PurchaseController.purchases.find(p => p.invoiceNo === inv);
+        if (!pur && window.PurchaseController) {
+          const pList = (window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache()) || window.PurchaseController.purchases || [];
+          pur = pList.find(p => (p.invoiceNo || p.billNo) === inv);
         }
         if (pur) {
           currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
@@ -1544,8 +1556,15 @@ window.ReturnsController = (function () {
   }
 
   function closeModal(modalId) {
-    const m = document.getElementById(modalId);
-    if (m) m.style.display = 'none';
+    if (window.AppDialogService && typeof window.AppDialogService.closeModal === 'function') {
+      window.AppDialogService.closeModal(modalId);
+    } else {
+      const m = document.getElementById(modalId);
+      if (m) {
+        m.style.display = 'none';
+        m.classList.remove('active');
+      }
+    }
   }
 
   return {
