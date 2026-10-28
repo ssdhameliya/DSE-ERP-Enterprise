@@ -3,19 +3,20 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.7.02",
+  version: "11.0.7.03",
   desktopVersion: "11.0.7",
-  webBuild: 2,
-  webVersion: "11.0.7.02",
-  tag: "web-v11.0.7.02",
-  releaseDate: "2026-10-28T02:00:00+05:30",
+  webBuild: 3,
+  webVersion: "11.0.7.03",
+  tag: "web-v11.0.7.03",
+  releaseDate: "2026-10-28T09:10:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.7.02 Enterprise Web Release: Centered Modal Dialogs for All Drawers (Zero Table Squeeze), Top Toolbar Action Symmetry, Items Master Reset & Full-Width Register Viewports",
+  summary: "v11.0.7.03 Enterprise Web Release: 1-to-1 Desktop Parity for Sales & Purchase Inspection Popups (Clean Inline SVGs, 4 Overview Cards, 4 Canonical Tabs, 10-Button Action Dock, Zero Mojibake)",
   highlights: [
-    "1. Universal Centered Floating Modals: All register and master detail drawers (Bank Entry, Expense Entry, Purchase Recon, Recon Supplier, Items Master, Inventory, Customers, Suppliers, Master Data) now float as clean centered modals with darkened backdrop overlay, preserving 100% full-width table viewports.",
-    "2. Action Bar Symmetry: Export Excel, Export PDF, and Print buttons moved to the main filter bar before Reset; financial summaries embedded directly into the pagination footer.",
-    "3. Items Master Reset: Complete filter clearing with table refresh.",
-    "4. Responsive 88vw × 88vh Document Inspection: Expansive modal popups across Sales, Purchase, Quotation, and Return registers."
+    "1. Desktop Inspection Dialog Parity: Sales & Purchase Inspection Popups redesigned with 32px Hero Bar, Party/Due kicker, Copy Ref button, and Live Status Pills.",
+    "2. Prominent 4 Overview Cards: Customer/Supplier Details, Document Breakdown, Collection/Outflow Status, Logistics & Tax / Terms.",
+    "3. 4 Canonical Tabs: Consignment/Purchased Items, Payments & Allocations, Attachments (Upload/Preview/Download), Transport & Notes / Logistics & Terms.",
+    "4. 10-Button Desktop Action Dock: Edit, Duplicate, PDF Print, Barcode, Excel, Email, Record Payment/Outflow, Create Return, Audit Trail, Approve/Reject.",
+    "5. Zero Mojibake / Character Corruption: All legacy Unicode encoding glitches replaced with crisp, ultra-modern inline SVGs."
   ]
 };
 

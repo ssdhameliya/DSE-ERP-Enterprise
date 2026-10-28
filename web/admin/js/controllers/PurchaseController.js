@@ -624,21 +624,143 @@ window.PurchaseController = (function() {
       }
     }
 
-    // Also populate legacy inspect fields if present
+    // Overview Cards & Header Hero bindings (Desktop PurchaseDocumentInspectionDialog Parity)
     const purNo = document.getElementById('drawer-pur-no');
     if (purNo) purNo.innerText = invNo;
+
+    const purMeta = document.getElementById('drawer-pur-meta');
+    if (purMeta) {
+      const dateStr = formatDate(p.invoiceDate || p.date);
+      const timeStr = p.createdAt ? new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      purMeta.innerText = `Bill Date: ${dateStr}${timeStr ? ' • ' + timeStr : ''}`;
+    }
+
+    const purDocStatus = document.getElementById('drawer-pur-status');
+    if (purDocStatus) {
+      purDocStatus.innerText = docSt === 'APPROVED' ? 'ACCEPTED' : docSt;
+      purDocStatus.className = `status-pill ${docSt === 'APPROVED' ? 'pill-success' : (docSt === 'PENDING APPROVAL' ? 'pill-warning' : 'pill-danger')}`;
+    }
+
+    const purPayStatus = document.getElementById('drawer-pur-pay-status');
+    if (purPayStatus) {
+      purPayStatus.innerText = paySt;
+      purPayStatus.className = `status-pill ${paySt === 'PAID' ? 'pill-success' : (paySt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}`;
+    }
+
+    const purRetStatus = document.getElementById('drawer-pur-return-status');
+    if (purRetStatus) {
+      const retSt = (p.returnStatus || '').toUpperCase().replace(/_/g, ' ');
+      if (retSt && retSt !== 'N/A') {
+        purRetStatus.innerText = retSt;
+        purRetStatus.style.display = 'inline-block';
+        purRetStatus.className = `status-pill ${retSt.includes('FULLY') ? 'pill-success' : 'pill-warning'}`;
+      } else {
+        purRetStatus.style.display = 'none';
+      }
+    }
+
+    // Card 1: Supplier Details
     const purSuppName = document.getElementById('drawer-pur-supp-name');
     if (purSuppName) purSuppName.innerText = suppName;
+    const purSuppPhone = document.getElementById('drawer-pur-supp-phone');
+    if (purSuppPhone) purSuppPhone.innerText = supp.phone || p.contactPersonMobile || p.phone || '—';
+    const purSuppGstin = document.getElementById('drawer-pur-supp-gstin');
+    if (purSuppGstin) purSuppGstin.innerText = p.billingGstin || supp.gstin || '—';
+
+    // Card 2: Bill Breakdown
+    const purTaxable = document.getElementById('drawer-pur-taxable');
+    if (purTaxable) purTaxable.innerText = formatMoney(p.subtotal || p.taxableAmount || 0);
+    const purGst = document.getElementById('drawer-pur-gst');
+    if (purGst) purGst.innerText = formatMoney(p.gstAmount || p.taxAmount || 0);
     const purTotal = document.getElementById('drawer-pur-total');
     if (purTotal) purTotal.innerText = formatMoney(total);
+
+    // Card 3: Outflow Status
     const purPaid = document.getElementById('drawer-pur-paid');
     if (purPaid) purPaid.innerText = formatMoney(paid);
     const purBalance = document.getElementById('drawer-pur-balance');
     if (purBalance) purBalance.innerText = formatMoney(balance);
+    const purDueDate = document.getElementById('drawer-pur-due-date');
+    if (purDueDate) {
+      const dueStr = p.dueDate ? formatDate(p.dueDate) : 'Not set';
+      const dueInfo = window.FormatUtil.getDueInfo(p);
+      purDueDate.innerText = `${dueStr} • ${dueInfo.text}`;
+    }
+
+    // Card 4: Logistics & Terms
+    const purGstType = document.getElementById('drawer-pur-gst-type');
+    if (purGstType) purGstType.innerText = p.gstType || 'Standard GST';
+    const purTrans = document.getElementById('drawer-pur-transporter');
+    if (purTrans) purTrans.innerText = p.transporterName || p.transporter || 'Direct / None';
+    const purVeh = document.getElementById('drawer-pur-vehicle');
+    if (purVeh) purVeh.innerText = p.vehicleNo || p.vehicleNumber || '—';
+
+    // Tab 1 Purchased Items Table & Summary Strip
+    const purItemsTbody = document.getElementById('drawer-pur-items-tbody');
+    const lines = p.lines || [];
+    const purCountBadge = document.getElementById('drawer-pur-items-count-badge');
+    if (purCountBadge) purCountBadge.innerText = `${lines.length}`;
+
+    if (purItemsTbody) {
+      if (lines.length === 0) {
+        purItemsTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:14px; color:var(--text-muted);">No purchased item records.</td></tr>`;
+      } else {
+        purItemsTbody.innerHTML = lines.map((l, idx) => `
+          <tr>
+            <td style="color:var(--text-dim);">${idx + 1}</td>
+            <td style="font-weight:600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+            <td style="font-family:monospace;">${l.hsnCode || l.hsn || '-'}</td>
+            <td style="text-align:right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+            <td>${l.itemUnit || l.unit || 'PCS'}</td>
+            <td style="text-align:right;">${formatMoney(l.rate || 0)}</td>
+            <td style="text-align:right;">${formatMoney(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+            <td style="text-align:right;">${l.gstPercent || l.taxRate || 18}%</td>
+            <td style="font-weight:700; text-align:right;">${formatMoney(l.totalAmount || l.lineTotal || 0)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    const purChargesAmt = document.getElementById('drawer-pur-charges-amt');
+    if (purChargesAmt) purChargesAmt.innerText = formatMoney(p.chargesAmount || 0);
+    const purSummaryGst = document.getElementById('drawer-pur-summary-gst');
+    if (purSummaryGst) purSummaryGst.innerText = formatMoney(p.gstAmount || p.taxAmount || 0);
+    const purSummaryGrand = document.getElementById('drawer-pur-summary-grand');
+    if (purSummaryGrand) purSummaryGrand.innerText = formatMoney(total);
+
+    // Tab 2 Payments & Allocations
+    const purPayPaidDisp = document.getElementById('drawer-pur-pay-paid-disp');
+    if (purPayPaidDisp) purPayPaidDisp.innerText = formatMoney(paid);
+    const purPayTotalDisp = document.getElementById('drawer-pur-pay-total-disp');
+    if (purPayTotalDisp) purPayTotalDisp.innerText = formatMoney(total);
+
+    // Tab 4 Logistics & Terms
+    const purBillAddr = document.getElementById('drawer-pur-billing-address');
+    if (purBillAddr) purBillAddr.innerText = p.billingAddress || supp.billingAddress || '—';
+    const purDelivAddr = document.getElementById('drawer-pur-delivery-address');
+    if (purDelivAddr) purDelivAddr.innerText = p.deliveryAddress || supp.shippingAddress || '—';
+    const purContact = document.getElementById('drawer-pur-contact-person');
+    if (purContact) purContact.innerText = p.contactPerson || supp.contactPerson || '—';
+    const purTerms = document.getElementById('drawer-pur-payment-terms');
+    if (purTerms) purTerms.innerText = p.paymentTerms || 'NET 30';
+    const purTransNotes = document.getElementById('drawer-pur-transporter-notes');
+    if (purTransNotes) purTransNotes.innerText = p.transporterName || p.transporter || '—';
+    const purVehNotes = document.getElementById('drawer-pur-vehicle-notes');
+    if (purVehNotes) purVehNotes.innerText = p.vehicleNo || p.vehicleNumber || '—';
+    const purDoor = document.getElementById('drawer-pur-door-delivery');
+    if (purDoor) purDoor.innerText = p.doorDelivery || 'Standard Delivery';
+    const purRemarks = document.getElementById('drawer-pur-remarks');
+    if (purRemarks) purRemarks.innerText = p.notes || p.remarks || 'No remarks recorded.';
+
+    const approvalBox = document.getElementById('drawer-pur-approval-box');
+    if (approvalBox) {
+      const isPending = (docSt === 'PENDING_APPROVAL' || docSt === 'PENDING APPROVAL' || docSt === 'PENDING');
+      approvalBox.style.display = isPending ? 'flex' : 'none';
+    }
 
     const isDocPaid = (balance <= 0.009) || (paySt === 'PAID');
     const btnPurRecPayTab = document.getElementById('drawer-pur-btn-record-payment-tab');
-    const btnPurRecPayFooter = document.getElementById('drawer-pur-btn-record-payment');
+    const btnPurRecPayFooter = document.getElementById('dock-pur-payment');
     [btnPurRecPayTab, btnPurRecPayFooter].forEach(btn => {
       if (btn) {
         btn.disabled = isDocPaid;
@@ -653,10 +775,22 @@ window.PurchaseController = (function() {
         }
       }
     });
+
+    switchPurchaseDrawerTab('items');
+  }
+
+  function copyPurchaseNo() {
+    const invNo = (currentDrawerPurchase && currentDrawerPurchase.invoiceNo) || selectedDrawerBillNo;
+    if (!invNo) return;
+    navigator.clipboard.writeText(invNo).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Bill #${invNo} copied to clipboard`);
+    }).catch(() => {
+      if (window.AppDialogService) window.AppDialogService.showToast(invNo, 'info');
+    });
   }
 
   function switchPurchaseDrawerTab(tabName) {
-    const tabs = ['summary', 'items', 'payments', 'audit', 'docs'];
+    const tabs = ['items', 'payments', 'attachments', 'transport'];
     tabs.forEach(t => {
       const btn = document.getElementById(`tab-btn-pur-${t}`);
       const pane = document.getElementById(`pane-pur-${t}`);
@@ -666,8 +800,47 @@ window.PurchaseController = (function() {
 
     if (tabName === 'payments' && currentDrawerPurchase) {
       loadPurchaseDrawerPayments(currentDrawerPurchase);
-    } else if (tabName === 'audit' && currentDrawerPurchase) {
-      loadPurchaseDrawerAudit(currentDrawerPurchase);
+    } else if (tabName === 'attachments' && currentDrawerPurchase) {
+      loadPurchaseDrawerAttachments(currentDrawerPurchase);
+    }
+  }
+
+  function loadPurchaseDrawerAttachments(p) {
+    const listEl = document.getElementById('drawer-pur-attachments-list');
+    if (!listEl) return;
+    const att = p && (p.attachmentPath || p.attachment);
+    if (!att) {
+      listEl.innerHTML = `<div style="color: var(--text-dim); font-size: 0.82rem;">No bill scans or vendor proofs recorded.</div>`;
+      return;
+    }
+    const fname = typeof att === 'string' ? att.split('/').pop().split('\\').pop() : 'Attachment';
+    listEl.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--cyan);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <span style="font-weight:600; font-size:0.84rem;">${fname}</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.previewCurrentDrawerAttachment()">Preview</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.PurchaseController.downloadCurrentDrawerAttachment()">Download</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function handleDrawerAttachmentUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !currentDrawerPurchase) return;
+    try {
+      window.AppDialogService.toastInfo(`Uploading ${file.name}...`);
+      await window.ApiService.uploadBinary(`/api/support/documents/PURCHASE/${currentDrawerPurchase.id}/attachment-file`, file.name, file);
+      window.AppDialogService.toastSuccess(`Attachment ${file.name} saved.`);
+      const listEl = document.getElementById('drawer-pur-attachments-list');
+      if (listEl) {
+        listEl.innerHTML = `<div style="color:var(--green); font-weight:600;">📎 ${file.name} (Uploaded)</div>`;
+      }
+    } catch (err) {
+      window.AppDialogService.toastError(`Failed to upload attachment: ${err.message}`);
     }
   }
 
@@ -2377,6 +2550,8 @@ window.PurchaseController = (function() {
     openPurchaseDrawer,
     openInspectionModal: openPurchaseDrawer,
     closePurchaseDrawer,
+    copyPurchaseNo,
+    handleDrawerAttachmentUpload,
     get currentDrawerPurchase() { return currentDrawerPurchase; },
     closeDrawer,
     previewCurrentDrawerAttachment,

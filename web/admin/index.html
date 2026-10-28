@@ -2147,190 +2147,195 @@
   <div class="side-drawer-overlay" id="side-drawer-overlay" onclick="closeInvoiceDrawer(); closePurchaseDrawer();">
   </div>
 
-  <!-- SIDE INSPECTION DRAWER: SALES INVOICE -->
-  <div class="side-drawer document-inspection-window-modal" id="drawer-invoice-details">
-    <div class="drawer-header">
-      <div>
-        <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-          Sales Tax Invoice</div>
-        <h3 id="drawer-inv-no"
-          style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">
-          -</h3>
+  <!-- SIDE INSPECTION DRAWER: SALES INVOICE (Desktop SalesDocumentInspectionDialog Parity) -->
+  <div class="side-drawer document-inspection-window-modal erp-document-inspection-dialog sales-inspection-dialog" id="drawer-invoice-details">
+    <!-- 1. HEADER HERO BAR -->
+    <div class="inspection-hero-bar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="inspection-hero-icon" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; color: var(--cyan); flex-shrink: 0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <div>
+          <div class="inspection-kicker">TAX INVOICE</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+            <h3 id="drawer-inv-no" class="inspection-hero-title" style="margin: 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--cyan); letter-spacing: -0.01em;">-</h3>
+            <button class="btn btn-secondary btn-sm copy-ref-button" style="padding: 2px 7px; font-size: 0.72rem; height: 24px; line-height: 1;" onclick="window.SalesController.copyInvoiceNo()" title="Copy invoice number">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <div id="drawer-inv-meta" class="inspection-meta-label" style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Invoice Date: -</div>
+        </div>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="drawer-inv-status" class="badge badge-paid">APPROVED</span>
-        <span id="drawer-inv-pay-status" class="badge badge-pending">UNPAID</span>
-        <button class="modal-close" onclick="closeInvoiceDrawer()">&times;</button>
+        <span id="drawer-inv-status" class="status-pill pill-success" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">APPROVED</span>
+        <span id="drawer-inv-pay-status" class="status-pill pill-warning" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">UNPAID</span>
+        <span id="drawer-inv-return-status" class="status-pill pill-warning" style="display: none; font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;"></span>
+        <button class="modal-close" onclick="closeInvoiceDrawer()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
       </div>
     </div>
 
-    <!-- 5 TABS NAVIGATION BAR -->
+    <!-- 2. OVERVIEW CARDS STRIP (Desktop buildOverviewCards Parity) -->
+    <div class="inspection-overview-strip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 12px 20px; background: rgba(10, 18, 34, 0.4); border-bottom: 1px solid var(--border-subtle); flex-shrink: 0;">
+      <!-- Card 1: Customer Details -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Customer Details
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Party Name:</span>
+            <span id="drawer-cust-name" class="inspection-card-value inspection-value-bold" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Contact Mobile:</span>
+            <span id="drawer-cust-phone" class="inspection-card-value">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GSTIN:</span>
+            <span id="drawer-cust-gstin" class="inspection-card-value" style="font-family: monospace;">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Invoice Breakdown -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+          Invoice Breakdown
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Taxable Subtotal:</span>
+            <span id="drawer-taxable-amt" class="inspection-card-value">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GST Amount:</span>
+            <span id="drawer-gst-amt" class="inspection-card-value">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700;">
+            <span class="inspection-card-caption" style="color: var(--cyan);">Total Invoice:</span>
+            <span id="drawer-grand-total" class="inspection-card-value inspection-value-bold" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Collection Status -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          Collection Status
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Total Paid:</span>
+            <span id="drawer-paid-amt" class="inspection-card-value text-green font-bold" style="color: var(--green);">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Pending Balance:</span>
+            <span id="drawer-balance-amt" class="inspection-card-value font-bold" style="color: var(--red); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Payment Due:</span>
+            <span id="drawer-inv-due" class="inspection-card-value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Logistics & Tax -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          Logistics &amp; Tax
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GST Treatment:</span>
+            <span id="drawer-gst-type" class="inspection-card-value">Standard</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Transporter:</span>
+            <span id="drawer-transporter" class="inspection-card-value" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Direct / None</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Vehicle No.:</span>
+            <span id="drawer-vehicle" class="inspection-card-value">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CANONICAL 4 TABS NAVIGATION BAR (Clean SVGs, Zero Mojibake) -->
     <div class="drawer-tabs-bar">
-      <button class="drawer-tab-btn active" id="tab-btn-sale-summary"
-        onclick="window.SalesController.switchDrawerTab('summary')">&#128207;Å’ Summary</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-items"
-        onclick="window.SalesController.switchDrawerTab('items')">&#128207;Â¦ Consignment Items</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-payments"
-        onclick="window.SalesController.switchDrawerTab('payments')">&#128179; Payments &amp; Allocations</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-audit" onclick="window.SalesController.switchDrawerTab('audit')">&#9671;
-        Audit Trail</button>
-      <button class="drawer-tab-btn" id="tab-btn-sale-docs" onclick="window.SalesController.switchDrawerTab('docs')">&#128207;â€˜
-        Documents &amp; Actions</button>
+      <button class="drawer-tab-btn active" id="tab-btn-sale-items" onclick="window.SalesController.switchDrawerTab('items')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Consignment Items (<span id="drawer-items-count-badge">0</span>)
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-payments" onclick="window.SalesController.switchDrawerTab('payments')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        Payments &amp; Allocations
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-attachments" onclick="window.SalesController.switchDrawerTab('attachments')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+        Attachments
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-sale-transport" onclick="window.SalesController.switchDrawerTab('transport')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        Transport &amp; Notes
+      </button>
     </div>
 
-    <div class="drawer-body">
-      <!-- TAB 1: SUMMARY -->
-      <div class="drawer-tab-pane active" id="pane-sale-summary">
-        <div class="drawer-section">
-          <div class="drawer-section-title">Invoice Key Metadata</div>
-          <div class="drawer-grid" style="grid-template-columns: repeat(4, 1fr);">
-            <div>
-              <div class="drawer-label">Invoice Date</div>
-              <div class="drawer-value" id="drawer-inv-date">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Due Date</div>
-              <div class="drawer-value" id="drawer-inv-due">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Payment Terms</div>
-              <div class="drawer-value" id="drawer-inv-terms">15 Days</div>
-            </div>
-            <div>
-              <div class="drawer-label">Reference No</div>
-              <div class="drawer-value" id="drawer-inv-ref">-</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="drawer-section">
-          <div class="drawer-section-title">Customer Profile</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div>
-              <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="drawer-cust-name">-</div>
-              <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;">GSTIN: <span id="drawer-cust-gstin"
-                  style="font-family: monospace;">-</span></div>
-              <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Contact: <span
-                  id="drawer-cust-phone">-</span> &bull; <span id="drawer-cust-email">-</span></div>
-            </div>
-            <div>
-              <div class="drawer-label">Billing Address</div>
-              <div style="font-size: 0.8rem; color: var(--text-main); margin-top: 2px;" id="drawer-cust-address">-</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="drawer-section">
-          <div class="drawer-section-title">Logistics &amp; Transport Details</div>
-          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr);">
-            <div>
-              <div class="drawer-label">Transporter</div>
-              <div class="drawer-value" id="drawer-transporter">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Vehicle #</div>
-              <div class="drawer-value" id="drawer-vehicle">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Door Delivery</div>
-              <div class="drawer-value" id="drawer-door-delivery">-</div>
-            </div>
-            <div style="grid-column: span 3;">
-              <div class="drawer-label">Shipping / Delivery Address</div>
-              <div class="drawer-value" id="drawer-delivery-address">-</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="drawer-section"
-          style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: 8px;">
-          <div class="drawer-section-title" style="color: var(--cyan);">Tax &amp; Financial Breakdown</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">Taxable Subtotal:</span>
-                <span id="drawer-taxable-amt" style="font-weight: 600;">&#8377; 0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">GST Tax Amount:</span>
-                <span id="drawer-gst-amt" style="font-weight: 600;">&#8377; 0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">Extra Charges &amp; Freight:</span>
-                <span id="drawer-charges-amt" style="font-weight: 600;">&#8377; 0.00</span>
-              </div>
-            </div>
-            <div>
-              <div
-                style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">
-                <span style="color: var(--cyan);">Grand Total:</span>
-                <span id="drawer-grand-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377;
-                  0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                <span style="color: var(--green);">Total Paid:</span>
-                <span id="drawer-paid-amt" style="color: var(--green); font-weight: 700;">&#8377; 0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700;">
-                <span style="color: var(--red);">Remaining Balance:</span>
-                <span id="drawer-balance-amt" style="color: var(--red); font-family: 'Space Grotesk';">&#8377;
-                  0.00</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: CONSIGNMENT ITEMS -->
-      <div class="drawer-tab-pane" id="pane-sale-items">
-        <div class="drawer-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div class="drawer-section-title" style="margin-bottom:0;">Line Items Consignment</div>
-            <span id="drawer-items-count-badge" class="badge badge-paid" style="font-size:0.75rem;">0 Items</span>
-          </div>
+    <!-- 4. TAB PANES BODY -->
+    <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+      <!-- TAB 1: CONSIGNMENT ITEMS -->
+      <div class="drawer-tab-pane active" id="pane-sale-items">
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
           <div style="overflow-x: auto;">
-            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th style="width: 40px;">#</th>
                   <th>Item Code / Description</th>
                   <th>HSN/SAC</th>
-                  <th>Qty</th>
+                  <th style="text-align: right;">Qty</th>
                   <th>Unit</th>
-                  <th>Rate</th>
-                  <th>Taxable</th>
-                  <th>GST %</th>
-                  <th style="text-align: right;">Total</th>
+                  <th style="text-align: right;">Rate (&#8377;)</th>
+                  <th style="text-align: right;">Taxable (&#8377;)</th>
+                  <th style="text-align: right;">GST %</th>
+                  <th style="text-align: right;">Total (&#8377;)</th>
                 </tr>
               </thead>
               <tbody id="drawer-items-tbody"></tbody>
             </table>
           </div>
         </div>
+        <!-- Summary breakdown bar -->
+        <div style="display: flex; justify-content: flex-end; gap: 24px; padding: 10px 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.82rem;">
+          <div><span style="color:var(--text-muted);">Charges: </span><span id="drawer-charges-amt" style="font-weight:600;">&#8377; 0.00</span></div>
+          <div><span style="color:var(--text-muted);">GST Tax: </span><span id="drawer-summary-gst" style="font-weight:600;">&#8377; 0.00</span></div>
+          <div><span style="color:var(--cyan); font-weight:700;">Grand Total: </span><span id="drawer-summary-grand" style="color:var(--cyan); font-weight:800; font-family:'Space Grotesk';">&#8377; 0.00</span></div>
+        </div>
       </div>
 
-      <!-- TAB 3: PAYMENTS & ALLOCATIONS -->
+      <!-- TAB 2: PAYMENTS & ALLOCATIONS -->
       <div class="drawer-tab-pane" id="pane-sale-payments">
-        <div class="drawer-section"
-          style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25);">
+        <div class="drawer-section" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); padding: 12px 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Payment
-                Status</div>
-              <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 2px;">
-                <span id="drawer-pay-paid-display">&#8377; 0.00</span> paid of <span
-                  id="drawer-pay-total-display">&#8377; 0.00</span>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Payment Status</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                <span id="drawer-pay-paid-display">&#8377; 0.00</span> paid of <span id="drawer-pay-total-display">&#8377; 0.00</span>
               </div>
             </div>
-            <button class="btn btn-primary" id="drawer-sale-btn-record-payment-tab" style="background: var(--green); border-color: var(--green);"
-              onclick="window.SalesController.recordPaymentForCurrentDrawer()">+ Record Payment</button>
+            <button class="btn btn-primary" id="drawer-sale-btn-record-payment-tab" style="background: var(--green); border-color: var(--green); display: flex; align-items: center; gap: 6px;" onclick="window.SalesController.recordPaymentForCurrentDrawer()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Record Payment
+            </button>
           </div>
         </div>
-
-        <div class="drawer-section">
-          <div class="drawer-section-title">Payment Transaction History</div>
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
           <div style="overflow-x: auto;">
-            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -2338,231 +2343,341 @@
                   <th>Mode</th>
                   <th>Reference</th>
                   <th>Notes</th>
-                  <th>Amount</th>
-                  <th>Proof</th>
+                  <th style="text-align: right;">Amount</th>
+                  <th style="text-align: center;">Proof</th>
                 </tr>
               </thead>
               <tbody id="drawer-payments-tbody">
-                <tr>
-                  <td colspan="7" style="text-align:center; color:var(--text-dim); padding:14px;">Loading payment
-                    history...</td>
-                </tr>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Loading payment history...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
+        <div id="drawer-sale-payments-footer-summary" style="font-size: 0.78rem; color: var(--text-dim); padding: 4px 6px;"></div>
       </div>
 
-      <!-- TAB 4: AUDIT TRAIL -->
-      <div class="drawer-tab-pane" id="pane-sale-audit">
+      <!-- TAB 3: ATTACHMENTS (Order Attachments & Payment Proofs) -->
+      <div class="drawer-tab-pane" id="pane-sale-attachments">
         <div class="drawer-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <div class="drawer-section-title" style="margin-bottom:0;">Authoritative Audit Log</div>
-            <span class="badge badge-paid" style="font-size:0.72rem;">Server Backed</span>
+          <div class="drawer-section-title">Attached Files &amp; Documentation</div>
+          <div id="drawer-sale-attachments-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            <div style="color: var(--text-dim); font-size: 0.82rem;">No order attachments or payment proofs recorded.</div>
           </div>
-          <div id="drawer-sale-audit-timeline" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="text-align:center; color:var(--text-dim); padding: 16px;">Loading activity history...</div>
+          <div style="display: flex; gap: 10px; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+            <input type="file" id="drawer-sale-attachment-input" style="display:none;" onchange="window.SalesController.handleAttachmentUpload(event)" />
+            <button class="btn btn-secondary" onclick="document.getElementById('drawer-sale-attachment-input').click()" style="display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              Attach File (PDF / Images)
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- TAB 5: DOCUMENTS & ACTIONS -->
-      <div class="drawer-tab-pane" id="pane-sale-docs">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-          <div class="drawer-section">
-            <div class="drawer-section-title">Official Tax Invoice (PDF)</div>
-            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate and print official
-              GST-compliant Tax Invoice formatted via canonical desktop engine.</p>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary"
-                onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128065;&#65039;
-                View / Print PDF</button>
-              <button class="btn btn-secondary"
-                onclick="if(window.SalesController.currentDrawerSale) window.ApiService.downloadDocumentPdf('SALE', window.SalesController.currentDrawerSale.invoiceNo)">&#11015;&#65039;
-                Download</button>
+      <!-- TAB 4: TRANSPORT & NOTES (Desktop buildLogisticsTabContent Parity) -->
+      <div class="drawer-tab-pane" id="pane-sale-transport">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Addresses &amp; Contact Details</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <div class="drawer-label">Billing Address</div>
+              <div class="drawer-value" id="drawer-cust-address">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Shipping / Delivery Address</div>
+              <div class="drawer-value" id="drawer-delivery-address">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Contact Person</div>
+              <div class="drawer-value" id="drawer-contact-person">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Contact Mobile</div>
+              <div class="drawer-value" id="drawer-contact-mobile">-</div>
             </div>
           </div>
-
-          <div class="drawer-section">
-            <div class="drawer-section-title">Order Dispatch Barcode</div>
-            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Generate Code-128 dispatch label
-              barcode for carton tracking and delivery logistics.</p>
-            <button class="btn btn-secondary"
-              onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printDispatchBarcode(window.SalesController.currentDrawerSale)">&#128207;Â¦
-              Print Dispatch Barcode</button>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Logistics &amp; Fulfillment</div>
+          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            <div>
+              <div class="drawer-label">Transporter Name</div>
+              <div class="drawer-value" id="drawer-transporter-notes">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Vehicle Number</div>
+              <div class="drawer-value" id="drawer-vehicle-notes">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Door Delivery</div>
+              <div class="drawer-value" id="drawer-door-delivery">-</div>
+            </div>
           </div>
         </div>
-
         <div class="drawer-section">
-          <div class="drawer-section-title">Document Attachments</div>
-          <div id="drawer-sale-attachments-list"
-            style="margin-bottom: 12px; font-size: 0.82rem; color: var(--text-dim);">No extra files attached.</div>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="file" id="drawer-sale-attachment-input" style="display:none;"
-              onchange="window.SalesController.handleAttachmentUpload(event)" />
-            <button class="btn btn-secondary"
-              onclick="document.getElementById('drawer-sale-attachment-input').click()">&#128207;Å½ Attach File (PDF /
-              Images)</button>
+          <div class="drawer-section-title">Commercial &amp; Remarks</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 2fr; gap: 14px;">
+            <div>
+              <div class="drawer-label">Salesperson / Representative</div>
+              <div class="drawer-value" id="drawer-salesperson">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Remarks / Special Notes</div>
+              <div class="drawer-value" id="drawer-remarks">No notes recorded.</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- DRAWER ACTION FOOTER -->
-    <div class="drawer-footer">
-      <div id="drawer-sale-approval-box" style="display:none; margin-right: auto; gap: 8px; align-items: center;">
-        <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING APPROVAL:</span>
-        <button class="btn btn-primary"
-          style="background:var(--green); border-color:var(--green); font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.approveSelectedSale()">&#10004; Approve</button>
-        <button class="btn btn-danger" style="font-size:0.78rem; padding:6px 12px;"
-          onclick="window.SalesController.rejectSelectedSale()">&#10006; Reject</button>
+    <!-- 5. ACTION DOCK (Desktop buildActionDock Parity: 10 Buttons) -->
+    <div class="inspection-action-dock" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10, 18, 34, 0.95); border-top: 1px solid var(--border-subtle); flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- 1. Edit Sale -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-edit" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.openSaleEditorTab(window.SalesController.currentDrawerSale, false)" title="Edit this sales invoice">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit Sale
+        </button>
+        <!-- 2. Duplicate Sale -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-duplicate" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.duplicateSale(window.SalesController.currentDrawerSale)" title="Duplicate as a new sale">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Duplicate
+        </button>
+        <!-- 3. Tax Invoice PDF -->
+        <button class="btn btn-primary btn-sm" id="dock-sale-pdf" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)" title="View official Tax Invoice PDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Tax Invoice PDF
+        </button>
+        <!-- 4. Barcode -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-barcode" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.openDispatchBarcodeModal(window.SalesController.currentDrawerSale.invoiceNo)" title="Print Dispatch Barcode Label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v14M8 5v14M12 5v14M17 5v14M21 5v14"></path></svg>
+          Barcode
+        </button>
+        <!-- 5. Excel -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-excel" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.exportInvoiceExcel(window.SalesController.currentDrawerSale.invoiceNo)" title="Export invoice to Excel spreadsheet">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          Excel
+        </button>
+        <!-- 6. Email -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-email" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.openEmailModal(window.SalesController.currentDrawerSale.invoiceNo)" title="Email Tax Invoice to customer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Email
+        </button>
+        <!-- 7. Record Payment -->
+        <button class="btn btn-primary btn-sm" id="dock-sale-payment" style="background:var(--green); border-color:var(--green);" onclick="window.SalesController.recordPaymentForCurrentDrawer()" title="Record collection payment">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          Record Payment
+        </button>
+        <!-- 8. Create Sales Return -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-return" onclick="if(window.SalesController.currentDrawerSale) window.SalesController.createSalesReturn(window.SalesController.currentDrawerSale.invoiceNo)" title="Create sales return for this invoice">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+          Create Return
+        </button>
+        <!-- 9. Audit Trail -->
+        <button class="btn btn-secondary btn-sm" id="dock-sale-audit" onclick="window.SalesController.auditCurrentInvoice()" title="View full authoritative audit trail">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Audit Trail
+        </button>
       </div>
-      <button class="btn btn-secondary" onclick="closeInvoiceDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.SalesController.auditCurrentInvoice()">&#9671; Full Audit</button>
-      <button class="btn btn-primary" id="drawer-sale-btn-record-payment" style="background:var(--green); border-color:var(--green);"
-        onclick="window.SalesController.recordPaymentForCurrentDrawer()">&#128179; Record Payment</button>
-      <button class="btn btn-primary"
-        onclick="if(window.SalesController.currentDrawerSale) window.SalesController.printTaxInvoice(window.SalesController.currentDrawerSale.invoiceNo)">&#128196;
-        Print Tax Invoice</button>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div id="drawer-sale-approval-box" style="display:none; align-items: center; gap: 6px;">
+          <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING:</span>
+          <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="window.SalesController.approveSelectedSale()">&#10004; Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="window.SalesController.rejectSelectedSale()">&#10006; Reject</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeInvoiceDrawer()">Close</button>
+      </div>
     </div>
   </div>
 
-  <!-- SIDE INSPECTION DRAWER: PURCHASE BILL -->
-  <div class="side-drawer document-inspection-window-modal" id="drawer-purchase-details-inspect">
-    <div class="drawer-header">
-      <div>
-        <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-          Purchase Inward Bill</div>
-        <h3 id="drawer-pur-no"
-          style="font-size: 1.25rem; font-family: 'Space Grotesk'; font-weight: 700; color: var(--cyan); margin-top: 2px;">
-          -</h3>
+  <!-- SIDE INSPECTION DRAWER: PURCHASE BILL (Desktop PurchaseDocumentInspectionDialog Parity) -->
+  <div class="side-drawer document-inspection-window-modal erp-document-inspection-dialog purchase-inspection-dialog" id="drawer-purchase-details-inspect">
+    <!-- 1. HEADER HERO BAR -->
+    <div class="inspection-hero-bar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="inspection-hero-icon" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; color: var(--cyan); flex-shrink: 0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        </div>
+        <div>
+          <div class="inspection-kicker">PURCHASE BILL</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+            <h3 id="drawer-pur-no" class="inspection-hero-title" style="margin: 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--cyan); letter-spacing: -0.01em;">-</h3>
+            <button class="btn btn-secondary btn-sm copy-ref-button" style="padding: 2px 7px; font-size: 0.72rem; height: 24px; line-height: 1;" onclick="window.PurchaseController.copyPurchaseNo()" title="Copy bill number">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <div id="drawer-pur-meta" class="inspection-meta-label" style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Bill Date: -</div>
+        </div>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="drawer-pur-status" class="badge badge-paid">ACCEPTED</span>
-        <span id="drawer-pur-pay-status" class="badge badge-pending">UNPAID</span>
-        <button class="modal-close" onclick="closePurchaseDrawer()">&times;</button>
+        <span id="drawer-pur-status" class="status-pill pill-success" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">ACCEPTED</span>
+        <span id="drawer-pur-pay-status" class="status-pill pill-warning" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">UNPAID</span>
+        <span id="drawer-pur-return-status" class="status-pill pill-warning" style="display: none; font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;"></span>
+        <button class="modal-close" onclick="closePurchaseDrawer()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
       </div>
     </div>
 
-    <!-- 5 TABS NAVIGATION BAR -->
+    <!-- 2. OVERVIEW CARDS STRIP (Desktop buildOverviewCards Parity) -->
+    <div class="inspection-overview-strip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 12px 20px; background: rgba(10, 18, 34, 0.4); border-bottom: 1px solid var(--border-subtle); flex-shrink: 0;">
+      <!-- Card 1: Supplier Details -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Supplier Details
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Party Name:</span>
+            <span id="drawer-pur-supp-name" class="inspection-card-value inspection-value-bold" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Contact Mobile:</span>
+            <span id="drawer-pur-supp-phone" class="inspection-card-value">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GSTIN:</span>
+            <span id="drawer-pur-supp-gstin" class="inspection-card-value" style="font-family: monospace;">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Bill Breakdown -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+          Bill Breakdown
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Taxable Inward:</span>
+            <span id="drawer-pur-taxable" class="inspection-card-value">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">ITC GST Amount:</span>
+            <span id="drawer-pur-gst" class="inspection-card-value">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700;">
+            <span class="inspection-card-caption" style="color: var(--cyan);">Total Bill:</span>
+            <span id="drawer-pur-total" class="inspection-card-value inspection-value-bold" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Outflow Status -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          Outflow Status
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Total Paid:</span>
+            <span id="drawer-pur-paid" class="inspection-card-value text-green font-bold" style="color: var(--green);">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Pending Balance:</span>
+            <span id="drawer-pur-balance" class="inspection-card-value font-bold" style="color: var(--red); font-family: 'Space Grotesk';">&#8377; 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Payment Due:</span>
+            <span id="drawer-pur-due-date" class="inspection-card-value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Logistics & Terms -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          Logistics &amp; Terms
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GST Treatment:</span>
+            <span id="drawer-pur-gst-type" class="inspection-card-value">Standard</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Transporter:</span>
+            <span id="drawer-pur-transporter" class="inspection-card-value" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Direct / None</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Vehicle No.:</span>
+            <span id="drawer-pur-vehicle" class="inspection-card-value">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CANONICAL 4 TABS NAVIGATION BAR (Clean SVGs, Zero Mojibake) -->
     <div class="drawer-tabs-bar">
-      <button class="drawer-tab-btn active" id="tab-btn-pur-summary"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('summary')">&#128207;Å’ Summary</button>
-      <button class="drawer-tab-btn" id="tab-btn-pur-items"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">&#128207;Â¦ Inward Items</button>
-      <button class="drawer-tab-btn" id="tab-btn-pur-payments"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">&#128179; Outflow Payments</button>
-      <button class="drawer-tab-btn" id="tab-btn-pur-audit"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('audit')">&#9671; Audit Trail</button>
-      <button class="drawer-tab-btn" id="tab-btn-pur-docs"
-        onclick="window.PurchaseController.switchPurchaseDrawerTab('docs')">&#128207;â€˜ Documents &amp; Proof</button>
+      <button class="drawer-tab-btn active" id="tab-btn-pur-items" onclick="window.PurchaseController.switchPurchaseDrawerTab('items')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Purchased Items (<span id="drawer-pur-items-count-badge">0</span>)
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-payments" onclick="window.PurchaseController.switchPurchaseDrawerTab('payments')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        Payments &amp; Allocations
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-attachments" onclick="window.PurchaseController.switchPurchaseDrawerTab('attachments')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+        Attachments
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-pur-transport" onclick="window.PurchaseController.switchPurchaseDrawerTab('transport')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        Logistics &amp; Terms
+      </button>
     </div>
 
-    <div class="drawer-body">
-      <!-- TAB 1: SUMMARY -->
-      <div class="drawer-tab-pane active" id="pane-pur-summary">
-        <div class="drawer-section">
-          <div class="drawer-section-title">Bill Key Metadata</div>
-          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr);">
-            <div>
-              <div class="drawer-label">Bill Date</div>
-              <div class="drawer-value" id="drawer-pur-date">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Supplier GSTIN</div>
-              <div class="drawer-value" id="drawer-pur-supp-gstin" style="font-family: monospace;">-</div>
-            </div>
-            <div>
-              <div class="drawer-label">Supplier Contact</div>
-              <div class="drawer-value" id="drawer-pur-supp-phone">-</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="drawer-section">
-          <div class="drawer-section-title">Supplier Profile</div>
-          <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="drawer-pur-supp-name">-</div>
-        </div>
-
-        <div class="drawer-section"
-          style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: 8px;">
-          <div class="drawer-section-title" style="color: var(--cyan);">Taxable Inward &amp; Payable Total</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">Taxable Inward:</span>
-                <span id="drawer-pur-taxable" style="font-weight: 600;">&#8377; 0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
-                <span style="color: var(--text-muted);">Input Tax Credit (ITC):</span>
-                <span id="drawer-pur-gst" style="font-weight: 600;">&#8377; 0.00</span>
-              </div>
-            </div>
-            <div>
-              <div
-                style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">
-                <span style="color: var(--cyan);">Total Bill Payable:</span>
-                <span id="drawer-pur-total" style="color: var(--cyan); font-family: 'Space Grotesk';">&#8377;
-                  0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                <span style="color: var(--green);">Paid Outflow:</span>
-                <span id="drawer-pur-paid" style="color: var(--green); font-weight: 700;">&#8377; 0.00</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700;">
-                <span style="color: var(--red);">Remaining Due:</span>
-                <span id="drawer-pur-balance" style="color: var(--red); font-family: 'Space Grotesk';">&#8377;
-                  0.00</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: INWARD ITEMS -->
-      <div class="drawer-tab-pane" id="pane-pur-items">
-        <div class="drawer-section">
-          <div class="drawer-section-title">Inward Material Line Items</div>
+    <!-- 4. TAB PANES BODY -->
+    <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+      <!-- TAB 1: PURCHASED ITEMS -->
+      <div class="drawer-tab-pane active" id="pane-pur-items">
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
           <div style="overflow-x: auto;">
-            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Material / Description</th>
-                  <th>Qty</th>
-                  <th>Cost Rate</th>
-                  <th style="text-align: right;">Total</th>
+                  <th style="width: 40px;">#</th>
+                  <th>Item Code / Description</th>
+                  <th>HSN/SAC</th>
+                  <th style="text-align: right;">Qty</th>
+                  <th>Unit</th>
+                  <th style="text-align: right;">Rate (&#8377;)</th>
+                  <th style="text-align: right;">Taxable (&#8377;)</th>
+                  <th style="text-align: right;">GST %</th>
+                  <th style="text-align: right;">Total (&#8377;)</th>
                 </tr>
               </thead>
               <tbody id="drawer-pur-items-tbody"></tbody>
             </table>
           </div>
         </div>
+        <div style="display: flex; justify-content: flex-end; gap: 24px; padding: 10px 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.82rem;">
+          <div><span style="color:var(--text-muted);">Charges: </span><span id="drawer-pur-charges-amt" style="font-weight:600;">&#8377; 0.00</span></div>
+          <div><span style="color:var(--text-muted);">Input GST: </span><span id="drawer-pur-summary-gst" style="font-weight:600;">&#8377; 0.00</span></div>
+          <div><span style="color:var(--cyan); font-weight:700;">Grand Total: </span><span id="drawer-pur-summary-grand" style="color:var(--cyan); font-weight:800; font-family:'Space Grotesk';">&#8377; 0.00</span></div>
+        </div>
       </div>
 
-      <!-- TAB 3: PAYMENTS & OUTFLOW -->
+      <!-- TAB 2: PAYMENTS & ALLOCATIONS -->
       <div class="drawer-tab-pane" id="pane-pur-payments">
-        <div class="drawer-section"
-          style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25);">
+        <div class="drawer-section" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); padding: 12px 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--green); font-weight: 700;">
-                Settlement Status</div>
-              <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 2px;">
-                <span id="drawer-pur-pay-paid-disp">&#8377; 0.00</span> paid of <span
-                  id="drawer-pur-pay-total-disp">&#8377; 0.00</span>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Settlement Status</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                <span id="drawer-pur-pay-paid-disp">&#8377; 0.00</span> paid of <span id="drawer-pur-pay-total-disp">&#8377; 0.00</span>
               </div>
             </div>
-            <button class="btn btn-primary" id="drawer-pur-btn-record-payment-tab" style="background: var(--green); border-color: var(--green);"
-              onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">+ Record Outflow</button>
+            <button class="btn btn-primary" id="drawer-pur-btn-record-payment-tab" style="background: var(--green); border-color: var(--green); display: flex; align-items: center; gap: 6px;" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Record Outflow
+            </button>
           </div>
         </div>
-
-        <div class="drawer-section">
-          <div class="drawer-section-title">Outflow Voucher History</div>
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
           <div style="overflow-x: auto;">
-            <table class="data-table" style="font-size: 0.78rem; width: 100%;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -2570,58 +2685,136 @@
                   <th>Mode</th>
                   <th>Reference</th>
                   <th>Notes</th>
-                  <th>Amount</th>
-                  <th>Proof</th>
+                  <th style="text-align: right;">Amount</th>
+                  <th style="text-align: center;">Proof</th>
                 </tr>
               </thead>
               <tbody id="drawer-pur-payments-tbody">
-                <tr>
-                  <td colspan="7" style="text-align:center; color:var(--text-dim); padding:14px;">Loading payment
-                    history...</td>
-                </tr>
+                <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Loading payment history...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
+        <div id="drawer-pur-payments-footer-summary" style="font-size: 0.78rem; color: var(--text-dim); padding: 4px 6px;"></div>
       </div>
 
-      <!-- TAB 4: AUDIT TRAIL -->
-      <div class="drawer-tab-pane" id="pane-pur-audit">
+      <!-- TAB 3: ATTACHMENTS -->
+      <div class="drawer-tab-pane" id="pane-pur-attachments">
         <div class="drawer-section">
-          <div class="drawer-section-title">Authoritative Inward Audit Trail</div>
-          <div id="drawer-pur-audit-timeline" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="text-align:center; color:var(--text-dim); padding: 16px;">Loading activity history...</div>
+          <div class="drawer-section-title">Bill Scans &amp; Vendor Proofs</div>
+          <div id="drawer-pur-attachments-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            <div style="color: var(--text-dim); font-size: 0.82rem;">No bill scans or vendor proofs recorded.</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+            <input type="file" id="drawer-pur-attachment-input" style="display:none;" onchange="window.PurchaseController.handleDrawerAttachmentUpload(event)" />
+            <button class="btn btn-secondary" onclick="document.getElementById('drawer-pur-attachment-input').click()" style="display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              Attach File (PDF / Images)
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- TAB 5: DOCUMENTS & PROOF -->
-      <div class="drawer-tab-pane" id="pane-pur-docs">
+      <!-- TAB 4: LOGISTICS & TERMS -->
+      <div class="drawer-tab-pane" id="pane-pur-transport">
         <div class="drawer-section">
-          <div class="drawer-section-title">Inward Bill Document</div>
-          <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">Print official purchase inward bill
-            voucher generated directly from the canonical desktop engine.</p>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128065;&#65039;
-              View / Print Bill</button>
-            <button class="btn btn-secondary"
-              onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.ApiService.downloadDocumentPdf('PURCHASE', window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#11015;&#65039;
-              Download</button>
+          <div class="drawer-section-title">Supplier Address &amp; Contact</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <div class="drawer-label">Billing Address</div>
+              <div class="drawer-value" id="drawer-pur-billing-address">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Delivery Destination</div>
+              <div class="drawer-value" id="drawer-pur-delivery-address">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Contact Person</div>
+              <div class="drawer-value" id="drawer-pur-contact-person">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Payment Terms</div>
+              <div class="drawer-value" id="drawer-pur-payment-terms">NET 30</div>
+            </div>
           </div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Logistics &amp; Transport</div>
+          <div class="drawer-grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            <div>
+              <div class="drawer-label">Transporter</div>
+              <div class="drawer-value" id="drawer-pur-transporter-notes">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Vehicle Number</div>
+              <div class="drawer-value" id="drawer-pur-vehicle-notes">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Door Delivery</div>
+              <div class="drawer-value" id="drawer-pur-door-delivery">-</div>
+            </div>
+          </div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Remarks &amp; Notes</div>
+          <div class="drawer-value" id="drawer-pur-remarks">No remarks recorded.</div>
         </div>
       </div>
     </div>
 
-    <!-- DRAWER ACTION FOOTER -->
-    <div class="drawer-footer">
-      <button class="btn btn-secondary" onclick="closePurchaseDrawer()">Close</button>
-      <button class="btn btn-secondary" onclick="window.PurchaseController.auditCurrentPurchase()">&#9671; Audit</button>
-      <button class="btn btn-primary" id="drawer-pur-btn-record-payment" style="background:var(--green); border-color:var(--green);"
-        onclick="window.PurchaseController.recordPaymentForCurrentDrawer()">&#128179; Record Payment</button>
-      <button class="btn btn-primary"
-        onclick="if(window.PurchaseController && window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#128196;
-        Print Inward Bill</button>
+    <!-- 5. ACTION DOCK (Desktop PurchaseDocumentInspectionDialog Parity: 10 Buttons) -->
+    <div class="inspection-action-dock" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10, 18, 34, 0.95); border-top: 1px solid var(--border-subtle); flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- 1. Edit Bill -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-edit" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.openPurchaseEditor(window.PurchaseController.currentDrawerPurchase)" title="Edit this purchase bill">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit Bill
+        </button>
+        <!-- 2. Duplicate Bill -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-duplicate" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.duplicatePurchase(window.PurchaseController.currentDrawerPurchase.id)" title="Duplicate as new purchase">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Duplicate
+        </button>
+        <!-- 3. Purchase Order PDF -->
+        <button class="btn btn-primary btn-sm" id="dock-pur-pdf" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.printPurchaseBill(window.PurchaseController.currentDrawerPurchase.invoiceNo)" title="View official Purchase Bill PDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Purchase Bill PDF
+        </button>
+        <!-- 4. Excel -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-excel" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.downloadExcel(window.PurchaseController.currentDrawerPurchase.invoiceNo)" title="Export bill to Excel spreadsheet">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          Excel
+        </button>
+        <!-- 5. Email -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-email" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.sendEmailPrompt(window.PurchaseController.currentDrawerPurchase.id, window.PurchaseController.currentDrawerPurchase.invoiceNo)" title="Email purchase order voucher">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Email
+        </button>
+        <!-- 6. Record Outflow Payment -->
+        <button class="btn btn-primary btn-sm" id="dock-pur-payment" style="background:var(--green); border-color:var(--green);" onclick="window.PurchaseController.recordPaymentForCurrentDrawer()" title="Record outflow payment">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          Record Outflow
+        </button>
+        <!-- 7. Create Purchase Return -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-return" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.openReturnPrompt(window.PurchaseController.currentDrawerPurchase.invoiceNo)" title="Create purchase return for this bill">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+          Create Return
+        </button>
+        <!-- 8. Audit Trail -->
+        <button class="btn btn-secondary btn-sm" id="dock-pur-audit" onclick="window.PurchaseController.auditCurrentPurchase()" title="View full authoritative audit trail">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Audit Trail
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div id="drawer-pur-approval-box" style="display:none; align-items: center; gap: 6px;">
+          <span style="font-size:0.75rem; color:var(--amber); font-weight:700;">PENDING:</span>
+          <button class="btn btn-primary btn-sm" style="background:var(--green); border-color:var(--green);" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.approvePurchase(window.PurchaseController.currentDrawerPurchase.id)">&#10004; Accept</button>
+          <button class="btn btn-danger btn-sm" onclick="if(window.PurchaseController.currentDrawerPurchase) window.PurchaseController.rejectPurchasePrompt(window.PurchaseController.currentDrawerPurchase.id, window.PurchaseController.currentDrawerPurchase.invoiceNo)">&#10006; Reject</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closePurchaseDrawer()">Close</button>
+      </div>
     </div>
   </div>
 
@@ -4627,7 +4820,7 @@
         <div>
           <h3
             style="margin:0; font-size:1.15rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>&#128207;â€š</span> Bank Statement History
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--cyan); vertical-align:middle; margin-right:6px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Bank Statement History
           </h3>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Browse previously imported statement batches, inspect reconciliation progress, or delete imports.
@@ -4721,7 +4914,7 @@
               <div>&bull; Ignored Items: <strong id="msdc-metric-ignored" style="color:var(--text-main, #0f172a);">0</strong></div>
             </div>
             <div style="font-size:0.75rem; color:#dc2626; line-height:1.4;">
-              &#9888;Ã¯Â¸Â Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
+              <span style="font-weight:700;">&#9888; Warning:</span> Any linked reconciliation or generated Bank / Expense entry will be reversed first. If any reversal
               fails, nothing will be deleted.
             </div>
           </div>
@@ -4879,7 +5072,7 @@
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.refreshSuggestions()"
               style="display:inline-flex; align-items:center; gap:6px;">
-              <span>&#128269;â€ž</span> Refresh Suggestions
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Refresh Suggestions
             </button>
             <button type="button" class="btn btn-secondary"
               onclick="window.BankStatementController.closeModal('modal-match-candidate')">
@@ -5832,7 +6025,7 @@
     <div class="modal-card" style="max-width: 720px; width: 95%;">
       <div class="modal-header">
         <div>
-          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">&#128207;â€ž Imported Statement Source Evidence</h3>
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Imported Statement Source Evidence</h3>
           <div id="msse-sub" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Original statement
             batch provenance &amp; SHA-256 fingerprint</div>
         </div>
@@ -6726,7 +6919,7 @@
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span id="universal-preview-icon" style="font-size:1.2rem;">&#128207;â€ž</span>
+          <span id="universal-preview-icon" style="display:flex; align-items:center; color:var(--cyan);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
           <span id="universal-preview-title" style="font-size:0.95rem; font-weight:700; color:#ffffff;">Document Preview</span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">

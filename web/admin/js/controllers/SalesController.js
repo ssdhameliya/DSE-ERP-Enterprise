@@ -3948,6 +3948,13 @@ window.SalesController = {
         const elInvNo = document.getElementById('drawer-inv-no');
         if (elInvNo) elInvNo.innerText = s.invoiceNo || invoiceNo;
 
+        const elInvMeta = document.getElementById('drawer-inv-meta');
+        if (elInvMeta) {
+          const dateStr = window.FormatUtil.formatDate(s.invoiceDate || s.date);
+          const timeStr = s.createdAt ? new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          elInvMeta.innerText = `Issued on ${dateStr}${timeStr ? ' • ' + timeStr : ''}`;
+        }
+
         const elInvDate = document.getElementById('drawer-inv-date');
         if (elInvDate) elInvDate.innerText = window.FormatUtil.formatDate(s.invoiceDate);
 
@@ -3967,14 +3974,26 @@ window.SalesController = {
         const elStatus = document.getElementById('drawer-inv-status');
         if (elStatus) {
           elStatus.innerText = docSt;
-          elStatus.className = `badge ${docSt === 'APPROVED' ? 'badge-paid' : (docSt === 'PENDING APPROVAL' ? 'badge-pending' : 'badge-danger')}`;
+          elStatus.className = `status-pill ${docSt === 'APPROVED' ? 'pill-success' : (docSt === 'PENDING APPROVAL' ? 'pill-warning' : 'pill-danger')}`;
         }
 
         const elPayStatus = document.getElementById('drawer-inv-pay-status');
         if (elPayStatus) {
           const paySt = (s.paymentStatus || 'UNPAID').toUpperCase();
           elPayStatus.innerText = paySt;
-          elPayStatus.className = `badge ${paySt === 'PAID' ? 'badge-paid' : (paySt === 'PARTIAL' ? 'badge-pending' : 'badge-unpaid')}`;
+          elPayStatus.className = `status-pill ${paySt === 'PAID' ? 'pill-success' : (paySt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}`;
+        }
+
+        const elRetStatus = document.getElementById('drawer-inv-return-status');
+        if (elRetStatus) {
+          const retSt = (s.returnStatus || '').toUpperCase().replace(/_/g, ' ');
+          if (retSt && retSt !== 'N/A') {
+            elRetStatus.innerText = retSt;
+            elRetStatus.style.display = 'inline-block';
+            elRetStatus.className = `status-pill ${retSt.includes('FULLY') ? 'pill-success' : 'pill-warning'}`;
+          } else {
+            elRetStatus.style.display = 'none';
+          }
         }
 
         const elCustName = document.getElementById('drawer-cust-name');
@@ -3993,16 +4012,37 @@ window.SalesController = {
         if (elCustAddr) elCustAddr.innerText = cust.address || s.billingAddress || '-';
 
         const elTransp = document.getElementById('drawer-transporter');
-        if (elTransp) elTransp.innerText = s.transporter || 'Self / By Hand';
+        if (elTransp) elTransp.innerText = s.transporter || 'Direct / None';
 
         const elVehicle = document.getElementById('drawer-vehicle');
-        if (elVehicle) elVehicle.innerText = s.vehicleNumber || '-';
+        if (elVehicle) elVehicle.innerText = s.vehicleNumber || '—';
 
         const elDoor = document.getElementById('drawer-door-delivery');
         if (elDoor) elDoor.innerText = s.doorDelivery || 'Standard Delivery';
 
         const elDeliveryAddr = document.getElementById('drawer-delivery-address');
         if (elDeliveryAddr) elDeliveryAddr.innerText = s.deliveryAddress || s.billingAddress || cust.address || '-';
+
+        const elGstType = document.getElementById('drawer-gst-type');
+        if (elGstType) elGstType.innerText = s.gstType || 'Standard GST';
+
+        const elPerson = document.getElementById('drawer-contact-person');
+        if (elPerson) elPerson.innerText = s.contactPerson || '—';
+
+        const elPersonMobile = document.getElementById('drawer-contact-mobile');
+        if (elPersonMobile) elPersonMobile.innerText = s.contactPersonMobile || cust.phone || '—';
+
+        const elTransNotes = document.getElementById('drawer-transporter-notes');
+        if (elTransNotes) elTransNotes.innerText = s.transporter || '—';
+
+        const elVehNotes = document.getElementById('drawer-vehicle-notes');
+        if (elVehNotes) elVehNotes.innerText = s.vehicleNumber || '—';
+
+        const elSalesperson = document.getElementById('drawer-salesperson');
+        if (elSalesperson) elSalesperson.innerText = s.salesperson || s.agentName || '—';
+
+        const elRemarks = document.getElementById('drawer-remarks');
+        if (elRemarks) elRemarks.innerText = s.remarks || s.notes || 'No special remarks recorded.';
 
         const taxable = s.subtotal != null ? s.subtotal : (s.taxableAmount || 0);
         const elTaxable = document.getElementById('drawer-taxable-amt');
@@ -4016,6 +4056,12 @@ window.SalesController = {
 
         const elGrand = document.getElementById('drawer-grand-total');
         if (elGrand) elGrand.innerText = window.FormatUtil.formatRupees(grandTotal);
+
+        const elSummaryGst = document.getElementById('drawer-summary-gst');
+        if (elSummaryGst) elSummaryGst.innerText = window.FormatUtil.formatRupees(gstAmount);
+
+        const elSummaryGrand = document.getElementById('drawer-summary-grand');
+        if (elSummaryGrand) elSummaryGrand.innerText = window.FormatUtil.formatRupees(grandTotal);
 
         const elPaid = document.getElementById('drawer-paid-amt');
         if (elPaid) elPaid.innerText = window.FormatUtil.formatRupees(paid);
@@ -4032,7 +4078,7 @@ window.SalesController = {
         const tbody = document.getElementById('drawer-items-tbody');
         const lines = s.lines || [];
         const countBadge = document.getElementById('drawer-items-count-badge');
-        if (countBadge) countBadge.innerText = `${lines.length} Items`;
+        if (countBadge) countBadge.innerText = `${lines.length}`;
 
         if (tbody) {
           if (lines.length === 0) {
@@ -4043,11 +4089,11 @@ window.SalesController = {
                 <td style="color: var(--text-dim);">${idx + 1}</td>
                 <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
                 <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
-                <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+                <td style="text-align: right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
                 <td>${l.itemUnit || l.unit || 'PCS'}</td>
-                <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
-                <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
-                <td>${l.gstPercent || l.taxRate || 18}%</td>
+                <td style="text-align: right;">${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+                <td style="text-align: right;">${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+                <td style="text-align: right;">${l.gstPercent || l.taxRate || 18}%</td>
                 <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
               </tr>
             `).join('');
@@ -4062,7 +4108,7 @@ window.SalesController = {
 
         const isDocPaid = (pending <= 0.009) || isPaid;
         const btnSalePayTab = document.getElementById('drawer-sale-btn-record-payment-tab');
-        const btnSalePayFooter = document.getElementById('drawer-sale-btn-record-payment');
+        const btnSalePayFooter = document.getElementById('dock-sale-payment');
         [btnSalePayTab, btnSalePayFooter].forEach(btn => {
           if (btn) {
             btn.disabled = isDocPaid;
@@ -4078,7 +4124,7 @@ window.SalesController = {
           }
         });
 
-        this.switchDrawerTab('summary');
+        this.switchDrawerTab('items');
         modalDrawer.classList.add('open');
         if (overlay) overlay.classList.add('open');
       }
@@ -4091,7 +4137,7 @@ window.SalesController = {
             const tbody = document.getElementById('drawer-items-tbody');
             const lines = fullSale.lines || [];
             const countBadge = document.getElementById('drawer-items-count-badge');
-            if (countBadge) countBadge.innerText = `${lines.length} Items`;
+            if (countBadge) countBadge.innerText = `${lines.length}`;
             if (tbody) {
               if (lines.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No line item records.</td></tr>`;
@@ -4101,11 +4147,11 @@ window.SalesController = {
                     <td style="color: var(--text-dim);">${idx + 1}</td>
                     <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
                     <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
-                    <td>${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+                    <td style="text-align: right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
                     <td>${l.itemUnit || l.unit || 'PCS'}</td>
-                    <td>${window.FormatUtil.formatRupees(l.rate || 0)}</td>
-                    <td>${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
-                    <td>${l.gstPercent || l.taxRate || 18}%</td>
+                    <td style="text-align: right;">${window.FormatUtil.formatRupees(l.rate || 0)}</td>
+                    <td style="text-align: right;">${window.FormatUtil.formatRupees(l.taxableAmount || (l.quantity * l.rate) || 0)}</td>
+                    <td style="text-align: right;">${l.gstPercent || l.taxRate || 18}%</td>
                     <td style="font-weight: 700; text-align: right;">${window.FormatUtil.formatRupees(l.totalAmount || l.lineTotal || 0)}</td>
                   </tr>
                 `).join('');
@@ -4120,8 +4166,18 @@ window.SalesController = {
     }
   },
 
+  copyInvoiceNo() {
+    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) || this.selectedDrawerInvoiceNo;
+    if (!invNo) return;
+    navigator.clipboard.writeText(invNo).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Invoice #${invNo} copied to clipboard`);
+    }).catch(() => {
+      if (window.AppDialogService) window.AppDialogService.showToast(invNo, 'info');
+    });
+  },
+
   switchDrawerTab(tabName) {
-    const tabs = ['summary', 'items', 'payments', 'audit', 'docs'];
+    const tabs = ['items', 'payments', 'attachments', 'transport'];
     tabs.forEach(t => {
       const btn = document.getElementById(`tab-btn-sale-${t}`);
       const pane = document.getElementById(`pane-sale-${t}`);
@@ -4131,9 +4187,32 @@ window.SalesController = {
 
     if (tabName === 'payments' && this.currentDrawerSale) {
       this.loadDrawerPayments(this.currentDrawerSale);
-    } else if (tabName === 'audit' && this.currentDrawerSale) {
-      this.loadDrawerAudit(this.currentDrawerSale);
+    } else if (tabName === 'attachments' && this.currentDrawerSale) {
+      this.loadDrawerAttachments(this.currentDrawerSale);
     }
+  },
+
+  loadDrawerAttachments(sale) {
+    const listEl = document.getElementById('drawer-sale-attachments-list');
+    if (!listEl) return;
+    const att = sale && (sale.attachmentPath || sale.attachment);
+    if (!att) {
+      listEl.innerHTML = `<div style="color: var(--text-dim); font-size: 0.82rem;">No order attachments or payment proofs recorded.</div>`;
+      return;
+    }
+    const fname = typeof att === 'string' ? att.split('/').pop().split('\\').pop() : 'Attachment';
+    listEl.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--cyan);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <span style="font-weight:600; font-size:0.84rem;">${fname}</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-secondary btn-sm" onclick="window.SalesController.previewCurrentDrawerAttachment()">Preview</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.SalesController.downloadCurrentDrawerAttachment()">Download</button>
+        </div>
+      </div>
+    `;
   },
 
   async loadDrawerPayments(sale) {
