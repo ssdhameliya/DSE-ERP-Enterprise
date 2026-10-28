@@ -671,10 +671,27 @@ window.SalesController = {
     return { eligible: true };
   },
 
-  createSalesReturn(invNo) {
-    const targetInv = invNo || (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) || this.selectedDrawerInvoiceNo;
-    const sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === targetInv) || this.currentDrawerSale;
-    this.closeInvoiceDrawer();
+  resolveCurrentInvoiceNo() {
+    return (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
+           (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText.trim()) ||
+           (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText.trim()) ||
+           this.selectedDrawerInvoiceNo ||
+           this.selectedInvoiceNo;
+  },
+
+  resolveCurrentSale(invNo) {
+    if (this.currentDrawerSale && (this.currentDrawerSale.invoiceNo === invNo || !invNo)) {
+      return this.currentDrawerSale;
+    }
+    if (invNo && invNo !== '-') {
+      return (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
+    }
+    return null;
+  },
+
+  async createSalesReturn(invNo) {
+    const targetInv = invNo || this.resolveCurrentInvoiceNo();
+    const sale = this.resolveCurrentSale(targetInv);
     if (sale) {
       const check = this.isReturnEligible(sale);
       if (!check.eligible) {
@@ -686,23 +703,32 @@ window.SalesController = {
         return;
       }
     }
-    if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
-      if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
-      window.ReturnsController.openCreateReturnModal(invNo, 'SALES RETURN');
-    } else {
-      if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
-        window.AppDialogService.openModal('modal-create-return');
+    this.closeInvoiceDrawer();
+    try {
+      if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
+        if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
+        await window.ReturnsController.openCreateReturnModal(targetInv, 'SALES RETURN');
       } else {
-        const modal = document.getElementById('modal-create-return');
-        if (modal) {
-          modal.style.display = 'flex';
-          modal.classList.add('active');
+        if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
+          window.AppDialogService.openModal('modal-create-return');
+        } else {
+          const modal = document.getElementById('modal-create-return');
+          if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+          }
         }
+        const inp = document.getElementById('cr-invoice-input');
+        if (inp) inp.value = targetInv || '';
+        const crType = document.getElementById('cr-type');
+        if (crType) crType.value = 'SALES RETURN';
       }
-      const inp = document.getElementById('cr-invoice-input');
-      if (inp) inp.value = targetInv || '';
-      const crType = document.getElementById('cr-type');
-      if (crType) crType.value = 'SALES RETURN';
+    } catch (e) {
+      if (window.AppDialogService && window.AppDialogService.showToast) {
+        window.AppDialogService.showToast('Could not initialize return: ' + e.message, 'error');
+      } else {
+        alert('Could not initialize return: ' + e.message);
+      }
     }
   },
 
@@ -3605,38 +3631,8 @@ window.SalesController = {
   },
 
   // =========================================================================
-  // 16. SALES RETURN PRELOADER (IN-PLACE MODAL PARITY)
+  // 16. SALES RETURN PRELOADER (DELEGATED TO PRIMARY createSalesReturn)
   // =========================================================================
-  async createSalesReturn(invoiceNo) {
-    const targetInv = invoiceNo || (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) || this.selectedDrawerInvoiceNo;
-    this.closeInvoiceDrawer();
-    try {
-      if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
-        if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
-        await window.ReturnsController.openCreateReturnModal(targetInv, 'SALES RETURN');
-      } else {
-        if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
-          window.AppDialogService.openModal('modal-create-return');
-        } else {
-          const modal = document.getElementById('modal-create-return');
-          if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.add('active');
-          }
-        }
-        const inp = document.getElementById('cr-invoice-input');
-        if (inp) inp.value = targetInv || '';
-        const crType = document.getElementById('cr-type');
-        if (crType) crType.value = 'SALES RETURN';
-      }
-    } catch (e) {
-      if (window.AppDialogService && window.AppDialogService.showToast) {
-        window.AppDialogService.showToast('Could not initialize return: ' + e.message, 'error');
-      } else {
-        alert('Could not initialize return: ' + e.message);
-      }
-    }
-  },
 
   // =========================================================================
   // 17. DUPLICATE SALE (SERVER ENDPOINT PARITY)
@@ -4286,12 +4282,11 @@ window.SalesController = {
   },
 
   auditCurrentInvoice() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
-    const id = (this.currentDrawerSale && this.currentDrawerSale.id) || null;
+    const invNo = this.resolveCurrentInvoiceNo();
+    const sale = this.resolveCurrentSale(invNo);
+    const id = (sale && sale.id) || (this.currentDrawerSale && this.currentDrawerSale.id) || null;
     this.closeInvoiceDrawer();
-    if (!invNo || invNo === '-') {
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }
@@ -4441,11 +4436,9 @@ window.SalesController = {
   },
 
   openEmailForCurrentDrawer() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
+    const invNo = this.resolveCurrentInvoiceNo();
     this.closeInvoiceDrawer();
-    if (!invNo || invNo === '-') {
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }
@@ -4453,14 +4446,12 @@ window.SalesController = {
   },
 
   async editCurrentDrawerSale() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
-    if (!invNo || invNo === '-') {
+    const invNo = this.resolveCurrentInvoiceNo();
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }
-    let sale = this.currentDrawerSale;
+    let sale = this.resolveCurrentSale(invNo);
     if (!sale || !sale.lines || sale.lines.length === 0) {
       try {
         sale = await window.OperationsService.getSaleByInvoice(invNo);
@@ -4477,16 +4468,13 @@ window.SalesController = {
   },
 
   async recordPaymentForCurrentDrawer() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
+    const invNo = this.resolveCurrentInvoiceNo();
     if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }
 
-    let sale = this.currentDrawerSale;
+    let sale = this.resolveCurrentSale(invNo);
     if (!sale || !sale.id) {
       try {
         sale = await window.OperationsService.getSaleByInvoice(invNo);
@@ -4527,10 +4515,8 @@ window.SalesController = {
   },
 
   async exportCurrentDrawerExcel() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
-    if (!invNo || invNo === '-') {
+    const invNo = this.resolveCurrentInvoiceNo();
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }
@@ -4538,12 +4524,10 @@ window.SalesController = {
   },
 
   async dispatchBarcodeForCurrentDrawer() {
-    const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-                  (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
-                  this.selectedDrawerInvoiceNo;
-    let sale = this.currentDrawerSale;
+    const invNo = this.resolveCurrentInvoiceNo();
+    let sale = this.resolveCurrentSale(invNo);
     this.closeInvoiceDrawer();
-    if (!invNo || invNo === '-') {
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
       window.AppDialogService.showToast('Please select an invoice first', 'warning');
       return;
     }

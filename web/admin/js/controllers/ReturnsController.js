@@ -58,15 +58,28 @@ window.ReturnsController = (function () {
   }
 
   function initDateFilters(isSales) {
-    const fromEl = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from');
-    const toEl = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to');
-    if (fromEl && !fromEl.value) {
-      const now = new Date();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-      fromEl.value = formatLocalDate(sixMonthsAgo);
+    const fromId = isSales ? 'sr-filter-from' : 'pr-filter-from';
+    const toId = isSales ? 'sr-filter-to' : 'pr-filter-to';
+    const fromEl = document.getElementById(fromId);
+    const toEl = document.getElementById(toId);
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    const fromVal = formatLocalDate(sixMonthsAgo);
+    const toVal = formatLocalDate(now);
+
+    if (fromEl) {
+      if (!fromEl.value) fromEl.value = fromVal;
+      if (window.DatePickerFormatter) {
+        window.DatePickerFormatter.attach(fromEl);
+        window.DatePickerFormatter.syncDisplay(fromEl);
+      }
     }
-    if (toEl && !toEl.value) {
-      toEl.value = formatLocalDate(new Date());
+    if (toEl) {
+      if (!toEl.value) toEl.value = toVal;
+      if (window.DatePickerFormatter) {
+        window.DatePickerFormatter.attach(toEl);
+        window.DatePickerFormatter.syncDisplay(toEl);
+      }
     }
   }
 
@@ -76,8 +89,13 @@ window.ReturnsController = (function () {
     currentPage = page;
     const isSales = currentType === 'SALES RETURN';
     initDateFilters(isSales);
+
     const containerId = isSales ? 'tbl-sales-returns-body' : 'tbl-purchase-returns-body';
-    const tbody = document.getElementById(containerId);
+    let tbody = document.getElementById(containerId);
+    if (!tbody) {
+      await new Promise(r => setTimeout(r, 60));
+      tbody = document.getElementById(containerId);
+    }
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="loading-spinner"></span> Loading ${isSales ? 'sales' : 'purchase'} returns from database...</td></tr>`;
     }
@@ -85,8 +103,16 @@ window.ReturnsController = (function () {
     const q = document.getElementById(isSales ? 'sr-filter-search' : 'pr-filter-search')?.value?.trim() || '';
     const party = document.getElementById(isSales ? 'sret-filter-customer' : 'pr-filter-supplier')?.value || '';
     const status = document.getElementById(isSales ? 'sr-filter-status' : 'pr-filter-status')?.value || '';
-    const from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
-    const to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
+    let from = document.getElementById(isSales ? 'sr-filter-from' : 'pr-filter-from')?.value || '';
+    let to = document.getElementById(isSales ? 'sr-filter-to' : 'pr-filter-to')?.value || '';
+
+    if (!from) {
+      const now = new Date();
+      from = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()));
+    }
+    if (!to) {
+      to = formatLocalDate(new Date());
+    }
 
     try {
       const data = await window.OperationsService.getReturnsPage(currentType, currentPage, pageSize, q, party, status, from, to);
@@ -875,10 +901,17 @@ window.ReturnsController = (function () {
     const isSales = currentType === 'SALES RETURN';
     document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
     document.getElementById('cr-type').value = currentType;
-    document.getElementById('cr-return-date').value = formatLocalDate(new Date());
+    const retDateEl = document.getElementById('cr-return-date');
+    if (retDateEl) {
+      retDateEl.value = formatLocalDate(new Date());
+      if (window.DatePickerFormatter) {
+        window.DatePickerFormatter.attach(retDateEl);
+        window.DatePickerFormatter.syncDisplay(retDateEl);
+      }
+    }
     const textInput = document.getElementById('cr-invoice-input');
     if (textInput) textInput.value = prefillInvoice || '';
-    document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
+    document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
     document.getElementById('cr-estimated-total').innerText = '₹ 0.00';
     document.getElementById('cr-selected-count').innerText = '0 items selected';
 
@@ -886,6 +919,14 @@ window.ReturnsController = (function () {
     const select = document.getElementById('cr-invoice-select');
     if (select) {
       select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option>`;
+      if (prefillInvoice) {
+        const opt = document.createElement('option');
+        opt.value = prefillInvoice;
+        opt.textContent = `${prefillInvoice} (Selected)`;
+        opt.selected = true;
+        select.appendChild(opt);
+        select.value = prefillInvoice;
+      }
       try {
         let orders = [];
         if (isSales && window.OperationsService && window.OperationsService.getSalesPage) {
@@ -895,6 +936,8 @@ window.ReturnsController = (function () {
           const res = await window.OperationsService.getPurchasesPage(0, 100);
           orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
         }
+        select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option>`;
+        let foundPrefill = false;
         orders.forEach(o => {
           const invNo = o.invoiceNo || o.billNo || (isSales ? `INV-${o.id}` : `BILL-${o.id}`);
           const party = (o.customer && o.customer.name) || (o.supplier && o.supplier.name) || o.partyName || o.customerName || o.supplierName || 'Party';
@@ -902,9 +945,20 @@ window.ReturnsController = (function () {
           const opt = document.createElement('option');
           opt.value = invNo;
           opt.textContent = `${invNo} — ${party} (${amt})`;
-          if (prefillInvoice && invNo === prefillInvoice) opt.selected = true;
+          if (prefillInvoice && invNo === prefillInvoice) {
+            opt.selected = true;
+            foundPrefill = true;
+          }
           select.appendChild(opt);
         });
+        if (prefillInvoice && !foundPrefill) {
+          const opt = document.createElement('option');
+          opt.value = prefillInvoice;
+          opt.textContent = `${prefillInvoice} (Selected)`;
+          opt.selected = true;
+          select.appendChild(opt);
+        }
+        if (prefillInvoice) select.value = prefillInvoice;
       } catch (err) {
         console.warn('Failed to load return orders:', err);
       }
@@ -935,7 +989,7 @@ window.ReturnsController = (function () {
   }
 
   async function loadReturnableLines(invoiceNo = null) {
-    const inv = invoiceNo || document.getElementById('cr-invoice-input')?.value?.trim();
+    const inv = invoiceNo || document.getElementById('cr-invoice-select')?.value?.trim() || document.getElementById('cr-invoice-input')?.value?.trim();
     if (!inv) {
       alert('Please enter or select an invoice number.');
       return;
@@ -950,25 +1004,36 @@ window.ReturnsController = (function () {
     try {
       // 1. Resolve exact source party ID so that backend validation (d.partyId() == expectedParty) succeeds
       currentInvoicePartyId = 0;
+      let cachedDoc = null;
       if (isSales) {
-        let sale = null;
-        try { sale = await window.OperationsService.getSaleByInvoice(inv); } catch (_) { }
-        if (!sale && window.SalesController) {
-          const sList = window.SalesController.salesCache || window.SalesController.sales || [];
-          sale = sList.find(s => (s.invoiceNo || s.number) === inv);
+        if (window.SalesController) {
+          if (window.SalesController.currentDrawerSale && (window.SalesController.currentDrawerSale.invoiceNo === inv || window.SalesController.currentDrawerSale.number === inv)) {
+            cachedDoc = window.SalesController.currentDrawerSale;
+          } else {
+            const sList = window.SalesController.salesCache || window.SalesController.sales || [];
+            cachedDoc = sList.find(s => (s.invoiceNo || s.number) === inv);
+          }
         }
-        if (sale) {
-          currentInvoicePartyId = (sale.customer && sale.customer.id) || sale.customerId || 0;
+        if (!cachedDoc) {
+          try { cachedDoc = await window.OperationsService.getSaleByInvoice(inv); } catch (_) { }
+        }
+        if (cachedDoc) {
+          currentInvoicePartyId = (cachedDoc.customer && cachedDoc.customer.id) || cachedDoc.customerId || 0;
         }
       } else {
-        let pur = null;
-        try { pur = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) { }
-        if (!pur && window.PurchaseController) {
-          const pList = (window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache()) || window.PurchaseController.purchases || [];
-          pur = pList.find(p => (p.invoiceNo || p.billNo) === inv);
+        if (window.PurchaseController) {
+          if (window.PurchaseController.currentDrawerPurchase && (window.PurchaseController.currentDrawerPurchase.invoiceNo === inv || window.PurchaseController.currentDrawerPurchase.billNo === inv)) {
+            cachedDoc = window.PurchaseController.currentDrawerPurchase;
+          } else {
+            const pList = (window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache()) || window.PurchaseController.purchases || [];
+            cachedDoc = pList.find(p => (p.invoiceNo || p.billNo) === inv);
+          }
         }
-        if (pur) {
-          currentInvoicePartyId = (pur.supplier && pur.supplier.id) || pur.supplierId || 0;
+        if (!cachedDoc) {
+          try { cachedDoc = await window.OperationsService.getPurchaseByInvoice(inv); } catch (_) { }
+        }
+        if (cachedDoc) {
+          currentInvoicePartyId = (cachedDoc.supplier && cachedDoc.supplier.id) || cachedDoc.supplierId || 0;
         }
       }
 
@@ -982,7 +1047,7 @@ window.ReturnsController = (function () {
       // Fallback: If returnable lines endpoint returned empty or failed, extract lines from source invoice
       if (!lines || lines.length === 0) {
         if (isSales) {
-          const sale = await window.OperationsService.getSaleByInvoice(inv).catch(() => null);
+          const sale = cachedDoc || await window.OperationsService.getSaleByInvoice(inv).catch(() => null);
           if (sale && sale.lines) {
             lines = sale.lines.map((l, i) => ({
               sourceLineId: l.id || i + 1,

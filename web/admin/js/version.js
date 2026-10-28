@@ -2,20 +2,20 @@
  * DSE ERP Web Admin Studio - Centralized Runtime Version Registry
  * Automatically synchronized with version.json and Desktop release revision.
  */
-window.DSE_VERSION = {
-  version: "11.0.8.04",
+window.AppVersion = window.DSE_VERSION = {
+  version: "11.0.8.05",
   desktopVersion: "11.0.8",
-  webBuild: 4,
-  webVersion: "11.0.8.04",
-  tag: "web-v11.0.8.04",
-  releaseDate: "2026-10-29T00:20:00+05:30",
+  webBuild: 5,
+  webVersion: "11.0.8.05",
+  tag: "web-v11.0.8.05",
+  releaseDate: "2026-10-29T01:30:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.8.04 Enterprise Web Release: Eliminate Screen Freezes, Fix Audit Trail & Return Register, Wire All Dead Buttons, and Solidify Image Uploads",
+  summary: "v11.0.8.05 Enterprise Web Release: Fix Sales Return Live Register, Create Return Line Preloading, and Audit Trail Drawer Resolution",
   highlights: [
-    "1. Audit Trail & Invoice Action Fix: Extract invoice details prior to drawer closure, resolving 'Please select an invoice first' warnings on audit history, email, and barcode dispatch.",
-    "2. Returns Register Data & Freeze Elimination: Fixed backend CTE query to match both 'SALE RETURN' and 'SALES RETURN'; converted create return modal to AppDialogService with automatic backdrop suppression, resolving screen freezing.",
-    "3. Zero Dead Buttons (855/855 Wired): Implemented missing Party 360 sub-tab switches and client/vendor quick notes, eliminating all unwired handlers across the application.",
-    "4. Settings Studio Image Upload Parity: Ensured extensionless images receive guaranteed image MIME blobs and persistent data URLs so uploaded banners display immediately without rendering blanks."
+    "1. Returns Register Auto-Loading & Live Parity: Replaced static placeholder with live data rendering, dynamic 6-month date range, automatic DatePickerFormatter binding on view mounting, and instant line item preloading.",
+    "2. Create Return Modal Pre-fill & Line Resolution: Passed resolved invoice number from drawer actions, added immediate pre-selection in dropdown before network calls, and enabled instant fallback to in-memory invoice lines.",
+    "3. Authoritative Audit Trail & Action Robustness: Enhanced drawer-inv-no DOM resolution in Sales & Purchase inspection drawers so audit timeline, email, payment, barcode, and return actions never throw 'Please select an invoice first'.",
+    "4. ViewLoader Dynamic Cache-Busting: Switched cache-busting to dynamic window.DSE_VERSION.webVersion and exposed window.AppVersion globally to eliminate stale view caching."
   ]
 };
 

@@ -903,8 +903,23 @@ window.PurchaseController = (function() {
   }
 
   function auditCurrentPurchase() {
-    if (!currentDrawerPurchase) return;
-    window.AppDialogService.showActivityTimeline('PURCHASE', currentDrawerPurchase.id, currentDrawerPurchase.invoiceNo);
+    const invNo = (currentDrawerPurchase && currentDrawerPurchase.invoiceNo) || 
+                  (document.getElementById('drawer-pur-no') && document.getElementById('drawer-pur-no').innerText.trim()) || 
+                  (document.getElementById('pd-invoice-no') && document.getElementById('pd-invoice-no').innerText.trim()) || 
+                  selectedDrawerBillNo;
+    let pur = currentDrawerPurchase;
+    if (!pur && invNo && invNo !== '-') {
+      pur = purchases.find(p => p.invoiceNo === invNo || p.billNo === invNo);
+    }
+    const id = (pur && pur.id) || (currentDrawerPurchase && currentDrawerPurchase.id) || null;
+    closePurchaseDrawer();
+    if (!invNo || invNo === '-' || invNo === 'Loading next sequence...') {
+      if (window.AppDialogService) window.AppDialogService.toastWarning('Please select a purchase bill first');
+      return;
+    }
+    if (window.AppDialogService && typeof window.AppDialogService.showActivityTimeline === 'function') {
+      window.AppDialogService.showActivityTimeline('PURCHASE', id, invNo);
+    }
   }
 
   async function printPurchaseBill(invoiceNo) {
@@ -1480,8 +1495,13 @@ window.PurchaseController = (function() {
   }
 
   function openReturnPrompt(invoiceNo) {
-    closePurchaseDrawer();
-    const p = purchases.find(x => (x.invoiceNo || x.billNo || x.number) === invoiceNo);
+    const targetInv = invoiceNo || (currentDrawerPurchase && (currentDrawerPurchase.invoiceNo || currentDrawerPurchase.billNo)) || 
+                      (document.getElementById('drawer-pur-no') && document.getElementById('drawer-pur-no').innerText.trim()) || 
+                      (document.getElementById('pd-invoice-no') && document.getElementById('pd-invoice-no').innerText.trim()) || 
+                      selectedDrawerBillNo;
+    const p = (currentDrawerPurchase && (currentDrawerPurchase.invoiceNo === targetInv || currentDrawerPurchase.billNo === targetInv))
+              ? currentDrawerPurchase
+              : purchases.find(x => (x.invoiceNo || x.billNo || x.number) === targetInv);
     if (p) {
       const check = isReturnEligible(p);
       if (!check.eligible) {
@@ -1493,18 +1513,24 @@ window.PurchaseController = (function() {
         return;
       }
     }
+    closePurchaseDrawer();
     if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
       if (window.ReturnsController.setType) window.ReturnsController.setType('PURCHASE RETURN');
-      window.ReturnsController.openCreateReturnModal(invoiceNo, 'PURCHASE RETURN');
+      window.ReturnsController.openCreateReturnModal(targetInv, 'PURCHASE RETURN');
     } else {
-      const modal = document.getElementById('modal-create-return');
-      if (modal) {
-        modal.style.display = 'flex';
-        const inp = document.getElementById('cr-invoice-input');
-        if (inp) inp.value = invoiceNo || '';
-        const crType = document.getElementById('cr-type');
-        if (crType) crType.value = 'PURCHASE RETURN';
+      if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
+        window.AppDialogService.openModal('modal-create-return');
+      } else {
+        const modal = document.getElementById('modal-create-return');
+        if (modal) {
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+        }
       }
+      const inp = document.getElementById('cr-invoice-input');
+      if (inp) inp.value = targetInv || '';
+      const crType = document.getElementById('cr-type');
+      if (crType) crType.value = 'PURCHASE RETURN';
     }
   }
 

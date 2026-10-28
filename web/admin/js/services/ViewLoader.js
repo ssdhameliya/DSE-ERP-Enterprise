@@ -32,7 +32,7 @@ window.ViewLoader = (function() {
 
       // Asynchronously fetch dedicated view HTML file
       try {
-        const version = (window.AppVersion && window.AppVersion.webVersion) || '10.0.41.09';
+        const version = (window.DSE_VERSION && window.DSE_VERSION.webVersion) || (window.AppVersion && window.AppVersion.webVersion) || '11.0.8.05';
         const res = await fetch(`./views/${cleanName}.html?v=${version}`);
         if (res.ok) {
           const html = await res.text();
@@ -81,6 +81,9 @@ window.ViewLoader = (function() {
 
       if (target) {
         delete target.dataset.stub;
+        if (window.DatePickerFormatter && typeof window.DatePickerFormatter.attachAll === 'function') {
+          window.DatePickerFormatter.attachAll(target);
+        }
         if (window.GlobalUiEnhancer) {
           window.GlobalUiEnhancer.enhance(target);
         }
