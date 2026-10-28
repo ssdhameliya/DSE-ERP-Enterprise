@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Jasvi Industries ERP - SettingsController
  * Full 1:1 Desktop FXML Parity for all 7 Enterprise Shared Settings:
  * 1. COMPANY: Legal Profile, Tax IDs, Factory Addresses, Application Branding
@@ -200,6 +200,7 @@ window.SettingsController = (function() {
       const file = fileInput.files[0];
       try {
         const arrayBuffer = await file.arrayBuffer();
+        fileInput.value = '';
         const token = getAuthToken();
         const headers = {
           'Content-Type': 'application/octet-stream',
@@ -307,6 +308,7 @@ window.SettingsController = (function() {
       const file = fileInput.files[0];
       try {
         const arrayBuffer = await file.arrayBuffer();
+        fileInput.value = '';
         const token = getAuthToken();
         const headers = {
           'Content-Type': 'application/octet-stream',

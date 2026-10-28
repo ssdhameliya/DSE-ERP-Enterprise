@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Jasvi Industries ERP - PurchaseController
  * Desktop Parity Implementation for PurchaseListController.java & PurchaseController.java
  * Handles Purchase Register, Inward Procurement Bills, Dynamic Tax Math, and Creation Workspace
@@ -1443,6 +1443,7 @@ window.PurchaseController = (function() {
   }
 
   async function sendEmailPrompt(invoiceNo, id) {
+    closePurchaseDrawer();
     let p = purchases.find(x => x.invoiceNo === invoiceNo);
     if (!p) {
       try {
@@ -1479,6 +1480,7 @@ window.PurchaseController = (function() {
   }
 
   function openReturnPrompt(invoiceNo) {
+    closePurchaseDrawer();
     const p = purchases.find(x => (x.invoiceNo || x.billNo || x.number) === invoiceNo);
     if (p) {
       const check = isReturnEligible(p);

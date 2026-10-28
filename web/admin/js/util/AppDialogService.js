@@ -110,7 +110,7 @@ window.AppDialogService = (function() {
       window._appDialogKeyboardBound = true;
       window.addEventListener('keydown', (e) => {
         const dialog = document.getElementById('modal-app-dialog');
-        if (dialog && (dialog.style.display === 'flex' || dialog.classList.contains('active')) && activeDialogResolver) {
+        if (dialog && (dialog.style.display === 'flex' || dialog.classList.contains('active')) && typeof activeDialogResolver === 'function') {
           if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
@@ -206,7 +206,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-primary';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -291,7 +291,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-delete';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       // Focus safe action by default to prevent accidental deletion on Enter key
@@ -349,7 +349,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-warning';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -420,7 +420,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-primary';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -488,7 +488,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-primary';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => {
@@ -540,7 +540,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-delete';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -601,7 +601,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-save';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -662,7 +662,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-action-3d role-warning';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -718,7 +718,7 @@ window.AppDialogService = (function() {
       btnConfirm.className = 'btn btn-primary';
 
       container.style.display = 'flex';
-      container.style.zIndex = '100020';
+      container.style.zIndex = '100080';
       container.classList.add('active');
 
       setTimeout(() => btnConfirm.focus(), 80);
@@ -776,10 +776,22 @@ window.AppDialogService = (function() {
     openModal(modalId) {
       const modal = document.getElementById(modalId);
       if (!modal) return;
+
+      // 1. Automatically close any open inspection drawers so overlays never collide
+      document.querySelectorAll('.slide-detail-drawer.open, .register-inline-drawer.open, .sales-inline-drawer.open, .side-drawer.open, .erp-global-detail-drawer.open').forEach(drawer => {
+        drawer.classList.remove('open');
+        drawer.style.display = 'none';
+      });
+      const sideOverlay = document.getElementById('side-drawer-overlay');
+      if (sideOverlay) {
+        sideOverlay.classList.remove('open');
+        sideOverlay.style.display = 'none';
+      }
+
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
       modal.style.display = 'flex';
       const isAuthModal = modalId === 'modal-authenticator-setup' || modalId.startsWith('modal-mfa') || document.body.classList.contains('auth-required') || document.documentElement.classList.contains('auth-required');
-      modal.style.zIndex = isAuthModal ? '1000010' : '100010';
+      modal.style.zIndex = isAuthModal ? '1000010' : '100060';
       modal.classList.add('active');
       const firstInput = modal.querySelector('input:not([type=hidden]):not([readonly]), select');
       if (firstInput) setTimeout(() => firstInput.focus(), 80);
@@ -794,7 +806,7 @@ window.AppDialogService = (function() {
     },
 
     closeAllModals() {
-      document.querySelectorAll('.modal-overlay').forEach(m => {
+      document.querySelectorAll('.modal-overlay, .modal, .modal-backdrop').forEach(m => {
         m.style.display = 'none';
         m.classList.remove('active');
       });

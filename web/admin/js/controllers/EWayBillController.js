@@ -377,7 +377,10 @@ window.EWayBillController = {
   },
 
   async generateEInvoicePrompt(invNo) {
-    if (!confirm(`Generate E-Invoice (IRN) for Invoice ${invNo}?`)) return;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      const ok = await window.AppDialogService.confirm('E-Invoice Generation', 'Generate IRN', `Generate E-Invoice (IRN) for Invoice ${invNo}?`, 'Generate IRN', 'Cancel');
+      if (!ok) return;
+    } else if (!confirm(`Generate E-Invoice (IRN) for Invoice ${invNo}?`)) return;
     try {
       let jsonData = null;
       if (window.AccountingService && window.AccountingService.generateEInvoice) {

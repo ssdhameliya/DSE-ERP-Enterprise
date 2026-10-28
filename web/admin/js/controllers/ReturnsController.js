@@ -853,9 +853,18 @@ window.ReturnsController = (function () {
 
   // 4. CREATE RETURN MODAL (DESKTOP ReturnEditorService.java PARITY)
   async function openCreateReturnModal(prefillInvoice = null, typeOverride = null) {
+    if (window.SalesController && typeof window.SalesController.closeInvoiceDrawer === 'function') {
+      window.SalesController.closeInvoiceDrawer();
+    }
+    if (window.PurchaseController && typeof window.PurchaseController.closePurchaseDrawer === 'function') {
+      window.PurchaseController.closePurchaseDrawer();
+    }
+    closeDrawer();
     if (typeOverride) currentType = typeOverride;
     const modal = document.getElementById('modal-create-return');
     if (!modal) return;
+    modal.style.zIndex = '100060';
+    modal.classList.add('active');
 
     const isSales = currentType === 'SALES RETURN';
     document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
@@ -1210,8 +1219,11 @@ window.ReturnsController = (function () {
   let activeRefundDetails = null;
 
   async function openRefundModal(returnNo) {
+    closeDrawer();
     const modal = document.getElementById('modal-return-refund');
     if (!modal) return;
+    modal.style.zIndex = '100060';
+    modal.classList.add('active');
 
     try {
       if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();

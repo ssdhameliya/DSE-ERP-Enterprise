@@ -461,6 +461,7 @@ window.QuotationController = (function () {
 
   // 3. WORKFLOW ACTIONS
   async function convertToSale(id, no, rowVersion) {
+    closeDrawer();
     let confirmed = false;
     const msg = `Convert Quotation ${no} to an active Sales Invoice and update inventory stock?`;
     if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {

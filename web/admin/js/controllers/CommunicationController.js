@@ -175,7 +175,10 @@ window.CommunicationController = (function() {
     const item = communications.find(c => c.id === id);
     if (!item) return;
 
-    if (!confirm(`Resend communication to ${item.recipient} via ${item.channel}?`)) return;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      const ok = await window.AppDialogService.confirm('Resend Communication', 'Confirmation', `Resend communication to ${item.recipient} via ${item.channel}?`, 'Resend', 'Cancel');
+      if (!ok) return;
+    } else if (!confirm(`Resend communication to ${item.recipient} via ${item.channel}?`)) return;
 
     try {
       const payload = {

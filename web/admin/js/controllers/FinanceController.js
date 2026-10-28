@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Jasvi Industries ERP - FinanceController
  * Desktop Parity Implementation for:
  * 1. BankExpense.fxml & BankExpenseController.java (Bank Entry & Expense Entry Registers)
@@ -1456,7 +1456,10 @@ window.FinanceController = {
   async deleteFinanceEntry(id) {
     const v = this.vouchersCache.find(x => x.id === id);
     if (!v) return;
-    if (!confirm(`Are you sure you want to delete ${v.voucherType} entry "${v.voucherNo || id}" of ${this.formatMoney(v.amount)}?`)) return;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      const ok = await window.AppDialogService.confirm('Delete Financial Voucher', 'Confirm Deletion', `Are you sure you want to delete ${v.voucherType} entry "${v.voucherNo || id}" of ${this.formatMoney(v.amount)}?`, 'Delete Voucher', 'Cancel');
+      if (!ok) return;
+    } else if (!confirm(`Are you sure you want to delete ${v.voucherType} entry "${v.voucherNo || id}" of ${this.formatMoney(v.amount)}?`)) return;
 
     try {
       await window.OperationsService.deleteFinance(id, v.rowVersion != null ? v.rowVersion : -1);
@@ -3369,7 +3372,10 @@ window.FinanceController = {
   async sendAgingReminder(partyId, partyName) {
     const isCreditor = this.agingType === 'CREDITORS';
     const actionDesc = isCreditor ? `Schedule payment for supplier ${partyName}?` : `Send automated payment reminder notice to customer ${partyName}?`;
-    if (!confirm(actionDesc)) return;
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      const ok = await window.AppDialogService.confirm(isCreditor ? 'Schedule Payment' : 'Payment Reminder', 'Action Confirmation', actionDesc, 'Proceed', 'Cancel');
+      if (!ok) return;
+    } else if (!confirm(actionDesc)) return;
     try {
       if (window.AccountingService) {
         await window.AccountingService.sendOverdueReminder(partyId, 'WHATSAPP');

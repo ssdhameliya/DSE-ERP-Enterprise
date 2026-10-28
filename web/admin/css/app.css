@@ -681,7 +681,7 @@
     /* MODAL */
     .modal-overlay, .modal, .modal-backdrop {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px); z-index: 100010; display: none; align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(8px); z-index: 100060 !important; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.active, .modal.active, .modal-backdrop.active { display: flex; }
     .modal-card,
@@ -1044,7 +1044,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-      z-index: 100050 !important;
+      z-index: 100020 !important;
       overflow: hidden;
       display: flex !important;
       flex-direction: column !important;
@@ -1066,7 +1066,7 @@
       font-size: 0.84rem !important;
     }
     .side-drawer-overlay {
-      z-index: 100040 !important;
+      z-index: 100015 !important;
     }
     .drawer-tabs-bar {
       display: flex; gap: 4px; padding: 0 16px; background: rgba(10, 18, 34, 0.85);
@@ -2159,7 +2159,7 @@
       border-radius: 14px !important;
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
       overflow-y: auto !important;
-      z-index: 100050 !important;
+      z-index: 100020 !important;
       backdrop-filter: blur(20px);
       transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -2181,7 +2181,7 @@
       opacity: 1 !important;
       pointer-events: auto !important;
       display: block !important;
-      z-index: 100040 !important;
+      z-index: 100015 !important;
     }
     .drawer-header {
       padding: 16px 20px;
@@ -3440,10 +3440,11 @@
     .cell-money-white { color: #ffffff !important; font-weight: 700; }
 
     /* App Dialog Modal (matching Desktop AppDialogRenderer.java) */
-    .app-dialog-overlay {
+    .app-dialog-overlay,
+    #modal-app-dialog {
       position: fixed; inset: 0; background: rgba(4, 9, 20, 0.82);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      z-index: 100020; display: flex; align-items: center; justify-content: center;
+      z-index: 100080 !important; display: flex; align-items: center; justify-content: center;
       padding: 20px; animation: dialogFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes dialogFadeIn {
@@ -5536,7 +5537,7 @@
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
       border-radius: 14px !important;
       box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.15) !important;
-      z-index: 100050 !important;
+      z-index: 100020 !important;
       display: none !important;
       flex-direction: column !important;
       transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;

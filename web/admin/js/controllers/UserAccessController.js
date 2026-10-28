@@ -569,7 +569,8 @@ window.UserAccessController = (function() {
     async toggleLockUser(id, lockState) {
       const u = cachedUsers.find(x => x.id === id);
       const action = lockState ? 'lock' : 'unlock';
-      if (!confirm(`Are you sure you want to ${action} account "${u ? u.username : id}"?`)) return;
+      const ok = await window.AppDialogService.confirm('User Access Control', `${action.toUpperCase()} User Account`, `Are you sure you want to ${action} account "${u ? u.username : id}"?`, action === 'lock' ? 'Lock Account' : 'Unlock Account', 'Cancel');
+      if (!ok) return;
 
       try {
         await window.ReportService.lockUser(id, lockState);
@@ -602,9 +603,8 @@ window.UserAccessController = (function() {
     async resetAuthenticator(id) {
       const u = cachedUsers.find(x => x.id === id);
       if (!u) return;
-      if (!confirm(`Reset Authenticator (2FA) for "${u.username}"?\n\nThe user's old phone will stop working. A new QR code enrollment will be required at the next sign-in.`)) {
-        return;
-      }
+      const ok = await window.AppDialogService.confirm('Security Governance', 'Reset Authenticator 2FA', `Reset Authenticator (2FA) for "${u.username}"?\n\nThe user's old phone will stop working. A new QR code enrollment will be required at the next sign-in.`, 'Reset 2FA', 'Cancel');
+      if (!ok) return;
       try {
         await window.ReportService.resetUserMfa(id);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
@@ -620,7 +620,8 @@ window.UserAccessController = (function() {
         window.AppDialogService.showToast('The primary administrator cannot be deleted.', 'error');
         return;
       }
-      if (!confirm(`Are you sure you want to permanently revoke and delete user "${username}"?`)) return;
+      const ok = await window.AppDialogService.confirm('User Access Control', 'Revoke & Delete User', `Are you sure you want to permanently revoke and delete user "${username}"?`, 'Delete User', 'Cancel');
+      if (!ok) return;
       try {
         await window.ReportService.deleteUser(id);
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
@@ -985,7 +986,8 @@ window.UserAccessController = (function() {
         return;
       }
 
-      if (!confirm(`Approve registration for "${reg.fullName || reg.username}" with role "${finalRole}"?`)) return;
+      const ok = await window.AppDialogService.confirm('Registration Approval', 'Approve User', `Approve registration for "${reg.fullName || reg.username}" with role "${finalRole}"?`, 'Approve', 'Cancel');
+      if (!ok) return;
 
       try {
         await window.ReportService.approveRegistration(reg.id, {
@@ -1087,9 +1089,10 @@ window.UserAccessController = (function() {
       }
     },
 
-    onPermissionRoleChange(role) {
+    async onPermissionRoleChange(role) {
       if (permissionsDirty) {
-        if (!confirm('You have unsaved permission changes. Do you want to discard them and switch role?')) {
+        const ok = await window.AppDialogService.confirm('Unsaved Permissions', 'Discard Changes', 'You have unsaved permission changes. Do you want to discard them and switch role?', 'Discard & Switch', 'Stay on Role');
+        if (!ok) {
           const permRoleEl = document.getElementById('perm-role-select');
           if (permRoleEl && currentPermRole) permRoleEl.value = currentPermRole;
           return;

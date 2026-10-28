@@ -3,18 +3,19 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.8.02",
+  version: "11.0.8.03",
   desktopVersion: "11.0.8",
-  webBuild: 2,
-  webVersion: "11.0.8.02",
-  tag: "web-v11.0.8.02",
-  releaseDate: "2026-10-28T22:35:00+05:30",
+  webBuild: 3,
+  webVersion: "11.0.8.03",
+  tag: "web-v11.0.8.03",
+  releaseDate: "2026-10-28T23:25:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.8.02 Enterprise Web Release: Fix Web Image Uploads, Real-Time Previews & Deletion Authority",
+  summary: "v11.0.8.03 Enterprise Web Release: Resolve Modal Z-Index Hierarchy, Eliminate Screen Freezes, Auto-Tuck Drawers and Re-selection Reset",
   highlights: [
-    "1. Fixed Web Image Binary Uploads: Enforced application/octet-stream content type and JSON accept headers to match Spring ServerResourceController contract.",
-    "2. Fixed Real-Time Image Preview: Added blob: URL protocol resolution support so uploaded images immediately display without being wiped out on load.",
-    "3. Fixed Image Deletion & Token Auth: Resolved dse_access_token Bearer authorization for PUT, GET, and DELETE /api/authority/resources/BUSINESS_ASSET endpoints."
+    "1. Universal Modal Stacking Realignment: Raised action modals to z-index 100060 and dialogs to 100080, lowering inspection windows to 100020, completely eliminating background modal traps.",
+    "2. Auto-Tuck Inspection Drawers: Automatically dismiss floating inspection windows upon initiating Create Return, Record Payment, Send Email, and Barcode actions.",
+    "3. Navigation Backstop Cleanup: NavigationRouter dismisses all active modals and lingering backdrops on route transitions to prevent click-interception freezes.",
+    "4. Image Re-selection & File Input Reset: Auto-cleared file inputs upon selection to ensure continuous image changes and file replacements reliably fire onchange."
   ]
 };
 

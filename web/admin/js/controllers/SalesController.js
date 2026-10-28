@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Jasvi Industries ERP - SalesController
  * Complete Desktop Parity (Desktop App Reference: org.example.controller.SalesController & SalesListController):
  * 1. 14-Column Sales Register Table with 6 Top KPI Summary Cards & Date Filters
@@ -672,6 +672,7 @@ window.SalesController = {
   },
 
   createSalesReturn(invNo) {
+    this.closeInvoiceDrawer();
     const sale = (this.salesCache || []).find(s => (s.invoiceNo || s.number) === invNo);
     if (sale) {
       const check = this.isReturnEligible(sale);
@@ -3602,6 +3603,7 @@ window.SalesController = {
   // 16. SALES RETURN PRELOADER (IN-PLACE MODAL PARITY)
   // =========================================================================
   async createSalesReturn(invoiceNo) {
+    this.closeInvoiceDrawer();
     try {
       if (window.ReturnsController && window.ReturnsController.openCreateReturnModal) {
         if (window.ReturnsController.setType) window.ReturnsController.setType('SALES RETURN');
@@ -4274,6 +4276,7 @@ window.SalesController = {
   },
 
   auditCurrentInvoice() {
+    this.closeInvoiceDrawer();
     const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) || this.selectedDrawerInvoiceNo;
     const id = (this.currentDrawerSale && this.currentDrawerSale.id) || null;
     if (!invNo) {
@@ -4416,6 +4419,7 @@ window.SalesController = {
   },
 
   openEmailForCurrentDrawer() {
+    this.closeInvoiceDrawer();
     const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
                   (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
                   this.selectedDrawerInvoiceNo;
@@ -4512,6 +4516,7 @@ window.SalesController = {
   },
 
   async dispatchBarcodeForCurrentDrawer() {
+    this.closeInvoiceDrawer();
     const invNo = (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
                   (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText) ||
                   this.selectedDrawerInvoiceNo;

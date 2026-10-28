@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Jasvi Industries ERP - NavigationRouter
  * View manager, route dispatcher, and multi-document workspace tab controller matching desktop NavigationManager
  */
@@ -136,13 +136,30 @@ window.NavigationRouter = (function() {
           sec.style.display = 'none';
         });
 
-        // Close open side drawers and overlay
+        // Close open side drawers and overlays
+        document.querySelectorAll('.slide-detail-drawer, .register-inline-drawer, .sales-inline-drawer, .side-drawer, .erp-global-detail-drawer').forEach(el => {
+          el.classList.remove('open');
+          el.style.display = 'none';
+        });
         ['drawer-invoice-details', 'drawer-purchase-details-inspect', 'drawer-purchase-details', 'quote-detail-drawer', 'sr-detail-drawer', 'pr-detail-drawer'].forEach(id => {
           const el = document.getElementById(id);
-          if (el) { el.classList.remove('open'); el.style.display = ''; }
+          if (el) { el.classList.remove('open'); el.style.display = 'none'; }
         });
         const ov = document.getElementById('side-drawer-overlay');
-        if (ov) ov.classList.remove('open');
+        if (ov) {
+          ov.classList.remove('open');
+          ov.style.display = 'none';
+        };
+
+        // Close any lingering modal overlays and backdrops so they never freeze subsequent screens
+        if (window.AppDialogService && typeof window.AppDialogService.closeAllModals === 'function') {
+          window.AppDialogService.closeAllModals();
+        } else {
+          document.querySelectorAll('.modal-overlay, .modal, .modal-backdrop').forEach(m => {
+            m.style.display = 'none';
+            m.classList.remove('active');
+          });
+        }
 
         // Clear all active navigation highlights
         document.querySelectorAll('.nav-single-item, .nav-child-item, .sidebar-item').forEach(btn => {

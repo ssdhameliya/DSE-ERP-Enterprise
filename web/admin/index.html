@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=11.0.8.02">
+  <link rel="stylesheet" href="css/app.css?v=11.0.8.03">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -291,7 +291,7 @@
         <div class="auth-brand-subtitle" style="display: none;"></div>
         <div class="auth-brand-tagline">Role-aware secure enterprise access</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 11.0.8.02</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 11.0.8.03</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v11.0.8</div>
         </div>
@@ -758,7 +758,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v11.0.8.02</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v11.0.8.03</span></div>
           </div>
         </div>
       </div>
@@ -3537,7 +3537,7 @@
   </div>
 
   <!-- MODAL: MFA HELP INFO (NO ACTIVE CHALLENGE) (LoginController.java resendLoginOtp line 506-511) -->
-  <div class="modal-overlay" id="modal-mfa-help-info" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-mfa-help-info" style="display: none; z-index: 100060 !important;">
     <div class="modal-card"
       style="max-width: 440px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
@@ -3562,7 +3562,7 @@
   </div>
 
   <!-- MODAL: MFA HELP ACTION (LOST / CHANGED PHONE) (LoginController.java showAuthenticatorHelp line 515-543) -->
-  <div class="modal-overlay" id="modal-mfa-help-action" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-mfa-help-action" style="display: none; z-index: 100060 !important;">
     <div class="modal-card"
       style="max-width: 480px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
@@ -3599,7 +3599,7 @@
   </div>
 
   <!-- MODAL: MFA RECOVERY VIA EMAIL (RESET AUTHENTICATOR) (LoginController.java showAuthenticatorRecoveryEmail line 564-627) -->
-  <div class="modal-overlay" id="modal-mfa-recovery-email" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-mfa-recovery-email" style="display: none; z-index: 100060 !important;">
     <div class="modal-card"
       style="max-width: 460px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
       <div class="modal-header" style="border: none; padding: 0 0 12px 0;">
@@ -4036,7 +4036,7 @@
   </div>
 
   <!-- MODAL: SIGNATURE PREVIEW (Desktop Parity) -->
-  <div class="modal-overlay" id="modal-preview-signature" style="z-index: 100010;">
+  <div class="modal-overlay" id="modal-preview-signature" style="z-index: 100060 !important;">
     <div class="modal-card" style="max-width: 480px; width: 92vw; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; padding: 0;">
       <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -4148,7 +4148,7 @@
   </div>
 
   <!-- MODAL: CREATE RETURN (DESKTOP ReturnEditorService.java PARITY) -->
-  <div id="modal-create-return" class="modal-overlay modal-backdrop" style="display:none; z-index:100010;">
+  <div id="modal-create-return" class="modal-overlay modal-backdrop" style="display:none; z-index:100060 !important;">
     <div class="modal-card" style="max-width: 900px; width: 95%;">
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -6145,7 +6145,7 @@
   </div>
 
   <!-- MODAL: BANK STATEMENT IMPORT PROGRESS (Desktop LiveOperationDialog Parity) -->
-  <div id="modal-bank-import-progress" class="modal-overlay" style="display: none; z-index: 100050;">
+  <div id="modal-bank-import-progress" class="modal-overlay" style="display: none; z-index: 100060 !important;">
     <div class="modal-card" style="max-width: 480px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
       <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -6170,7 +6170,7 @@
   </div>
 
   <!-- MODAL: BANK STATEMENT IMPORT SUMMARY (Desktop v11.0.5 Parity) -->
-  <div id="modal-bank-import-summary" class="modal-overlay" style="display: none; z-index: 100040;">
+  <div id="modal-bank-import-summary" class="modal-overlay" style="display: none; z-index: 100060 !important;">
     <div class="modal-card" style="max-width: 680px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
       <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -6224,7 +6224,7 @@
   </div>
 
   <!-- MODAL: RECON SUPPLIER RECORDS (Desktop ReconSupplierRecordsDialog.java Parity) -->
-  <div id="modal-recon-supplier-records" class="modal-overlay" style="display: none; z-index: 100030;">
+  <div id="modal-recon-supplier-records" class="modal-overlay" style="display: none; z-index: 100060 !important;">
     <div class="modal-card" style="max-width: 950px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
       <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -6285,7 +6285,7 @@
   </div>
 
   <!-- MODAL: FINANCIAL STATEMENT DRILL-DOWN (Desktop FinancialStatements.fxml Parity) -->
-  <div id="modal-fs-drilldown" class="modal-overlay" style="display: none; z-index: 100030;">
+  <div id="modal-fs-drilldown" class="modal-overlay" style="display: none; z-index: 100060 !important;">
     <div class="modal-card" style="max-width: 950px; width: 95%; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;">
       <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 14px 18px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -6419,7 +6419,7 @@
   </div>
 
   <!-- MODAL: NEW / EDIT REPORT SCHEDULE (Desktop Image 5 Parity) -->
-  <div class="modal-overlay" id="modal-new-schedule" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-new-schedule" style="display: none; z-index: 100060 !important;">
     <div class="modal-box"
       style="max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; border-radius: 10px; background: #0c1527; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
       <div class="modal-header"
@@ -6547,7 +6547,7 @@
   </div>
 
   <!-- MODAL: ADD / EDIT REMINDER (Desktop ReminderCenter.fxml Parity) -->
-  <div class="modal-overlay" id="modal-reminder-editor" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-reminder-editor" style="display: none; z-index: 100060 !important;">
     <div class="modal-box"
       style="max-width: 520px; width: 100%; border-radius: 10px; background: #0c1527; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
       <div class="modal-header"
@@ -6632,7 +6632,7 @@
   </div>
 
   <!-- MODAL: SNOOZE REMINDER (Desktop ReminderCenter.fxml Parity) -->
-  <div class="modal-overlay" id="modal-reminder-snooze" style="display: none; z-index: 100010;">
+  <div class="modal-overlay" id="modal-reminder-snooze" style="display: none; z-index: 100060 !important;">
     <div class="modal-box"
       style="max-width: 420px; width: 100%; border-radius: 10px; background: #0c1527; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
       <div class="modal-header"
@@ -6940,78 +6940,78 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=11.0.8.02"></script>
+  <script src="js/version.js?v=11.0.8.03"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=11.0.8.02"></script>
-  <script src="js/util/FormatUtil.js?v=11.0.8.02"></script>
-  <script src="js/util/DatePickerFormatter.js?v=11.0.8.02"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=11.0.8.02"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=11.0.8.02"></script>
-  <script src="js/util/AudioSynthesizer.js?v=11.0.8.02"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=11.0.8.02"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=11.0.8.02"></script>
-  <script src="js/util/TableUiEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/ButtonIconEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/PaginationUiEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=11.0.8.02"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=11.0.8.02"></script>
-  <script src="js/util/AppDialogService.js?v=11.0.8.02"></script>
-  <script src="js/util/FormDirtyTracker.js?v=11.0.8.02"></script>
-  <script src="js/util/DeepLinkService.js?v=11.0.8.02"></script>
-  <script src="js/util/BarcodeGenerator.js?v=11.0.8.02"></script>
-  <script src="js/util/ShortcutManager.js?v=11.0.8.02"></script>
-  <script src="js/util/RegisterUiSupport.js?v=11.0.8.02"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=11.0.8.02"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=11.0.8.02"></script>
+  <script src="js/util/xlsx.full.min.js?v=11.0.8.03"></script>
+  <script src="js/util/FormatUtil.js?v=11.0.8.03"></script>
+  <script src="js/util/DatePickerFormatter.js?v=11.0.8.03"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=11.0.8.03"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=11.0.8.03"></script>
+  <script src="js/util/AudioSynthesizer.js?v=11.0.8.03"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=11.0.8.03"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=11.0.8.03"></script>
+  <script src="js/util/TableUiEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/ButtonIconEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/PaginationUiEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=11.0.8.03"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=11.0.8.03"></script>
+  <script src="js/util/AppDialogService.js?v=11.0.8.03"></script>
+  <script src="js/util/FormDirtyTracker.js?v=11.0.8.03"></script>
+  <script src="js/util/DeepLinkService.js?v=11.0.8.03"></script>
+  <script src="js/util/BarcodeGenerator.js?v=11.0.8.03"></script>
+  <script src="js/util/ShortcutManager.js?v=11.0.8.03"></script>
+  <script src="js/util/RegisterUiSupport.js?v=11.0.8.03"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=11.0.8.03"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=11.0.8.03"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=11.0.8.02"></script>
-  <script src="js/services/ApiService.js?v=11.0.8.02"></script>
-  <script src="js/services/AuthService.js?v=11.0.8.02"></script>
-  <script src="js/services/ViewLoader.js?v=11.0.8.02"></script>
-  <script src="js/services/NotificationService.js?v=11.0.8.02"></script>
-  <script src="js/services/MasterService.js?v=11.0.8.02"></script>
-  <script src="js/services/OperationsService.js?v=11.0.8.02"></script>
-  <script src="js/services/ReportService.js?v=11.0.8.02"></script>
-  <script src="js/services/ReconService.js?v=11.0.8.02"></script>
-  <script src="js/services/AccountingService.js?v=11.0.8.02"></script>
-  <script src="js/services/ImportService.js?v=11.0.8.02"></script>
+  <script src="js/services/BrandingService.js?v=11.0.8.03"></script>
+  <script src="js/services/ApiService.js?v=11.0.8.03"></script>
+  <script src="js/services/AuthService.js?v=11.0.8.03"></script>
+  <script src="js/services/ViewLoader.js?v=11.0.8.03"></script>
+  <script src="js/services/NotificationService.js?v=11.0.8.03"></script>
+  <script src="js/services/MasterService.js?v=11.0.8.03"></script>
+  <script src="js/services/OperationsService.js?v=11.0.8.03"></script>
+  <script src="js/services/ReportService.js?v=11.0.8.03"></script>
+  <script src="js/services/ReconService.js?v=11.0.8.03"></script>
+  <script src="js/services/AccountingService.js?v=11.0.8.03"></script>
+  <script src="js/services/ImportService.js?v=11.0.8.03"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/SalesController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/PurchaseController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ReturnsController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/QuotationController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ItemMasterController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/PartyController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/FinanceController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/BankStatementController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/CommunicationController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/GstController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/EWayBillController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ImportController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ReportsController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/MasterDataController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/UserAccessController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/ProfileController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/SettingsController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=11.0.8.02"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=11.0.8.02"></script>
+  <script src="js/controllers/DashboardController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/SalesController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/PurchaseController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ReturnsController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/QuotationController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ItemMasterController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/PartyController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/FinanceController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/BankStatementController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/CommunicationController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/GstController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/EWayBillController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ImportController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ReportsController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/MasterDataController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/UserAccessController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/ProfileController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/SettingsController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=11.0.8.03"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=11.0.8.03"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=11.0.8.02"></script>
-  <script src="js/app.js?v=11.0.8.02"></script>
+  <script src="js/navigation/NavigationRouter.js?v=11.0.8.03"></script>
+  <script src="js/app.js?v=11.0.8.03"></script>
 </body>
 
 </html>

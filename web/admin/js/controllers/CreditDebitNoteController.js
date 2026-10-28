@@ -409,7 +409,10 @@ window.CreditDebitNoteController = (function() {
   // 4. CANCEL NOTE ACTION
   async function cancelNote(id, noteNo, isCredit = true) {
     const noteType = isCredit ? 'Credit Note' : 'Debit Note';
-    if (!confirm(`Cancel ${noteType} ${noteNo}?\n\nThis will reverse General Ledger postings and adjust inventory back.`)) {
+    if (window.AppDialogService && typeof window.AppDialogService.confirm === 'function') {
+      const ok = await window.AppDialogService.confirm('Cancel Note', 'Reverse Postings', `Cancel ${noteType} ${noteNo}?\n\nThis will reverse General Ledger postings and adjust inventory back.`, `Cancel ${noteType}`, 'Keep Note');
+      if (!ok) return;
+    } else if (!confirm(`Cancel ${noteType} ${noteNo}?\n\nThis will reverse General Ledger postings and adjust inventory back.`)) {
       return;
     }
 
