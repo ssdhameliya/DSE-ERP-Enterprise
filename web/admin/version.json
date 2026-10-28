@@ -1,14 +1,14 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 1,
-    "webVersion": "11.0.8.01",
-    "tag": "web-v11.0.8.01",
-    "releaseDate": "2026-10-28T11:00:00+05:30",
+    "webBuild": 2,
+    "webVersion": "11.0.8.02",
+    "tag": "web-v11.0.8.02",
+    "releaseDate": "2026-10-28T22:35:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.01 Enterprise Web Release: All 6 Company Business Images Real-Time Synchronization & Preview (UPI QR, Banner Wallpaper, Application Splash Mark, Invoice Logo, Authorized Signature, Email Signature)",
+    "summary": "v11.0.8.02 Enterprise Web Release: Fix Web Image Uploads, Real-Time Previews & Deletion Authority",
     "highlights": [
-        "1. Isolated Email Signature Image: Separated email.signature.image from company.signaturePath & invoice.digital.seal to prevent cross-overwriting and accidental deletions between email signatures and invoice seals.",
-        "2. Added Company Email Signature Preview: Added a dedicated Preview button in both Web and Desktop Settings with full image preview capabilities.",
-        "3. Real-Time Bidirectional Sync & Deletion Parity: Enabled real-time synchronization whenever ApiSession is established, synchronized canonical and Web alias keys (invoice.header.logo, invoice.digital.seal, payment.upi.qr, application.banner, application.mark), resolved server-resource URIs properly on reload, and ensured deletions on one client immediately clear on the other client without resurrection."
+        "1. Fixed Web Image Binary Uploads: Enforced application/octet-stream content type and JSON accept headers to match Spring ServerResourceController contract.",
+        "2. Fixed Real-Time Image Preview: Added blob: URL protocol resolution support so uploaded images immediately display without being wiped out on load.",
+        "3. Fixed Image Deletion & Token Auth: Resolved dse_access_token Bearer authorization for PUT, GET, and DELETE /api/authority/resources/BUSINESS_ASSET endpoints."
     ]
 }

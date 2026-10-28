@@ -77,7 +77,7 @@ window.ApiService = (function() {
         const contentType = res.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           return await res.json();
-        } else if (contentType.includes('application/octet-stream') || contentType.includes('application/pdf')) {
+        } else if (contentType.includes('application/octet-stream') || contentType.includes('application/pdf') || contentType.startsWith('image/') || contentType.includes('image/')) {
           return await res.blob();
         }
         return await res.text();

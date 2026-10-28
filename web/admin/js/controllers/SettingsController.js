@@ -104,7 +104,7 @@ window.SettingsController = (function() {
     if (!val || typeof val !== 'string' || val.trim() === '' || val === 'null' || val === 'undefined') {
       return '';
     }
-    if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
+    if (val.startsWith('data:') || val.startsWith('blob:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
       return val;
     }
     
@@ -202,18 +202,23 @@ window.SettingsController = (function() {
         const arrayBuffer = await file.arrayBuffer();
         const token = getAuthToken();
         const headers = {
-          'Content-Type': file.type || 'application/octet-stream'
+          'Content-Type': 'application/octet-stream',
+          'Accept': 'application/json'
         };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
         // 1. Upload binary stream to ServerResourceController
         const resKey = 'email.signature.image';
         const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
-        await fetch(uploadUrl, {
+        const putResp = await fetch(uploadUrl, {
           method: 'PUT',
           headers: headers,
           body: arrayBuffer
         });
+        if (!putResp.ok) {
+          const errText = await putResp.text().catch(() => '');
+          throw new Error(`Upload failed (${putResp.status}): ${errText || putResp.statusText}`);
+        }
 
         // 2. Save pointer in support settings
         await window.ApiService.put('/api/support/settings', {
@@ -262,10 +267,13 @@ window.SettingsController = (function() {
         try {
           const token = getAuthToken();
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-          await fetch(`/api/authority/resources/BUSINESS_ASSET/email.signature.image`, {
+          const delResp = await fetch(`/api/authority/resources/BUSINESS_ASSET/email.signature.image`, {
             method: 'DELETE',
             headers
           });
+          if (!delResp.ok && delResp.status !== 404) {
+            console.warn(`[SettingsController] Server signature delete returned ${delResp.status}`);
+          }
         } catch (e) {
           console.warn('Could not delete signature resource:', e);
         }
@@ -301,7 +309,8 @@ window.SettingsController = (function() {
         const arrayBuffer = await file.arrayBuffer();
         const token = getAuthToken();
         const headers = {
-          'Content-Type': file.type || 'application/octet-stream'
+          'Content-Type': 'application/octet-stream',
+          'Accept': 'application/json'
         };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
@@ -328,11 +337,15 @@ window.SettingsController = (function() {
         // 1. Upload binary stream to ServerResourceController
         const resKey = canonicalKey;
         const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
-        await fetch(uploadUrl, {
+        const putResp = await fetch(uploadUrl, {
           method: 'PUT',
           headers: headers,
           body: arrayBuffer
         });
+        if (!putResp.ok) {
+          const errText = await putResp.text().catch(() => '');
+          throw new Error(`Upload failed (${putResp.status}): ${errText || putResp.statusText}`);
+        }
 
         // 2. Save pointer in support settings under both canonical and alias keys
         const values = {};
@@ -409,10 +422,13 @@ window.SettingsController = (function() {
         try {
           const token = getAuthToken();
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-          await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(canonicalKey)}`, {
+          const delResp = await fetch(`/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(canonicalKey)}`, {
             method: 'DELETE',
             headers
           });
+          if (!delResp.ok && delResp.status !== 404) {
+            console.warn(`[SettingsController] Server asset delete returned ${delResp.status}`);
+          }
         } catch (e) {
           console.warn('Could not delete server resource:', e);
         }

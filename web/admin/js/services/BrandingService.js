@@ -52,7 +52,7 @@ window.BrandingService = (function() {
     if (!val || typeof val !== 'string' || val.trim() === '' || val === 'null' || val === 'undefined') {
       return '';
     }
-    if (val.startsWith('data:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
+    if (val.startsWith('data:') || val.startsWith('blob:') || val.startsWith('http:') || val.startsWith('https:') || val.startsWith('assets/')) {
       return val;
     }
     let key = '';
