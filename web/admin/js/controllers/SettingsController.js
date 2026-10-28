@@ -207,7 +207,7 @@ window.SettingsController = (function() {
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
         // 1. Upload binary stream to ServerResourceController
-        const resKey = 'company.signaturePath';
+        const resKey = 'email.signature.image';
         const uploadUrl = `/api/authority/resources/BUSINESS_ASSET/${encodeURIComponent(resKey)}?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/png')}`;
         await fetch(uploadUrl, {
           method: 'PUT',
@@ -215,12 +215,10 @@ window.SettingsController = (function() {
           body: arrayBuffer
         });
 
-        // 2. Save pointer in support settings under both canonical and alias keys
+        // 2. Save pointer in support settings
         await window.ApiService.put('/api/support/settings', {
           values: {
-            'company.signaturePath': 'server-resource:' + resKey,
-            'email.signature.image': 'server-resource:' + resKey,
-            'invoice.digital.seal': 'server-resource:' + resKey
+            'email.signature.image': 'server-resource:' + resKey
           }
         });
 
@@ -235,10 +233,27 @@ window.SettingsController = (function() {
           status.style.color = '#4ade80';
         }
         if (window.AudioSynthesizer) window.AudioSynthesizer.playSuccess();
-        window.AppDialogService.showToast('Signature image saved to server resource repository!', 'success');
+        window.AppDialogService.showToast('Email signature image saved to server resource repository!', 'success');
       } catch (err) {
-        console.error('Failed to save signature image:', err);
-        window.AppDialogService.showToast('Failed to save signature image: ' + err.message, 'error');
+        console.error('Failed to save email signature image:', err);
+        window.AppDialogService.showToast('Failed to save email signature image: ' + err.message, 'error');
+      }
+    },
+
+    previewEmailSignatureImage() {
+      const imgEl = document.getElementById('preview-email-sig-img');
+      const src = imgEl ? imgEl.src : '';
+      if (!src || src.endsWith('undefined') || src === window.location.href || imgEl.style.display === 'none') {
+        window.AppDialogService.showToast('No email signature image available to preview.', 'warning');
+        return;
+      }
+      const modal = document.getElementById('modal-branding-preview');
+      const modalImg = document.getElementById('branding-preview-img');
+      const modalTitle = document.getElementById('branding-preview-title');
+      if (modal && modalImg) {
+        modalImg.src = src;
+        if (modalTitle) modalTitle.textContent = 'Preview: Company Email Signature Image';
+        modal.style.display = 'flex';
       }
     },
 
@@ -247,7 +262,7 @@ window.SettingsController = (function() {
         try {
           const token = getAuthToken();
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-          await fetch(`/api/authority/resources/BUSINESS_ASSET/company.signaturePath`, {
+          await fetch(`/api/authority/resources/BUSINESS_ASSET/email.signature.image`, {
             method: 'DELETE',
             headers
           });
@@ -257,9 +272,7 @@ window.SettingsController = (function() {
 
         await window.ApiService.put('/api/support/settings', {
           values: {
-            'company.signaturePath': '',
-            'email.signature.image': '',
-            'invoice.digital.seal': ''
+            'email.signature.image': ''
           }
         });
         const img = document.getElementById('preview-email-sig-img');
@@ -985,16 +998,27 @@ window.SettingsController = (function() {
           if (emailSettings['email.signature']) {
             setVal('smtp-signature', emailSettings['email.signature']);
           }
-          if (emailSettings['email.signature.image']) {
-            const sigImg = document.getElementById('preview-email-sig-img');
-            const sigStatus = document.getElementById('status-email-sig-img');
-            if (sigImg) {
-              sigImg.src = emailSettings['email.signature.image'];
+          const sigImgVal = emailSettings['email.signature.image'];
+          const sigImg = document.getElementById('preview-email-sig-img');
+          const sigStatus = document.getElementById('status-email-sig-img');
+          if (sigImgVal && sigImgVal !== 'null' && sigImgVal.trim() !== '') {
+            const resolvedUrl = await resolveAssetUrl(sigImgVal, 'email.signature.image');
+            if (sigImg && resolvedUrl) {
+              sigImg.src = resolvedUrl;
               sigImg.style.display = 'block';
             }
             if (sigStatus) {
-              sigStatus.textContent = 'signature_stamp.png • preserved';
+              sigStatus.textContent = 'email_signature • preserved on server';
               sigStatus.style.color = '#4ade80';
+            }
+          } else {
+            if (sigImg) {
+              sigImg.src = '';
+              sigImg.style.display = 'none';
+            }
+            if (sigStatus) {
+              sigStatus.textContent = 'No signature image attached';
+              sigStatus.style.color = '#64748b';
             }
           }
         } catch (ignored) {}

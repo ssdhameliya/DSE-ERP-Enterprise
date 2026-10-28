@@ -3,18 +3,18 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.7.04",
+  version: "11.0.7.05",
   desktopVersion: "11.0.7",
-  webBuild: 4,
-  webVersion: "11.0.7.04",
-  tag: "web-v11.0.7.04",
-  releaseDate: "2026-10-28T10:25:00+05:30",
+  webBuild: 5,
+  webVersion: "11.0.7.05",
+  tag: "web-v11.0.7.05",
+  releaseDate: "2026-10-28T10:55:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.7.04 Enterprise Web Release: Fix Centralized Prompt Dialog Input Field (Interactive Recipient Input & Asynchronous Prompt Handling)",
+  summary: "v11.0.7.05 Enterprise Release: All 6 Company Business Images Real-Time Synchronization & Preview (UPI QR, Banner Wallpaper, Application Splash Mark, Invoice Logo, Authorized Signature, Email Signature)",
   highlights: [
-    "1. Fix AppDialogService.prompt: Added missing input container (#app-dialog-prompt-wrap) to centralized #modal-app-dialog in index.html and dynamic DOM fallback.",
-    "2. Asynchronous Prompt Awaiting: Converted testEmail(), rejectRegistration(), rejectSale(), and return actions to properly await prompt() input resolution.",
-    "3. Live Email Test Pipeline: Test email probe now displays recipient input field pre-filled with default sender, allowing smooth delivery verification."
+    "1. Isolated Email Signature Image: Separated email.signature.image from company.signaturePath & invoice.digital.seal to prevent cross-overwriting and accidental deletions between email signatures and invoice seals.",
+    "2. Added Company Email Signature Preview: Added a dedicated Preview button in both Web and Desktop Settings with full image preview capabilities.",
+    "3. Real-Time Bidirectional Sync & Deletion Parity: Enabled real-time synchronization whenever ApiSession is established, synchronized canonical and Web alias keys (invoice.header.logo, invoice.digital.seal, payment.upi.qr, application.banner, application.mark), resolved server-resource URIs properly on reload, and ensured deletions on one client immediately clear on the other client without resurrection."
   ]
 };
 
@@ -24,23 +24,28 @@ window.DSE_VERSION = {
     const v = window.DSE_VERSION;
     if (!v) return;
 
-    // 1. Login Page Version Badge
-    const loginBadge = document.getElementById('auth-app-version-badge') || document.querySelector('.auth-brand-version-badge');
-    if (loginBadge) {
-      loginBadge.textContent = `v${v.webVersion}`;
-      loginBadge.title = `Desktop Compatibility: v${v.desktopVersion} | Release Tag: ${v.tag}`;
+    // Synchronize Desktop Parity Badge
+    const desktopParityEl = document.getElementById('footer-desktop-version');
+    if (desktopParityEl) {
+      desktopParityEl.textContent = `Desktop v${v.desktopVersion} Parity`;
     }
 
-    // 2. Sidebar Footer Version Tag
-    const sidebarBadge = document.getElementById('sidebar-app-version') || document.querySelector('.sidebar-footer-version');
-    if (sidebarBadge) {
-      sidebarBadge.textContent = `Web v${v.webVersion} • Desktop v${v.desktopVersion}`;
+    // Synchronize Web Build Badge
+    const webBuildEl = document.getElementById('footer-web-build');
+    if (webBuildEl) {
+      webBuildEl.textContent = `Web v${v.webVersion} (${v.environment})`;
     }
 
-    // 3. Document Title Suffix
-    if (!document.title.includes(v.webVersion)) {
-      document.title = `${document.title.split(' — ')[0]} — Jasvi Industries ERP v${v.webVersion}`;
+    // Synchronize Header Title Tooltip / Sub-badge
+    const headerVerEl = document.getElementById('header-app-version');
+    if (headerVerEl) {
+      headerVerEl.textContent = `v${v.webVersion}`;
     }
+
+    // Also update any elements with class .dse-version-display
+    document.querySelectorAll('.dse-version-display').forEach(el => {
+      el.textContent = v.webVersion;
+    });
   }
 
   if (document.readyState === 'loading') {

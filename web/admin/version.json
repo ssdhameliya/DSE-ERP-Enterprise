@@ -1,14 +1,14 @@
 {
     "desktopVersion": "11.0.7",
-    "webBuild": 4,
-    "webVersion": "11.0.7.04",
-    "tag": "web-v11.0.7.04",
-    "releaseDate": "2026-10-28T10:25:00+05:30",
+    "webBuild": 5,
+    "webVersion": "11.0.7.05",
+    "tag": "web-v11.0.7.05",
+    "releaseDate": "2026-10-28T10:55:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.7.04 Enterprise Web Release: Fix Centralized Prompt Dialog Input Field (Interactive Recipient Input & Asynchronous Prompt Handling)",
+    "summary": "v11.0.7.05 Enterprise Release: All 6 Company Business Images Real-Time Synchronization & Preview (UPI QR, Banner Wallpaper, Application Splash Mark, Invoice Logo, Authorized Signature, Email Signature)",
     "highlights": [
-        "1. Fix AppDialogService.prompt: Added missing input container (#app-dialog-prompt-wrap) to centralized #modal-app-dialog in index.html and dynamic DOM fallback.",
-        "2. Asynchronous Prompt Awaiting: Converted testEmail(), rejectRegistration(), rejectSale(), and return actions to properly await prompt() input resolution.",
-        "3. Live Email Test Pipeline: Test email probe now displays recipient input field pre-filled with default sender, allowing smooth delivery verification."
+        "1. Isolated Email Signature Image: Separated email.signature.image from company.signaturePath & invoice.digital.seal to prevent cross-overwriting and accidental deletions between email signatures and invoice seals.",
+        "2. Added Company Email Signature Preview: Added a dedicated Preview button in both Web and Desktop Settings with full image preview capabilities.",
+        "3. Real-Time Bidirectional Sync & Deletion Parity: Enabled real-time synchronization whenever ApiSession is established, synchronized canonical and Web alias keys (invoice.header.logo, invoice.digital.seal, payment.upi.qr, application.banner, application.mark), resolved server-resource URIs properly on reload, and ensured deletions on one client immediately clear on the other client without resurrection."
     ]
 }
