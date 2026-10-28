@@ -1366,8 +1366,10 @@ window.ReportsController = (function() {
       const def = this.currentDefinition || definitions[0];
       const preset = document.getElementById('v-filter-period')?.value || 'This Month';
       const defaultName = `${def?.title || 'Report'} (${preset})`;
-      const name = prompt('Enter a name for this Saved Report configuration:', defaultName);
-      if (!name || !name.trim()) return;
+      const name = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+        ? window.AppDialogService.prompt('Save Report Preset', 'Configuration Name', 'Enter a name for this Saved Report configuration:', defaultName)
+        : Promise.resolve(prompt('Enter a name for this Saved Report configuration:', defaultName)));
+      if (!name || typeof name !== 'string' || !name.trim()) return;
 
       const fVal = document.getElementById('v-filter-from')?.value || '';
       const tVal = document.getElementById('v-filter-to')?.value || '';

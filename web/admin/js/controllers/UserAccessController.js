@@ -1011,7 +1011,9 @@ window.UserAccessController = (function() {
       const reg = cachedRegistrations.find(x => x.id === selectedRegId);
       if (!reg) return;
 
-      const reason = prompt(`Specify rejection reason for ${reg.fullName || reg.username}:`, 'Registration declined by administrator');
+      const reason = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+        ? window.AppDialogService.prompt('Reject Registration', `Registration • ${reg.fullName || reg.username}`, `Specify rejection reason for ${reg.fullName || reg.username}:`, 'Registration declined by administrator')
+        : Promise.resolve(prompt(`Specify rejection reason for ${reg.fullName || reg.username}:`, 'Registration declined by administrator')));
       if (reason === null) return;
 
       try {

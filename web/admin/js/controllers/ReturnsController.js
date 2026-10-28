@@ -493,8 +493,10 @@ window.ReturnsController = (function () {
   }
 
   async function editReasonPrompt(no, currentReason) {
-    const newReason = prompt(`Edit return reason for ${no}:`, currentReason || '');
-    if (newReason === null || newReason.trim() === currentReason) return;
+    const newReason = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Edit Reason', `Return • ${no}`, `Edit return reason for ${no}:`, currentReason || '')
+      : Promise.resolve(prompt(`Edit return reason for ${no}:`, currentReason || '')));
+    if (newReason === null || typeof newReason !== 'string' || newReason.trim() === currentReason) return;
     try {
       const details = await window.OperationsService.getReturnDetails(no);
       await window.OperationsService.updateReturn(no, 'reason', newReason.trim(), details.rowVersion || 0);
@@ -805,12 +807,14 @@ window.ReturnsController = (function () {
     });
   }
 
-  function sendWhatsappPrompt(no) {
+  async function sendWhatsappPrompt(no) {
     const isSales = currentType === 'SALES RETURN';
     const ret = (returnsList || []).find(r => r.no === no) || selectedReturn;
     const phone = ret?.phone || ret?.contactPersonMobile || '';
-    const mobile = prompt(`Send ${currentType} ${no} via WhatsApp to number (with country code):`, phone);
-    if (!mobile) return;
+    const mobile = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('WhatsApp Share', `${currentType} • ${no}`, `Send ${currentType} ${no} via WhatsApp to number (with country code):`, phone, '+91 9999999999')
+      : Promise.resolve(prompt(`Send ${currentType} ${no} via WhatsApp to number (with country code):`, phone)));
+    if (!mobile || typeof mobile !== 'string') return;
     const clean = mobile.replace(/\D/g, '');
     const num = clean.length === 10 ? '91' + clean : clean;
     const partyName = ret?.partyName || ret?.party || ret?.customer || ret?.supplier || 'Valued Partner';

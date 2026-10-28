@@ -504,8 +504,10 @@ window.BankStatementController = (function() {
 
   async function bulkMarkReview() {
     if (selectedTxnIds.size === 0) return;
-    const note = prompt(`Enter review notes for ${selectedTxnIds.size} transactions:`, 'Verified against physical voucher');
-    if (!note) return;
+    const note = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Mark for Review', `${selectedTxnIds.size} Transactions`, `Enter review notes for ${selectedTxnIds.size} transactions:`, 'Verified against physical voucher')
+      : Promise.resolve(prompt(`Enter review notes for ${selectedTxnIds.size} transactions:`, 'Verified against physical voucher')));
+    if (!note || typeof note !== 'string') return;
 
     for (const id of selectedTxnIds) {
       try {
@@ -520,8 +522,10 @@ window.BankStatementController = (function() {
 
   async function bulkIgnore() {
     if (selectedTxnIds.size === 0) return;
-    const note = prompt(`Audit reason for ignoring ${selectedTxnIds.size} transactions:`, 'Bank charge exempted / non-operating item');
-    if (!note) return;
+    const note = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Audit Ignore', `${selectedTxnIds.size} Transactions`, `Audit reason for ignoring ${selectedTxnIds.size} transactions:`, 'Bank charge exempted / non-operating item')
+      : Promise.resolve(prompt(`Audit reason for ignoring ${selectedTxnIds.size} transactions:`, 'Bank charge exempted / non-operating item')));
+    if (!note || typeof note !== 'string') return;
 
     for (const id of selectedTxnIds) {
       try {
@@ -1238,8 +1242,10 @@ window.BankStatementController = (function() {
   }
 
   async function quickMoveBankEntry(txnId, amount, dir) {
-    const notes = prompt(`Create ${dir} Bank Journal for ${formatMoney(amount)}. Enter narration / reference:`, 'Direct banking settlement');
-    if (notes === null) return;
+    const notes = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Create Journal', `${dir} Bank Entry`, `Create ${dir} Bank Journal for ${formatMoney(amount)}. Enter narration / reference:`, 'Direct banking settlement')
+      : Promise.resolve(prompt(`Create ${dir} Bank Journal for ${formatMoney(amount)}. Enter narration / reference:`, 'Direct banking settlement')));
+    if (notes === null || typeof notes !== 'string') return;
 
     try {
       const payload = {

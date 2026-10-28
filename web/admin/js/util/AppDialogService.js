@@ -45,6 +45,19 @@ window.AppDialogService = (function() {
         </div>
       `;
       document.body.appendChild(container);
+    } else if (!container.querySelector('#app-dialog-prompt-wrap')) {
+      const bodyEl = container.querySelector('#app-dialog-body');
+      const wrap = document.createElement('div');
+      wrap.className = 'app-dialog-prompt-wrap';
+      wrap.id = 'app-dialog-prompt-wrap';
+      wrap.style.cssText = 'display: none; padding: 4px 24px 16px 24px;';
+      wrap.innerHTML = '<input type="text" id="app-dialog-prompt-input" class="form-input" style="width: 100%; height: 42px; background: rgba(15,23,42,0.8); border: 1.5px solid rgba(56,189,248,0.4); border-radius: 8px; color: #fff; padding: 0 14px; font-size: 0.9rem; outline: none; box-shadow: 0 0 15px rgba(56,189,248,0.15);" />';
+      if (bodyEl && bodyEl.parentNode) {
+        bodyEl.parentNode.insertBefore(wrap, bodyEl.nextSibling);
+      } else {
+        const card = container.querySelector('.app-dialog-card');
+        if (card) card.appendChild(wrap);
+      }
     }
     return container;
   }

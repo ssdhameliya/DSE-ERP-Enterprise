@@ -891,8 +891,10 @@ window.QuotationController = (function () {
       window.SalesController.openEmailModal(no, 'QUOTATION', quote);
       return;
     }
-    const email = prompt(`Send Quotation ${no} to email address:`, recipientEmail || '');
-    if (!email) return;
+    const email = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Email Quotation', `Quotation • ${no}`, `Send Quotation ${no} to email address:`, recipientEmail || '', 'name@company.com')
+      : Promise.resolve(prompt(`Send Quotation ${no} to email address:`, recipientEmail || '')));
+    if (!email || typeof email !== 'string' || !email.trim()) return;
     if (window.AppDialogService) window.AppDialogService.toastInfo(`Preparing and sending quotation email to ${email}...`);
 
     let attachmentBase64 = null;

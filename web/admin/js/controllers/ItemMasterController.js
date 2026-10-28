@@ -940,8 +940,11 @@ window.ItemMasterController = (function() {
     if (!item) return;
     const currentCost = parseFloat(item.purchasePrice || item.costPrice || 0);
     const stock = parseFloat(item.openingStock || item.currentStock || item.stock || 0);
-    const newRateStr = prompt(`Stock Revaluation for ${code} (${item.description || item.name || ''})\n\nCurrent Purchase Rate: ₹ ${currentCost.toFixed(2)}\nCurrent Stock: ${stock.toFixed(2)}\n\nEnter new valuation rate (₹):`, currentCost.toFixed(2));
-    if (newRateStr === null) return;
+    const promptMsg = `Current Purchase Rate: ₹ ${currentCost.toFixed(2)}\nCurrent Stock: ${stock.toFixed(2)}\n\nEnter new valuation rate (₹):`;
+    const newRateStr = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Stock Revaluation', `SKU • ${code}`, promptMsg, currentCost.toFixed(2))
+      : Promise.resolve(prompt(`Stock Revaluation for ${code} (${item.description || item.name || ''})\n\n${promptMsg}`, currentCost.toFixed(2))));
+    if (newRateStr === null || typeof newRateStr !== 'string') return;
     const newRate = parseFloat(newRateStr);
     if (isNaN(newRate) || newRate < 0) {
       if (window.AppDialogService) window.AppDialogService.toastError('Invalid valuation rate entered.');

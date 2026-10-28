@@ -358,8 +358,10 @@ window.EWayBillController = {
   },
 
   async cancelEWayBillPrompt(id, ewayNo) {
-    const reason = prompt(`Reason for cancelling E-Way Bill ${ewayNo}:`, 'Order Cancelled');
-    if (!reason) return;
+    const reason = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Cancel E-Way Bill', `E-Way Bill • ${ewayNo}`, `Reason for cancelling E-Way Bill ${ewayNo}:`, 'Order Cancelled')
+      : Promise.resolve(prompt(`Reason for cancelling E-Way Bill ${ewayNo}:`, 'Order Cancelled')));
+    if (!reason || typeof reason !== 'string') return;
     try {
       if (window.AccountingService && window.AccountingService.cancelEWayBill) {
         await window.AccountingService.cancelEWayBill(id, { reason });

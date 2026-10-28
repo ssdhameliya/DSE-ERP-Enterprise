@@ -3,20 +3,18 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.DSE_VERSION = {
-  version: "11.0.7.03",
+  version: "11.0.7.04",
   desktopVersion: "11.0.7",
-  webBuild: 3,
-  webVersion: "11.0.7.03",
-  tag: "web-v11.0.7.03",
-  releaseDate: "2026-10-28T09:10:00+05:30",
+  webBuild: 4,
+  webVersion: "11.0.7.04",
+  tag: "web-v11.0.7.04",
+  releaseDate: "2026-10-28T10:25:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.7.03 Enterprise Web Release: 1-to-1 Desktop Parity for Sales & Purchase Inspection Popups (Clean Inline SVGs, 4 Overview Cards, 4 Canonical Tabs, 10-Button Action Dock, Zero Mojibake)",
+  summary: "v11.0.7.04 Enterprise Web Release: Fix Centralized Prompt Dialog Input Field (Interactive Recipient Input & Asynchronous Prompt Handling)",
   highlights: [
-    "1. Desktop Inspection Dialog Parity: Sales & Purchase Inspection Popups redesigned with 32px Hero Bar, Party/Due kicker, Copy Ref button, and Live Status Pills.",
-    "2. Prominent 4 Overview Cards: Customer/Supplier Details, Document Breakdown, Collection/Outflow Status, Logistics & Tax / Terms.",
-    "3. 4 Canonical Tabs: Consignment/Purchased Items, Payments & Allocations, Attachments (Upload/Preview/Download), Transport & Notes / Logistics & Terms.",
-    "4. 10-Button Desktop Action Dock: Edit, Duplicate, PDF Print, Barcode, Excel, Email, Record Payment/Outflow, Create Return, Audit Trail, Approve/Reject.",
-    "5. Zero Mojibake / Character Corruption: All legacy Unicode encoding glitches replaced with crisp, ultra-modern inline SVGs."
+    "1. Fix AppDialogService.prompt: Added missing input container (#app-dialog-prompt-wrap) to centralized #modal-app-dialog in index.html and dynamic DOM fallback.",
+    "2. Asynchronous Prompt Awaiting: Converted testEmail(), rejectRegistration(), rejectSale(), and return actions to properly await prompt() input resolution.",
+    "3. Live Email Test Pipeline: Test email probe now displays recipient input field pre-filled with default sender, allowing smooth delivery verification."
   ]
 };
 

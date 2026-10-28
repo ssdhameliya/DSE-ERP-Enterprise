@@ -4300,9 +4300,10 @@ window.SalesController = {
   },
 
   async rejectSelectedSale() {
-    if (!this.currentDrawerSale) return;
-    const reason = prompt(`Enter rejection reason for ${this.currentDrawerSale.invoiceNo}:`);
-    if (!reason || !reason.trim()) return;
+    const reason = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+      ? window.AppDialogService.prompt('Reject Sale', `Invoice • ${this.currentDrawerSale.invoiceNo}`, `Enter rejection reason for ${this.currentDrawerSale.invoiceNo}:`, 'Discrepancy in sale details')
+      : Promise.resolve(prompt(`Enter rejection reason for ${this.currentDrawerSale.invoiceNo}:`)));
+    if (!reason || typeof reason !== 'string' || !reason.trim()) return;
     try {
       await window.ApiService.post(`/api/sales/${this.currentDrawerSale.id}/reject`, { reason: reason.trim() });
       window.AppDialogService.toastSuccess(`Sale ${this.currentDrawerSale.invoiceNo} rejected.`);

@@ -1080,8 +1080,10 @@ window.SettingsController = (function() {
 
     async testEmail() {
       const defaultRecipient = val('smtp-email').trim() || 'ssdhameliya@gmail.com';
-      const recipient = prompt('Enter recipient email address to send test diagnostic message:', defaultRecipient);
-      if (!recipient || !recipient.trim()) return;
+      const recipient = await (window.AppDialogService && typeof window.AppDialogService.prompt === 'function'
+        ? window.AppDialogService.prompt('Input Required', 'SMTP Diagnostic Probe', 'Enter recipient email address to send test diagnostic message:', defaultRecipient)
+        : Promise.resolve(prompt('Enter recipient email address to send test diagnostic message:', defaultRecipient)));
+      if (!recipient || typeof recipient !== 'string' || !recipient.trim()) return;
 
       const cleanRecipient = recipient.trim();
       const host = val('smtp-host').trim() || 'smtp.gmail.com';
