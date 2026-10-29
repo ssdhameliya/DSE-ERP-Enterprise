@@ -11,6 +11,10 @@ window.ItemMasterController = (function() {
   let editingRowVersion = 0;
   let cachedCategories = [];
   let cachedUnits = ['PCS', 'NOS', 'MTR', 'KGS', 'SET', 'BOX', 'PKT', 'ROLL', 'TON'];
+  let currentPage = 0;
+  const pageSize = 25;
+  let totalPages = 1;
+  let filterDebounceTimer = null;
 
   function formatMoney(amount) {
     return '₹ ' + (parseFloat(amount) || 0).toLocaleString('en-IN', {
@@ -68,21 +72,31 @@ window.ItemMasterController = (function() {
     if (valEl) valEl.innerText = formatMoney(totalValuation);
   }
 
-  function filterItems(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-      filteredItems = [...items];
+  function filterItems(query, immediate = false) {
+    if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
+    const doFilter = () => {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        filteredItems = [...items];
+      } else {
+        filteredItems = items.filter(i => {
+          const code = (i.itemCode || '').toLowerCase();
+          const desc = (i.description || '').toLowerCase();
+          const cat = (i.category || '').toLowerCase();
+          const brand = (i.brand || '').toLowerCase();
+          const hsn = (i.hsn || '').toLowerCase();
+          return code.includes(q) || desc.includes(q) || cat.includes(q) || brand.includes(q) || hsn.includes(q);
+        });
+      }
+      currentPage = 0;
+      renderTable(filteredItems);
+    };
+
+    if (immediate) {
+      doFilter();
     } else {
-      filteredItems = items.filter(i => {
-        const code = (i.itemCode || '').toLowerCase();
-        const desc = (i.description || '').toLowerCase();
-        const cat = (i.category || '').toLowerCase();
-        const brand = (i.brand || '').toLowerCase();
-        const hsn = (i.hsn || '').toLowerCase();
-        return code.includes(q) || desc.includes(q) || cat.includes(q) || brand.includes(q) || hsn.includes(q);
-      });
+      filterDebounceTimer = setTimeout(doFilter, 120);
     }
-    renderTable(filteredItems);
   }
 
   async function isolateItem(ref) {
@@ -106,7 +120,16 @@ window.ItemMasterController = (function() {
     const tbody = document.getElementById('items-table-tbody');
     if (!tbody) return;
 
-    if (!rows || rows.length === 0) {
+    const list = rows || [];
+    const total = list.length;
+    totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
+    if (currentPage < 0) currentPage = 0;
+
+    const start = currentPage * pageSize;
+    const pageRows = list.slice(start, start + pageSize);
+
+    if (pageRows.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="15" style="text-align:center; padding:40px; color:var(--text-muted);">
@@ -120,7 +143,7 @@ window.ItemMasterController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map((i, idx) => {
+    tbody.innerHTML = pageRows.map((i, idx) => {
       const isSelected = selectedCodes.has(i.itemCode);
       const stock = parseFloat(i.openingStock) || 0;
       const minStock = parseFloat(i.minimumStock) || 10;
@@ -379,13 +402,53 @@ window.ItemMasterController = (function() {
     const selCountEl = document.getElementById('item-selected-count');
     const delBtn = document.getElementById('item-btn-delete-selected');
     const recCountEl = document.getElementById('item-record-count');
+    const prevBtn = document.getElementById('btn-item-prev');
+    const nextBtn = document.getElementById('btn-item-next');
+    const pageInfo = document.getElementById('item-page-info');
 
     if (selCountEl) selCountEl.innerText = `${selectedCodes.size} selected`;
     if (delBtn) {
       delBtn.disabled = selectedCodes.size === 0;
       delBtn.innerText = `Delete Selected (${selectedCodes.size})`;
     }
-    if (recCountEl) recCountEl.innerText = `${filteredItems.length} of ${items.length} items in catalog`;
+    const total = filteredItems.length;
+    const start = total === 0 ? 0 : (currentPage * pageSize + 1);
+    const end = Math.min(total, (currentPage + 1) * pageSize);
+    if (recCountEl) {
+      recCountEl.innerText = `Showing ${start}–${end} of ${total} items (${items.length} total)`;
+    }
+    if (pageInfo) {
+      pageInfo.innerText = `Page ${total === 0 ? 0 : (currentPage + 1)} of ${totalPages}`;
+    }
+    if (prevBtn) prevBtn.disabled = currentPage <= 0;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+  }
+
+  function prevPage() {
+    if (currentPage > 0) {
+      currentPage--;
+      renderTable(filteredItems);
+      const scrollEl = document.querySelector('#item-master-workspace .sales-table-scroll');
+      if (scrollEl) scrollEl.scrollTop = 0;
+    }
+  }
+
+  function nextPage() {
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      renderTable(filteredItems);
+      const scrollEl = document.querySelector('#item-master-workspace .sales-table-scroll');
+      if (scrollEl) scrollEl.scrollTop = 0;
+    }
+  }
+
+  function goToPage(page) {
+    if (page >= 0 && page < totalPages) {
+      currentPage = page;
+      renderTable(filteredItems);
+      const scrollEl = document.querySelector('#item-master-workspace .sales-table-scroll');
+      if (scrollEl) scrollEl.scrollTop = 0;
+    }
   }
 
   // ==========================================
@@ -1485,8 +1548,14 @@ window.ItemMasterController = (function() {
       const searchInput = document.getElementById('item-search');
       if (searchInput) searchInput.value = '';
       selectedItemCode = null;
-      loadItems();
+      selectedCodes.clear();
+      currentPage = 0;
+      filteredItems = [...items];
+      renderTable(filteredItems);
     },
-    isolateItem
+    isolateItem,
+    prevPage,
+    nextPage,
+    goToPage
   };
 })();

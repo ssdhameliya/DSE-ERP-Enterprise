@@ -936,7 +936,7 @@ window.ReturnsController = (function () {
           const res = await window.OperationsService.getPurchasesPage(0, 100);
           orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
         }
-        select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option>`;
+        select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option><option value="__MANUAL__">-- Type or Paste Invoice Number --</option>`;
         let foundPrefill = false;
         orders.forEach(o => {
           const invNo = o.invoiceNo || o.billNo || (isSales ? `INV-${o.id}` : `BILL-${o.id}`);
@@ -975,14 +975,37 @@ window.ReturnsController = (function () {
     }
   }
 
+  function toggleInvoiceInputMode(manual) {
+    const sel = document.getElementById('cr-invoice-select');
+    const inp = document.getElementById('cr-invoice-input');
+    const btn = document.getElementById('btn-toggle-inv-mode');
+    const isManual = manual !== undefined ? manual : (inp && inp.style.display === 'none');
+    if (isManual) {
+      if (sel) sel.style.display = 'none';
+      if (inp) {
+        inp.style.display = 'block';
+        inp.focus();
+      }
+      if (btn) btn.innerText = 'Select from List';
+    } else {
+      if (inp) inp.style.display = 'none';
+      if (sel) sel.style.display = 'block';
+      if (btn) btn.innerText = 'Type Manual #';
+    }
+  }
+
   async function onInvoiceSelectChanged(invNo) {
+    if (invNo === '__MANUAL__') {
+      toggleInvoiceInputMode(true);
+      return;
+    }
     const textInput = document.getElementById('cr-invoice-input');
     if (textInput) textInput.value = invNo || '';
     if (invNo) {
       await loadReturnableLines(invNo);
     } else {
       const tbody = document.getElementById('cr-lines-body');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
       document.getElementById('cr-estimated-total').innerText = '₹ 0.00';
       document.getElementById('cr-selected-count').innerText = '0 items selected';
     }
@@ -1652,6 +1675,7 @@ window.ReturnsController = (function () {
     viewOriginalDoc,
     openCreateReturnModal,
     onInvoiceSelectChanged,
+    toggleInvoiceInputMode,
     loadReturnableLines,
     toggleLineSelect,
     toggleSelectAllLines,

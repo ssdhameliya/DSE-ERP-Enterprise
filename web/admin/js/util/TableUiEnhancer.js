@@ -107,9 +107,14 @@ window.TableUiEnhancer = (function() {
     const tbody = table.querySelector('tbody');
     if (!tbody) return;
 
+    const theadThs = table.querySelectorAll('thead th');
+    const headerTexts = Array.from(theadThs).map(th => (th.textContent || '').toLowerCase().trim());
+
     const rows = tbody.querySelectorAll('tr:not(.empty-row)');
     rows.forEach(row => {
+      if (row.dataset.erpRowEnhanced === 'true') return;
       const cells = row.querySelectorAll('td');
+
       cells.forEach(td => {
         // Skip cells with custom complex components or already enhanced
         if (td.dataset.erpCellEnhanced === 'true') return;
@@ -118,11 +123,11 @@ window.TableUiEnhancer = (function() {
           return;
         }
 
-        const rawText = (td.innerText || td.textContent || '').trim();
+        const rawText = (td.textContent || '').trim();
         if (!rawText) return;
 
         // Check if cell is a known status
-        const statusSem = window.UiSemanticRegistry.statusSemantic(rawText);
+        const statusSem = window.UiSemanticRegistry ? window.UiSemanticRegistry.statusSemantic(rawText) : null;
         if (statusSem) {
           td.dataset.erpCellEnhanced = 'true';
           td.innerHTML = `
@@ -136,8 +141,7 @@ window.TableUiEnhancer = (function() {
 
         // Check if cell is a monetary amount (e.g. ₹ 1,250.00, or numbers under amount headers)
         const colIdx = Array.prototype.indexOf.call(row.children, td);
-        const th = table.querySelector(`thead th:nth-child(${colIdx + 1})`);
-        const hText = th ? (th.innerText || th.textContent || '').toLowerCase() : '';
+        const hText = headerTexts[colIdx] || '';
         const isAmountHeader = /amount|rate|price|total|balance|paid|due|tax|gst|debit|credit|subtotal|discount|value/i.test(hText);
         const isMoneyString = rawText.startsWith('₹') || rawText.startsWith('Rs.') || rawText.startsWith('INR') || /^-?₹?\s*\d+(?:,\d+)*(?:\.\d+)?$/.test(rawText);
 
@@ -185,6 +189,7 @@ window.TableUiEnhancer = (function() {
           return;
         }
       });
+      row.dataset.erpRowEnhanced = 'true';
     });
   }
 

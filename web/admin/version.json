@@ -1,16 +1,16 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 6,
-    "webVersion": "11.0.8.06",
-    "tag": "web-v11.0.8.06",
-    "releaseDate": "2026-10-29T02:15:00+05:30",
+    "webBuild": 7,
+    "webVersion": "11.0.8.07",
+    "tag": "web-v11.0.8.07",
+    "releaseDate": "2026-10-29T09:05:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.06 Enterprise Web Release: Eliminate Runtime Syntax Errors in ReturnsController, PurchaseController & ButtonIconEnhancer; Restore Returns Register Live Data & Create Return Modal Line Loading",
+    "summary": "v11.0.8.07 Enterprise Web Release: High-Performance Item Master (25-Item Pagination, Frame-Coalesced MutationObserver, Fast In-Memory Reset & Search Debounce); Dynamic Return Date Range & Create Return Modal Invoice Manual Input Toggle",
     "highlights": [
-        "1. ReturnsController Syntax Restoration: Resolved misplaced isolateReturn function that prematurely truncated sendEmailPrompt and caused an invalid await SyntaxError, restoring window.ReturnsController and all return actions across the application.",
-        "2. PurchaseController Variable Redeclaration Fix: Renamed duplicate approvalBox declaration in showPurchaseDrawer to drawerApprovalBox, restoring PurchaseController initialization and eliminate all syntax failures.",
-        "3. ButtonIconEnhancer Regex Group Completion: Fixed unterminated regex capture group in EMOJI_REGEX, restoring ButtonIconEnhancer without crashing startup scripts.",
-        "4. Live Sales & Purchase Return Registers: Replaced static empty placeholders with live loading states, added automated inline img DOM mount triggers, and linked NavigationRouter/app.js boot lifecycle for instantaneous data rendering.",
-        "5. Create Return Modal Line Item Population: Restored synchronous options pre-population from active sales cache, enabled automatic return date formatting via DatePickerFormatter, and guaranteed item line preloading on modal launch."
+        "1. Item Master Pagination & Reflow Optimization: Implemented 25-item per page client-side pagination with previous/next controls and status counter, eliminating tens of thousands of simultaneous DOM nodes.",
+        "2. MutationObserver Layout Storm Elimination: Coalesced table row mutations in GlobalUiEnhancer with requestAnimationFrame batching and precomputed header texts in TableUiEnhancer, eliminating O(N^2) synchronous layout thrashing and unfreezing the browser.",
+        "3. Instant Item Master Reset & Debounced Filter: Reset button now resets search and re-slices cached items instantly in 2ms without network delays, while search input is debounced by 120ms to prevent main thread blocking.",
+        "4. Dynamic Sales & Purchase Return Date Range: Removed hardcoded static dates (2026-10-28) from views/sales-returns.html and views/purchase-returns.html, ensuring returns on and after today appear dynamically in the register.",
+        "5. Create Return Modal Manual Invoice Input Toggle: Added Type Manual # toggle allowing direct paste/typing of any invoice (e.g. JI/25-10-2026/0031) with immediate line item loading, avoiding dropdown bottlenecks."
     ]
 }

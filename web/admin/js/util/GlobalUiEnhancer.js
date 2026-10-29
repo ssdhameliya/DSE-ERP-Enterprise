@@ -66,6 +66,29 @@ window.GlobalUiEnhancer = (function() {
     }, 120);
   }
 
+  const pendingTables = new Set();
+  let tableBatchTimer = null;
+
+  function scheduleTableBatchEnhancement(tbl) {
+    if (!tbl || !window.TableUiEnhancer) return;
+    pendingTables.add(tbl);
+    if (tableBatchTimer) return;
+    tableBatchTimer = requestAnimationFrame(() => {
+      tableBatchTimer = null;
+      const tables = Array.from(pendingTables);
+      pendingTables.clear();
+      tables.forEach(t => {
+        try {
+          if (t && t.isConnected && window.TableUiEnhancer) {
+            window.TableUiEnhancer.enhanceTable(t);
+          }
+        } catch (e) {
+          console.warn('[GlobalUiEnhancer] Debounced table enhance warning:', e);
+        }
+      });
+    });
+  }
+
   function installObserver() {
     const target = document.getElementById('main-content-stage') || document.body;
     if (!target || observer) return;
@@ -80,11 +103,11 @@ window.GlobalUiEnhancer = (function() {
           const n = m.addedNodes[i];
           if (n.nodeType === 1) {
             const tag = n.tagName;
-            // Handle dynamic table row rendering
+            // Handle dynamic table row rendering with debounced frame batching
             if (tag === 'TR' || tag === 'TBODY') {
               const tbl = n.closest ? n.closest('table') : null;
               if (tbl && window.TableUiEnhancer && !n.closest?.('.sale-workspace-container, #view-sale-create, #view-purchase-creation')) {
-                window.TableUiEnhancer.enhanceTable(tbl);
+                scheduleTableBatchEnhancement(tbl);
               }
               continue;
             }

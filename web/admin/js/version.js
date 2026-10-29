@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.AppVersion = window.DSE_VERSION = {
-  version: "11.0.8.06",
+  version: "11.0.8.07",
   desktopVersion: "11.0.8",
-  webBuild: 6,
-  webVersion: "11.0.8.06",
-  tag: "web-v11.0.8.06",
-  releaseDate: "2026-10-29T02:15:00+05:30",
+  webBuild: 7,
+  webVersion: "11.0.8.07",
+  tag: "web-v11.0.8.07",
+  releaseDate: "2026-10-29T09:05:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.8.06 Enterprise Web Release: Eliminate Runtime Syntax Errors in ReturnsController, PurchaseController & ButtonIconEnhancer; Restore Returns Register Live Data & Create Return Modal Line Loading",
+  summary: "v11.0.8.07 Enterprise Web Release: High-Performance Item Master (25-Item Pagination, Frame-Coalesced MutationObserver, Fast In-Memory Reset & Search Debounce); Dynamic Return Date Range & Create Return Modal Invoice Manual Input Toggle",
   highlights: [
     "1. Returns Register Auto-Loading & Live Parity: Replaced static placeholder with live data rendering, dynamic 6-month date range, automatic DatePickerFormatter binding on view mounting, and instant line item preloading.",
     "2. Create Return Modal Pre-fill & Line Resolution: Passed resolved invoice number from drawer actions, added immediate pre-selection in dropdown before network calls, and enabled instant fallback to in-memory invoice lines.",
