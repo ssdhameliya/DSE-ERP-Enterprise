@@ -83,9 +83,21 @@ window.FormDirtyTracker = (function() {
       if (activeTrackers.has(id)) return;
 
       const markDirty = (e) => {
-        // Ignore filter inputs or search inputs inside tables
-        if (e.target && (e.target.classList.contains('filter-input') || e.target.classList.contains('omni-search') || e.target.classList.contains('search-input'))) {
-          return;
+        // Ignore filter inputs, omni-searches, toolbar selectors, table checkboxes, and search fields
+        if (e.target) {
+          const t = e.target;
+          if (t.classList && (t.classList.contains('filter-input') || t.classList.contains('omni-search') || t.classList.contains('search-input') || t.classList.contains('form-select'))) {
+            return;
+          }
+          if (t.id && (t.id.includes('search') || t.id.includes('filter'))) {
+            return;
+          }
+          if (t.closest && t.closest('.filter-toolbar, .filter-toolbar-strip, .entity-toolbar, .filter-strip, .table-footer-bar, .sales-desktop-table')) {
+            return;
+          }
+          if (t.type === 'checkbox' && t.closest && (t.closest('th') || t.closest('thead') || t.closest('table'))) {
+            return;
+          }
         }
         globalDirty = true;
         el.dataset.erpFormDirty = 'true';

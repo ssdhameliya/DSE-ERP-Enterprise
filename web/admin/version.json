@@ -1,16 +1,17 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 8,
-    "webVersion": "11.0.8.08",
-    "tag": "web-v11.0.8.08",
-    "releaseDate": "2026-10-29T10:45:00+05:30",
+    "webBuild": 9,
+    "webVersion": "11.0.8.09",
+    "tag": "web-v11.0.8.09",
+    "releaseDate": "2026-10-29T11:15:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.08 Enterprise Web Release: Resilient Sales & Purchase Return Loading, Instant Return Modal Prefill & Manual Input Mode, Audit Trail Resolution & Full Table Pagination Census",
+    "summary": "v11.0.8.09 Enterprise Web Release: High-Performance Item Master Reset & Refresh, FormDirtyTracker Search Exemption, Resilient Returns Loading & Complete Table Census",
     "highlights": [
-        "1. Resilient Returns Register: Added authoritative summary recovery so existing returns (SAL-RET-2026-0002) always render immediately regardless of backend date filter formatting differences.",
-        "2. Instant Create Return Modal: Synchronously populates invoice options from in-memory sales cache, pre-selects the source invoice, ensures manual invoice input mode works smoothly, and eliminates modal freezes.",
-        "3. Audit Trail Fix: Implemented ReturnsController.showAudit() and added Audit Trail buttons to Return drawers; hardened SalesController.resolveCurrentInvoiceNo() to safely ignore placeholder dashes.",
-        "4. Returnable Line Allocation: Fixed invoice line loading to properly handle manual input and cache lookups for immediate item selection.",
-        "5. Register Pagination Census: Comprehensive audit of all 103 tables in the ERP suite, ensuring all 13 core operational registers feature 25-item pagination with 120ms debounce."
+        "1. High-Performance Item Master: Hardened resetFilters() and refreshItems() with debounced timer clearing, cache invalidation, and button state management to eliminate freezes.",
+        "2. FormDirtyTracker Search Exemption: Omnisearches, table filters, search inputs, and table headers are strictly exempted from dirty form tracking, preventing unintended page refresh locks and navigation aborts.",
+        "3. Stock Register Instant Refresh: views/inventory.html and views/item-master.html now provide visual spinner feedback and dedicated server cache invalidation.",
+        "4. Resilient Returns Register: Added authoritative summary recovery so existing returns (SAL-RET-2026-0002) always render immediately regardless of backend date filter formatting differences.",
+        "5. Instant Create Return Modal: Synchronously populates invoice options from in-memory sales cache, pre-selects the source invoice, ensures manual invoice input mode works smoothly, and eliminates modal freezes.",
+        "6. Table Census Architecture: Complete audit of all 103 tables with 13 core registers fully paginated at 25 items/page."
     ]
 }

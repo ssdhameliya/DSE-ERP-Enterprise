@@ -1398,8 +1398,33 @@ window.ItemMasterController = (function() {
     }
   }
 
-  function refreshItems() {
-    loadItems(true);
+  async function refreshItems() {
+    if (filterDebounceTimer) {
+      clearTimeout(filterDebounceTimer);
+      filterDebounceTimer = null;
+    }
+    const btn = document.getElementById('item-refresh-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner" style="display:inline-block; margin-right:6px;"></span> Refreshing...';
+    }
+    try {
+      if (window.MasterService && window.MasterService.invalidate) {
+        window.MasterService.invalidate('master_items');
+      }
+      if (window.FormDirtyTracker && window.FormDirtyTracker.reset) {
+        window.FormDirtyTracker.reset();
+      }
+      await loadItems(true);
+      if (window.AppDialogService && window.AppDialogService.toastSuccess) {
+        window.AppDialogService.toastSuccess('Item catalog refreshed successfully.');
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '&#8634; Refresh';
+      }
+    }
   }
 
   async function exportInventoryExcel() {
@@ -1615,13 +1640,27 @@ window.ItemMasterController = (function() {
       this.importItemsExcel();
     },
     resetFilters() {
+      if (filterDebounceTimer) {
+        clearTimeout(filterDebounceTimer);
+        filterDebounceTimer = null;
+      }
       const searchInput = document.getElementById('item-search');
-      if (searchInput) searchInput.value = '';
+      if (searchInput) {
+        searchInput.value = '';
+        try { searchInput.focus(); } catch (e) {}
+      }
       selectedItemCode = null;
       selectedCodes.clear();
       currentPage = 0;
+      closeItemDrawer();
+      if (window.FormDirtyTracker && window.FormDirtyTracker.reset) {
+        window.FormDirtyTracker.reset();
+      }
       filteredItems = [...items];
       renderTable(filteredItems);
+      if (window.AppDialogService && window.AppDialogService.toastInfo) {
+        window.AppDialogService.toastInfo('Filters reset');
+      }
     },
     isolateItem,
     prevPage,

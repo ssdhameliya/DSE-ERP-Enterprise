@@ -3,14 +3,14 @@
  * Automatically synchronized with version.json and Desktop release revision.
  */
 window.AppVersion = window.DSE_VERSION = {
-  version: "11.0.8.08",
+  version: "11.0.8.09",
   desktopVersion: "11.0.8",
-  webBuild: 8,
-  webVersion: "11.0.8.08",
-  tag: "web-v11.0.8.08",
-  releaseDate: "2026-10-29T10:45:00+05:30",
+  webBuild: 9,
+  webVersion: "11.0.8.09",
+  tag: "web-v11.0.8.09",
+  releaseDate: "2026-10-29T11:15:00+05:30",
   environment: "Production / Enterprise",
-  summary: "v11.0.8.08 Enterprise Web Release: Resilient Sales & Purchase Return Loading, Instant Return Modal Prefill & Manual Input Mode, Audit Trail Resolution & Full Table Pagination Census",
+  summary: "v11.0.8.09 Enterprise Web Release: High-Performance Item Master Reset & Refresh, FormDirtyTracker Search Exemption, Resilient Returns Loading & Complete Table Census",
   highlights: [
     "1. Returns Register Auto-Loading & Live Parity: Replaced static placeholder with live data rendering, dynamic 6-month date range, automatic DatePickerFormatter binding on view mounting, and instant line item preloading.",
     "2. Create Return Modal Pre-fill & Line Resolution: Passed resolved invoice number from drawer actions, added immediate pre-selection in dropdown before network calls, and enabled instant fallback to in-memory invoice lines.",

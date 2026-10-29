@@ -73,7 +73,7 @@
               <option value="LOW_STOCK">Low Stock</option>
               <option value="OUT_OF_STOCK">Out of Stock</option>
             </select>
-            <button class="btn btn-secondary" onclick="window.ItemMasterController.loadInventory()">&#8634;
+            <button class="btn btn-secondary" id="inv-refresh-btn" onclick="window.ItemMasterController.loadInventory(true)">&#8634;
               Refresh</button>
             <button class="btn btn-secondary" onclick="window.ItemMasterController.exportInventoryExcel()">&#128202;
               Export Excel</button>
