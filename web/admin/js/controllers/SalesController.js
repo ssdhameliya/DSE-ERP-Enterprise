@@ -672,11 +672,27 @@ window.SalesController = {
   },
 
   resolveCurrentInvoiceNo() {
-    return (this.currentDrawerSale && this.currentDrawerSale.invoiceNo) ||
-           (document.getElementById('drawer-inv-no') && document.getElementById('drawer-inv-no').innerText.trim()) ||
-           (document.getElementById('side-inv-no') && document.getElementById('side-inv-no').innerText.trim()) ||
-           this.selectedDrawerInvoiceNo ||
-           this.selectedInvoiceNo;
+    const fromSale = this.currentDrawerSale && (this.currentDrawerSale.invoiceNo || this.currentDrawerSale.number);
+    if (fromSale && fromSale !== '-' && fromSale !== 'Loading next sequence...') return fromSale;
+
+    const drawerEl = document.getElementById('drawer-inv-no');
+    const drawerText = drawerEl ? drawerEl.innerText.trim() : '';
+    if (drawerText && drawerText !== '-' && drawerText !== 'Loading next sequence...') return drawerText;
+
+    const sideEl = document.getElementById('side-inv-no');
+    const sideText = sideEl ? sideEl.innerText.trim() : '';
+    if (sideText && sideText !== '-' && sideText !== 'Loading next sequence...') return sideText;
+
+    if (this.selectedDrawerInvoiceNo && this.selectedDrawerInvoiceNo !== '-') return this.selectedDrawerInvoiceNo;
+    if (this.selectedInvoiceNo && this.selectedInvoiceNo !== '-') return this.selectedInvoiceNo;
+
+    const activeRow = document.querySelector('#sales-main-table tr.active-selected-row, #sales-main-table tr.selected');
+    if (activeRow) {
+      const inv = activeRow.getAttribute('data-invoice-no') || activeRow.getAttribute('data-id');
+      if (inv && inv !== '-') return inv;
+    }
+
+    return '';
   },
 
   resolveCurrentSale(invNo) {

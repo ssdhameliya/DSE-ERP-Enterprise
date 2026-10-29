@@ -94,9 +94,14 @@
                   </tbody>
                 </table>
               </div>
-              <div
+              <div class="table-footer-bar"
                 style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(10,18,34,0.85); border-top:1px solid var(--border-subtle); font-size:0.75rem;">
-                <span id="cust-record-count" style="color:var(--text-muted);">0 customer records</span>
+                <span id="cust-record-count" style="color:var(--text-muted); font-size:0.8rem;">Showing 0 customer records</span>
+                <div id="cust-pagination-container" style="display:inline-flex; align-items:center; gap:6px;">
+                  <button class="btn btn-secondary btn-sm" id="btn-cust-prev" onclick="window.PartyController.prevCustomerPage()" disabled style="padding:3px 10px; font-size:0.75rem;">&larr; Prev</button>
+                  <span id="cust-page-info" style="font-size:0.8rem; color:var(--text-main); font-weight:600; min-width:80px; text-align:center;">Page 1 of 1</span>
+                  <button class="btn btn-secondary btn-sm" id="btn-cust-next" onclick="window.PartyController.nextCustomerPage()" disabled style="padding:3px 10px; font-size:0.75rem;">Next &rarr;</button>
+                </div>
               </div>
             </div>
 

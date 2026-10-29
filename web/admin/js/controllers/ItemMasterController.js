@@ -16,6 +16,12 @@ window.ItemMasterController = (function() {
   let totalPages = 1;
   let filterDebounceTimer = null;
 
+  let currentInvPage = 0;
+  const invPageSize = 25;
+  let totalInvPages = 1;
+  let invFilterDebounceTimer = null;
+  let filteredInventoryItems = [];
+
   function formatMoney(amount) {
     return '₹ ' + (parseFloat(amount) || 0).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
@@ -804,9 +810,11 @@ window.ItemMasterController = (function() {
       }
       const items = await window.MasterService.getItems(forceRefresh);
       inventoryItems = items || [];
+      filteredInventoryItems = [...inventoryItems];
+      currentInvPage = 0;
       updateInventoryKpis(inventoryItems);
       populateInventoryCategories(inventoryItems);
-      filterInventory();
+      filterInventory(true);
       if (forceRefresh && window.AppDialogService && window.AppDialogService.toastSuccess) {
         window.AppDialogService.toastSuccess('Stock Register refreshed with latest server balances.');
       }
@@ -865,43 +873,102 @@ window.ItemMasterController = (function() {
     });
   }
 
-  function filterInventory() {
-    const q = (document.getElementById('inv-search-input')?.value || '').toLowerCase();
-    const cat = document.getElementById('inv-category-filter')?.value || '';
-    const status = document.getElementById('inv-status-filter')?.value || '';
+  function filterInventory(immediate = false) {
+    if (invFilterDebounceTimer) clearTimeout(invFilterDebounceTimer);
+    const execute = () => {
+      const q = (document.getElementById('inv-search-input')?.value || '').toLowerCase().trim();
+      const cat = document.getElementById('inv-category-filter')?.value || '';
+      const status = document.getElementById('inv-status-filter')?.value || '';
 
-    const filtered = inventoryItems.filter(i => {
-      const code = (i.itemCode || i.code || '').toLowerCase();
-      const desc = (i.description || i.name || '').toLowerCase();
-      const hsn = (i.hsn || '').toLowerCase();
-      const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
-      const min = parseFloat(i.minimumStock || 10);
+      filteredInventoryItems = (inventoryItems || []).filter(i => {
+        const code = (i.itemCode || i.code || '').toLowerCase();
+        const desc = (i.description || i.name || '').toLowerCase();
+        const hsn = (i.hsn || '').toLowerCase();
+        const loc = (i.location || '').toLowerCase();
+        const stock = parseFloat(i.openingStock || i.currentStock || i.stock || 0);
+        const min = parseFloat(i.minimumStock || 10);
 
-      const matchesQ = !q || code.includes(q) || desc.includes(q) || hsn.includes(q);
-      const matchesCat = !cat || (i.category === cat);
-      let matchesStatus = true;
-      if (status === 'IN_STOCK') matchesStatus = stock > min;
-      else if (status === 'LOW_STOCK') matchesStatus = stock > 0 && stock <= min;
-      else if (status === 'OUT_OF_STOCK') matchesStatus = stock <= 0;
+        const matchesQ = !q || code.includes(q) || desc.includes(q) || hsn.includes(q) || loc.includes(q);
+        const matchesCat = !cat || (i.category === cat);
+        let matchesStatus = true;
+        if (status === 'IN_STOCK') matchesStatus = stock > min;
+        else if (status === 'LOW_STOCK') matchesStatus = stock > 0 && stock <= min;
+        else if (status === 'OUT_OF_STOCK') matchesStatus = stock <= 0;
 
-      return matchesQ && matchesCat && matchesStatus;
-    });
+        return matchesQ && matchesCat && matchesStatus;
+      });
 
-    renderInventoryTable(filtered);
+      currentInvPage = 0;
+      renderInventoryTable(filteredInventoryItems);
+    };
+
+    if (immediate) execute();
+    else invFilterDebounceTimer = setTimeout(execute, 120);
+  }
+
+  function updateInventoryPagination(total) {
+    totalInvPages = Math.max(1, Math.ceil(total / invPageSize));
+    if (currentInvPage >= totalInvPages) currentInvPage = totalInvPages - 1;
+    if (currentInvPage < 0) currentInvPage = 0;
+
+    const start = total === 0 ? 0 : currentInvPage * invPageSize + 1;
+    const end = Math.min(total, (currentInvPage + 1) * invPageSize);
+
     const elCount = document.getElementById('lbl-inv-record-count');
-    if (elCount) elCount.innerText = `Showing ${filtered.length} of ${inventoryItems.length} Records`;
+    if (elCount) elCount.innerText = total === 0 ? 'Showing 0 Records' : `Showing ${start}–${end} of ${total.toLocaleString()} Records`;
+
+    const pageInfo = document.getElementById('inv-page-info');
+    if (pageInfo) pageInfo.innerText = `Page ${currentInvPage + 1} of ${totalInvPages}`;
+
+    const btnPrev = document.getElementById('btn-inv-prev');
+    if (btnPrev) btnPrev.disabled = currentInvPage <= 0;
+
+    const btnNext = document.getElementById('btn-inv-next');
+    if (btnNext) btnNext.disabled = currentInvPage >= totalInvPages - 1;
+  }
+
+  function prevInventoryPage() {
+    if (currentInvPage > 0) {
+      currentInvPage--;
+      renderInventoryTable(filteredInventoryItems);
+      const tbl = document.getElementById('inventory-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function nextInventoryPage() {
+    if (currentInvPage < totalInvPages - 1) {
+      currentInvPage++;
+      renderInventoryTable(filteredInventoryItems);
+      const tbl = document.getElementById('inventory-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function goToInventoryPage(p) {
+    const pageIndex = Math.max(0, Math.min(p - 1, totalInvPages - 1));
+    if (pageIndex !== currentInvPage) {
+      currentInvPage = pageIndex;
+      renderInventoryTable(filteredInventoryItems);
+    }
   }
 
   function renderInventoryTable(items) {
     const tbody = document.getElementById('inventory-tbody');
     if (!tbody) return;
 
-    if (!items || items.length === 0) {
+    const list = items || [];
+    updateInventoryPagination(list.length);
+
+    if (list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">No inventory records match the selected filters.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = items.map(item => {
+    const start = currentInvPage * invPageSize;
+    const pageRows = list.slice(start, start + invPageSize);
+
+    tbody.innerHTML = pageRows.map(item => {
       const code = item.itemCode || item.code || '';
       const desc = item.description || item.name || '';
       const cat = item.category || 'General';
@@ -1454,6 +1521,9 @@ window.ItemMasterController = (function() {
     // Inventory Ledger Parity
     loadInventory,
     filterInventory,
+    prevInventoryPage,
+    nextInventoryPage,
+    goToInventoryPage,
     openStockAdjustment,
     submitStockAdjustment,
     openStockHistory,

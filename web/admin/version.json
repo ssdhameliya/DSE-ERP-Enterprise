@@ -1,16 +1,16 @@
 {
     "desktopVersion": "11.0.8",
-    "webBuild": 7,
-    "webVersion": "11.0.8.07",
-    "tag": "web-v11.0.8.07",
-    "releaseDate": "2026-10-29T09:05:00+05:30",
+    "webBuild": 8,
+    "webVersion": "11.0.8.08",
+    "tag": "web-v11.0.8.08",
+    "releaseDate": "2026-10-29T10:45:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.07 Enterprise Web Release: High-Performance Item Master (25-Item Pagination, Frame-Coalesced MutationObserver, Fast In-Memory Reset & Search Debounce); Dynamic Return Date Range & Create Return Modal Invoice Manual Input Toggle",
+    "summary": "v11.0.8.08 Enterprise Web Release: Resilient Sales & Purchase Return Loading, Instant Return Modal Prefill & Manual Input Mode, Audit Trail Resolution & Full Table Pagination Census",
     "highlights": [
-        "1. Item Master Pagination & Reflow Optimization: Implemented 25-item per page client-side pagination with previous/next controls and status counter, eliminating tens of thousands of simultaneous DOM nodes.",
-        "2. MutationObserver Layout Storm Elimination: Coalesced table row mutations in GlobalUiEnhancer with requestAnimationFrame batching and precomputed header texts in TableUiEnhancer, eliminating O(N^2) synchronous layout thrashing and unfreezing the browser.",
-        "3. Instant Item Master Reset & Debounced Filter: Reset button now resets search and re-slices cached items instantly in 2ms without network delays, while search input is debounced by 120ms to prevent main thread blocking.",
-        "4. Dynamic Sales & Purchase Return Date Range: Removed hardcoded static dates (2026-10-28) from views/sales-returns.html and views/purchase-returns.html, ensuring returns on and after today appear dynamically in the register.",
-        "5. Create Return Modal Manual Invoice Input Toggle: Added Type Manual # toggle allowing direct paste/typing of any invoice (e.g. JI/25-10-2026/0031) with immediate line item loading, avoiding dropdown bottlenecks."
+        "1. Resilient Returns Register: Added authoritative summary recovery so existing returns (SAL-RET-2026-0002) always render immediately regardless of backend date filter formatting differences.",
+        "2. Instant Create Return Modal: Synchronously populates invoice options from in-memory sales cache, pre-selects the source invoice, ensures manual invoice input mode works smoothly, and eliminates modal freezes.",
+        "3. Audit Trail Fix: Implemented ReturnsController.showAudit() and added Audit Trail buttons to Return drawers; hardened SalesController.resolveCurrentInvoiceNo() to safely ignore placeholder dashes.",
+        "4. Returnable Line Allocation: Fixed invoice line loading to properly handle manual input and cache lookups for immediate item selection.",
+        "5. Register Pagination Census: Comprehensive audit of all 103 tables in the ERP suite, ensuring all 13 core operational registers feature 25-item pagination with 120ms debounce."
     ]
 }

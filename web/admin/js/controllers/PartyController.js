@@ -6,8 +6,17 @@
 window.PartyController = (function() {
   let customers = [];
   let filteredCustomers = [];
+  let currentCustPage = 0;
+  const custPageSize = 25;
+  let totalCustPages = 1;
+  let custFilterDebounce = null;
+
   let suppliers = [];
   let filteredSuppliers = [];
+  let currentSuppPage = 0;
+  const suppPageSize = 25;
+  let totalSuppPages = 1;
+  let suppFilterDebounce = null;
 
   let selectedCustomerId = null;
   let selectedSupplierId = null;
@@ -46,6 +55,7 @@ window.PartyController = (function() {
       const data = await window.MasterService.getParties('CUSTOMER');
       customers = data || [];
       filteredCustomers = [...customers];
+      currentCustPage = 0;
 
       updateCustomerKpis(customers);
       renderCustomersTable(filteredCustomers);
@@ -78,21 +88,77 @@ window.PartyController = (function() {
     if (recEl) recEl.innerText = `${filteredCustomers.length} customer records`;
   }
 
-  function filterCustomers(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-      filteredCustomers = [...customers];
-    } else {
-      filteredCustomers = customers.filter(c => {
-        const code = (c.partyCode || c.code || '').toLowerCase();
-        const name = (c.name || '').toLowerCase();
-        const phone = (c.phone || '').toLowerCase();
-        const email = (c.email || '').toLowerCase();
-        const gstin = (c.gstin || '').toLowerCase();
-        return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || gstin.includes(q);
-      });
+  function filterCustomers(query, immediate = false) {
+    if (custFilterDebounce) clearTimeout(custFilterDebounce);
+    const execute = () => {
+      const q = (query !== undefined ? query : (document.getElementById('cust-search')?.value || '')).toLowerCase().trim();
+      if (!q) {
+        filteredCustomers = [...customers];
+      } else {
+        filteredCustomers = customers.filter(c => {
+          const code = (c.partyCode || c.code || '').toLowerCase();
+          const name = (c.name || '').toLowerCase();
+          const phone = (c.phone || '').toLowerCase();
+          const email = (c.email || '').toLowerCase();
+          const gstin = (c.gstin || '').toLowerCase();
+          return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || gstin.includes(q);
+        });
+      }
+      currentCustPage = 0;
+      renderCustomersTable(filteredCustomers);
+    };
+
+    if (immediate) execute();
+    else custFilterDebounce = setTimeout(execute, 120);
+  }
+
+  function updateCustomerPagination(total) {
+    totalCustPages = Math.max(1, Math.ceil(total / custPageSize));
+    if (currentCustPage >= totalCustPages) currentCustPage = totalCustPages - 1;
+    if (currentCustPage < 0) currentCustPage = 0;
+
+    const start = total === 0 ? 0 : currentCustPage * custPageSize + 1;
+    const end = Math.min(total, (currentCustPage + 1) * custPageSize);
+
+    const recEl = document.getElementById('cust-record-count');
+    if (recEl) {
+      recEl.innerText = total === 0 ? 'Showing 0 customer records' : `Showing ${start}–${end} of ${total.toLocaleString()} customer records`;
     }
-    renderCustomersTable(filteredCustomers);
+
+    const pageInfo = document.getElementById('cust-page-info');
+    if (pageInfo) pageInfo.innerText = `Page ${currentCustPage + 1} of ${totalCustPages}`;
+
+    const btnPrev = document.getElementById('btn-cust-prev');
+    if (btnPrev) btnPrev.disabled = currentCustPage <= 0;
+
+    const btnNext = document.getElementById('btn-cust-next');
+    if (btnNext) btnNext.disabled = currentCustPage >= totalCustPages - 1;
+  }
+
+  function prevCustomerPage() {
+    if (currentCustPage > 0) {
+      currentCustPage--;
+      renderCustomersTable(filteredCustomers);
+      const tbl = document.getElementById('customers-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function nextCustomerPage() {
+    if (currentCustPage < totalCustPages - 1) {
+      currentCustPage++;
+      renderCustomersTable(filteredCustomers);
+      const tbl = document.getElementById('customers-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function goToCustomerPage(p) {
+    const pageIndex = Math.max(0, Math.min(p - 1, totalCustPages - 1));
+    if (pageIndex !== currentCustPage) {
+      currentCustPage = pageIndex;
+      renderCustomersTable(filteredCustomers);
+    }
   }
 
   function selectCustomerRow(id) {
@@ -227,7 +293,10 @@ window.PartyController = (function() {
     const tbody = document.getElementById('customers-table-tbody');
     if (!tbody) return;
 
-    if (!rows || rows.length === 0) {
+    const list = rows || [];
+    updateCustomerPagination(list.length);
+
+    if (list.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
@@ -240,7 +309,10 @@ window.PartyController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map((c) => {
+    const start = currentCustPage * custPageSize;
+    const pageRows = list.slice(start, start + custPageSize);
+
+    tbody.innerHTML = pageRows.map((c) => {
       const code = c.partyCode || c.code || '-';
       const bal = parseFloat(c.openingBalance) || 0;
       const isActive = c.active !== false;
@@ -293,6 +365,7 @@ window.PartyController = (function() {
       const data = await window.MasterService.getParties('SUPPLIER');
       suppliers = data || [];
       filteredSuppliers = [...suppliers];
+      currentSuppPage = 0;
 
       updateSupplierKpis(suppliers);
       renderSuppliersTable(filteredSuppliers);
@@ -325,21 +398,77 @@ window.PartyController = (function() {
     if (recEl) recEl.innerText = `${filteredSuppliers.length} supplier records`;
   }
 
-  function filterSuppliers(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-      filteredSuppliers = [...suppliers];
-    } else {
-      filteredSuppliers = suppliers.filter(s => {
-        const code = (s.partyCode || s.code || '').toLowerCase();
-        const name = (s.name || '').toLowerCase();
-        const phone = (s.phone || '').toLowerCase();
-        const email = (s.email || '').toLowerCase();
-        const gstin = (s.gstin || '').toLowerCase();
-        return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || gstin.includes(q);
-      });
+  function filterSuppliers(query, immediate = false) {
+    if (suppFilterDebounce) clearTimeout(suppFilterDebounce);
+    const execute = () => {
+      const q = (query !== undefined ? query : (document.getElementById('supp-search')?.value || '')).toLowerCase().trim();
+      if (!q) {
+        filteredSuppliers = [...suppliers];
+      } else {
+        filteredSuppliers = suppliers.filter(s => {
+          const code = (s.partyCode || s.code || '').toLowerCase();
+          const name = (s.name || '').toLowerCase();
+          const phone = (s.phone || '').toLowerCase();
+          const email = (s.email || '').toLowerCase();
+          const gstin = (s.gstin || '').toLowerCase();
+          return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || gstin.includes(q);
+        });
+      }
+      currentSuppPage = 0;
+      renderSuppliersTable(filteredSuppliers);
+    };
+
+    if (immediate) execute();
+    else suppFilterDebounce = setTimeout(execute, 120);
+  }
+
+  function updateSupplierPagination(total) {
+    totalSuppPages = Math.max(1, Math.ceil(total / suppPageSize));
+    if (currentSuppPage >= totalSuppPages) currentSuppPage = totalSuppPages - 1;
+    if (currentSuppPage < 0) currentSuppPage = 0;
+
+    const start = total === 0 ? 0 : currentSuppPage * suppPageSize + 1;
+    const end = Math.min(total, (currentSuppPage + 1) * suppPageSize);
+
+    const recEl = document.getElementById('supp-record-count');
+    if (recEl) {
+      recEl.innerText = total === 0 ? 'Showing 0 supplier records' : `Showing ${start}–${end} of ${total.toLocaleString()} supplier records`;
     }
-    renderSuppliersTable(filteredSuppliers);
+
+    const pageInfo = document.getElementById('supp-page-info');
+    if (pageInfo) pageInfo.innerText = `Page ${currentSuppPage + 1} of ${totalSuppPages}`;
+
+    const btnPrev = document.getElementById('btn-supp-prev');
+    if (btnPrev) btnPrev.disabled = currentSuppPage <= 0;
+
+    const btnNext = document.getElementById('btn-supp-next');
+    if (btnNext) btnNext.disabled = currentSuppPage >= totalSuppPages - 1;
+  }
+
+  function prevSupplierPage() {
+    if (currentSuppPage > 0) {
+      currentSuppPage--;
+      renderSuppliersTable(filteredSuppliers);
+      const tbl = document.getElementById('suppliers-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function nextSupplierPage() {
+    if (currentSuppPage < totalSuppPages - 1) {
+      currentSuppPage++;
+      renderSuppliersTable(filteredSuppliers);
+      const tbl = document.getElementById('suppliers-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function goToSupplierPage(p) {
+    const pageIndex = Math.max(0, Math.min(p - 1, totalSuppPages - 1));
+    if (pageIndex !== currentSuppPage) {
+      currentSuppPage = pageIndex;
+      renderSuppliersTable(filteredSuppliers);
+    }
   }
 
   async function isolateParty(ref, isCustomer = true) {
@@ -514,7 +643,10 @@ window.PartyController = (function() {
     const tbody = document.getElementById('suppliers-table-tbody');
     if (!tbody) return;
 
-    if (!rows || rows.length === 0) {
+    const list = rows || [];
+    updateSupplierPagination(list.length);
+
+    if (list.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
@@ -527,7 +659,10 @@ window.PartyController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map((s) => {
+    const start = currentSuppPage * suppPageSize;
+    const pageRows = list.slice(start, start + suppPageSize);
+
+    tbody.innerHTML = pageRows.map((s) => {
       const code = s.partyCode || s.code || '-';
       const bal = parseFloat(s.openingBalance) || 0;
       const isActive = s.active !== false;
@@ -1914,8 +2049,16 @@ window.PartyController = (function() {
     filterCustomers,
     selectCustomerRow,
     openSelectedCustomer360,
+    prevCustomerPage,
+    nextCustomerPage,
+    goToCustomerPage,
     loadSuppliers,
     filterSuppliers,
+    selectSupplierRow,
+    openSelectedSupplier360,
+    prevSupplierPage,
+    nextSupplierPage,
+    goToSupplierPage,
     selectSupplierRow,
     openSelectedSupplier360,
     togglePartyActionMenu,

@@ -6,6 +6,17 @@
 window.CreditDebitNoteController = (function() {
   let creditNotes = [];
   let debitNotes = [];
+  let currentCreditPage = 0;
+  const creditPageSize = 25;
+  let totalCreditPages = 1;
+  let filteredCreditList = [];
+  let creditDebounceTimer = null;
+
+  let currentDebitPage = 0;
+  const debitPageSize = 25;
+  let totalDebitPages = 1;
+  let filteredDebitList = [];
+  let debitDebounceTimer = null;
   let selectedNote = null;
   let isCreditNote = true;
   let cachedCustomerInvoices = [];
@@ -53,8 +64,9 @@ window.CreditDebitNoteController = (function() {
 
     try {
       creditNotes = await window.OperationsService.getCreditNotes();
+      currentCreditPage = 0;
       updateCreditKpis(creditNotes);
-      filterCreditNotes();
+      filterCreditNotes(true);
     } catch (err) {
       console.error('Failed to load credit notes:', err);
       if (tbody) {
@@ -88,31 +100,90 @@ window.CreditDebitNoteController = (function() {
     if (cStock) cStock.innerText = restocked;
   }
 
-  function filterCreditNotes() {
-    const q = document.getElementById('cn-filter-search')?.value?.toLowerCase().trim() || '';
-    const reason = document.getElementById('cn-filter-reason')?.value || 'All Reasons';
+  function filterCreditNotes(immediate = false) {
+    if (creditDebounceTimer) clearTimeout(creditDebounceTimer);
+    const execute = () => {
+      const q = document.getElementById('cn-filter-search')?.value?.toLowerCase().trim() || '';
+      const reason = document.getElementById('cn-filter-reason')?.value || 'All Reasons';
 
-    const matched = (creditNotes || []).filter(r => {
-      const matchSearch = !q ||
-        (r.creditNoteNo && r.creditNoteNo.toLowerCase().includes(q)) ||
-        (r.partyName && r.partyName.toLowerCase().includes(q)) ||
-        (r.originalInvoiceNo && r.originalInvoiceNo.toLowerCase().includes(q));
+      filteredCreditList = (creditNotes || []).filter(r => {
+        const matchSearch = !q ||
+          (r.creditNoteNo && r.creditNoteNo.toLowerCase().includes(q)) ||
+          (r.partyName && r.partyName.toLowerCase().includes(q)) ||
+          (r.originalInvoiceNo && r.originalInvoiceNo.toLowerCase().includes(q));
 
-      const matchReason = reason === 'All Reasons' ||
-        (r.reasonCode && r.reasonCode.equalsIgnoreCase && r.reasonCode.equalsIgnoreCase(reason)) ||
-        (r.reasonCode && r.reasonCode === reason);
+        const matchReason = reason === 'All Reasons' ||
+          (r.reasonCode && r.reasonCode.equalsIgnoreCase && r.reasonCode.equalsIgnoreCase(reason)) ||
+          (r.reasonCode && r.reasonCode === reason);
 
-      return matchSearch && matchReason;
-    });
+        return matchSearch && matchReason;
+      });
 
-    renderCreditTable(matched);
+      currentCreditPage = 0;
+      renderCreditTable(filteredCreditList);
+    };
+
+    if (immediate) execute();
+    else creditDebounceTimer = setTimeout(execute, 120);
+  }
+
+  function updateCreditPagination(total) {
+    totalCreditPages = Math.max(1, Math.ceil(total / creditPageSize));
+    if (currentCreditPage >= totalCreditPages) currentCreditPage = totalCreditPages - 1;
+    if (currentCreditPage < 0) currentCreditPage = 0;
+
+    const start = total === 0 ? 0 : currentCreditPage * creditPageSize + 1;
+    const end = Math.min(total, (currentCreditPage + 1) * creditPageSize);
+
+    const recEl = document.getElementById('cn-record-count');
+    if (recEl) {
+      recEl.innerText = total === 0 ? 'Showing 0 credit notes' : `Showing ${start}–${end} of ${total.toLocaleString()} credit notes`;
+    }
+
+    const pageInfo = document.getElementById('cn-page-info');
+    if (pageInfo) pageInfo.innerText = `Page ${currentCreditPage + 1} of ${totalCreditPages}`;
+
+    const btnPrev = document.getElementById('btn-cn-prev');
+    if (btnPrev) btnPrev.disabled = currentCreditPage <= 0;
+
+    const btnNext = document.getElementById('btn-cn-next');
+    if (btnNext) btnNext.disabled = currentCreditPage >= totalCreditPages - 1;
+  }
+
+  function prevCreditPage() {
+    if (currentCreditPage > 0) {
+      currentCreditPage--;
+      renderCreditTable(filteredCreditList);
+      const tbl = document.getElementById('credit-notes-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function nextCreditPage() {
+    if (currentCreditPage < totalCreditPages - 1) {
+      currentCreditPage++;
+      renderCreditTable(filteredCreditList);
+      const tbl = document.getElementById('credit-notes-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function goToCreditPage(p) {
+    const pageIndex = Math.max(0, Math.min(p - 1, totalCreditPages - 1));
+    if (pageIndex !== currentCreditPage) {
+      currentCreditPage = pageIndex;
+      renderCreditTable(filteredCreditList);
+    }
   }
 
   function renderCreditTable(rows) {
     const tbody = document.getElementById('tbl-credit-notes-body');
     if (!tbody) return;
 
-    if (!rows || rows.length === 0) {
+    const list = rows || [];
+    updateCreditPagination(list.length);
+
+    if (list.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
@@ -125,7 +196,10 @@ window.CreditDebitNoteController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map(r => {
+    const start = currentCreditPage * creditPageSize;
+    const pageRows = list.slice(start, start + creditPageSize);
+
+    tbody.innerHTML = pageRows.map(r => {
       const taxTotal = (parseFloat(r.cgstAmount) || 0) + (parseFloat(r.sgstAmount) || 0) + (parseFloat(r.igstAmount) || 0);
       const isActive = (r.status || '').toUpperCase() === 'ACTIVE' || (r.status || '').toUpperCase() === 'POSTED';
 
@@ -171,8 +245,9 @@ window.CreditDebitNoteController = (function() {
 
     try {
       debitNotes = await window.OperationsService.getDebitNotes();
+      currentDebitPage = 0;
       updateDebitKpis(debitNotes);
-      filterDebitNotes();
+      filterDebitNotes(true);
     } catch (err) {
       console.error('Failed to load debit notes:', err);
       if (tbody) {
@@ -206,30 +281,90 @@ window.CreditDebitNoteController = (function() {
     if (dStock) dStock.innerText = returnedStock;
   }
 
-  function filterDebitNotes() {
-    const q = document.getElementById('dn-filter-search')?.value?.toLowerCase().trim() || '';
-    const reason = document.getElementById('dn-filter-reason')?.value || 'All Reasons';
+  function filterDebitNotes(immediate = false) {
+    if (debitDebounceTimer) clearTimeout(debitDebounceTimer);
+    const execute = () => {
+      const q = document.getElementById('dn-filter-search')?.value?.toLowerCase().trim() || '';
+      const reason = document.getElementById('dn-filter-reason')?.value || 'All Reasons';
 
-    const matched = (debitNotes || []).filter(r => {
-      const matchSearch = !q ||
-        (r.debitNoteNo && r.debitNoteNo.toLowerCase().includes(q)) ||
-        (r.supplierName && r.supplierName.toLowerCase().includes(q)) ||
-        (r.originalBillNo && r.originalBillNo.toLowerCase().includes(q));
+      filteredDebitList = (debitNotes || []).filter(r => {
+        const matchSearch = !q ||
+          (r.debitNoteNo && r.debitNoteNo.toLowerCase().includes(q)) ||
+          (r.partyName && r.partyName.toLowerCase().includes(q)) ||
+          (r.originalInvoiceNo && r.originalInvoiceNo.toLowerCase().includes(q));
 
-      const matchReason = reason === 'All Reasons' ||
-        (r.reasonCode && r.reasonCode === reason);
+        const matchReason = reason === 'All Reasons' ||
+          (r.reasonCode && r.reasonCode.equalsIgnoreCase && r.reasonCode.equalsIgnoreCase(reason)) ||
+          (r.reasonCode && r.reasonCode === reason);
 
-      return matchSearch && matchReason;
-    });
+        return matchSearch && matchReason;
+      });
 
-    renderDebitTable(matched);
+      currentDebitPage = 0;
+      renderDebitTable(filteredDebitList);
+    };
+
+    if (immediate) execute();
+    else debitDebounceTimer = setTimeout(execute, 120);
+  }
+
+  function updateDebitPagination(total) {
+    totalDebitPages = Math.max(1, Math.ceil(total / debitPageSize));
+    if (currentDebitPage >= totalDebitPages) currentDebitPage = totalDebitPages - 1;
+    if (currentDebitPage < 0) currentDebitPage = 0;
+
+    const start = total === 0 ? 0 : currentDebitPage * debitPageSize + 1;
+    const end = Math.min(total, (currentDebitPage + 1) * debitPageSize);
+
+    const recEl = document.getElementById('dn-record-count');
+    if (recEl) {
+      recEl.innerText = total === 0 ? 'Showing 0 debit notes' : `Showing ${start}–${end} of ${total.toLocaleString()} debit notes`;
+    }
+
+    const pageInfo = document.getElementById('dn-page-info');
+    if (pageInfo) pageInfo.innerText = `Page ${currentDebitPage + 1} of ${totalDebitPages}`;
+
+    const btnPrev = document.getElementById('btn-dn-prev');
+    if (btnPrev) btnPrev.disabled = currentDebitPage <= 0;
+
+    const btnNext = document.getElementById('btn-dn-next');
+    if (btnNext) btnNext.disabled = currentDebitPage >= totalDebitPages - 1;
+  }
+
+  function prevDebitPage() {
+    if (currentDebitPage > 0) {
+      currentDebitPage--;
+      renderDebitTable(filteredDebitList);
+      const tbl = document.getElementById('debit-notes-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function nextDebitPage() {
+    if (currentDebitPage < totalDebitPages - 1) {
+      currentDebitPage++;
+      renderDebitTable(filteredDebitList);
+      const tbl = document.getElementById('debit-notes-main-table');
+      if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function goToDebitPage(p) {
+    const pageIndex = Math.max(0, Math.min(p - 1, totalDebitPages - 1));
+    if (pageIndex !== currentDebitPage) {
+      currentDebitPage = pageIndex;
+      renderDebitTable(filteredDebitList);
+    }
   }
 
   function renderDebitTable(rows) {
     const tbody = document.getElementById('tbl-debit-notes-body');
     if (!tbody) return;
 
-    if (!rows || rows.length === 0) {
+    const list = rows || [];
+    updateDebitPagination(list.length);
+
+    if (list.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
@@ -242,7 +377,10 @@ window.CreditDebitNoteController = (function() {
       return;
     }
 
-    tbody.innerHTML = rows.map(r => {
+    const start = currentDebitPage * debitPageSize;
+    const pageRows = list.slice(start, start + debitPageSize);
+
+    tbody.innerHTML = pageRows.map(r => {
       const taxTotal = (parseFloat(r.cgstAmount) || 0) + (parseFloat(r.sgstAmount) || 0) + (parseFloat(r.igstAmount) || 0);
       const isActive = (r.status || '').toUpperCase() === 'ACTIVE' || (r.status || '').toUpperCase() === 'POSTED';
 

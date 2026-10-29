@@ -108,11 +108,17 @@
                   </tbody>
                 </table>
               </div>
-              <div
+              <div class="table-footer-bar"
                 style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--border-subtle); background:rgba(10,18,34,0.85);">
-                <span style="font-size:0.75rem; color:var(--text-dim);">Real-time inventory calculated using weighted
-                  moving average purchase cost.</span>
-                <span id="lbl-inv-record-count" class="badge badge-neutral">Showing 0 Records</span>
+                <span style="font-size:0.75rem; color:var(--text-dim);">Real-time inventory calculated using weighted moving average purchase cost.</span>
+                <div style="display:flex; align-items:center; gap:14px;">
+                  <span id="lbl-inv-record-count" class="badge badge-neutral">Showing 0 Records</span>
+                  <div id="inv-pagination-container" style="display:inline-flex; align-items:center; gap:6px;">
+                    <button class="btn btn-secondary btn-sm" id="btn-inv-prev" onclick="window.ItemMasterController.prevInventoryPage()" disabled style="padding:3px 10px; font-size:0.75rem;">&larr; Prev</button>
+                    <span id="inv-page-info" style="font-size:0.8rem; color:var(--text-main); font-weight:600; min-width:80px; text-align:center;">Page 1 of 1</span>
+                    <button class="btn btn-secondary btn-sm" id="btn-inv-next" onclick="window.ItemMasterController.nextInventoryPage()" disabled style="padding:3px 10px; font-size:0.75rem;">Next &rarr;</button>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -120,6 +120,22 @@ window.ReturnsController = (function () {
       totalRows = data?.totalRows || returnsList.length;
       totalPages = data?.totalPages || Math.max(1, Math.ceil(totalRows / pageSize));
 
+      // Resilient fallback: If paged query returned 0 rows and no specific text search was entered,
+      // probe authoritative summary endpoint in case server-side date filter excluded records
+      if (returnsList.length === 0 && !q && !party && !status && window.ApiService) {
+        try {
+          const allSummaries = await window.ApiService.get(`/api/returns?type=${encodeURIComponent(currentType)}`);
+          if (Array.isArray(allSummaries) && allSummaries.length > 0) {
+            console.info('[ReturnsController] Recovered ' + allSummaries.length + ' returns from authoritative summary endpoint');
+            returnsList = allSummaries.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+            totalRows = allSummaries.length;
+            totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+          }
+        } catch (sumErr) {
+          console.warn('[ReturnsController] Summary fallback notice:', sumErr);
+        }
+      }
+
       // Update KPI Cards matching SalesReturns.fxml
       try {
         applyKpis(data?.metrics, isSales);
@@ -875,6 +891,24 @@ window.ReturnsController = (function () {
     }
   }
 
+  function showAudit(returnNo) {
+    const no = returnNo || (selectedReturn && selectedReturn.no) || (document.getElementById(currentType === 'SALES RETURN' ? 'sr-detail-no' : 'pr-detail-no')?.innerText);
+    if (!no || no === '-' || no === 'Return Details') {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) {
+        window.AppDialogService.toastWarning('Please select a return first');
+      } else {
+        alert('Please select a return first');
+      }
+      return;
+    }
+    const isSales = currentType === 'SALES RETURN';
+    if (window.AppDialogService && typeof window.AppDialogService.showActivityTimeline === 'function') {
+      window.AppDialogService.showActivityTimeline(isSales ? 'SALES_RETURN' : 'PURCHASE_RETURN', null, no);
+    } else if (window.SalesController && typeof window.SalesController.openAuditTrail === 'function') {
+      window.SalesController.openAuditTrail(no);
+    }
+  }
+
   let currentInvoicePartyId = 0;
 
   // 4. CREATE RETURN MODAL (DESKTOP ReturnEditorService.java PARITY)
@@ -887,20 +921,23 @@ window.ReturnsController = (function () {
     }
     closeDrawer();
     if (typeOverride) currentType = typeOverride;
+
+    const modal = document.getElementById('modal-create-return');
+    if (modal) {
+      modal.style.zIndex = '100060';
+      modal.classList.add('active');
+      modal.style.display = 'flex';
+    }
     if (window.AppDialogService && typeof window.AppDialogService.openModal === 'function') {
       window.AppDialogService.openModal('modal-create-return');
-    } else {
-      const modal = document.getElementById('modal-create-return');
-      if (modal) {
-        modal.style.zIndex = '100060';
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-      }
     }
 
     const isSales = currentType === 'SALES RETURN';
-    document.getElementById('modal-create-return-title').innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
-    document.getElementById('cr-type').value = currentType;
+    const titleEl = document.getElementById('modal-create-return-title');
+    if (titleEl) titleEl.innerText = isSales ? 'Create Sales Return' : 'Create Purchase Return';
+    const typeEl = document.getElementById('cr-type');
+    if (typeEl) typeEl.value = currentType;
+
     const retDateEl = document.getElementById('cr-return-date');
     if (retDateEl) {
       retDateEl.value = formatLocalDate(new Date());
@@ -909,65 +946,76 @@ window.ReturnsController = (function () {
         window.DatePickerFormatter.syncDisplay(retDateEl);
       }
     }
+
     const textInput = document.getElementById('cr-invoice-input');
     if (textInput) textInput.value = prefillInvoice || '';
-    document.getElementById('cr-lines-body').innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>`;
-    document.getElementById('cr-estimated-total').innerText = '₹ 0.00';
-    document.getElementById('cr-selected-count').innerText = '0 items selected';
 
-    // Populate searchable select dropdown with valid paid orders
+    const linesBody = document.getElementById('cr-lines-body');
+    if (linesBody) linesBody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">Select or enter an invoice number to load returnable line items.</td></tr>';
+
+    const estTotal = document.getElementById('cr-estimated-total');
+    if (estTotal) estTotal.innerText = '₹ 0.00';
+    const selCount = document.getElementById('cr-selected-count');
+    if (selCount) selCount.innerText = '0 items selected';
+
+    // Populate searchable select dropdown immediately from cache (0ms delay)
     const select = document.getElementById('cr-invoice-select');
     if (select) {
-      select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option>`;
-      if (prefillInvoice) {
-        const opt = document.createElement('option');
-        opt.value = prefillInvoice;
-        opt.textContent = `${prefillInvoice} (Selected)`;
-        opt.selected = true;
-        select.appendChild(opt);
-        select.value = prefillInvoice;
+      let cachedOrders = [];
+      if (isSales && window.SalesController) {
+        cachedOrders = window.SalesController.salesCache || window.SalesController.sales || [];
+      } else if (!isSales && window.PurchaseController) {
+        cachedOrders = (window.PurchaseController.getPurchasesCache && window.PurchaseController.getPurchasesCache()) || window.PurchaseController.purchases || [];
       }
-      try {
-        let orders = [];
-        if (isSales && window.OperationsService && window.OperationsService.getSalesPage) {
-          const res = await window.OperationsService.getSalesPage(0, 100);
-          orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
-        } else if (!isSales && window.OperationsService && window.OperationsService.getPurchasesPage) {
-          const res = await window.OperationsService.getPurchasesPage(0, 100);
-          orders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
-        }
-        select.innerHTML = `<option value="">-- Select ${isSales ? 'Paid Tax Invoice' : 'Supplier Bill'} --</option><option value="__MANUAL__">-- Type or Paste Invoice Number --</option>`;
-        let foundPrefill = false;
-        orders.forEach(o => {
-          const invNo = o.invoiceNo || o.billNo || (isSales ? `INV-${o.id}` : `BILL-${o.id}`);
-          const party = (o.customer && o.customer.name) || (o.supplier && o.supplier.name) || o.partyName || o.customerName || o.supplierName || 'Party';
-          const amt = formatMoney(o.totalAmount || o.total || 0);
-          const opt = document.createElement('option');
-          opt.value = invNo;
-          opt.textContent = `${invNo} — ${party} (${amt})`;
-          if (prefillInvoice && invNo === prefillInvoice) {
-            opt.selected = true;
-            foundPrefill = true;
-          }
-          select.appendChild(opt);
-        });
-        if (prefillInvoice && !foundPrefill) {
-          const opt = document.createElement('option');
-          opt.value = prefillInvoice;
-          opt.textContent = `${prefillInvoice} (Selected)`;
-          opt.selected = true;
-          select.appendChild(opt);
-        }
-        if (prefillInvoice) select.value = prefillInvoice;
-      } catch (err) {
-        console.warn('Failed to load return orders:', err);
-      }
-    }
 
-    const m = document.getElementById('modal-create-return');
-    if (m) {
-      m.style.display = 'flex';
-      m.classList.add('active');
+      let optionsHtml = '<option value="">-- Select ' + (isSales ? 'Paid Tax Invoice' : 'Supplier Bill') + ' --</option><option value="__MANUAL__">-- Type or Paste Invoice Number --</option>';
+      const seen = new Set();
+      if (prefillInvoice) {
+        optionsHtml += '<option value="' + prefillInvoice + '" selected>' + prefillInvoice + ' (Selected)</option>';
+        seen.add(prefillInvoice);
+      }
+
+      cachedOrders.forEach(o => {
+        const invNo = o.invoiceNo || o.billNo || (isSales ? ('INV-' + o.id) : ('BILL-' + o.id));
+        if (!invNo || seen.has(invNo)) return;
+        seen.add(invNo);
+        const party = (o.customer && o.customer.name) || (o.supplier && o.supplier.name) || o.partyName || o.customerName || o.supplierName || 'Party';
+        const amt = formatMoney(o.totalAmount || o.total || 0);
+        const isSel = prefillInvoice && invNo === prefillInvoice;
+        optionsHtml += '<option value="' + invNo + '" ' + (isSel ? 'selected' : '') + '>' + invNo + ' - ' + party + ' (' + amt + ')</option>';
+      });
+
+      select.innerHTML = optionsHtml;
+      if (prefillInvoice) select.value = prefillInvoice;
+
+      // In the background, fetch remote orders if cache was empty or for fresh sync without wiping options
+      (async () => {
+        try {
+          let remoteOrders = [];
+          if (isSales && window.OperationsService && window.OperationsService.getSalesPage) {
+            const res = await window.OperationsService.getSalesPage(0, 100);
+            remoteOrders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
+          } else if (!isSales && window.OperationsService && window.OperationsService.getPurchasesPage) {
+            const res = await window.OperationsService.getPurchasesPage(0, 100);
+            remoteOrders = (res && (res.rows || res.content || (Array.isArray(res) ? res : []))) || [];
+          }
+          if (remoteOrders.length > 0) {
+            remoteOrders.forEach(o => {
+              const invNo = o.invoiceNo || o.billNo || (isSales ? ('INV-' + o.id) : ('BILL-' + o.id));
+              if (!invNo || seen.has(invNo)) return;
+              seen.add(invNo);
+              const party = (o.customer && o.customer.name) || (o.supplier && o.supplier.name) || o.partyName || o.customerName || o.supplierName || 'Party';
+              const amt = formatMoney(o.totalAmount || o.total || 0);
+              const opt = document.createElement('option');
+              opt.value = invNo;
+              opt.textContent = invNo + ' - ' + party + ' (' + amt + ')';
+              select.appendChild(opt);
+            });
+          }
+        } catch (remoteErr) {
+          console.warn('[ReturnsController] Remote orders fetch fallback:', remoteErr);
+        }
+      })();
     }
 
     if (prefillInvoice) {
@@ -1012,9 +1060,24 @@ window.ReturnsController = (function () {
   }
 
   async function loadReturnableLines(invoiceNo = null) {
-    const inv = invoiceNo || document.getElementById('cr-invoice-select')?.value?.trim() || document.getElementById('cr-invoice-input')?.value?.trim();
-    if (!inv) {
-      alert('Please enter or select an invoice number.');
+    let inv = invoiceNo;
+    if (!inv || inv === '__MANUAL__') {
+      const inp = document.getElementById('cr-invoice-input');
+      const sel = document.getElementById('cr-invoice-select');
+      if (inp && inp.style.display !== 'none' && inp.value.trim()) {
+        inv = inp.value.trim();
+      } else if (sel && sel.value && sel.value !== '__MANUAL__') {
+        inv = sel.value.trim();
+      } else if (inp && inp.value.trim()) {
+        inv = inp.value.trim();
+      }
+    }
+    if (!inv || inv === '__MANUAL__') {
+      if (window.AppDialogService && window.AppDialogService.toastWarning) {
+        window.AppDialogService.toastWarning('Please enter or select an invoice number.');
+      } else {
+        alert('Please enter or select an invoice number.');
+      }
       return;
     }
     const typeInput = document.getElementById('cr-type')?.value;
@@ -1673,6 +1736,7 @@ window.ReturnsController = (function () {
     sendWhatsappPrompt,
     isolateReturn,
     viewOriginalDoc,
+    showAudit,
     openCreateReturnModal,
     onInvoiceSelectChanged,
     toggleInvoiceInputMode,
