@@ -343,9 +343,18 @@ window.QuotationController = (function () {
   }
 
   // 2. SLIDE DRAWER DETAILS
+  let currentInspectionQuote = null;
+
   async function showDetails(id) {
-    const drawer = document.getElementById('quote-detail-drawer');
-    if (!drawer) return;
+    const modal = document.getElementById('modal-quotation-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (!modal) return;
+
+    // Toggle close if clicking already active quote
+    if (modal.classList.contains('open') && selectedQuote && selectedQuote.id === id) {
+      closeInspectionModal();
+      return;
+    }
 
     // Highlight row
     document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
@@ -357,51 +366,285 @@ window.QuotationController = (function () {
       }
     });
 
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+
+    // 1. Initial quick render from memory cache
+    let q = (quotationsList || []).find(x => x.id === id) || { id };
+    selectedQuote = q;
+    currentInspectionQuote = q;
+    populateQuotationInspectionModal(q);
+
+    // Switch to default Tab 1 (Quoted Items)
+    switchInspectionTab('items');
+
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.style.pointerEvents = 'auto';
+      overlay.classList.add('open');
+    }
+
+    // 2. Fetch complete details with lines and terms from server
     try {
-      const q = await window.OperationsService.getQuotation(id);
-      selectedQuote = q;
-
-      document.getElementById('qd-no').innerText = q.no;
-      document.getElementById('qd-date').innerText = formatDate(q.date);
-      document.getElementById('qd-customer').innerText = q.customer || '-';
-      document.getElementById('qd-contact').innerText = [q.phone, q.email, q.gstin].filter(Boolean).join('\n') || 'No contact details';
-      document.getElementById('qd-amount').innerText = formatMoney(q.amount);
-      document.getElementById('qd-discount').innerText = formatMoney(q.discount);
-      document.getElementById('qd-valid').innerText = formatDate(q.valid);
-      document.getElementById('qd-follow').innerText = formatDate(q.followUp);
-      document.getElementById('qd-converted').innerText = q.converted || '—';
-      document.getElementById('qd-status').innerHTML = getStatusBadge(q.status);
-      document.getElementById('qd-source').innerText = q.source || 'Direct';
-      document.getElementById('qd-remarks').innerText = q.remarks || 'None';
-
-      const btnConvert = document.getElementById('qd-btn-convert');
-      if (btnConvert) {
-        const canConvert = (!q.converted || q.converted.trim() === '') && (q.status || '').toUpperCase() !== 'REJECTED' && (q.status || '').toUpperCase() !== 'EXPIRED';
-        btnConvert.style.display = canConvert ? 'inline-flex' : 'none';
+      let fullQuote = null;
+      if (window.OperationsService && window.OperationsService.getQuotation) {
+        fullQuote = await window.OperationsService.getQuotation(id);
+      } else {
+        fullQuote = await window.ApiService.get(`/api/quotations/${id}`);
       }
 
-      const secAttachment = document.getElementById('qd-attachment-section');
-      const lblAttachment = document.getElementById('qd-attachment-name');
-      const attPath = q.attachmentPath || q.attachment;
-      if (secAttachment && lblAttachment) {
-        if (attPath) {
-          secAttachment.style.display = 'block';
-          lblAttachment.innerText = attPath.split('/').pop().split('\\').pop();
-          lblAttachment.title = attPath;
-        } else {
-          secAttachment.style.display = 'none';
+      if (fullQuote && selectedQuote && selectedQuote.id === id) {
+        if (!fullQuote.lines || fullQuote.lines.length === 0) {
+          try {
+            const lines = await window.ApiService.get(`/api/quotations/${id}/lines`);
+            if (Array.isArray(lines)) fullQuote.lines = lines;
+          } catch (_) {}
         }
-      }
-
-      drawer.classList.add('open');
-      drawer.style.display = 'flex';
-      if (window.DynamicTableLayoutManager) {
-        window.DynamicTableLayoutManager.reflowAllTables();
-        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+        selectedQuote = fullQuote;
+        currentInspectionQuote = fullQuote;
+        populateQuotationInspectionModal(fullQuote);
       }
     } catch (e) {
-      console.error('Failed to load quotation details:', e);
-      if (window.AppDialogService) window.AppDialogService.toastError('Failed to load details: ' + e.message);
+      console.warn('Background quote lines fetch error:', e);
+    }
+  }
+
+  function populateQuotationInspectionModal(q) {
+    if (!q) return;
+
+    // Header Hero
+    const elNo = document.getElementById('quote-inspect-no');
+    if (elNo) elNo.innerText = q.no || '-';
+
+    const elMeta = document.getElementById('quote-inspect-meta');
+    if (elMeta) {
+      const dStr = q.date ? formatDate(q.date) : '-';
+      const vStr = q.valid ? formatDate(q.valid) : 'Not specified';
+      elMeta.innerText = `Issued on ${dStr} • Valid until ${vStr}`;
+    }
+
+    const elStatus = document.getElementById('quote-inspect-status');
+    if (elStatus) {
+      const st = (q.status || 'DRAFT').toUpperCase();
+      elStatus.innerText = st;
+      elStatus.className = `status-pill ${st === 'ACCEPTED' || st === 'CONVERTED' ? 'pill-success' : (st === 'SENT' ? 'pill-info' : (st === 'REJECTED' || st === 'EXPIRED' ? 'pill-danger' : 'pill-neutral'))}`;
+    }
+
+    const elConvPill = document.getElementById('quote-inspect-converted-pill');
+    if (elConvPill) {
+      if (q.converted && q.converted.trim()) {
+        elConvPill.style.display = 'inline-block';
+        elConvPill.innerText = `CONVERTED: ${q.converted}`;
+      } else {
+        elConvPill.style.display = 'none';
+      }
+    }
+
+    // Card 1: Customer Details
+    const elCustName = document.getElementById('quote-inspect-cust-name');
+    if (elCustName) elCustName.innerText = q.customer || 'Unknown Customer';
+
+    const elCustPhone = document.getElementById('quote-inspect-cust-phone');
+    if (elCustPhone) elCustPhone.innerText = q.phone || '-';
+
+    const elCustGstin = document.getElementById('quote-inspect-cust-gstin');
+    if (elCustGstin) elCustGstin.innerText = q.gstin || 'Unregistered / Consumer';
+
+    // Card 2: Quote Financials
+    const totalAmt = q.total != null ? q.total : (q.amount != null ? q.amount : 0);
+    const discountAmt = q.discountAmount != null ? q.discountAmount : (q.discount || 0);
+    const subtotalAmt = q.subtotal != null ? q.subtotal : Math.max(0, totalAmt - (q.gstAmount || 0) + discountAmt);
+    const gstAmt = q.gstAmount != null ? q.gstAmount : Math.max(0, totalAmt - subtotalAmt);
+
+    const elTotal = document.getElementById('quote-inspect-total');
+    if (elTotal) elTotal.innerText = formatMoney(totalAmt);
+
+    const elDisc = document.getElementById('quote-inspect-discount');
+    if (elDisc) elDisc.innerText = formatMoney(discountAmt);
+
+    const elValid = document.getElementById('quote-inspect-valid');
+    if (elValid) elValid.innerText = q.valid ? formatDate(q.valid) : 'Not specified';
+
+    // Card 3: Sales & Origin
+    const elSalesperson = document.getElementById('quote-inspect-salesperson');
+    if (elSalesperson) elSalesperson.innerText = q.salesperson || 'Not Assigned';
+
+    const elSource = document.getElementById('quote-inspect-source');
+    if (elSource) elSource.innerText = q.source || 'Direct';
+
+    const elCreated = document.getElementById('quote-inspect-created-by');
+    if (elCreated) elCreated.innerText = q.createdBy || 'Admin';
+
+    // Card 4: Lifecycle Status
+    const elFollow = document.getElementById('quote-inspect-follow-up');
+    if (elFollow) elFollow.innerText = q.followUp ? formatDate(q.followUp) : 'None scheduled';
+
+    const elConv = document.getElementById('quote-inspect-converted');
+    if (elConv) {
+      elConv.innerText = q.converted || 'Not converted';
+      elConv.style.color = q.converted ? 'var(--green)' : 'var(--purple)';
+    }
+
+    const elState = document.getElementById('quote-inspect-state');
+    if (elState) elState.innerText = (q.status || 'ACTIVE').toUpperCase();
+
+    // Tab 1: Line Items Table
+    const tbody = document.getElementById('quote-inspect-items-tbody');
+    const lines = q.lines || [];
+    const countBadge = document.getElementById('quote-inspect-items-count');
+    if (countBadge) countBadge.innerText = `${lines.length}`;
+
+    if (tbody) {
+      if (lines.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 14px;">No line items in this quotation.</td></tr>`;
+      } else {
+        tbody.innerHTML = lines.map((l, idx) => `
+          <tr>
+            <td style="color: var(--text-dim);">${idx + 1}</td>
+            <td style="font-weight: 600;">${l.itemDescription || l.description || l.itemCode || '-'}</td>
+            <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
+            <td style="text-align: right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+            <td>${l.unit || 'PCS'}</td>
+            <td style="text-align: right;">${formatMoney(l.unitRate || l.rate || 0)}</td>
+            <td style="text-align: right;">${(parseFloat(l.discountPercent) || 0).toFixed(1)}%</td>
+            <td style="text-align: right;">${formatMoney(l.taxableAmount || (l.quantity * (l.unitRate || l.rate || 0)))}</td>
+            <td style="text-align: right;">${l.gstRate || 18}%</td>
+            <td style="font-weight: 700; text-align: right; color: var(--yellow);">${formatMoney(l.netAmount || l.total || 0)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Totals Bar
+    const elSub = document.getElementById('quote-inspect-subtotal');
+    if (elSub) elSub.innerText = formatMoney(subtotalAmt);
+
+    const elDiscSum = document.getElementById('quote-inspect-discount-sum');
+    if (elDiscSum) elDiscSum.innerText = formatMoney(discountAmt);
+
+    const elGstSum = document.getElementById('quote-inspect-gst-sum');
+    if (elGstSum) elGstSum.innerText = formatMoney(gstAmt);
+
+    const elGrandSum = document.getElementById('quote-inspect-grand-sum');
+    if (elGrandSum) elGrandSum.innerText = formatMoney(totalAmt);
+
+    // Tab 2: Follow-Up & Conversion
+    const elFollowText = document.getElementById('quote-inspect-follow-text');
+    if (elFollowText) {
+      elFollowText.innerText = q.followUp ? `Scheduled: ${formatDate(q.followUp)}` : 'No follow-up scheduled';
+    }
+
+    const elConvDetail = document.getElementById('quote-inspect-conversion-detail');
+    const btnConvert = document.getElementById('quote-inspect-btn-convert');
+    if (q.converted && q.converted.trim()) {
+      if (elConvDetail) elConvDetail.innerHTML = `Converted to Sales Order / Invoice: <b style="color:var(--green); font-family:monospace;">${q.converted}</b>`;
+      if (btnConvert) btnConvert.style.display = 'none';
+    } else {
+      if (elConvDetail) elConvDetail.innerText = 'This quotation has not been converted to a sales document yet.';
+      if (btnConvert) {
+        const canConvert = (q.status || '').toUpperCase() !== 'REJECTED' && (q.status || '').toUpperCase() !== 'EXPIRED';
+        btnConvert.style.display = canConvert ? 'flex' : 'none';
+      }
+    }
+
+    // Tab 3: Terms & Notes
+    const elTerms = document.getElementById('quote-inspect-payment-terms');
+    if (elTerms) elTerms.innerText = q.paymentTerms || 'Standard 15 Days Net';
+
+    const elDelivery = document.getElementById('quote-inspect-delivery-terms');
+    if (elDelivery) elDelivery.innerText = q.deliveryTerms || 'Door Delivery / Transport';
+
+    const elRemarks = document.getElementById('quote-inspect-remarks');
+    if (elRemarks) elRemarks.innerText = q.remarks || q.notes || 'No special notes recorded.';
+
+    const attPath = q.attachmentPath || q.attachment;
+    const attItem = document.getElementById('quote-inspect-attachment-item');
+    const attNone = document.getElementById('quote-inspect-no-attachment');
+    const attName = document.getElementById('quote-inspect-attachment-name');
+    if (attPath) {
+      if (attItem) attItem.style.display = 'flex';
+      if (attNone) attNone.style.display = 'none';
+      if (attName) attName.innerText = attPath.split('/').pop().split('\').pop();
+    } else {
+      if (attItem) attItem.style.display = 'none';
+      if (attNone) attNone.style.display = 'block';
+    }
+  }
+
+  function switchInspectionTab(tabName) {
+    const tabs = ['items', 'follow', 'terms'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-quote-${t}`);
+      const pane = document.getElementById(`pane-quote-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) pane.classList.toggle('active', t === tabName);
+    });
+  }
+
+  function closeInspectionModal() {
+    const modal = document.getElementById('modal-quotation-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+    }
+    if (overlay) {
+      overlay.classList.remove('open');
+      overlay.style.display = 'none';
+    }
+    document.querySelectorAll('#tbl-quotations-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    selectedQuote = null;
+    currentInspectionQuote = null;
+  }
+
+  function closeDrawer() {
+    closeInspectionModal();
+  }
+
+  function copyQuotationNo() {
+    const q = currentInspectionQuote || selectedQuote;
+    if (!q || !q.no) return;
+    navigator.clipboard.writeText(q.no).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Copied quotation ${q.no} to clipboard`);
+    });
+  }
+
+  function convertCurrentInspectionToSale() {
+    const q = currentInspectionQuote || selectedQuote;
+    if (!q) return;
+    convertToSale(q.id, q.no, q.rowVersion || 0);
+  }
+
+  function openFollowUpFromInspection() {
+    const q = currentInspectionQuote || selectedQuote;
+    if (!q) return;
+    const isConverted = !!(q.converted && q.converted.trim());
+    openFollowUpModal(q.id, q.no, q.followUp || '', q.rowVersion || 0, isConverted);
+  }
+
+  function previewCurrentInspectionAttachment() {
+    const q = currentInspectionQuote || selectedQuote;
+    if (!q || !q.id) return;
+    const fileName = (q.attachmentPath || q.attachment || 'quotation-attachment').split('/').pop().split('\').pop();
+    if (window.ApiService && window.ApiService.viewFile) {
+      window.ApiService.viewFile(`/api/support/documents/QUOTATION/${q.id}/attachment-file`, fileName);
+    } else {
+      window.open(`/api/support/documents/QUOTATION/${q.id}/attachment-file`, '_blank');
+    }
+  }
+
+  function downloadCurrentInspectionAttachment() {
+    const q = currentInspectionQuote || selectedQuote;
+    if (!q || !q.id) return;
+    const fileName = (q.attachmentPath || q.attachment || 'quotation-attachment').split('/').pop().split('\').pop();
+    if (window.ApiService && window.ApiService.downloadFile) {
+      window.ApiService.downloadFile(`/api/support/documents/QUOTATION/${q.id}/attachment-file`, fileName);
+    } else {
+      const a = document.createElement('a');
+      a.href = `/api/support/documents/QUOTATION/${q.id}/attachment-file`;
+      a.download = fileName;
+      a.click();
     }
   }
 

@@ -1,17 +1,16 @@
 {
     "desktopVersion": "11.0.11",
-    "webBuild": 10,
-    "webVersion": "11.0.11.01",
-    "tag": "web-v11.0.11.01",
-    "releaseDate": "2026-10-30T23:55:00+05:30",
+    "webBuild": 11,
+    "webVersion": "11.0.11.02",
+    "tag": "web-v11.0.11.02",
+    "releaseDate": "2026-10-31T01:10:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.11.01 Enterprise Web Release: Enterprise Diagnostic Ledger (Ctrl+Shift+L), 88% Responsive Modals, Zero Bleed-Through, Pre-Indexed Audit Trail Search & Full Web Parity with Desktop v11.0.11",
+    "summary": "v11.0.11.02 Enterprise Web Release: Full Suite 88% Responsive Inspection Modals for Quotations, Returns & Credit/Debit Notes, Auto-Fitting Non-Colliding Metric Cards & Zero Legacy Drawers",
     "highlights": [
-        "1. Enterprise System & Application Diagnostics: Full parity with Desktop Diagnostic Ledger via global shortcut Ctrl+Shift+L, live error counter badge, Spring Boot regex log parsing, plain-English guidance, and CSV export.",
-        "2. Zero Bleed-Through & 88% Responsive Inspection Modals: Eliminated transparency bleed-through in Sales & Purchase inspection modals (#0d1527 solid background, 88% viewport width) and eliminated legacy 380px squished inline drawers.",
-        "3. High-Performance Pre-Indexed Audit Trail: Integrated pre-computed search indexing and 250ms debounced filtering for instant response on extensive audit logs, accompanied by 5 KPI summary counters and CSV export.",
-        "4. Universal Reference Hyperlinks (#38bdf8): Extended regex pattern matcher across all 75 document types (JI, INV, SO, PO, QTN, REF, RS, PRC, BE, EXP, SAL-RET, PUR-RET, CUST, SUP, CN, DN, BANK, PAY) with 1-click clipboard copy toast.",
-        "5. Supplier Recon & Bank Statement Multi-Allocation: Added dedicated Supplier Records inspection modal with instant search and CSV export, plus Bank Statement multi-voucher allocation viewing.",
-        "6. Context-Aware Return Navigation: Intelligently switches between 'View Return' and 'Create Return' based on settlement status."
+        "1. Full Suite 88% Responsive Document Inspection Modals: Quotations (QuotationDocumentInspectionDialog), Sales & Purchase Returns (ReturnDocumentInspectionDialog), and Credit & Debit Notes (CreditDebitNoteInspectionDialog) fully modernized to match Desktop v11.0.11 standard.",
+        "2. Eliminated Legacy 380px Inline Drawers: Stripped cramped side drawers across all five register views (quotations.html, sales-returns.html, purchase-returns.html, credit-notes.html, debit-notes.html); data tables now expand to 100% full width.",
+        "3. Responsive Auto-Fitting Metric Strip: Upgraded CSS inspection overview grid from fixed 4-column squish to responsive grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) with dedicated 3-card variant, guaranteeing zero card collision or text clipping.",
+        "4. Default Tab 1 Active State & Comprehensive Tab Switching: Standardized all inspection modals to open directly with Tab 1 active and populated (Items/Lines/Impact) while supporting seamless transitions to Settlement, Notes, and Audit tabs.",
+        "5. Deep Line-Item Hydration: Upgraded Quotation, Return, and Note controllers to dynamically hydrate nested lines, tax breakdowns, origin invoices, and settlement records with full action menus (Convert to Sale, Record Refund, Print PDF, Barcode)."
     ]
 }

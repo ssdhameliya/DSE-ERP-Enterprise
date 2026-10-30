@@ -1133,12 +1133,15 @@
     }
     .inspection-overview-strip {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
       gap: 12px;
       padding: 14px 22px;
       background: #090e1a !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
+    }
+    .inspection-overview-strip.strip-3-cards {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
     }
     .inspection-card {
       background: #111c38 !important;

@@ -117,68 +117,7 @@
               </div>
             </div>
 
-            <!-- Right: Side Inspection Drawer Docked Beside Table (Desktop PurchaseReturnsController Parity) -->
-            <div id="pr-detail-drawer" class="slide-detail-drawer register-inline-drawer"
-              style="width: 380px; min-width: 360px; max-width: 400px; display: none; flex-direction: column; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-subtle); border-radius: 10px; box-shadow: -4px 0 20px rgba(0,0,0,0.4); overflow-y: auto; flex-shrink: 0; max-height: calc(100vh - 280px);">
-              <div class="drawer-header"
-                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
-                    id="pr-detail-no">Purchase Return Details</div>
-                  <div style="font-size:0.72rem; color:var(--text-muted);">Supplier Return Record &amp; Line Audit</div>
-                </div>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.closeDrawer()">&times;</button>
-              </div>
-              <div class="drawer-body"
-                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
-                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
-                    class="drawer-field-value" id="pr-detail-date">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span
-                    class="drawer-field-value" id="pr-detail-party"
-                    style="font-weight:700; color:var(--text-main);">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span
-                    class="drawer-field-value" id="pr-detail-invoice" style="color:var(--cyan);">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span
-                    class="drawer-field-value" id="pr-detail-total"
-                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Refunded Amount:</span><span
-                    class="drawer-field-value" id="pr-detail-refund" style="color:var(--green);">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Return Reason:</span><span
-                    class="drawer-field-value" id="pr-detail-reason">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Approval Status:</span><span
-                    class="drawer-field-value" id="pr-detail-status">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Refund Status:</span><span
-                    class="drawer-field-value" id="pr-detail-refund-status">-</span></div>
-                <div
-                  style="margin-top:10px; margin-bottom:4px; font-weight:700; font-size:0.80rem; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em;">
-                  Return Line Items</div>
-                <div id="pr-detail-lines" style="max-height:220px; overflow-y:auto;"></div>
-              </div>
-              <div class="drawer-footer"
-                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
-                <button class="btn btn-success btn-sm" id="pr-detail-btn-approve"
-                  onclick="window.ReturnsController.approveReturn(document.getElementById('pr-detail-no').innerText)"
-                  style="display:none;">Approve Return</button>
-                <button class="btn btn-danger btn-sm" id="pr-detail-btn-reject"
-                  onclick="window.ReturnsController.rejectReturnPrompt(document.getElementById('pr-detail-no').innerText)"
-                  style="display:none;">Reject</button>
-                <button class="btn btn-primary btn-sm" id="pr-detail-btn-refund"
-                  onclick="window.ReturnsController.openRefundModal(document.getElementById('pr-detail-no').innerText)">Record
-                  Refund</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.showAudit(document.getElementById('pr-detail-no').innerText)">📜 Audit Trail</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.downloadPdf(document.getElementById('pr-detail-no').innerText)">PDF</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.downloadExcel(document.getElementById('pr-detail-no').innerText)">Excel</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.sendEmailPrompt(document.getElementById('pr-detail-no').innerText)">Email</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.ReturnsController.sendWhatsappPrompt(document.getElementById('pr-detail-no').innerText)">WhatsApp</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeDrawer()">Close</button>
-              </div>
-            </div>
+            
           </div>
         </div>
 <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>" style="display:none;" onload="if(window.ReturnsController && typeof window.ReturnsController.loadReturns==='function') window.ReturnsController.loadReturns('PURCHASE RETURN', 0);">

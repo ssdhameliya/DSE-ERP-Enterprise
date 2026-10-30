@@ -339,10 +339,20 @@ window.ReturnsController = (function () {
   }
 
   // 2. SIDE DRAWER DETAILS
+  async let currentInspectionReturn = null;
+
   async function showDetails(no) {
+    const modal = document.getElementById('modal-return-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (!modal) return;
+
     const isSales = currentType === 'SALES RETURN';
-    const drawer = document.getElementById(isSales ? 'sr-detail-drawer' : 'pr-detail-drawer');
-    if (!drawer) return;
+
+    // Toggle close if clicking already active return
+    if (modal.classList.contains('open') && selectedReturn && (selectedReturn.no === no || selectedReturn.returnNo === no)) {
+      closeInspectionModal();
+      return;
+    }
 
     // Highlight selected row
     const tableId = isSales ? 'tbl-sales-returns-body' : 'tbl-purchase-returns-body';
@@ -355,98 +365,264 @@ window.ReturnsController = (function () {
       }
     });
 
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+
+    // 1. Initial quick render from memory cache
+    let rObj = (returnsList || []).find(x => (x.no === no || x.returnNo === no)) || { no, returnNo: no };
+    selectedReturn = rObj;
+    currentInspectionReturn = rObj;
+    populateReturnInspectionModal(rObj, isSales);
+
+    // Switch to Tab 1 (Returned Lines)
+    switchInspectionTab('lines');
+
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.style.pointerEvents = 'auto';
+      overlay.classList.add('open');
+    }
+
+    // 2. Fetch full details with lines and settlements from server
     try {
       const details = await window.OperationsService.getReturnDetails(no);
-      selectedReturn = details;
-
-      const prefix = isSales ? 'sr-detail-' : 'pr-detail-';
-      const elNo = document.getElementById(prefix + 'no');
-      const elDate = document.getElementById(prefix + 'date');
-      const elParty = document.getElementById(prefix + 'party');
-      const elInvoice = document.getElementById(prefix + 'invoice');
-      const elTotal = document.getElementById(prefix + 'total');
-      const elRefund = document.getElementById(prefix + 'refund');
-      const elReason = document.getElementById(prefix + 'reason');
-      const elStatus = document.getElementById(prefix + 'status');
-      const elRefundStatus = document.getElementById(prefix + 'refund-status');
-      const elLines = document.getElementById(prefix + 'lines');
-
-      if (elNo) elNo.innerText = details.no;
-      if (elDate) elDate.innerText = formatDate(details.date);
-      if (elParty) elParty.innerText = details.party || '-';
-      if (elInvoice) elInvoice.innerText = details.invoice || '-';
-      if (elTotal) elTotal.innerText = formatMoney(details.total);
-      if (elRefund) elRefund.innerText = formatMoney(details.refund);
-      if (elReason) elReason.innerText = details.notes || 'Not set';
-      if (elStatus) elStatus.innerHTML = getStatusBadge(details.status);
-      if (elRefundStatus) elRefundStatus.innerHTML = getStatusBadge(details.refundStatus);
-
-      // Render line items
-      if (elLines && details.lines) {
-        elLines.innerHTML = details.lines.map(l => `
-          <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:6px; padding:8px 10px; margin-bottom:6px; font-size:0.78rem;">
-            <div style="display:flex; justify-content:space-between; font-weight:600; color:var(--text-main);">
-              <span>${l.name || l.code}</span>
-              <span style="color:var(--yellow);">${formatMoney(l.amount)}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; color:var(--text-muted); margin-top:3px; font-size:0.72rem;">
-              <span>Qty: ${l.quantity} ${l.unit || ''} @ ₹ ${l.rate}</span>
-              <span>Reason: ${l.reason || '-'}</span>
-            </div>
-          </div>
-        `).join('');
+      if (details && selectedReturn && (selectedReturn.no === no || selectedReturn.returnNo === no)) {
+        selectedReturn = details;
+        currentInspectionReturn = details;
+        populateReturnInspectionModal(details, isSales);
       }
-
-      // Action buttons in drawer
-      const isApproved = (details.status || '').toUpperCase() === 'APPROVED';
-      const isPending = (details.status || '').toUpperCase() === 'PENDING APPROVAL';
-      const btnApprove = document.getElementById(prefix + 'btn-approve');
-      const btnReject = document.getElementById(prefix + 'btn-reject');
-      const btnRefund = document.getElementById(prefix + 'btn-refund');
-
-      if (btnApprove) btnApprove.style.display = isPending ? 'inline-flex' : 'none';
-      if (btnReject) btnReject.style.display = isPending ? 'inline-flex' : 'none';
-      if (btnRefund) {
-        btnRefund.disabled = !isApproved;
-        btnRefund.title = isApproved ? 'Record Refund' : 'Approval required first';
-      }
-
-      drawer.classList.add('open');
-      drawer.style.display = 'flex';
-      if (window.DynamicTableLayoutManager) {
-        window.DynamicTableLayoutManager.reflowAllTables();
-        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
-      }
-
     } catch (e) {
-      console.error('Failed to load return details:', e);
-      if (window.AppDialogService) window.AppDialogService.toastError('Failed to load details: ' + e.message);
+      console.warn('Background return lines fetch error:', e);
     }
   }
 
-  function closeDrawer() {
-    const isSales = currentType === 'SALES RETURN';
-    const drawer = document.getElementById(isSales ? 'sr-detail-drawer' : 'pr-detail-drawer');
-    if (drawer) {
-      drawer.classList.remove('open');
-      drawer.style.display = 'none';
+  function populateReturnInspectionModal(r, isSales) {
+    if (!r) return;
+
+    const retNo = r.returnNo || r.no || '-';
+    const origInv = r.invoice || r.invoiceNo || '-';
+    const partyName = r.party || r.partyName || r.customer || r.supplier || 'Walk-in Party';
+
+    // Header Hero
+    const elKicker = document.getElementById('return-inspect-kicker');
+    if (elKicker) elKicker.innerText = isSales ? 'SALES RETURN DOCUMENT' : 'PURCHASE RETURN DOCUMENT';
+
+    const elNo = document.getElementById('return-inspect-no');
+    if (elNo) elNo.innerText = retNo;
+
+    const elMeta = document.getElementById('return-inspect-meta');
+    if (elMeta) {
+      const dStr = r.date ? formatDate(r.date) : '-';
+      elMeta.innerText = `Return Date: ${dStr} • Linked Reference: ${origInv}`;
+    }
+
+    const elStatus = document.getElementById('return-inspect-doc-status');
+    if (elStatus) {
+      const st = (r.status || 'APPROVED').toUpperCase();
+      elStatus.innerText = st;
+      elStatus.className = `status-pill ${st === 'APPROVED' ? 'pill-success' : (st === 'PENDING APPROVAL' ? 'pill-warning' : 'pill-danger')}`;
+    }
+
+    const elSettleStatus = document.getElementById('return-inspect-settlement-status');
+    if (elSettleStatus) {
+      const refSt = (r.refundStatus || 'SETTLED').toUpperCase();
+      elSettleStatus.innerText = refSt;
+      elSettleStatus.className = `status-pill ${refSt === 'SETTLED' ? 'pill-success' : (refSt === 'PARTIAL' ? 'pill-warning' : 'pill-danger')}`;
+    }
+
+    // Card 1: Return Value
+    const totalAmt = r.total != null ? r.total : (r.amount != null ? r.amount : 0);
+    const approvedAmt = r.approvedAmount != null ? r.approvedAmount : totalAmt;
+    const pendingAmt = r.pendingAmount != null ? r.pendingAmount : (r.refundStatus === 'SETTLED' ? 0 : totalAmt);
+
+    const elTotal = document.getElementById('return-inspect-total');
+    if (elTotal) elTotal.innerText = formatMoney(totalAmt);
+
+    const elApproved = document.getElementById('return-inspect-approved-amt');
+    if (elApproved) elApproved.innerText = formatMoney(approvedAmt);
+
+    const elPending = document.getElementById('return-inspect-pending-amt');
+    if (elPending) elPending.innerText = formatMoney(pendingAmt);
+
+    // Card 2: Approval & Status
+    const elApprState = document.getElementById('return-inspect-approval-state');
+    if (elApprState) elApprState.innerText = (r.status || 'APPROVED').toUpperCase();
+
+    const elRefMode = document.getElementById('return-inspect-refund-mode');
+    if (elRefMode) elRefMode.innerText = r.refundMode || 'Credit Note / Ledger';
+
+    const elRefState = document.getElementById('return-inspect-refund-state');
+    if (elRefState) elRefState.innerText = (r.refundStatus || 'SETTLED').toUpperCase();
+
+    // Card 3: Reference & Origin
+    const elOrigInv = document.getElementById('return-inspect-orig-inv');
+    if (elOrigInv) elOrigInv.innerText = origInv;
+
+    const elDate = document.getElementById('return-inspect-date');
+    if (elDate) elDate.innerText = r.date ? formatDate(r.date) : '-';
+
+    const elParty = document.getElementById('return-inspect-party');
+    if (elParty) elParty.innerText = partyName;
+
+    // Tab 1: Returned Lines
+    const tbody = document.getElementById('return-inspect-lines-tbody');
+    const lines = r.lines || [];
+    const countBadge = document.getElementById('return-inspect-lines-count');
+    if (countBadge) countBadge.innerText = `${lines.length}`;
+
+    if (tbody) {
+      if (lines.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">No returned item lines recorded.</td></tr>`;
+      } else {
+        tbody.innerHTML = lines.map((l, idx) => `
+          <tr>
+            <td style="color: var(--text-dim);">${idx + 1}</td>
+            <td style="font-weight: 600;">${l.name || l.itemDescription || l.description || l.itemCode || l.code || '-'}</td>
+            <td style="font-family: monospace;">${l.hsnCode || l.hsn || '-'}</td>
+            <td style="text-align: right;">${(parseFloat(l.quantity) || 1).toFixed(2)}</td>
+            <td>${l.unit || 'PCS'}</td>
+            <td style="text-align: right;">${formatMoney(l.rate || l.unitRate || 0)}</td>
+            <td style="text-align: right;">${formatMoney(l.taxableAmount || (l.quantity * (l.rate || 0)))}</td>
+            <td style="text-align: right;">${l.gstPercent || l.taxRate || 18}%</td>
+            <td style="font-weight: 700; text-align: right; color: var(--yellow);">${formatMoney(l.amount || l.total || 0)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    const elSummaryTotal = document.getElementById('return-inspect-summary-total');
+    if (elSummaryTotal) elSummaryTotal.innerText = formatMoney(totalAmt);
+
+    // Tab 2: Refunds & Settlements
+    const elSettleBanner = document.getElementById('return-inspect-settle-banner');
+    if (elSettleBanner) {
+      elSettleBanner.innerText = (r.refundStatus || 'SETTLED').toUpperCase() === 'SETTLED' ? 'Fully Settled / Balanced' : 'Pending Settlement Allocation';
+    }
+
+    const refundsTbody = document.getElementById('return-inspect-refunds-tbody');
+    if (refundsTbody) {
+      const settlements = r.settlements || [];
+      if (settlements.length === 0) {
+        refundsTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 14px;">Direct refund / credit note allocated to party ledger.</td></tr>`;
+      } else {
+        refundsTbody.innerHTML = settlements.map((s, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${formatDate(s.date)}</td>
+            <td style="font-family: monospace; font-weight: 600; color: var(--cyan);">${s.reference || s.voucherNo || '-'}</td>
+            <td>${s.mode || 'LEDGER CREDIT'}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--green);">${formatMoney(s.amount)}</td>
+            <td>${s.user || 'System'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tab 3: Notes & Origin
+    const elReason = document.getElementById('return-inspect-reason');
+    if (elReason) elReason.innerText = r.notes || r.reason || 'No specific reason provided.';
+
+    const elSnapInv = document.getElementById('return-inspect-snap-inv');
+    if (elSnapInv) elSnapInv.innerText = origInv;
+
+    const elSnapDate = document.getElementById('return-inspect-snap-date');
+    if (elSnapDate) elSnapDate.innerText = r.date ? formatDate(r.date) : '-';
+
+    // Action Dock
+    const isPending = (r.status || '').toUpperCase() === 'PENDING APPROVAL';
+    const isApproved = (r.status || '').toUpperCase() === 'APPROVED';
+    const approvalActions = document.getElementById('return-inspect-approval-actions');
+    if (approvalActions) approvalActions.style.display = isPending ? 'flex' : 'none';
+
+    const btnRefund = document.getElementById('dock-return-refund');
+    if (btnRefund) {
+      btnRefund.disabled = !isApproved;
+      btnRefund.title = isApproved ? 'Record Refund' : 'Approval required first';
+      btnRefund.style.opacity = isApproved ? '1' : '0.5';
+    }
+  }
+
+  function switchInspectionTab(tabName) {
+    const tabs = ['lines', 'refunds', 'notes'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-return-${t}`);
+      const pane = document.getElementById(`pane-return-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) pane.classList.toggle('active', t === tabName);
+    });
+  }
+
+  function closeInspectionModal() {
+    const modal = document.getElementById('modal-return-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+    }
+    if (overlay) {
+      overlay.classList.remove('open');
+      overlay.style.display = 'none';
     }
     document.querySelectorAll('#tbl-sales-returns-body tr.active-selected-row, #tbl-purchase-returns-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
     selectedReturn = null;
-    if (window.DynamicTableLayoutManager) {
-      window.DynamicTableLayoutManager.reflowAllTables();
-      setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
-    }
+    currentInspectionReturn = null;
   }
 
-  // Install escape listeners
-  if (typeof window !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.installEscapeClose('sr-detail-drawer', '#tbl-sales-returns-body', closeDrawer);
-        window.RegisterUiSupport.installEscapeClose('pr-detail-drawer', '#tbl-purchase-returns-body', closeDrawer);
-      }
+  function closeDrawer() {
+    closeInspectionModal();
+  }
+
+  function copyReturnNo() {
+    const r = currentInspectionReturn || selectedReturn;
+    const no = r ? (r.returnNo || r.no) : '';
+    if (!no) return;
+    navigator.clipboard.writeText(no).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Copied return ${no} to clipboard`);
     });
+  }
+
+  function recordRefundFromInspection() {
+    const r = currentInspectionReturn || selectedReturn;
+    const no = r ? (r.returnNo || r.no) : '';
+    if (!no) return;
+    openRefundModal(no);
+  }
+
+  function printReturnPdf(no) {
+    const r = currentInspectionReturn || selectedReturn;
+    const targetNo = no || (r ? (r.returnNo || r.no) : '');
+    if (!targetNo) return;
+    downloadPdf(targetNo);
+  }
+
+  function exportReturnExcel(no) {
+    const r = currentInspectionReturn || selectedReturn;
+    const targetNo = no || (r ? (r.returnNo || r.no) : '');
+    if (!targetNo) return;
+    downloadExcel(targetNo);
+  }
+
+  function approveCurrentReturn() {
+    const r = currentInspectionReturn || selectedReturn;
+    const no = r ? (r.returnNo || r.no) : '';
+    if (!no) return;
+    approveReturn(no);
+  }
+
+  function rejectCurrentReturn() {
+    const r = currentInspectionReturn || selectedReturn;
+    const no = r ? (r.returnNo || r.no) : '';
+    if (!no) return;
+    rejectReturnPrompt(no);
+  }
+
+  function viewOriginalInvoiceFromInspection() {
+    const r = currentInspectionReturn || selectedReturn;
+    const inv = r ? (r.invoice || r.invoiceNo) : '';
+    if (!inv) return;
+    closeInspectionModal();
+    viewOriginalDoc(inv);
   }
 
   // 3. WORKFLOW ACTIONS: APPROVE, REJECT, CANCEL, DELETE, EDIT REASON
