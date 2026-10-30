@@ -1,17 +1,17 @@
 {
-    "desktopVersion": "11.0.8",
-    "webBuild": 9,
-    "webVersion": "11.0.8.09",
-    "tag": "web-v11.0.8.09",
-    "releaseDate": "2026-10-29T11:15:00+05:30",
+    "desktopVersion": "11.0.11",
+    "webBuild": 10,
+    "webVersion": "11.0.11.01",
+    "tag": "web-v11.0.11.01",
+    "releaseDate": "2026-10-30T23:55:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.8.09 Enterprise Web Release: High-Performance Item Master Reset & Refresh, FormDirtyTracker Search Exemption, Resilient Returns Loading & Complete Table Census",
+    "summary": "v11.0.11.01 Enterprise Web Release: Enterprise Diagnostic Ledger (Ctrl+Shift+L), 88% Responsive Modals, Zero Bleed-Through, Pre-Indexed Audit Trail Search & Full Web Parity with Desktop v11.0.11",
     "highlights": [
-        "1. High-Performance Item Master: Hardened resetFilters() and refreshItems() with debounced timer clearing, cache invalidation, and button state management to eliminate freezes.",
-        "2. FormDirtyTracker Search Exemption: Omnisearches, table filters, search inputs, and table headers are strictly exempted from dirty form tracking, preventing unintended page refresh locks and navigation aborts.",
-        "3. Stock Register Instant Refresh: views/inventory.html and views/item-master.html now provide visual spinner feedback and dedicated server cache invalidation.",
-        "4. Resilient Returns Register: Added authoritative summary recovery so existing returns (SAL-RET-2026-0002) always render immediately regardless of backend date filter formatting differences.",
-        "5. Instant Create Return Modal: Synchronously populates invoice options from in-memory sales cache, pre-selects the source invoice, ensures manual invoice input mode works smoothly, and eliminates modal freezes.",
-        "6. Table Census Architecture: Complete audit of all 103 tables with 13 core registers fully paginated at 25 items/page."
+        "1. Enterprise System & Application Diagnostics: Full parity with Desktop Diagnostic Ledger via global shortcut Ctrl+Shift+L, live error counter badge, Spring Boot regex log parsing, plain-English guidance, and CSV export.",
+        "2. Zero Bleed-Through & 88% Responsive Inspection Modals: Eliminated transparency bleed-through in Sales & Purchase inspection modals (#0d1527 solid background, 88% viewport width) and eliminated legacy 380px squished inline drawers.",
+        "3. High-Performance Pre-Indexed Audit Trail: Integrated pre-computed search indexing and 250ms debounced filtering for instant response on extensive audit logs, accompanied by 5 KPI summary counters and CSV export.",
+        "4. Universal Reference Hyperlinks (#38bdf8): Extended regex pattern matcher across all 75 document types (JI, INV, SO, PO, QTN, REF, RS, PRC, BE, EXP, SAL-RET, PUR-RET, CUST, SUP, CN, DN, BANK, PAY) with 1-click clipboard copy toast.",
+        "5. Supplier Recon & Bank Statement Multi-Allocation: Added dedicated Supplier Records inspection modal with instant search and CSV export, plus Bank Statement multi-voucher allocation viewing.",
+        "6. Context-Aware Return Navigation: Intelligently switches between 'View Return' and 'Create Return' based on settlement status."
     ]
 }

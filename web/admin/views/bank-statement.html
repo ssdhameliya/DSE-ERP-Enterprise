@@ -358,4 +358,65 @@
             <span><strong>How Matching Works:</strong> Automatically links bank entries to sales invoices, vendor bills,
               and expense vouchers based on reference heuristics, amount tolerance (±₹5.00), and date proximity.</span>
           </div>
+        
+  <!-- Modal: Linked Allocations & Multi-Target Chooser (Desktop Parity) -->
+  <div class="modal-overlay app-dialog-overlay" id="modal-linked-allocations" style="display:none; z-index: 100060 !important;">
+    <div class="modal-card" style="max-width: 960px; width: 92%; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 class="modal-title" style="margin:0; font-size:1.1rem; font-weight:700; color:#fff;">Linked Allocation Details</h3>
+          <p class="modal-subtitle" style="margin:4px 0 0 0; font-size:0.75rem; color:var(--text-dim);">
+            Bank Txn Ref: <span id="mla-bank-ref" style="font-family:monospace; font-weight:700; color:var(--cyan);">-</span>
+          </p>
         </div>
+        <button type="button" class="modal-close" onclick="document.getElementById('modal-linked-allocations').style.display='none'">&times;</button>
+      </div>
+
+      <!-- Quick Allocation KPI summary -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px 20px; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--border-subtle);">
+        <div style="padding: 6px 10px; background: rgba(56, 189, 248, 0.08); border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2);">
+          <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Linked Records</div>
+          <div id="mla-linked-count" style="font-size: 1.1rem; font-weight: 700; color: var(--cyan); font-family: monospace;">0</div>
+        </div>
+        <div style="padding: 6px 10px; background: rgba(52, 211, 153, 0.08); border-radius: 6px; border: 1px solid rgba(52, 211, 153, 0.2);">
+          <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Total Allocated</div>
+          <div id="mla-bank-linked" style="font-size: 1.1rem; font-weight: 700; color: var(--green); font-family: monospace;">₹ 0.00</div>
+        </div>
+        <div style="padding: 6px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.2);">
+          <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Round-Off Adj</div>
+          <div id="mla-round-off" style="font-size: 1.1rem; font-weight: 700; color: #fff; font-family: monospace;">₹ 0.00</div>
+        </div>
+        <div style="padding: 6px 10px; background: rgba(251, 191, 36, 0.08); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.2);">
+          <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Difference</div>
+          <div id="mla-diff" style="font-size: 1.1rem; font-weight: 700; color: var(--yellow); font-family: monospace;">₹ 0.00</div>
+        </div>
+      </div>
+
+      <!-- Allocation Table -->
+      <div class="modal-body" style="padding: 0; overflow-y: auto; flex: 1; max-height: 440px;">
+        <table class="table-modern" style="width: 100%; border-collapse: collapse;">
+          <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 10;">
+            <tr>
+              <th style="padding: 8px 12px;">Target Type</th>
+              <th style="padding: 8px 12px;">Document No</th>
+              <th style="padding: 8px 12px;">Details / Party</th>
+              <th style="padding: 8px 12px; text-align: right;">Allocated (₹)</th>
+              <th style="padding: 8px 12px; text-align: right;">Round-Off (₹)</th>
+              <th style="padding: 8px 12px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="mla-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">No linked allocations found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span id="mla-footer-text" style="font-size: 0.75rem; color: var(--text-dim);"></span>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-linked-allocations').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

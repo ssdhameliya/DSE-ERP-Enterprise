@@ -850,7 +850,9 @@ window.PurchaseReconController = (function() {
           <td style="font-weight:600; color:var(--text-main);">${s.legalName}</td>
           <td style="font-family:monospace; color:var(--purple);">${s.gstin || 'Unregistered'}</td>
           <td>${s.phone || '-'}</td>
-          <td style="text-align:right; font-weight:700; color:var(--cyan); font-family:'JetBrains Mono',monospace;">${sCount}</td>
+          <td style="text-align:right;" onclick="event.stopPropagation();">
+            <button type="button" class="btn-preset-chip" style="font-weight:700; color:var(--cyan); font-family:'JetBrains Mono',monospace; cursor:pointer; padding: 2px 8px;" onclick="window.PurchaseReconController.showSupplierRecords(${s.id})" title="Click to view ${sCount} Purchase Recon records">${sCount} records</button>
+          </td>
           <td><span class="pill-badge pill-neutral">${s.source || 'MANUAL'}</span></td>
           <td style="text-align:center;">
             ${isActive ? '<span class="pill-badge pill-success">ACTIVE</span>' : '<span class="pill-badge pill-danger">INACTIVE</span>'}
@@ -1046,6 +1048,49 @@ window.PurchaseReconController = (function() {
     } catch (err) {
       if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red); padding:20px;">Failed to load records: ${err.message}</td></tr>`;
     }
+  }
+
+  function filterSupplierRecords(query) {
+    if (!activeSupplierRecordsData || !activeSupplierRecordsData.records) return;
+    const q = (query || '').toLowerCase().trim();
+    const tbody = document.getElementById('mrsr-tbody');
+    if (!tbody) return;
+    const records = activeSupplierRecordsData.records.filter(r => {
+      if (!q) return true;
+      const ref = (r.reference || ('PR-' + r.id)).toLowerCase();
+      const invNo = (r.invoiceNumber || r.invoiceNo || '').toLowerCase();
+      const st = (r.status || '').toLowerCase();
+      return ref.includes(q) || invNo.includes(q) || st.includes(q);
+    });
+    if (records.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No matching records found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = records.map(r => {
+      const iv = Number(r.invoiceAmount || r.invoiceValue || r.totalAmount || 0);
+      const lv = Number(r.linkedAmount || r.reconciledAmount || 0);
+      const dStr = window.FormatUtil ? window.FormatUtil.formatDate(r.invoiceDate) : (r.invoiceDate || '-');
+      const st = (r.status || 'PENDING').toUpperCase();
+      let badgeClass = 'pill-neutral';
+      if (st === 'RECONCILED') badgeClass = 'pill-success';
+      else if (st === 'PARTIALLY_RECONCILED') badgeClass = 'pill-warning';
+
+      return `
+        <tr>
+          <td style="font-weight:700; color:var(--cyan); font-family:monospace;">
+            <a href="#" onclick="window.PurchaseReconController.openEditRecon(${r.id}); return false;" style="color:var(--cyan); text-decoration:none;">${r.reference || ('PR-' + r.id)}</a>
+          </td>
+          <td>${dStr}</td>
+          <td style="font-weight:600; color:var(--text-main);">${r.invoiceNumber || r.invoiceNo || '-'}</td>
+          <td style="text-align:right; font-family:'JetBrains Mono',monospace;">${window.FormatUtil ? window.FormatUtil.formatCurrency(iv) : '₹ ' + iv.toFixed(2)}</td>
+          <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:var(--green);">${window.FormatUtil ? window.FormatUtil.formatCurrency(lv) : '₹ ' + lv.toFixed(2)}</td>
+          <td style="text-align:center;"><span class="pill-badge ${badgeClass}">${st}</span></td>
+          <td style="text-align:center;">
+            <button class="btn btn-sm btn-outline-cyan" onclick="window.PurchaseReconController.openEditRecon(${r.id})" style="padding:2px 8px; font-size:0.75rem;">View</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function downloadSupplierRecordsExcel() {
@@ -1326,6 +1371,7 @@ window.PurchaseReconController = (function() {
     nextSupplierPage,
     lastSupplierPage,
     showSupplierRecords,
+    filterSupplierRecords,
     downloadSupplierRecordsExcel,
     exportPurchaseReconExcel,
     exportReconSuppliersExcel,
@@ -1344,6 +1390,10 @@ if (typeof window !== 'undefined') {
       const sModal = document.getElementById('modal-recon-supplier-editor');
       if (sModal && (sModal.classList.contains('active') || sModal.style.display === 'flex')) {
         window.PurchaseReconController.closeSupplierEditor();
+      }
+      const rModal = document.getElementById('modal-recon-supplier-records');
+      if (rModal && (rModal.classList.contains('active') || rModal.style.display === 'flex')) {
+        window.PurchaseReconController.closeModal('modal-recon-supplier-records');
       }
     }
   });

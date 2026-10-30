@@ -3123,5 +3123,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.BankStatementController) window.BankStatementController.closeStatementDrawer();
     });
   }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const m = document.getElementById('modal-linked-allocations');
+      if (m && m.style.display !== 'none') {
+        m.style.display = 'none';
+      }
+    }
+  });
 });
 

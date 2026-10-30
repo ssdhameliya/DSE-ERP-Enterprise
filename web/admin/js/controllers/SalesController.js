@@ -4148,9 +4148,41 @@ window.SalesController = {
           }
         });
 
+        // Context-aware Return Routing (Desktop Parity)
+        const btnSaleReturn = document.getElementById('dock-sale-return');
+        if (btnSaleReturn) {
+          const hasReturn = s.hasReturnSettlement || (s.returnStatus && s.returnStatus !== 'N/A');
+          if (hasReturn) {
+            btnSaleReturn.innerHTML = `
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 8 12 12 16"></polyline><line x1="16" y1="12" x2="8" y2="12"></line></svg>
+              View Return
+            `;
+            btnSaleReturn.title = 'View existing return settlement details for this invoice';
+            btnSaleReturn.onclick = () => {
+              this.closeInvoiceDrawer();
+              if (window.NavigationRouter) window.NavigationRouter.navigateTo('sales-return', { invoiceNo });
+              else if (window.ReturnsController && window.ReturnsController.filterReturnsByInvoice) window.ReturnsController.filterReturnsByInvoice(invoiceNo);
+            };
+          } else {
+            btnSaleReturn.innerHTML = `
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+              Create Return
+            `;
+            btnSaleReturn.title = 'Create sales return for this invoice';
+            btnSaleReturn.onclick = () => {
+              this.createSalesReturn(invoiceNo);
+            };
+          }
+        }
+
         this.switchDrawerTab('items');
+        modalDrawer.style.display = 'flex';
         modalDrawer.classList.add('open');
-        if (overlay) overlay.classList.add('open');
+        if (overlay) {
+          overlay.style.display = 'block';
+          overlay.style.pointerEvents = 'auto';
+          overlay.classList.add('open');
+        }
       }
 
       // Background asynchronous lines loading if not already in memory
