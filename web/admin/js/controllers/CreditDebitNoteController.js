@@ -461,14 +461,16 @@ window.CreditDebitNoteController = (function() {
   }
 
   // 3. SHOW NOTE DETAILS IN SLIDE DRAWER
+  let currentInspectionNote = null;
+
   async function showNoteDetails(id, isCredit = true) {
-    const prefix = isCredit ? 'cn-detail-' : 'dn-detail-';
-    const drawer = document.getElementById(isCredit ? 'cn-detail-drawer' : 'dn-detail-drawer');
-    if (!drawer) return;
+    const modal = document.getElementById('modal-note-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (!modal) return;
 
     // Toggle close if clicking already active note
-    if ((drawer.classList.contains('open') || drawer.style.display === 'flex') && selectedNote && selectedNote.id === id) {
-      closeDrawer(isCredit);
+    if (modal.classList.contains('open') && selectedNote && selectedNote.id === id) {
+      closeInspectionModal();
       return;
     }
 
@@ -478,70 +480,221 @@ window.CreditDebitNoteController = (function() {
     const rows = document.querySelectorAll(`#${tableId} tr`);
     rows.forEach(r => {
       const onclickAttr = r.getAttribute('onclick') || '';
-      if (onclickAttr.includes(`showNoteDetails(${id},`)) {
+      if (onclickAttr.includes(`showNoteDetails(${id}`)) {
         r.classList.add('active-selected-row');
       }
     });
 
+    if (window.AudioSynthesizer) window.AudioSynthesizer.playNav();
+
+    // 1. Initial quick render from memory cache
+    const sourceList = isCredit ? creditNotes : debitNotes;
+    let n = sourceList.find(x => x.id === id) || { id };
+    selectedNote = n;
+    currentInspectionNote = n;
+    populateNoteInspectionModal(n, isCredit);
+
+    // Switch to Tab 1 (Impact)
+    switchInspectionTab('impact');
+
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.style.pointerEvents = 'auto';
+      overlay.classList.add('open');
+    }
+
+    // 2. Fetch full details from server
     try {
-      const note = isCredit ? await window.OperationsService.getCreditNote(id) : await window.OperationsService.getDebitNote(id);
-      selectedNote = note;
-
-      document.getElementById(prefix + 'no').innerText = isCredit ? note.creditNoteNo : note.debitNoteNo;
-      document.getElementById(prefix + 'date').innerText = formatDate(note.noteDate);
-      document.getElementById(prefix + 'party').innerText = isCredit ? note.partyName : note.supplierName;
-      document.getElementById(prefix + 'ref').innerText = isCredit ? (note.originalInvoiceNo || '-') : (note.originalBillNo || '-');
-      document.getElementById(prefix + 'reason').innerText = note.reasonCode || '-';
-      document.getElementById(prefix + 'taxable').innerText = formatMoney(note.taxableAmount);
-      document.getElementById(prefix + 'cgst').innerText = formatMoney(note.cgstAmount);
-      document.getElementById(prefix + 'sgst').innerText = formatMoney(note.sgstAmount);
-      document.getElementById(prefix + 'igst').innerText = formatMoney(note.igstAmount);
-      document.getElementById(prefix + 'total').innerText = formatMoney(note.totalAmount);
-      document.getElementById(prefix + 'stock').innerText = note.stockReturned ? (isCredit ? 'Yes (Inventory added back)' : 'Yes (Inventory deducted)') : 'No (Price diff only)';
-      document.getElementById(prefix + 'status').innerHTML = getStatusBadge(note.status);
-
-      drawer.classList.add('open');
-      drawer.style.display = 'flex';
-      const overlay = document.getElementById('side-drawer-overlay');
-      if (overlay) {
-        overlay.classList.add('open');
-        overlay.onclick = () => closeDrawer(isCredit);
-      }
-      if (window.DynamicTableLayoutManager) {
-        window.DynamicTableLayoutManager.reflowAllTables();
-        setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
+      const full = await window.ApiService.get(`/api/credit-debit-notes/${id}`);
+      if (full && selectedNote && selectedNote.id === id) {
+        selectedNote = full;
+        currentInspectionNote = full;
+        populateNoteInspectionModal(full, isCredit);
       }
     } catch (e) {
-      console.error('Failed to load note details:', e);
-      if (window.AppDialogService) window.AppDialogService.toastError('Failed to load note details: ' + e.message);
+      console.warn('Background note fetch error:', e);
     }
+  }
+
+  function populateNoteInspectionModal(n, isCredit) {
+    if (!n) return;
+
+    const noteNum = n.noteNumber || n.number || n.no || '-';
+    const origInv = n.invoiceNumber || n.invoiceNo || n.originalInvoiceNumber || '-';
+    const partyName = n.partyName || n.customerName || n.supplierName || 'Walk-in Party';
+
+    // Header Hero
+    const elKicker = document.getElementById('note-inspect-kicker');
+    if (elKicker) elKicker.innerText = isCredit ? 'CREDIT NOTE DOCUMENT' : 'DEBIT NOTE DOCUMENT';
+
+    const elNo = document.getElementById('note-inspect-no');
+    if (elNo) elNo.innerText = noteNum;
+
+    const elMeta = document.getElementById('note-inspect-meta');
+    if (elMeta) {
+      const dStr = n.noteDate || n.date ? formatDate(n.noteDate || n.date) : '-';
+      elMeta.innerText = `Issue Date: ${dStr} • Linked Document: ${origInv}`;
+    }
+
+    const elStatus = document.getElementById('note-inspect-status');
+    if (elStatus) {
+      const st = (n.status || 'ACTIVE').toUpperCase();
+      elStatus.innerText = st;
+      elStatus.className = `status-pill ${st === 'ACTIVE' || st === 'SETTLED' ? 'pill-success' : 'pill-danger'}`;
+    }
+
+    // Card 1: Party & Reference
+    const elParty = document.getElementById('note-inspect-party-name');
+    if (elParty) elParty.innerText = partyName;
+
+    const elGstin = document.getElementById('note-inspect-gstin');
+    if (elGstin) elGstin.innerText = n.gstin || 'Unregistered / Consumer';
+
+    const elOrigInv = document.getElementById('note-inspect-orig-inv');
+    if (elOrigInv) elOrigInv.innerText = origInv;
+
+    // Card 2: Financials
+    const totalAmt = n.totalAmount != null ? n.totalAmount : (n.amount != null ? n.amount : 0);
+    const gstAmt = n.gstAmount != null ? n.gstAmount : 0;
+    const taxableAmt = n.taxableAmount != null ? n.taxableAmount : Math.max(0, totalAmt - gstAmt);
+
+    const elTaxable = document.getElementById('note-inspect-taxable');
+    if (elTaxable) elTaxable.innerText = formatMoney(taxableAmt);
+
+    const elGst = document.getElementById('note-inspect-gst');
+    if (elGst) elGst.innerText = formatMoney(gstAmt);
+
+    const elTotal = document.getElementById('note-inspect-total');
+    if (elTotal) elTotal.innerText = formatMoney(totalAmt);
+
+    // Card 3: Reason & State
+    const elReasonCode = document.getElementById('note-inspect-reason-code');
+    if (elReasonCode) elReasonCode.innerText = n.reason || (isCredit ? 'Sales Return / Rate Diff' : 'Purchase Return / Rate Diff');
+
+    const elSettleState = document.getElementById('note-inspect-settle-state');
+    if (elSettleState) elSettleState.innerText = (n.status || 'SETTLED').toUpperCase();
+
+    const elDate = document.getElementById('note-inspect-date');
+    if (elDate) elDate.innerText = n.noteDate || n.date ? formatDate(n.noteDate || n.date) : '-';
+
+    // Tab 1: GST & General Ledger Impact
+    const isInterState = (n.gstType || '').toUpperCase().includes('IGST') || (n.gstin && !n.gstin.startsWith('24'));
+    const gstRate = parseFloat(n.gstRate) || 18.0;
+
+    const elCgstRate = document.getElementById('note-inspect-cgst-rate');
+    const elCgstTax = document.getElementById('note-inspect-cgst-taxable');
+    const elCgstAmt = document.getElementById('note-inspect-cgst-amt');
+
+    const elSgstRate = document.getElementById('note-inspect-sgst-rate');
+    const elSgstTax = document.getElementById('note-inspect-sgst-taxable');
+    const elSgstAmt = document.getElementById('note-inspect-sgst-amt');
+
+    const elIgstRate = document.getElementById('note-inspect-igst-rate');
+    const elIgstTax = document.getElementById('note-inspect-igst-taxable');
+    const elIgstAmt = document.getElementById('note-inspect-igst-amt');
+
+    if (isInterState) {
+      if (elCgstRate) elCgstRate.innerText = '0.0%';
+      if (elCgstTax) elCgstTax.innerText = '₹ 0.00';
+      if (elCgstAmt) elCgstAmt.innerText = '₹ 0.00';
+
+      if (elSgstRate) elSgstRate.innerText = '0.0%';
+      if (elSgstTax) elSgstTax.innerText = '₹ 0.00';
+      if (elSgstAmt) elSgstAmt.innerText = '₹ 0.00';
+
+      if (elIgstRate) elIgstRate.innerText = `${gstRate.toFixed(1)}%`;
+      if (elIgstTax) elIgstTax.innerText = formatMoney(taxableAmt);
+      if (elIgstAmt) elIgstAmt.innerText = formatMoney(gstAmt);
+    } else {
+      const halfRate = (gstRate / 2).toFixed(1);
+      const halfAmt = gstAmt / 2;
+
+      if (elCgstRate) elCgstRate.innerText = `${halfRate}%`;
+      if (elCgstTax) elCgstTax.innerText = formatMoney(taxableAmt);
+      if (elCgstAmt) elCgstAmt.innerText = formatMoney(halfAmt);
+
+      if (elSgstRate) elSgstRate.innerText = `${halfRate}%`;
+      if (elSgstTax) elSgstTax.innerText = formatMoney(taxableAmt);
+      if (elSgstAmt) elSgstAmt.innerText = formatMoney(halfAmt);
+
+      if (elIgstRate) elIgstRate.innerText = '0.0%';
+      if (elIgstTax) elIgstTax.innerText = '₹ 0.00';
+      if (elIgstAmt) elIgstAmt.innerText = '₹ 0.00';
+    }
+
+    const elGlDebit = document.getElementById('note-inspect-gl-debit');
+    const elGlCredit = document.getElementById('note-inspect-gl-credit');
+    if (isCredit) {
+      if (elGlDebit) elGlDebit.innerText = 'Sales Returns / Rate Difference A/c';
+      if (elGlCredit) elGlCredit.innerText = `${partyName} (Customer Ledger)`;
+    } else {
+      if (elGlDebit) elGlDebit.innerText = `${partyName} (Supplier Ledger)`;
+      if (elGlCredit) elGlCredit.innerText = 'Purchase Returns / Rate Difference A/c';
+    }
+
+    // Tab 2: Remarks
+    const elRemarks = document.getElementById('note-inspect-remarks');
+    if (elRemarks) elRemarks.innerText = n.remarks || n.notes || 'No special commercial remarks recorded.';
+  }
+
+  function switchInspectionTab(tabName) {
+    const tabs = ['impact', 'notes'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-note-${t}`);
+      const pane = document.getElementById(`pane-note-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) pane.classList.toggle('active', t === tabName);
+    });
+  }
+
+  function closeInspectionModal() {
+    const modal = document.getElementById('modal-note-inspection');
+    const overlay = document.getElementById('side-drawer-overlay');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+    }
+    if (overlay) {
+      overlay.classList.remove('open');
+      overlay.style.display = 'none';
+    }
+    document.querySelectorAll('#tbl-credit-notes-body tr.active-selected-row, #tbl-debit-notes-body tr.active-selected-row').forEach(r => r.classList.remove('active-selected-row'));
+    selectedNote = null;
+    currentInspectionNote = null;
   }
 
   function closeDrawer(isCredit = true) {
-    const drawer = document.getElementById(isCredit ? 'cn-detail-drawer' : 'dn-detail-drawer');
-    if (drawer) {
-      drawer.classList.remove('open');
-      drawer.style.display = 'none';
-    }
-    const overlay = document.getElementById('side-drawer-overlay');
-    if (overlay) overlay.classList.remove('open');
-    const tableId = isCredit ? 'tbl-credit-notes-body' : 'tbl-debit-notes-body';
-    document.querySelectorAll(`#${tableId} tr.active-selected-row`).forEach(r => r.classList.remove('active-selected-row'));
-    selectedNote = null;
-    if (window.DynamicTableLayoutManager) {
-      window.DynamicTableLayoutManager.reflowAllTables();
-      setTimeout(() => window.DynamicTableLayoutManager.reflowAllTables(), 50);
-    }
+    closeInspectionModal();
   }
 
-  // Install escape listeners
-  if (typeof window !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.RegisterUiSupport) {
-        window.RegisterUiSupport.installEscapeClose('cn-detail-drawer', '#tbl-credit-notes-body', () => closeDrawer(true));
-        window.RegisterUiSupport.installEscapeClose('dn-detail-drawer', '#tbl-debit-notes-body', () => closeDrawer(false));
-      }
+  function copyNoteNo() {
+    const n = currentInspectionNote || selectedNote;
+    const no = n ? (n.noteNumber || n.number || n.no) : '';
+    if (!no) return;
+    navigator.clipboard.writeText(no).then(() => {
+      if (window.AppDialogService) window.AppDialogService.toastSuccess(`Copied note ${no} to clipboard`);
     });
+  }
+
+  function editCurrentInspectionNote() {
+    const n = currentInspectionNote || selectedNote;
+    if (!n) return;
+    const isCredit = (n.noteType || '').toUpperCase().includes('CREDIT') || (n.noteNumber || '').startsWith('CN');
+    openEditNoteModal(n.id, isCredit);
+  }
+
+  function printCurrentInspectionPdf() {
+    const n = currentInspectionNote || selectedNote;
+    if (!n) return;
+    printPdf(n.id);
+  }
+
+  function printCurrentInspectionBarcode() {
+    const n = currentInspectionNote || selectedNote;
+    if (!n) return;
+    printBarcode(n.id);
   }
 
   // 4. CANCEL NOTE ACTION
@@ -955,6 +1108,13 @@ window.CreditDebitNoteController = (function() {
     recalcDebitTax,
     submitCreateDebitNote,
     closeModal,
-    toggleActionMenu
+    toggleActionMenu,
+    closeInspectionModal,
+    switchInspectionTab,
+    copyNoteNo,
+    editCurrentInspectionNote,
+    printCurrentInspectionPdf,
+    printCurrentInspectionBarcode,
+    getCurrentInspectionNote: () => currentInspectionNote
   };
 })();

@@ -93,52 +93,6 @@
             </div>
 
             <!-- Centered Modal Inspection Popup (Eliminates Side Drawer) -->
-            <div id="dn-detail-drawer" class="slide-detail-drawer register-inline-drawer" style="display: none;">
-              <div class="drawer-header"
-                style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.85); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <div style="font-family:'Space Grotesk'; font-size:1.05rem; font-weight:700; color:var(--cyan);"
-                    id="dn-detail-no">Debit Note Details</div>
-                  <div style="font-size:0.72rem; color:var(--text-muted);">Accounts &amp; General Ledger Posting</div>
-                </div>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.CreditDebitNoteController.closeDrawer(false)">&times;</button>
-              </div>
-              <div class="drawer-body"
-                style="padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
-                <div class="drawer-field-row"><span class="drawer-field-label">Date:</span><span
-                    class="drawer-field-value" id="dn-detail-date">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Supplier:</span><span
-                    class="drawer-field-value" id="dn-detail-party"
-                    style="font-weight:700; color:var(--text-main);">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Original Bill:</span><span
-                    class="drawer-field-value" id="dn-detail-ref" style="color:var(--cyan);">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Reason Code:</span><span
-                    class="drawer-field-value" id="dn-detail-reason">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Taxable Amount:</span><span
-                    class="drawer-field-value" id="dn-detail-taxable">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">CGST (50%):</span><span
-                    class="drawer-field-value" id="dn-detail-cgst">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">SGST (50%):</span><span
-                    class="drawer-field-value" id="dn-detail-sgst">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">IGST:</span><span
-                    class="drawer-field-value" id="dn-detail-igst">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Total Amount:</span><span
-                    class="drawer-field-value" id="dn-detail-total"
-                    style="color:var(--yellow); font-size:0.95rem; font-weight:700;">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Stock Deducted:</span><span
-                    class="drawer-field-value" id="dn-detail-stock">-</span></div>
-                <div class="drawer-field-row"><span class="drawer-field-label">Status:</span><span
-                    class="drawer-field-value" id="dn-detail-status">-</span></div>
-              </div>
-              <div class="drawer-footer"
-                style="padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: rgba(10, 18, 34, 0.9); display: flex; gap: 6px; flex-wrap: wrap;">
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.CreditDebitNoteController.downloadPdf(document.getElementById('dn-detail-no').innerText, false)">Print
-                  PDF</button>
-                <button class="btn btn-secondary btn-sm"
-                  onclick="window.CreditDebitNoteController.closeDrawer(false)">Close</button>
-              </div>
-            </div>
+            
           </div>
         </div>

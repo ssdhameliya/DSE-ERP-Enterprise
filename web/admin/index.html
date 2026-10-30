@@ -81,7 +81,7 @@
     html.auth-forgot #form-login { display: none !important; }
     html.auth-forgot #auth-card-col { max-width: 860px !important; }
   </style>
-  <link rel="stylesheet" href="css/app.css?v=11.0.11.01">
+  <link rel="stylesheet" href="css/app.css?v=11.0.11.02">
   <script>
     /* --- Immediate live clock: starts on head parse, before any font/script load (Desktop ClockService parity) --- */
     (function() {
@@ -291,7 +291,7 @@
         <div class="auth-brand-subtitle" style="display: none;"></div>
         <div class="auth-brand-tagline">Role-aware secure enterprise access</div>
         <div>
-          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 11.0.11.01</span>
+          <span class="auth-brand-version-badge" id="auth-app-version-badge">Version 11.0.11.02</span>
           <div id="auth-desktop-baseline" style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Desktop Baseline:
             v11.0.11</div>
         </div>
@@ -766,7 +766,7 @@
             </div>
             <div id="menu-version-footer"
               style="padding: 8px 14px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v11.0.11.01</span></div>
+              <span>Web Studio</span><span style="color: var(--cyan); font-weight: 600;">v11.0.11.02</span></div>
           </div>
         </div>
       </div>
@@ -2825,6 +2825,712 @@
       </div>
     </div>
   </div>
+
+
+  <!-- MODAL: QUOTATION INSPECTION (Desktop QuotationDocumentInspectionDialog Parity) -->
+  <div class="side-drawer document-inspection-window-modal quotation-inspection-dialog approved-ui" id="modal-quotation-inspection" style="display: none;">
+    <!-- 1. HEADER HERO BAR -->
+    <div class="inspection-hero-bar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="inspection-hero-icon" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; color: var(--cyan); flex-shrink: 0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <div>
+          <div class="inspection-kicker">QUOTATION DOCUMENT</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+            <h3 id="quote-inspect-no" class="inspection-hero-title" style="margin: 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--cyan); letter-spacing: -0.01em;">-</h3>
+            <button class="btn btn-secondary btn-sm copy-ref-button" style="padding: 2px 7px; font-size: 0.72rem; height: 24px; line-height: 1;" onclick="window.QuotationController.copyQuotationNo()" title="Copy quotation number">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <div id="quote-inspect-meta" class="inspection-meta-label" style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Issued: - • Valid Until: -</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="quote-inspect-status" class="status-pill pill-neutral" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">DRAFT</span>
+        <span id="quote-inspect-converted-pill" class="status-pill pill-success" style="display: none; font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">CONVERTED</span>
+        <button class="modal-close" onclick="window.QuotationController.closeInspectionModal()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+      </div>
+    </div>
+
+    <!-- 2. OVERVIEW CARDS STRIP (Desktop QuotationDocumentInspectionDialog buildOverviewCards Parity) -->
+    <div class="inspection-overview-strip">
+      <!-- Card 1: Customer Details -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Customer Details
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Party Name:</span>
+            <span id="quote-inspect-cust-name" class="inspection-card-value inspection-value-bold" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Contact Mobile:</span>
+            <span id="quote-inspect-cust-phone" class="inspection-card-value">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Customer GSTIN:</span>
+            <span id="quote-inspect-cust-gstin" class="inspection-card-value" style="font-family: monospace;">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Quote Financials -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+          Quote Financials
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Total Amount:</span>
+            <span id="quote-inspect-total" class="inspection-card-value inspection-value-bold" style="color: var(--yellow); font-family: 'Space Grotesk'; font-size: 0.95rem;">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Special Discount:</span>
+            <span id="quote-inspect-discount" class="inspection-card-value">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Valid Until:</span>
+            <span id="quote-inspect-valid" class="inspection-card-value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Sales & Origin -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Sales &amp; Origin
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Sales Representative:</span>
+            <span id="quote-inspect-salesperson" class="inspection-card-value">Not Assigned</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Lead Source:</span>
+            <span id="quote-inspect-source" class="inspection-card-value">Direct</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Created By:</span>
+            <span id="quote-inspect-created-by" class="inspection-card-value">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Lifecycle Status -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          Lifecycle Status
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Follow-up Date:</span>
+            <span id="quote-inspect-follow-up" class="inspection-card-value">None scheduled</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Sale Conversion:</span>
+            <span id="quote-inspect-converted" class="inspection-card-value" style="font-weight: 700; color: var(--purple);">Not converted</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Current State:</span>
+            <span id="quote-inspect-state" class="inspection-card-value">ACTIVE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CANONICAL 3 TABS NAVIGATION BAR -->
+    <div class="drawer-tabs-bar">
+      <button class="drawer-tab-btn active" id="tab-btn-quote-items" onclick="window.QuotationController.switchInspectionTab('items')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Quoted Items (<span id="quote-inspect-items-count">0</span>)
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-quote-follow" onclick="window.QuotationController.switchInspectionTab('follow')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+        Follow-Up &amp; Conversion
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-quote-terms" onclick="window.QuotationController.switchInspectionTab('terms')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Terms &amp; Notes
+      </button>
+    </div>
+
+    <!-- 4. TAB PANES BODY -->
+    <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+      <!-- TAB 1: QUOTED ITEMS -->
+      <div class="drawer-tab-pane active" id="pane-quote-items">
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">#</th>
+                  <th>Item Code / Description</th>
+                  <th>HSN/SAC</th>
+                  <th style="text-align: right;">Qty</th>
+                  <th>Unit</th>
+                  <th style="text-align: right;">Rate (₹)</th>
+                  <th style="text-align: right;">Discount %</th>
+                  <th style="text-align: right;">Taxable (₹)</th>
+                  <th style="text-align: right;">GST %</th>
+                  <th style="text-align: right;">Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="quote-inspect-items-tbody">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 14px;">Loading line items...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Summary breakdown bar -->
+        <div style="display: flex; justify-content: flex-end; gap: 24px; padding: 10px 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.82rem;">
+          <div><span style="color:var(--text-muted);">Taxable: </span><span id="quote-inspect-subtotal" style="font-weight:600;">₹ 0.00</span></div>
+          <div><span style="color:var(--text-muted);">Discount: </span><span id="quote-inspect-discount-sum" style="font-weight:600;">₹ 0.00</span></div>
+          <div><span style="color:var(--text-muted);">GST Amount: </span><span id="quote-inspect-gst-sum" style="font-weight:600;">₹ 0.00</span></div>
+          <div><span style="color:var(--yellow); font-weight:700;">Grand Total: </span><span id="quote-inspect-grand-sum" style="color:var(--yellow); font-weight:800; font-family:'Space Grotesk';">₹ 0.00</span></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: FOLLOW-UP & CONVERSION -->
+      <div class="drawer-tab-pane" id="pane-quote-follow">
+        <div class="drawer-section" style="background: rgba(168, 85, 247, 0.06); border-color: rgba(168, 85, 247, 0.25); padding: 14px 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: #c084fc; font-weight: 700;">Next Follow-Up Schedule</div>
+              <div id="quote-inspect-follow-text" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">No schedule set</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.openFollowUpFromInspection()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              Schedule Follow-Up
+            </button>
+          </div>
+        </div>
+
+        <div class="drawer-section" id="quote-inspect-conversion-box">
+          <div class="drawer-section-title">Sales Conversion Status</div>
+          <div id="quote-inspect-conversion-detail" style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 10px;">Not converted to a sales invoice yet.</div>
+          <button class="btn btn-success" id="quote-inspect-btn-convert" onclick="window.QuotationController.convertCurrentInspectionToSale()" style="display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Convert to Sale Order / Invoice
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 3: TERMS & NOTES -->
+      <div class="drawer-tab-pane" id="pane-quote-terms">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Commercial Terms &amp; Conditions</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <div class="drawer-label">Payment Terms</div>
+              <div class="drawer-value" id="quote-inspect-payment-terms">Standard 15 Days</div>
+            </div>
+            <div>
+              <div class="drawer-label">Delivery Terms</div>
+              <div class="drawer-value" id="quote-inspect-delivery-terms">Ex-Works / Door Delivery</div>
+            </div>
+          </div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Remarks &amp; Internal Notes</div>
+          <div class="drawer-value" id="quote-inspect-remarks" style="min-height: 48px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">No notes recorded.</div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Attached Documentation</div>
+          <div id="quote-inspect-attachment-item" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 12px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>📄</span>
+              <span id="quote-inspect-attachment-name" style="font-size: 0.8rem; font-weight: 600;">-</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.previewCurrentInspectionAttachment()">Preview</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.downloadCurrentInspectionAttachment()">Download</button>
+            </div>
+          </div>
+          <div id="quote-inspect-no-attachment" style="font-size: 0.8rem; color: var(--text-dim);">No file attachments uploaded for this quotation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. ACTION DOCK (Desktop QuotationDocumentInspectionDialog Parity: 8 Buttons) -->
+    <div class="inspection-action-dock" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10, 18, 34, 0.95); border-top: 1px solid var(--border-subtle); flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- 1. Edit Quotation -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-edit" onclick="window.QuotationController.openQuotationEditor(window.QuotationController.currentInspectionQuote?.id)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit Quotation
+        </button>
+        <!-- 2. Duplicate -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-duplicate" onclick="window.QuotationController.duplicate(window.QuotationController.currentInspectionQuote?.id, window.QuotationController.currentInspectionQuote?.no)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Duplicate
+        </button>
+        <!-- 3. Print / PDF -->
+        <button class="btn btn-primary btn-sm" id="dock-quote-pdf" onclick="window.QuotationController.printPdf(window.QuotationController.currentInspectionQuote?.no)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print / PDF
+        </button>
+        <!-- 4. Excel -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-excel" onclick="window.QuotationController.downloadExcel(window.QuotationController.currentInspectionQuote?.no)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          Excel
+        </button>
+        <!-- 5. Email -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-email" onclick="window.QuotationController.sendEmailPrompt(window.QuotationController.currentInspectionQuote?.id, window.QuotationController.currentInspectionQuote?.no, window.QuotationController.currentInspectionQuote?.email)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Email
+        </button>
+        <!-- 6. Follow Up -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-followup" onclick="window.QuotationController.openFollowUpFromInspection()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          Follow Up
+        </button>
+        <!-- 7. Convert to Sale -->
+        <button class="btn btn-success btn-sm" id="dock-quote-convert" onclick="window.QuotationController.convertCurrentInspectionToSale()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Convert to Sale
+        </button>
+        <!-- 8. Audit Trail -->
+        <button class="btn btn-secondary btn-sm" id="dock-quote-audit" onclick="if(window.AppDialogService) window.AppDialogService.showActivityTimeline('QUOTATION', window.QuotationController.currentInspectionQuote?.id, window.QuotationController.currentInspectionQuote?.no)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Audit Trail
+        </button>
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="window.QuotationController.closeInspectionModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: RETURN INSPECTION (Desktop ReturnDocumentInspectionDialog Parity) -->
+  <div class="side-drawer document-inspection-window-modal return-inspection-dialog approved-ui" id="modal-return-inspection" style="display: none;">
+    <!-- 1. HEADER HERO BAR -->
+    <div class="inspection-hero-bar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="inspection-hero-icon" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; color: var(--yellow); flex-shrink: 0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </div>
+        <div>
+          <div class="inspection-kicker" id="return-inspect-kicker">SALES RETURN DOCUMENT</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+            <h3 id="return-inspect-no" class="inspection-hero-title" style="margin: 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--yellow); letter-spacing: -0.01em;">-</h3>
+            <button class="btn btn-secondary btn-sm copy-ref-button" style="padding: 2px 7px; font-size: 0.72rem; height: 24px; line-height: 1;" onclick="window.ReturnsController.copyReturnNo()" title="Copy return document number">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <div id="return-inspect-meta" class="inspection-meta-label" style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Return Date: - • Linked Invoice: -</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="return-inspect-doc-status" class="status-pill pill-success" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">APPROVED</span>
+        <span id="return-inspect-settlement-status" class="status-pill pill-warning" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">PENDING REFUND</span>
+        <button class="modal-close" onclick="window.ReturnsController.closeInspectionModal()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+      </div>
+    </div>
+
+    <!-- 2. OVERVIEW CARDS STRIP (Desktop ReturnDocumentInspectionDialog buildOverviewCards Parity) -->
+    <div class="inspection-overview-strip strip-3-cards">
+      <!-- Card 1: Return Value -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+          Return Financial Value
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Total Claimed:</span>
+            <span id="return-inspect-total" class="inspection-card-value inspection-value-bold" style="color: var(--yellow); font-family: 'Space Grotesk'; font-size: 0.95rem;">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Approved Value:</span>
+            <span id="return-inspect-approved-amt" class="inspection-card-value font-bold" style="color: var(--green);">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Pending Settlement:</span>
+            <span id="return-inspect-pending-amt" class="inspection-card-value font-bold" style="color: var(--red);">₹ 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Approval & Status -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Approval &amp; Settlement
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Approval Status:</span>
+            <span id="return-inspect-approval-state" class="inspection-card-value inspection-value-bold">APPROVED</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Refund Mode:</span>
+            <span id="return-inspect-refund-mode" class="inspection-card-value">Credit Note / Ledger</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Settlement State:</span>
+            <span id="return-inspect-refund-state" class="inspection-card-value">SETTLED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Timeline & Audit -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          Document Reference &amp; Origin
+        </div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Original Invoice:</span>
+            <span id="return-inspect-orig-inv" class="inspection-card-value inspection-value-bold" style="color: var(--cyan);">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Return Date:</span>
+            <span id="return-inspect-date" class="inspection-card-value">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Party Name:</span>
+            <span id="return-inspect-party" class="inspection-card-value" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CANONICAL 3 TABS NAVIGATION BAR -->
+    <div class="drawer-tabs-bar">
+      <button class="drawer-tab-btn active" id="tab-btn-return-lines" onclick="window.ReturnsController.switchInspectionTab('lines')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Returned Lines (<span id="return-inspect-lines-count">0</span>)
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-return-refunds" onclick="window.ReturnsController.switchInspectionTab('refunds')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        Refunds &amp; Settlements
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-return-notes" onclick="window.ReturnsController.switchInspectionTab('notes')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Notes &amp; Original Document
+      </button>
+    </div>
+
+    <!-- 4. TAB PANES BODY -->
+    <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+      <!-- TAB 1: RETURNED LINES -->
+      <div class="drawer-tab-pane active" id="pane-return-lines">
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">#</th>
+                  <th>Item Code / Description</th>
+                  <th>HSN/SAC</th>
+                  <th style="text-align: right;">Return Qty</th>
+                  <th>Unit</th>
+                  <th style="text-align: right;">Unit Rate (₹)</th>
+                  <th style="text-align: right;">Taxable (₹)</th>
+                  <th style="text-align: right;">GST %</th>
+                  <th style="text-align: right;">Refund Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="return-inspect-lines-tbody">
+                <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 14px;">Loading returned lines...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 24px; padding: 10px 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.82rem;">
+          <div><span style="color:var(--yellow); font-weight:700;">Total Return Amount: </span><span id="return-inspect-summary-total" style="color:var(--yellow); font-weight:800; font-family:'Space Grotesk';">₹ 0.00</span></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: REFUNDS & SETTLEMENTS -->
+      <div class="drawer-tab-pane" id="pane-return-refunds">
+        <div class="drawer-section" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); padding: 14px 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--green); font-weight: 700;">Settlement Allocation</div>
+              <div id="return-inspect-settle-banner" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">Fully Settled</div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="return-inspect-btn-record-refund" style="background: var(--green); border-color: var(--green);" onclick="window.ReturnsController.recordRefundFromInspection()">
+              Record Refund / Credit Note
+            </button>
+          </div>
+        </div>
+        <div class="drawer-section" style="padding: 0; overflow: hidden;">
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.8rem; width: 100%;">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Voucher / Ref No</th>
+                  <th>Mode</th>
+                  <th style="text-align: right;">Amount (₹)</th>
+                  <th>Recorded By</th>
+                </tr>
+              </thead>
+              <tbody id="return-inspect-refunds-tbody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 14px;">No settlement records found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: NOTES & ORIGINAL DOCUMENT -->
+      <div class="drawer-tab-pane" id="pane-return-notes">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Reason for Return</div>
+          <div id="return-inspect-reason" style="font-size: 0.85rem; color: var(--text-main); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">No specific reason provided.</div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">Original Invoice Snapshot</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <div class="drawer-label">Original Invoice No</div>
+              <div class="drawer-value" id="return-inspect-snap-inv">-</div>
+            </div>
+            <div>
+              <div class="drawer-label">Original Invoice Date</div>
+              <div class="drawer-value" id="return-inspect-snap-date">-</div>
+            </div>
+          </div>
+          <div style="margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.viewOriginalInvoiceFromInspection()">
+              View Original Invoice Document
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. ACTION DOCK (Desktop ReturnDocumentInspectionDialog Parity) -->
+    <div class="inspection-action-dock" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10, 18, 34, 0.95); border-top: 1px solid var(--border-subtle); flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- 1. Record Refund -->
+        <button class="btn btn-primary btn-sm" id="dock-return-refund" style="background:var(--green); border-color:var(--green);" onclick="window.ReturnsController.recordRefundFromInspection()">
+          Record Refund
+        </button>
+        <!-- 2. Print / PDF -->
+        <button class="btn btn-secondary btn-sm" id="dock-return-pdf" onclick="window.ReturnsController.printReturnPdf(window.ReturnsController.currentInspectionReturn?.returnNo)">
+          Print / PDF
+        </button>
+        <!-- 3. Excel -->
+        <button class="btn btn-secondary btn-sm" id="dock-return-excel" onclick="window.ReturnsController.exportReturnExcel(window.ReturnsController.currentInspectionReturn?.returnNo)">
+          Excel
+        </button>
+        <!-- 4. Email -->
+        <button class="btn btn-secondary btn-sm" id="dock-return-email" onclick="window.ReturnsController.sendEmailPrompt(window.ReturnsController.currentInspectionReturn?.id, window.ReturnsController.currentInspectionReturn?.returnNo)">
+          Email
+        </button>
+        <!-- 5. Audit Trail -->
+        <button class="btn btn-secondary btn-sm" id="dock-return-audit" onclick="if(window.AppDialogService) window.AppDialogService.showActivityTimeline('RETURN', window.ReturnsController.currentInspectionReturn?.id, window.ReturnsController.currentInspectionReturn?.returnNo)">
+          Audit Trail
+        </button>
+        <!-- Approval Box if Pending -->
+        <div id="return-inspect-approval-actions" style="display: none; align-items: center; gap: 6px;">
+          <button class="btn btn-success btn-sm" onclick="window.ReturnsController.approveCurrentReturn()">Approve Return</button>
+          <button class="btn btn-danger btn-sm" onclick="window.ReturnsController.rejectCurrentReturn()">Reject Return</button>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="window.ReturnsController.closeInspectionModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: CREDIT / DEBIT NOTE INSPECTION (Desktop CreditDebitNoteInspectionDialog Parity) -->
+  <div class="side-drawer document-inspection-window-modal note-inspection-dialog approved-ui" id="modal-note-inspection" style="display: none;">
+    <!-- 1. HEADER HERO BAR -->
+    <div class="inspection-hero-bar">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="inspection-hero-icon" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.3); display: flex; align-items: center; justify-content: center; color: var(--purple); flex-shrink: 0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <div>
+          <div class="inspection-kicker" id="note-inspect-kicker">CREDIT NOTE DOCUMENT</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+            <h3 id="note-inspect-no" class="inspection-hero-title" style="margin: 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--purple); letter-spacing: -0.01em;">-</h3>
+            <button class="btn btn-secondary btn-sm copy-ref-button" style="padding: 2px 7px; font-size: 0.72rem; height: 24px; line-height: 1;" onclick="window.CreditDebitNoteController.copyNoteNo()" title="Copy note reference">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <div id="note-inspect-meta" class="inspection-meta-label" style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Issue Date: - • Linked Ref: -</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="note-inspect-status" class="status-pill pill-success" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">ACTIVE</span>
+        <button class="modal-close" onclick="window.CreditDebitNoteController.closeInspectionModal()" style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+      </div>
+    </div>
+
+    <!-- 2. OVERVIEW CARDS STRIP -->
+    <div class="inspection-overview-strip strip-3-cards">
+      <!-- Card 1: Party & Reference -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">Party &amp; Linked Document</div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Party Name:</span>
+            <span id="note-inspect-party-name" class="inspection-card-value inspection-value-bold" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GSTIN:</span>
+            <span id="note-inspect-gstin" class="inspection-card-value" style="font-family: monospace;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Original Invoice:</span>
+            <span id="note-inspect-orig-inv" class="inspection-card-value font-bold" style="color: var(--cyan);">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Note Financials -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">Financial Adjustment</div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Taxable Value:</span>
+            <span id="note-inspect-taxable" class="inspection-card-value">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">GST Tax (IGST/CGST/SGST):</span>
+            <span id="note-inspect-gst" class="inspection-card-value">₹ 0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Total Note Amount:</span>
+            <span id="note-inspect-total" class="inspection-card-value inspection-value-bold" style="color: var(--purple); font-family: 'Space Grotesk'; font-size: 0.95rem;">₹ 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Reason & State -->
+      <div class="inspection-card">
+        <div class="inspection-card-title">Commercial Reason &amp; Impact</div>
+        <div class="inspection-card-body" style="margin-top: 6px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Reason Code:</span>
+            <span id="note-inspect-reason-code" class="inspection-card-value">Sales Return / Defect</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Ledger Settlement:</span>
+            <span id="note-inspect-settle-state" class="inspection-card-value font-bold" style="color: var(--green);">SETTLED</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+            <span class="inspection-card-caption">Issue Date:</span>
+            <span id="note-inspect-date" class="inspection-card-value">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CANONICAL 2 TABS NAVIGATION BAR -->
+    <div class="drawer-tabs-bar">
+      <button class="drawer-tab-btn active" id="tab-btn-note-impact" onclick="window.CreditDebitNoteController.switchInspectionTab('impact')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        GST &amp; General Ledger Impact
+      </button>
+      <button class="drawer-tab-btn" id="tab-btn-note-notes" onclick="window.CreditDebitNoteController.switchInspectionTab('notes')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Notes &amp; Audit Trail
+      </button>
+    </div>
+
+    <!-- 4. TAB PANES BODY -->
+    <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+      <!-- TAB 1: GST & GL IMPACT -->
+      <div class="drawer-tab-pane active" id="pane-note-impact">
+        <div class="drawer-section">
+          <div class="drawer-section-title">GST Tax Distribution</div>
+          <table class="data-table" style="font-size: 0.8rem; width: 100%;">
+            <thead>
+              <tr>
+                <th>Tax Category</th>
+                <th style="text-align: right;">Rate %</th>
+                <th style="text-align: right;">Taxable Value (₹)</th>
+                <th style="text-align: right;">Tax Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="note-inspect-tax-tbody">
+              <tr>
+                <td>Central GST (CGST)</td>
+                <td style="text-align: right;" id="note-inspect-cgst-rate">9.0%</td>
+                <td style="text-align: right;" id="note-inspect-cgst-taxable">₹ 0.00</td>
+                <td style="text-align: right;" id="note-inspect-cgst-amt">₹ 0.00</td>
+              </tr>
+              <tr>
+                <td>State GST (SGST)</td>
+                <td style="text-align: right;" id="note-inspect-sgst-rate">9.0%</td>
+                <td style="text-align: right;" id="note-inspect-sgst-taxable">₹ 0.00</td>
+                <td style="text-align: right;" id="note-inspect-sgst-amt">₹ 0.00</td>
+              </tr>
+              <tr>
+                <td>Integrated GST (IGST)</td>
+                <td style="text-align: right;" id="note-inspect-igst-rate">18.0%</td>
+                <td style="text-align: right;" id="note-inspect-igst-taxable">₹ 0.00</td>
+                <td style="text-align: right;" id="note-inspect-igst-amt">₹ 0.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section-title">General Ledger Posting Summary</div>
+          <div class="drawer-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+              <div class="drawer-label">Account Debited</div>
+              <div class="drawer-value font-bold" id="note-inspect-gl-debit" style="color: var(--cyan);">-</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+              <div class="drawer-label">Account Credited</div>
+              <div class="drawer-value font-bold" id="note-inspect-gl-credit" style="color: var(--purple);">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: NOTES & AUDIT -->
+      <div class="drawer-tab-pane" id="pane-note-notes">
+        <div class="drawer-section">
+          <div class="drawer-section-title">Commercial Remarks &amp; Explanations</div>
+          <div id="note-inspect-remarks" style="font-size: 0.85rem; color: var(--text-main); background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">No special notes recorded.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. ACTION DOCK (Desktop CreditDebitNoteInspectionDialog Parity) -->
+    <div class="inspection-action-dock" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10, 18, 34, 0.95); border-top: 1px solid var(--border-subtle); flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- 1. Edit Note -->
+        <button class="btn btn-secondary btn-sm" id="dock-note-edit" onclick="window.CreditDebitNoteController.editCurrentInspectionNote()">
+          Edit Note
+        </button>
+        <!-- 2. Print / PDF -->
+        <button class="btn btn-secondary btn-sm" id="dock-note-pdf" onclick="window.CreditDebitNoteController.printCurrentInspectionPdf()">
+          Print / PDF
+        </button>
+        <!-- 3. Barcode -->
+        <button class="btn btn-secondary btn-sm" id="dock-note-barcode" onclick="window.CreditDebitNoteController.printCurrentInspectionBarcode()">
+          Barcode
+        </button>
+        <!-- 4. Audit Trail -->
+        <button class="btn btn-secondary btn-sm" id="dock-note-audit" onclick="if(window.AppDialogService) window.AppDialogService.showActivityTimeline('NOTE', window.CreditDebitNoteController.currentInspectionNote?.id, window.CreditDebitNoteController.currentInspectionNote?.noteNumber)">
+          Audit Trail
+        </button>
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="window.CreditDebitNoteController.closeInspectionModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- MODAL: AUTHORITATIVE AUDIT TRAIL (Desktop ActivityTimelineDialog Parity) -->
   <div class="modal-overlay" id="modal-activity-timeline" style="display: none; z-index: 100025;">
@@ -7141,80 +7847,80 @@
   <!-- JAVASCRIPT STUDIO ENGINE -->
   <!-- MVC ARCHITECTURE - DESKTOP PARITY -->
   <!-- 0. Centralized Runtime Version Registry -->
-  <script src="js/version.js?v=11.0.11.01"></script>
+  <script src="js/version.js?v=11.0.11.02"></script>
 
   <!-- 1. Utilities matching org.example.util -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/util/xlsx.full.min.js?v=11.0.11.01"></script>
-  <script src="js/util/FormatUtil.js?v=11.0.11.01"></script>
-  <script src="js/util/DatePickerFormatter.js?v=11.0.11.01"></script>
-  <script src="js/util/AmountInWordsConverter.js?v=11.0.11.01"></script>
-  <script src="js/util/DocumentCalculationEngine.js?v=11.0.11.01"></script>
-  <script src="js/util/AudioSynthesizer.js?v=11.0.11.01"></script>
-  <script src="js/util/UiSemanticRegistry.js?v=11.0.11.01"></script>
-  <script src="js/util/DynamicTableLayoutManager.js?v=11.0.11.01"></script>
-  <script src="js/util/TableUiEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/KpiCardEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/LabelIconEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/ButtonIconEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/PaginationUiEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/WorkflowFocusManager.js?v=11.0.11.01"></script>
-  <script src="js/util/GlobalUiEnhancer.js?v=11.0.11.01"></script>
-  <script src="js/util/AppDialogService.js?v=11.0.11.01"></script>
-  <script src="js/util/UserFacingErrorMapper.js?v=11.0.11.01"></script>
-  <script src="js/util/FormDirtyTracker.js?v=11.0.11.01"></script>
-  <script src="js/util/DeepLinkService.js?v=11.0.11.01"></script>
-  <script src="js/util/BarcodeGenerator.js?v=11.0.11.01"></script>
-  <script src="js/util/ShortcutManager.js?v=11.0.11.01"></script>
-  <script src="js/util/RegisterUiSupport.js?v=11.0.11.01"></script>
-  <script src="js/util/DocumentPdfGenerator.js?v=11.0.11.01"></script>
-  <script src="js/util/DocumentExcelGenerator.js?v=11.0.11.01"></script>
+  <script src="js/util/xlsx.full.min.js?v=11.0.11.02"></script>
+  <script src="js/util/FormatUtil.js?v=11.0.11.02"></script>
+  <script src="js/util/DatePickerFormatter.js?v=11.0.11.02"></script>
+  <script src="js/util/AmountInWordsConverter.js?v=11.0.11.02"></script>
+  <script src="js/util/DocumentCalculationEngine.js?v=11.0.11.02"></script>
+  <script src="js/util/AudioSynthesizer.js?v=11.0.11.02"></script>
+  <script src="js/util/UiSemanticRegistry.js?v=11.0.11.02"></script>
+  <script src="js/util/DynamicTableLayoutManager.js?v=11.0.11.02"></script>
+  <script src="js/util/TableUiEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/KpiCardEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/LabelIconEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/ButtonIconEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/PaginationUiEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/WorkflowFocusManager.js?v=11.0.11.02"></script>
+  <script src="js/util/GlobalUiEnhancer.js?v=11.0.11.02"></script>
+  <script src="js/util/AppDialogService.js?v=11.0.11.02"></script>
+  <script src="js/util/UserFacingErrorMapper.js?v=11.0.11.02"></script>
+  <script src="js/util/FormDirtyTracker.js?v=11.0.11.02"></script>
+  <script src="js/util/DeepLinkService.js?v=11.0.11.02"></script>
+  <script src="js/util/BarcodeGenerator.js?v=11.0.11.02"></script>
+  <script src="js/util/ShortcutManager.js?v=11.0.11.02"></script>
+  <script src="js/util/RegisterUiSupport.js?v=11.0.11.02"></script>
+  <script src="js/util/DocumentPdfGenerator.js?v=11.0.11.02"></script>
+  <script src="js/util/DocumentExcelGenerator.js?v=11.0.11.02"></script>
 
   <!-- 2. Services matching org.example.service -->
-  <script src="js/services/BrandingService.js?v=11.0.11.01"></script>
-  <script src="js/services/ApiService.js?v=11.0.11.01"></script>
-  <script src="js/services/AuthService.js?v=11.0.11.01"></script>
-  <script src="js/services/ViewLoader.js?v=11.0.11.01"></script>
-  <script src="js/services/NotificationService.js?v=11.0.11.01"></script>
-  <script src="js/services/MasterService.js?v=11.0.11.01"></script>
-  <script src="js/services/OperationsService.js?v=11.0.11.01"></script>
-  <script src="js/services/ReportService.js?v=11.0.11.01"></script>
-  <script src="js/services/ReconService.js?v=11.0.11.01"></script>
-  <script src="js/services/AccountingService.js?v=11.0.11.01"></script>
-  <script src="js/services/ImportService.js?v=11.0.11.01"></script>
+  <script src="js/services/BrandingService.js?v=11.0.11.02"></script>
+  <script src="js/services/ApiService.js?v=11.0.11.02"></script>
+  <script src="js/services/AuthService.js?v=11.0.11.02"></script>
+  <script src="js/services/ViewLoader.js?v=11.0.11.02"></script>
+  <script src="js/services/NotificationService.js?v=11.0.11.02"></script>
+  <script src="js/services/MasterService.js?v=11.0.11.02"></script>
+  <script src="js/services/OperationsService.js?v=11.0.11.02"></script>
+  <script src="js/services/ReportService.js?v=11.0.11.02"></script>
+  <script src="js/services/ReconService.js?v=11.0.11.02"></script>
+  <script src="js/services/AccountingService.js?v=11.0.11.02"></script>
+  <script src="js/services/ImportService.js?v=11.0.11.02"></script>
 
   <!-- 3. Controllers matching org.example.controller -->
-  <script src="js/controllers/DashboardController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/SalesController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/PurchaseController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ReturnsController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/CreditDebitNoteController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/QuotationController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ItemMasterController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/PartyController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/FinanceController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/BankStatementController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/PurchaseReconController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/CommunicationController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/BarcodeStudioController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/GstController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/EWayBillController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/AutomationCenterController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ImportController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ReportsController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ReminderCenterController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/MasterDataController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/UserAccessController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/ProfileController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/SettingsController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/GlobalSearchController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/NotificationCenterController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/RecordPaymentController.js?v=11.0.11.01"></script>
-  <script src="js/controllers/DiagnosticsController.js?v=11.0.11.01"></script>
+  <script src="js/controllers/DashboardController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/SalesController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/PurchaseController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ReturnsController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/CreditDebitNoteController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/QuotationController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ItemMasterController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/PartyController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/FinanceController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/BankStatementController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/PurchaseReconController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/CommunicationController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/BarcodeStudioController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/GstController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/EWayBillController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/AutomationCenterController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ImportController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ReportsController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ReminderCenterController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/MasterDataController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/UserAccessController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/ProfileController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/SettingsController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/GlobalSearchController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/NotificationCenterController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/RecordPaymentController.js?v=11.0.11.02"></script>
+  <script src="js/controllers/DiagnosticsController.js?v=11.0.11.02"></script>
 
   <!-- 4. Navigation & App Lifecycle matching org.example.navigation & app -->
-  <script src="js/navigation/NavigationRouter.js?v=11.0.11.01"></script>
-  <script src="js/app.js?v=11.0.11.01"></script>
+  <script src="js/navigation/NavigationRouter.js?v=11.0.11.02"></script>
+  <script src="js/app.js?v=11.0.11.02"></script>
 </body>
 
 </html>
