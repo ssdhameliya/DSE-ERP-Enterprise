@@ -63,7 +63,8 @@ window.NavigationRouter = (function() {
     'view-settings-notifications': { title: 'Notification Settings', breadcrumb: 'System Alerts & Subscriptions', icon: '🔔' },
     'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
     'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
-    'view-settings-modules': { title: 'Module Management', breadcrumb: 'Enterprise Module Toggles & Automation', icon: '🧩' }
+    'view-settings-modules': { title: 'Module Management', breadcrumb: 'Enterprise Module Toggles & Automation', icon: '🧩' },
+    'view-diagnostics': { title: 'System Diagnostics', breadcrumb: 'Enterprise Diagnostic & Log Ledger', icon: '⚙️' }
   };
 
   function updateHeader(meta) {
@@ -609,6 +610,11 @@ window.NavigationRouter = (function() {
             window.SettingsController.loadModulesSettings();
           }
           break;
+        case 'view-diagnostics':
+          if (window.DiagnosticsController) {
+            window.DiagnosticsController.loadData();
+          }
+          break;
         case 'view-automation':
           if (window.AutomationCenterController) window.AutomationCenterController.loadData();
           break;
@@ -660,7 +666,8 @@ window.NavigationRouter = (function() {
         'master': 'view-masters',
         'lookup': 'view-masters',
         'lookups': 'view-masters',
-        'settings': 'view-settings'
+        'settings': 'view-settings',
+        'diagnostics': 'view-diagnostics'
       };
 
       if (aliasMap[clean]) return aliasMap[clean];

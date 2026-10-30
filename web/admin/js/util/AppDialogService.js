@@ -816,11 +816,27 @@ window.AppDialogService = (function() {
     },
 
     rawAuditEvents: [],
+    filteredAuditEvents: [],
+    activeAuditCategory: 'All',
+    auditSearchQuery: '',
+    _auditSearchTimer: null,
+    currentAuditTarget: null,
+
     async showActivityTimeline(type, id, referenceNo) {
       const modal = document.getElementById('modal-activity-timeline');
       if (!modal) return;
+      this.currentAuditTarget = { type, id, referenceNo };
+
+      const titleEl = document.getElementById('audit-modal-title');
+      if (titleEl) titleEl.innerText = `${type} Audit & Activity Trail`;
+
       const refEl = document.getElementById('audit-modal-reference');
       if (refEl) refEl.innerText = `${type} • ${referenceNo || ('#' + id)}`;
+
+      const searchInput = document.getElementById('audit-search-input');
+      if (searchInput) searchInput.value = '';
+      this.auditSearchQuery = '';
+      this.activeAuditCategory = 'All';
 
       const eventsContainer = document.getElementById('audit-modal-events');
       if (eventsContainer) {
@@ -831,19 +847,45 @@ window.AppDialogService = (function() {
 
       try {
         let events = [];
-        if (id) {
+        if (window.ApiService && typeof window.ApiService.getAuditEvents === 'function') {
+          events = await window.ApiService.getAuditEvents(type, id, referenceNo, 100);
+        } else if (id) {
           events = await window.ApiService.get(`/api/support/activity?type=${encodeURIComponent(type)}&id=${id}`).catch(() => []);
         }
-        if (!events || events.length === 0) {
+
+        if (!Array.isArray(events) || events.length === 0) {
           events = [{
             action: 'CREATED',
             category: 'LIFECYCLE',
-            detail: `Record registered in system (${type} ${referenceNo || id})`,
+            detail: `Record registered in system (${type} ${referenceNo || id || ''})`,
             user: 'System / Auditor',
             createdAt: new Date().toISOString()
           }];
         }
-        this.rawAuditEvents = events;
+
+        // Process and pre-compute searchIndex on each event
+        this.rawAuditEvents = events.map(e => {
+          const act = (e.action || e.type || 'ACTIVITY').toUpperCase();
+          const cat = (e.category || e.module || 'GENERAL').toUpperCase();
+          const det = e.detail || e.description || e.message || e.remarks || '';
+          const usr = e.user || e.actor || e.createdBy || 'System';
+          const oldV = e.oldValue || e.before || '';
+          const newV = e.newValue || e.after || '';
+          const time = e.createdAt || e.timestamp || e.created_at || new Date().toISOString();
+          const sIdx = (act + ' ' + cat + ' ' + det + ' ' + usr + ' ' + oldV + ' ' + newV).toLowerCase();
+          return {
+            action: act,
+            category: cat,
+            detail: det,
+            user: usr,
+            oldValue: oldV,
+            newValue: newV,
+            createdAt: time,
+            _searchIndex: sIdx
+          };
+        });
+
+        this.updateAuditKpis();
         this.filterAuditEvents('All');
       } catch (err) {
         if (eventsContainer) {
@@ -852,7 +894,42 @@ window.AppDialogService = (function() {
       }
     },
 
+    updateAuditKpis() {
+      const all = this.rawAuditEvents || [];
+      const total = all.length;
+      let changes = 0, financial = 0, docs = 0, comm = 0;
+
+      all.forEach(e => {
+        const act = e.action;
+        const cat = e.category;
+        const det = (e.detail || '').toUpperCase();
+        if (cat.includes('CHANGE') || act.includes('UPDATE') || act.includes('EDIT') || act.includes('APPROVE') || act.includes('REJECT')) changes++;
+        if (cat.includes('FINANCIAL') || act.includes('PAYMENT') || act.includes('SETTLE') || det.includes('PAID') || det.includes('REFUND')) financial++;
+        if (cat.includes('DOCUMENT') || act.includes('PRINT') || act.includes('PDF') || act.includes('ATTACH') || act.includes('BARCODE')) docs++;
+        if (cat.includes('COMMUNICATION') || act.includes('EMAIL') || act.includes('WHATSAPP')) comm++;
+      });
+
+      const setEl = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = String(val);
+      };
+      setEl('audit-kpi-total', total);
+      setEl('audit-kpi-changes', changes);
+      setEl('audit-kpi-financial', financial);
+      setEl('audit-kpi-documents', docs);
+      setEl('audit-kpi-communication', comm);
+    },
+
+    filterAuditSearch(query) {
+      clearTimeout(this._auditSearchTimer);
+      this._auditSearchTimer = setTimeout(() => {
+        this.auditSearchQuery = (query || '').trim().toLowerCase();
+        this.applyAuditFilter();
+      }, 250);
+    },
+
     filterAuditEvents(category) {
+      this.activeAuditCategory = category;
       const buttons = document.querySelectorAll('.audit-chip-btn');
       buttons.forEach(b => {
         const isMatch = b.innerText.trim() === category;
@@ -867,43 +944,101 @@ window.AppDialogService = (function() {
           b.style.background = '';
         }
       });
+      this.applyAuditFilter();
+    },
 
+    applyAuditFilter() {
+      const category = this.activeAuditCategory || 'All';
+      const q = this.auditSearchQuery || '';
       const eventsContainer = document.getElementById('audit-modal-events');
       const countEl = document.getElementById('audit-events-count');
       if (!eventsContainer) return;
 
       const events = this.rawAuditEvents || [];
       const filtered = events.filter(e => {
-        if (category === 'All') return true;
-        const act = (e.action || '').toUpperCase();
-        const cat = (e.category || '').toUpperCase();
-        const det = (e.detail || '').toUpperCase();
-        if (category === 'Changes') return cat.includes('CHANGE') || act.includes('UPDATE') || act.includes('EDIT') || act.includes('APPROVE') || act.includes('REJECT');
-        if (category === 'Financial') return cat.includes('FINANCIAL') || act.includes('PAYMENT') || act.includes('SETTLE') || det.includes('PAID');
-        if (category === 'Documents') return cat.includes('DOCUMENT') || act.includes('PRINT') || act.includes('PDF') || act.includes('ATTACH');
-        if (category === 'Communication') return cat.includes('COMMUNICATION') || act.includes('EMAIL') || act.includes('WHATSAPP');
+        if (category !== 'All') {
+          const act = e.action;
+          const cat = e.category;
+          const det = (e.detail || '').toUpperCase();
+          if (category === 'Changes' && !(cat.includes('CHANGE') || act.includes('UPDATE') || act.includes('EDIT') || act.includes('APPROVE') || act.includes('REJECT'))) return false;
+          if (category === 'Financial' && !(cat.includes('FINANCIAL') || act.includes('PAYMENT') || act.includes('SETTLE') || det.includes('PAID') || det.includes('REFUND'))) return false;
+          if (category === 'Documents' && !(cat.includes('DOCUMENT') || act.includes('PRINT') || act.includes('PDF') || act.includes('ATTACH') || act.includes('BARCODE'))) return false;
+          if (category === 'Communication' && !(cat.includes('COMMUNICATION') || act.includes('EMAIL') || act.includes('WHATSAPP'))) return false;
+        }
+        if (q && !e._searchIndex.includes(q)) return false;
         return true;
       });
 
-      if (countEl) countEl.innerText = `${filtered.length} of ${events.length} events`;
+      this.filteredAuditEvents = filtered;
+      if (countEl) countEl.innerText = `${filtered.length} of ${events.length} events recorded`;
 
       if (filtered.length === 0) {
-        eventsContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 30px;">No events match the "${category}" filter.</div>`;
+        eventsContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 30px;">No events match the "${category}" ${q ? 'with search "' + q + '"' : ''} filter.</div>`;
         return;
       }
 
-      eventsContainer.innerHTML = filtered.map(e => `
-        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="badge badge-paid" style="font-size: 0.72rem; padding: 2px 8px;">${e.action || 'ACTIVITY'}</span>
-              <span style="font-size: 0.75rem; color: var(--text-dim);">${window.FormatUtil ? window.FormatUtil.formatDate(e.createdAt || e.timestamp) : (e.createdAt || '')}</span>
+      eventsContainer.innerHTML = filtered.map((e, idx) => {
+        let badgeClass = 'badge-paid';
+        if (e.action.includes('CANCEL') || e.action.includes('REJECT') || e.action.includes('DELETE')) badgeClass = 'badge-danger';
+        else if (e.action.includes('UPDATE') || e.action.includes('EDIT') || e.action.includes('APPROV')) badgeClass = 'badge-pending';
+
+        const hasDiff = e.oldValue || e.newValue;
+        return `
+          <div style="background: #111c38; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 16px; transition: border-color 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge ${badgeClass}" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 700;">${e.action}</span>
+                <span style="font-size: 0.74rem; color: var(--text-dim);">${window.FormatUtil ? window.FormatUtil.formatDate(e.createdAt) : e.createdAt}</span>
+              </div>
+              <div style="font-size: 0.74rem; color: var(--cyan); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                ${e.user}
+              </div>
             </div>
-            <div style="font-size: 0.72rem; color: var(--cyan); font-weight: 600;">Actor: ${e.user || e.actor || 'System'}</div>
+            <div style="font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: ${hasDiff ? '6px' : '0'};">${e.detail || 'System action executed.'}</div>
+            ${hasDiff ? `
+              <div style="display: flex; gap: 14px; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                <div><span style="color: var(--text-dim);">Old Value:</span> <span style="color: #f87171; text-decoration: line-through;">${e.oldValue || 'None'}</span></div>
+                <div><span style="color: var(--text-dim);">New Value:</span> <span style="color: #34d399; font-weight: 700;">${e.newValue || 'Updated'}</span></div>
+              </div>
+            ` : ''}
           </div>
-          <div style="font-size: 0.85rem; color: var(--text-main); font-weight: 600;">${e.detail || e.description || 'System action executed.'}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+    },
+
+    exportAuditCsv() {
+      const rows = this.filteredAuditEvents || this.rawAuditEvents || [];
+      if (rows.length === 0) {
+        this.toastWarning('No audit events to export.');
+        return;
+      }
+      const headers = ['#', 'Action', 'Category', 'Timestamp', 'Actor', 'Detail', 'Old Value', 'New Value'];
+      const escape = (val) => '"' + String(val == null ? '' : val).replace(/"/g, '""') + '"';
+      const lines = [headers.join(',')];
+      rows.forEach((r, idx) => {
+        lines.push([
+          idx + 1,
+          escape(r.action),
+          escape(r.category),
+          escape(r.createdAt),
+          escape(r.user),
+          escape(r.detail),
+          escape(r.oldValue),
+          escape(r.newValue)
+        ].join(','));
+      });
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ref = (this.currentAuditTarget && this.currentAuditTarget.referenceNo) ? this.currentAuditTarget.referenceNo.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Record';
+      a.href = url;
+      a.download = `Audit_Trail_${ref}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      this.toastSuccess(`Exported ${rows.length} audit records to CSV.`);
     }
   };
 })();

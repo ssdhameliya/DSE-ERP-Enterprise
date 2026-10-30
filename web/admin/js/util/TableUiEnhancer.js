@@ -188,6 +188,15 @@ window.TableUiEnhancer = (function() {
           });
           return;
         }
+
+        // Check if cell contains document reference code matching 75+ ERP document types (Milestone 3 Parity)
+        const refMatch = rawText.match(/\b(JI\/\d{2}-\d{4}\/\d{4}|(INV|SO|PO|QTN|REF|RS|PRC|BE|EXP|SAL-RET|PUR-RET|CUST|SUP|CN|DN|VOUCH|BANK|PAY)-[A-Za-z0-9\/-]+)\b/);
+        if (refMatch && !td.querySelector('a') && !td.querySelector('.erp-ref-link')) {
+          td.dataset.erpCellEnhanced = 'true';
+          const code = refMatch[0];
+          td.innerHTML = td.innerHTML.replace(code, `<a class="erp-ref-link" style="color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline dotted; transition: color 0.15s;" title="Click to copy ${code}" onclick="event.stopPropagation(); navigator.clipboard.writeText('${code}'); if(window.AppDialogService) window.AppDialogService.toastSuccess('Copied reference ${code}');">${code}</a>`);
+          return;
+        }
       });
       row.dataset.erpRowEnhanced = 'true';
     });

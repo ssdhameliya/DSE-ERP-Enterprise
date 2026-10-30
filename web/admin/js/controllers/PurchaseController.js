@@ -445,6 +445,8 @@ window.PurchaseController = (function() {
       modalDrawer.style.display = 'flex';
     }
     if (overlay) {
+      overlay.style.display = 'block';
+      overlay.style.pointerEvents = 'auto';
       overlay.classList.add('open');
     }
 

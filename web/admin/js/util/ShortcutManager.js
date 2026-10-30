@@ -98,6 +98,14 @@ window.ShortcutManager = {
         e.preventDefault();
         if (window.AppDialogService) window.AppDialogService.openModal('modal-shortcuts-help');
       }
+
+      // 12. Ctrl+Shift+L -> Open Enterprise System & Application Diagnostics Ledger (Desktop Parity)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (typeof window.openSystemDiagnostics === 'function') {
+          window.openSystemDiagnostics();
+        }
+      }
     });
   }
 };

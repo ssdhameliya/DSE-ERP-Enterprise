@@ -1,0 +1,141 @@
+<!-- views/diagnostics.html — Parity with Desktop SystemDiagnosticsDialog.java (v11.0.10 / v11.0.11) -->
+<div class="view-panel" id="view-diagnostics" style="display: flex; flex-direction: column; height: 100%; padding: 18px 24px; gap: 16px; overflow-y: auto;">
+  <!-- 1. HEADER HERO BAR -->
+  <div style="display: flex; justify-content: space-between; align-items: center; background: #0b1222; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px; padding: 16px 20px;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; color: var(--cyan); flex-shrink: 0;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </div>
+      <div>
+        <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan);">ENTERPRISE DIAGNOSTIC &amp; LOG LEDGER</div>
+        <h3 style="margin: 2px 0 0 0; font-size: 1.35rem; font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: #fff;">System &amp; Application Diagnostics</h3>
+        <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">Real-time diagnostic stream of desktop client exceptions, server background tasks, and database events.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="status-pill pill-success" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px;">● LIVE STREAM</span>
+      <span class="status-pill pill-neutral" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px;">LOG ROTATION ACTIVE</span>
+    </div>
+  </div>
+
+  <!-- 2. 5 KPI CARDS STRIP -->
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
+    <!-- KPI 1: Total Events -->
+    <div class="inspection-card" style="background: #111c38; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px 16px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        Total Diagnostic Events
+      </div>
+      <div id="page-diag-kpi-total" style="font-size: 1.6rem; font-family: 'Space Grotesk'; font-weight: 800; color: #fff; margin-top: 4px;">0</div>
+      <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">Loaded from disk &amp; server</div>
+    </div>
+
+    <!-- KPI 2: Errors -->
+    <div class="inspection-card" style="background: #111c38; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 16px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Critical &amp; Errors
+      </div>
+      <div id="page-diag-kpi-errors" style="font-size: 1.6rem; font-family: 'Space Grotesk'; font-weight: 800; color: #f87171; margin-top: 4px;">0</div>
+      <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">Require action / inspection</div>
+    </div>
+
+    <!-- KPI 3: Warnings -->
+    <div class="inspection-card" style="background: #111c38; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 12px 16px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        System Warnings
+      </div>
+      <div id="page-diag-kpi-warnings" style="font-size: 1.6rem; font-family: 'Space Grotesk'; font-weight: 800; color: var(--amber); margin-top: 4px;">0</div>
+      <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">Non-fatal alerts &amp; retries</div>
+    </div>
+
+    <!-- KPI 4: Web Client -->
+    <div class="inspection-card" style="background: #111c38; border: 1px solid rgba(45, 212, 191, 0.25); border-radius: 10px; padding: 12px 16px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: #2dd4bf; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        Web Client
+      </div>
+      <div id="page-diag-kpi-desktop" style="font-size: 1.6rem; font-family: 'Space Grotesk'; font-weight: 800; color: #2dd4bf; margin-top: 4px;">0</div>
+      <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">UI thread &amp; fetch events</div>
+    </div>
+
+    <!-- KPI 5: Server Platform -->
+    <div class="inspection-card" style="background: #111c38; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 12px 16px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        Server Platform
+      </div>
+      <div id="page-diag-kpi-server" style="font-size: 1.6rem; font-family: 'Space Grotesk'; font-weight: 800; color: #c084fc; margin-top: 4px;">0</div>
+      <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">Spring REST &amp; database engine</div>
+    </div>
+  </div>
+
+  <!-- 3. FILTER TOOLBAR -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #0c1426; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px 14px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 320px;">
+      <div style="position: relative; flex: 1;">
+        <input type="text" class="form-control" id="page-diag-search-input" placeholder="Search error messages, components, users, or SQL state..."
+          oninput="window.DiagnosticsController.filterDebounced(this.value)"
+          style="padding-left: 32px; height: 34px; font-size: 0.8rem; background: rgba(0, 0, 0, 0.35); border-color: rgba(255,255,255,0.12);" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-dim);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </div>
+      <select class="form-select" id="page-diag-level-select" onchange="window.DiagnosticsController.setLevel(this.value)" style="height: 34px; font-size: 0.78rem; width: 130px; background: rgba(0, 0, 0, 0.35);">
+        <option value="ALL">All Levels</option>
+        <option value="ERROR">ERROR Only</option>
+        <option value="WARN">WARN Only</option>
+        <option value="INFO">INFO Only</option>
+      </select>
+      <select class="form-select" id="page-diag-source-select" onchange="window.DiagnosticsController.setSource(this.value)" style="height: 34px; font-size: 0.78rem; width: 130px; background: rgba(0, 0, 0, 0.35);">
+        <option value="ALL">All Sources</option>
+        <option value="SERVER">SERVER</option>
+        <option value="WEB_CLIENT">WEB_CLIENT</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="status-pill pill-neutral" id="page-diag-entries-count" style="font-size: 0.74rem;">0 events</span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="window.DiagnosticsController.exportCsv()" style="display: flex; align-items: center; gap: 5px; height: 32px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Export CSV
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="window.DiagnosticsController.loadData()" style="display: flex; align-items: center; gap: 5px; height: 32px; background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 700;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. LOG TABLE -->
+  <div style="flex: 1; min-height: 400px; background: #0b1222; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;">
+    <div style="flex: 1; overflow-x: auto; overflow-y: auto;">
+      <table class="data-table" style="width: 100%; font-size: 0.8rem;">
+        <thead>
+          <tr>
+            <th style="width: 44px; text-align: center;">#</th>
+            <th style="width: 165px;">Timestamp</th>
+            <th style="width: 90px;">Level</th>
+            <th style="width: 110px;">Source</th>
+            <th style="width: 160px;">Component / Scope</th>
+            <th style="width: 200px;">User-Friendly Issue</th>
+            <th>Explanation &amp; Guidance</th>
+            <th style="width: 100px;">User</th>
+            <th style="width: 95px; text-align: center;">Diagnostic</th>
+          </tr>
+        </thead>
+        <tbody id="page-diag-table-tbody">
+          <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 32px;">Loading authoritative server diagnostic stream...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Footer & Pagination -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; border-top: 1px solid rgba(255, 255, 255, 0.08); background: #090e1a;">
+      <div id="page-diag-pagination-summary" style="font-size: 0.78rem; color: var(--text-muted);">Showing 1 to 25 of 0 events</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" id="page-diag-btn-prev" onclick="window.DiagnosticsController.goToPage('prev')">&laquo; Previous</button>
+        <span id="page-diag-page-display" style="font-size: 0.78rem; color: var(--text-main); font-weight: 600;">Page 1 of 1</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="page-diag-btn-next" onclick="window.DiagnosticsController.goToPage('next')">Next &raquo;</button>
+      </div>
+    </div>
+  </div>
+</div>

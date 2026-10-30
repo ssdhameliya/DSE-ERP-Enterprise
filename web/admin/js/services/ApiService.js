@@ -359,6 +359,40 @@ window.ApiService = (function() {
         throw new Error(errorMsg);
       }
       return await res.blob();
+    },
+
+    /**
+     * Enterprise System & Application Diagnostics (Desktop Parity)
+     * Fetches real-time server and platform diagnostic events from Spring REST backend
+     */
+    async getServerDiagnostics(limit = 500) {
+      try {
+        return await this.get(`/api/admin/diagnostics/server-logs?limit=${limit}`);
+      } catch (err) {
+        console.warn('[ApiService] /api/admin/diagnostics/server-logs unavailable:', err);
+        return [];
+      }
+    },
+
+    /**
+     * Global Authoritative Audit Trail Events
+     */
+    async getAuditEvents(type, id, referenceNo, limit = 100) {
+      try {
+        if (id && Number(id) > 0) {
+          const res = await this.get(`/api/audit/record?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`).catch(() => null);
+          if (Array.isArray(res) && res.length > 0) return res;
+        }
+        if (referenceNo) {
+          const res = await this.get(`/api/audit/global?reference=${encodeURIComponent(referenceNo)}&size=${limit}`).catch(() => null);
+          if (res && Array.isArray(res.items) && res.items.length > 0) return res.items;
+          if (res && Array.isArray(res.content) && res.content.length > 0) return res.content;
+        }
+        return await this.get(`/api/support/activity?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id || referenceNo || '')}`).catch(() => []);
+      } catch (err) {
+        console.warn('[ApiService] Audit events fetch error:', err);
+        return [];
+      }
     }
   };
 
