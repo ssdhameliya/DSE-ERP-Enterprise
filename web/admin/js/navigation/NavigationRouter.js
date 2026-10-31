@@ -64,6 +64,7 @@ window.NavigationRouter = (function() {
     'view-settings-email': { title: 'Corporate Email', breadcrumb: 'SMTP & Delivery Services', icon: '✉️' },
     'view-settings-security': { title: 'Security Settings', breadcrumb: 'Session & Authentication Governance', icon: '🔒' },
     'view-settings-modules': { title: 'Module Management', breadcrumb: 'Enterprise Module Toggles & Automation', icon: '🧩' },
+    'view-settings-showcase': { title: 'Website & 3D Showcase', breadcrumb: 'Industrial Digital Twin & 3D Coverflow Studio', icon: '🌐' },
     'view-diagnostics': { title: 'System Diagnostics', breadcrumb: 'Enterprise Diagnostic & Log Ledger', icon: '⚙️' }
   };
 

@@ -53,6 +53,10 @@
               onclick="window.SettingsController.switchSection('MODULES')">
               <span>&#129513;</span> Module Management
             </button>
+            <button type="button" class="settings-tab-btn" data-section="SHOWCASE"
+              onclick="window.SettingsController.switchSection('SHOWCASE')">
+              <span>&#127760;</span> Website &amp; 3D Showcase
+            </button>
           </div>
 
           <!-- PANEL HOST: 7 SHARED ENTERPRISE PANELS -->
@@ -1333,6 +1337,127 @@ Outstanding Balance: {BalanceAmount}
                 </div>
 
               </div>
+            </div>
+
+            <!-- 8. SCREEN 8: WEBSITE & 3D SHOWCASE STUDIO PANEL -->
+            <div id="settings-panel-showcase" class="settings-subpanel" data-section="SHOWCASE" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="color:#38bdf8; font-size:1.15rem;">&#127760;</span>
+                    <h2 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; font-family:'Space Grotesk',sans-serif;">Headless Website &amp; 3D Showcase Studio</h2>
+                  </div>
+                  <div style="font-size:0.75rem; color:#94a3b8;">Manage 3D coverflow workstations, upload machinery photos, edit tolerance metrics, and publish live content updates without code redeployment.</div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                  <button type="button" class="btn btn-secondary" onclick="window.SettingsController.previewShowcase()" style="height:36px; padding:0 14px; font-size:0.8rem; font-weight:600;">
+                    <span>&#128065;</span> Preview Showcase
+                  </button>
+                  <button type="button" class="btn btn-primary" onclick="window.SettingsController.saveShowcase()" style="background:#0284c7; border-color:#0369a1; height:36px; padding:0 16px; font-size:0.8rem; font-weight:700;">
+                    <span>&#9889;</span> Publish Live Website
+                  </button>
+                </div>
+              </div>
+
+              <!-- Section 1: Hero & 3D Tilt Metrics -->
+              <div class="data-panel settings-card-panel" style="padding:20px 22px; margin-bottom:18px; border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                  <span style="color:#38bdf8;">&#128308;</span>
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#f8fafc; margin:0;">Hero Section &amp; 3D Tilt Metrics</h3>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:12px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Company Name</label>
+                    <input type="text" id="sc-company-name" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="JASVI INDUSTRIES">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Tagline / Subtitle</label>
+                    <input type="text" id="sc-tagline" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="Precision Engineering">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Hero Badge Text</label>
+                    <input type="text" id="sc-badge-text" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="Next-Gen Industrial Digital Engineering">
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:12px; margin-bottom:14px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Hero Main Headline</label>
+                    <input type="text" id="sc-headline" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="Precision Machining. Zero Compromise.">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Hero Lead Paragraph</label>
+                    <input type="text" id="sc-lead-para" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="Jasvi Industries delivers micron-tolerance 5-axis CNC milling...">
+                  </div>
+                </div>
+
+                <!-- 4 KPI Tilt Metrics -->
+                <div style="font-size:0.74rem; font-weight:700; color:#38bdf8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">The 4 Dynamic 3D KPI Tilt Cards</div>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;" id="sc-kpi-grid">
+                  <!-- Injected dynamically by SettingsController -->
+                </div>
+              </div>
+
+              <!-- Section 2: 3D Machinery & Workstations (The Swiper Coverflow) -->
+              <div class="data-panel settings-card-panel" style="padding:20px 22px; margin-bottom:18px; border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="color:#38bdf8;">&#9881;&#65039;</span>
+                    <div>
+                      <h3 style="font-size:0.95rem; font-weight:700; color:#f8fafc; margin:0;">3D Machinery &amp; Workstations Carousel</h3>
+                      <div style="font-size:0.72rem; color:#94a3b8;">Each workstation slide appears in the interactive 3D Coverflow. Upload photos and define technical specifications.</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-secondary" onclick="window.SettingsController.addMachineSlide()" style="height:32px; padding:0 12px; font-size:0.75rem; font-weight:700; color:#38bdf8; border-color:rgba(56,189,248,0.35);">
+                    <span>+</span> Add Workstation Slide
+                  </button>
+                </div>
+
+                <!-- Workstations Card List -->
+                <div id="sc-machinery-container" style="display:flex; flex-direction:column; gap:12px;">
+                  <!-- Injected dynamically by SettingsController -->
+                </div>
+              </div>
+
+              <!-- Section 3: Engineered Components Portfolio -->
+              <div class="data-panel settings-card-panel" style="padding:20px 22px; margin-bottom:18px; border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="color:#38bdf8;">&#128188;</span>
+                    <h3 style="font-size:0.95rem; font-weight:700; color:#f8fafc; margin:0;">Engineered Components Showcase</h3>
+                  </div>
+                  <button type="button" class="btn btn-secondary" onclick="window.SettingsController.addPortfolioItem()" style="height:32px; padding:0 12px; font-size:0.75rem; font-weight:700; color:#38bdf8; border-color:rgba(56,189,248,0.35);">
+                    <span>+</span> Add Component Case Study
+                  </button>
+                </div>
+                <div id="sc-portfolio-container" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+
+              <!-- Section 4: Infinite Marquee & Contact Details -->
+              <div class="data-panel settings-card-panel" style="padding:20px 22px; margin-bottom:18px; border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                  <span style="color:#38bdf8;">&#128222;</span>
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#f8fafc; margin:0;">Plant Contact &amp; Marquee Ticker</h3>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:12px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Factory Plant Address</label>
+                    <textarea id="sc-plant-address" class="form-input" style="height:60px; font-size:0.8rem; padding:8px; resize:none;" placeholder="Plot No. 42, GIDC..."></textarea>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Official Inquiries Email</label>
+                    <input type="email" id="sc-contact-email" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="info@jasviindustries.in">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8; margin-top:6px;">Official Phone Number</label>
+                    <input type="text" id="sc-contact-phone" class="form-input" style="height:36px; font-size:0.82rem;" placeholder="+91 98765 43210">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.72rem; color:#94a3b8;">Infinite Marquee Badges (Comma-separated)</label>
+                    <textarea id="sc-marquee-badges" class="form-input" style="height:60px; font-size:0.8rem; padding:8px; resize:none;" placeholder="ISO 9001:2015, 5-Axis VMC, ±0.005mm..."></textarea>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>

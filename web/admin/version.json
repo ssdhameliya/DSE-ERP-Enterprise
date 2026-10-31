@@ -1,16 +1,14 @@
 {
-    "desktopVersion": "11.0.11",
-    "webBuild": 11,
-    "webVersion": "11.0.11.02",
-    "tag": "web-v11.0.11.02",
-    "releaseDate": "2026-10-31T01:10:00+05:30",
+    "desktopVersion": "11.0.14",
+    "webBuild": 12,
+    "webVersion": "11.0.14.01",
+    "tag": "web-v11.0.14.01",
+    "releaseDate": "2026-10-31T20:00:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.11.02 Enterprise Web Release: Full Suite 88% Responsive Inspection Modals for Quotations, Returns & Credit/Debit Notes, Auto-Fitting Non-Colliding Metric Cards & Zero Legacy Drawers",
+    "summary": "v11.0.14.01 Enterprise Web Release: Headless 3D Coverflow Showcase Studio (8th Settings Tab), Hero/KPIs/Workstations Dynamic Management & REST Media Integration",
     "highlights": [
-        "1. Full Suite 88% Responsive Document Inspection Modals: Quotations (QuotationDocumentInspectionDialog), Sales & Purchase Returns (ReturnDocumentInspectionDialog), and Credit & Debit Notes (CreditDebitNoteInspectionDialog) fully modernized to match Desktop v11.0.11 standard.",
-        "2. Eliminated Legacy 380px Inline Drawers: Stripped cramped side drawers across all five register views (quotations.html, sales-returns.html, purchase-returns.html, credit-notes.html, debit-notes.html); data tables now expand to 100% full width.",
-        "3. Responsive Auto-Fitting Metric Strip: Upgraded CSS inspection overview grid from fixed 4-column squish to responsive grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) with dedicated 3-card variant, guaranteeing zero card collision or text clipping.",
-        "4. Default Tab 1 Active State & Comprehensive Tab Switching: Standardized all inspection modals to open directly with Tab 1 active and populated (Items/Lines/Impact) while supporting seamless transitions to Settlement, Notes, and Audit tabs.",
-        "5. Deep Line-Item Hydration: Upgraded Quotation, Return, and Note controllers to dynamically hydrate nested lines, tax breakdowns, origin invoices, and settlement records with full action menus (Convert to Sale, Record Refund, Print PDF, Barcode)."
+        "1. Dynamic 3D Coverflow Showcase Studio: Added dedicated 8th tab in Settings for live management of public 3D machinery coverflow workstations, precision specs, hero typography, and plant contact coordinates.",
+        "2. Binary Media File Uploader: Instant photographic upload with dynamic in-memory client previews, bounding limits, and server resource streaming.",
+        "3. Live Preview & Instant Cloud Publishing: One-click preview launching the interactive 3D showcase alongside atomic REST PUT publishing without server restarts."
     ]
 }

@@ -8,17 +8,17 @@
 
 window.AppVersion = window.DSE_VERSION = {
 
-  version: "11.0.11.02",
+  version: "11.0.14.01",
 
-  desktopVersion: "11.0.11",
+  desktopVersion: "11.0.14",
 
-  webBuild: 11,
+  webBuild: 12,
 
-  webVersion: "11.0.11.02",
+  webVersion: "11.0.14.01",
 
-  tag: "web-v11.0.11.02",
+  tag: "web-v11.0.14.01",
 
-  releaseDate: "2026-10-31T01:10:00+05:30",
+  releaseDate: "2026-10-31T20:00:00+05:30",
 
   environment: "Production / Enterprise",
 
