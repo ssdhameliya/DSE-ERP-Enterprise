@@ -83,7 +83,7 @@ All verified IP addresses, DNS mappings, ports, databases, and SSH credentials a
 
 ---
 
- ## 3. Decoupled Multi-Platform Architecture
+## 3. Decoupled Multi-Platform Architecture
 
 DSE-ERP uses a **clean decoupled architecture**. The backend server is a stateless, high-performance Spring Boot REST API. Both Desktop and Web clients connect to the identical REST endpoints using Bearer JWT authentication:
 
@@ -132,6 +132,15 @@ DSE-ERP uses a **clean decoupled architecture**. The backend server is a statele
 ### 3.2 Backend Security & Filter Chain (`SecurityConfig.java`)
 * **Stateless JWT Security (`/api/**`):** Stateless Bearer token authentication (`SessionCreationPolicy.STATELESS`). Exclusively serves both the JavaFX Desktop Client and the Web Client API requests.
 * **CORS & Forward Headers:** Configured for cross-origin web access and native reverse-proxy forwarding (`server.forward-headers-strategy=native`).
+
+### 3.3 Desktop Client Centralized Core Systems (`desktop`)
+The desktop client features a unified, centralized backbone providing high performance, consistent styling, and non-blocking background task execution across all screens:
+* **High-Speed Document Inspection Modals:** Standardized, instant-load modal dialogs for Sales (`SalesDocumentInspectionDialog`), Purchases (`PurchaseDocumentInspectionDialog`), Quotations (`QuotationDocumentInspectionDialog`), and Debit/Credit Notes (`CreditDebitNoteInspectionDialog`, `ReturnDocumentInspectionDialog`) featuring **0ms tab switching**, asynchronous line item streaming, and non-blocking action docks.
+* **Unified UI & Modal Architecture:** Standardized vector SVG icons (`IconFactory`, `UiActionIcons`, `SemanticIconManager`), owned modal dialog lifecycle (`AppDialogService`, `OwnedDialog`, `DialogOwnerResolver`) to prevent misplaced or orphaned popups, and auto-sizing table registers that save custom column widths per user (`DynamicTableLayoutManager`, `RegisterColumnPreferences`).
+* **Concurrency & Freeze Prevention:** Background worker thread pool (`UiTaskExecutor`) ensuring heavy REST operations and exports never block the JavaFX Application Thread, UI responsiveness watchdog (`FxThreadWatchdog`), and input debouncers (`FxDebouncer`) keeping the UI smooth at 60 FPS.
+* **Multi-Tab Workspace Navigation:** Multi-screen workspace tabs (`WorkspaceTabManager`), idle screen prewarming (`NavigationManager`), and dirty-state guards (`UnsavedChangesManager`) that protect against accidental closure of in-progress entries.
+* **Security, RBAC & API Runtime:** Dynamic role-based permission toggling on buttons and menus (`PermissionService`), inactivity auto-lock session watchdog (`SessionService`, `SessionActivityManager`), Bearer JWT injection (`ApiRuntime`, `ApiSession`), and live server/database health checking (`RuntimeHealthMonitor`).
+* **Universal Document Studio & Exporters:** Standardized GST PDF invoice rendering (`ProfessionalDocumentRenderer`, `InvoicePdfService`), dynamic UPI QR code & barcode generation (`QrCodeImageFactory`, `Code128Encoder`), and unified Excel/PDF register exporting (`UnifiedReportExportService`, `BrandedRegisterPdfService`).
 
 ---
 
