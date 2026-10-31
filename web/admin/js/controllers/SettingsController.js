@@ -1486,29 +1486,8 @@ window.SettingsController = (function() {
 
     saveModules(e) {
       return this.saveModulesSettings(e);
-    }
-  };
-})();
+    },
 
-// Desktop Parity: SessionFocusManager (Client-side Idle Timeout & Warning Modal)
-window.SessionFocusManager = {
-  timeoutMinutes: 60,
-  warningSeconds: 60,
-  lastActivity: Date.now(),
-  checkInterval: null,
-  countdownInterval: null,
-  isWarningShown: false,
-
-  init(timeoutMin = 60, warningSec = 60) {
-    this.timeoutMinutes = timeoutMin;
-    this.warningSeconds = warningSec;
-    this.lastActivity = Date.now();
-    
-    const resetActivity = () => {
-      if (!this.isWarningShown) {
-        this.lastActivity = Date.now();
-      }
-  
     // ==========================================
     // 8. WEBSITE & 3D SHOWCASE STUDIO ENGINE
     // ==========================================
@@ -1574,64 +1553,67 @@ window.SessionFocusManager = {
 
         this.cachedShowcaseData = res;
 
-        // Populate Hero fields
-        const cName = document.getElementById('sc-company-name');
-        const cTag = document.getElementById('sc-tagline');
-        const bText = document.getElementById('sc-badge-text');
-        const hTitle = document.getElementById('sc-headline');
-        const hLead = document.getElementById('sc-lead-para');
+        // Hydrate Branding & Hero
+        const b = res.branding || {};
+        const h = res.hero || {};
+        const setV = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val !== undefined && val !== null) el.value = val;
+        };
 
-        if (cName) cName.value = res.branding?.companyName || 'JASVI INDUSTRIES';
-        if (cTag) cTag.value = res.branding?.tagline || 'Precision Engineering';
-        if (bText) bText.value = res.hero?.badge || 'Next-Gen Industrial Digital Engineering';
-        if (hTitle) hTitle.value = res.hero?.headline || 'Precision Machining. Zero Compromise.';
-        if (hLead) hLead.value = res.hero?.leadParagraph || '';
+        setV('sc-company-name', b.companyName || 'JASVI INDUSTRIES');
+        setV('sc-tagline', b.tagline || 'Precision Engineering');
+        setV('sc-badge-text', h.badge || '');
+        setV('sc-headline', h.headline || '');
+        setV('sc-lead-para', h.leadParagraph || '');
 
-        // Populate Contact fields
-        const pAddr = document.getElementById('sc-plant-address');
-        const pEmail = document.getElementById('sc-contact-email');
-        const pPhone = document.getElementById('sc-contact-phone');
-        const pMarquee = document.getElementById('sc-marquee-badges');
-
-        if (pAddr) pAddr.value = res.contact?.plantAddress || '';
-        if (pEmail) pEmail.value = res.contact?.email || '';
-        if (pPhone) pPhone.value = res.contact?.phone || '';
-        if (pMarquee && Array.isArray(res.marquee)) pMarquee.value = res.marquee.join(', ');
-
-        // Render sub-containers
         this.renderShowcaseKpis();
         this.renderShowcaseMachinery();
         this.renderShowcasePortfolio();
 
+        // Hydrate Contact & Marquee
+        const c = res.contact || {};
+        setV('sc-plant-address', c.plantAddress || '');
+        setV('sc-contact-email', c.email || '');
+        setV('sc-contact-phone', c.phone || '');
+
+        const mBadges = Array.isArray(res.marquee) ? res.marquee.join(', ') : '';
+        setV('sc-marquee-badges', mBadges);
+
       } catch (err) {
-        console.error('Failed to load showcase configuration in SettingsController:', err);
+        console.error('[SettingsController] Failed to load showcase settings:', err);
+        if (window.AppDialogService) {
+          window.AppDialogService.showToast('Could not load 3D Showcase settings.', 'error');
+        }
       }
     },
 
     renderShowcaseKpis() {
-      const grid = document.getElementById('sc-kpi-grid');
-      if (!grid) return;
-      const stats = this.cachedShowcaseData?.hero?.kpiStats || [];
-      grid.innerHTML = stats.map((s, idx) => `
-        <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
-          <div style="display:flex; gap:6px; margin-bottom:8px;">
-            <input type="text" id="sc-kpi-num-${idx}" value="${s.number || ''}" class="form-input" style="height:32px; font-weight:700; color:#38bdf8; font-size:0.85rem;" placeholder="Value">
-            <input type="text" id="sc-kpi-suf-${idx}" value="${s.suffix || ''}" class="form-input" style="height:32px; width:55px; color:#38bdf8; font-size:0.85rem;" placeholder="+">
+      const container = document.getElementById('sc-kpi-grid');
+      if (!container || !this.cachedShowcaseData?.hero?.kpiStats) return;
+
+      const stats = this.cachedShowcaseData.hero.kpiStats;
+      container.innerHTML = stats.map((s, idx) => `
+        <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:10px;">
+          <div style="font-size:0.68rem; font-weight:700; color:#94a3b8; margin-bottom:4px;">Card ${idx + 1}</div>
+          <div style="display:flex; gap:6px; margin-bottom:6px;">
+            <input type="text" id="sc-kpi-num-${idx}" value="${s.number || ''}" class="form-input" style="height:30px; font-weight:700; color:#38bdf8; font-size:0.85rem; width:65%;" placeholder="15">
+            <input type="text" id="sc-kpi-suf-${idx}" value="${s.suffix || ''}" class="form-input" style="height:30px; font-weight:700; color:#38bdf8; font-size:0.85rem; width:35%;" placeholder="+">
           </div>
-          <input type="text" id="sc-kpi-lbl-${idx}" value="${s.label || ''}" class="form-input" style="height:30px; font-size:0.75rem; color:#94a3b8;" placeholder="Card Label">
+          <input type="text" id="sc-kpi-lbl-${idx}" value="${s.label || ''}" class="form-input" style="height:30px; font-size:0.75rem;" placeholder="Metric Label">
         </div>
       `).join('');
     },
 
     renderShowcaseMachinery() {
       const container = document.getElementById('sc-machinery-container');
-      if (!container) return;
-      const machines = this.cachedShowcaseData?.machinery || [];
+      if (!container || !Array.isArray(this.cachedShowcaseData?.machinery)) return;
 
-      container.innerHTML = machines.map((m, mIdx) => {
-        const specs = m.specs || [];
+      const list = this.cachedShowcaseData.machinery;
+      container.innerHTML = list.map((m, mIdx) => {
+        const specs = Array.isArray(m.specs) ? m.specs : [];
         const specsRows = specs.map((sp, sIdx) => `
-          <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+          <div style="display:flex; gap:6px; margin-bottom:4px;" id="sc-spec-row-${mIdx}-${sIdx}">
             <input type="text" id="sc-spec-k-${mIdx}-${sIdx}" value="${sp.key || ''}" class="form-input" style="height:28px; font-size:0.75rem; flex:1;" placeholder="Spec Name">
             <input type="text" id="sc-spec-v-${mIdx}-${sIdx}" value="${sp.value || ''}" class="form-input" style="height:28px; font-size:0.75rem; flex:1;" placeholder="Spec Value">
             <button type="button" class="btn btn-sm" onclick="window.SettingsController.removeMachineSpec(${mIdx}, ${sIdx})" style="height:28px; padding:0 8px; color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:0.7rem;">&times;</button>
@@ -1640,10 +1622,10 @@ window.SessionFocusManager = {
 
         return `
           <div style="background:rgba(15,23,42,0.65); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
-              <span style="font-weight:700; color:#38bdf8; font-size:0.85rem;">Slide #${mIdx + 1}: ${m.title || 'Workstation'}</span>
-              <div style="display:flex; gap:10px; align-items:center;">
-                <label style="font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span style="font-size:0.8rem; font-weight:700; color:#38bdf8;">Workstation #${mIdx + 1}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:4px; cursor:pointer;">
                   <input type="checkbox" id="sc-mach-active-${mIdx}" ${m.active !== false ? 'checked' : ''} style="accent-color:#38bdf8;"> Active in 3D Carousel
                 </label>
                 <button type="button" class="btn btn-sm" onclick="window.SettingsController.removeMachineSlide(${mIdx})" style="height:28px; padding:0 10px; font-size:0.75rem; color:#ef4444; border-color:rgba(239,68,68,0.35);">
@@ -1652,11 +1634,11 @@ window.SessionFocusManager = {
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 160px 1fr 1fr; gap:14px; align-items:start;">
-              <!-- Photo Thumbnail & Upload Trigger -->
+            <div style="display:grid; grid-template-columns: 140px 1fr 1fr; gap:14px;">
+              <!-- Photo Box & Uploader -->
               <div>
-                <div style="width:100%; height:105px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); margin-bottom:8px; background:#0f172a; display:flex; align-items:center; justify-content:center;">
-                  <img id="sc-mach-img-preview-${mIdx}" src="${m.image || 'assets/images/machine_vmc_5axis.jpg'}" style="width:100%; height:100%; object-fit:cover;">
+                <div style="width:140px; height:90px; background:rgba(0,0,0,0.4); border:1px dashed rgba(255,255,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:6px;">
+                  <img id="sc-mach-img-preview-${mIdx}" src="${m.image || 'assets/images/machine_vmc_5axis.jpg'}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='assets/images/machine_vmc_5axis.jpg'">
                 </div>
                 <label class="btn btn-secondary" style="width:100%; height:30px; font-size:0.72rem; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                   <span>&#128247;</span> Upload Photo
@@ -1666,22 +1648,22 @@ window.SessionFocusManager = {
 
               <!-- Title, Badge, Description -->
               <div style="display:flex; flex-direction:column; gap:8px;">
-                <div>
-                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8; margin-bottom:3px;">Machine Title</label>
-                  <input type="text" id="sc-mach-title-${mIdx}" value="${m.title || ''}" class="form-input" style="height:32px; font-size:0.8rem;" placeholder="e.g. 5-Axis VMC Machining">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8;">Workstation Title</label>
+                  <input type="text" id="sc-mach-title-${mIdx}" value="${m.title || ''}" class="form-input" style="height:32px; font-size:0.8rem; font-weight:700;" placeholder="Machine Name">
                 </div>
-                <div>
-                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8; margin-bottom:3px;">Category Badge</label>
-                  <input type="text" id="sc-mach-badge-${mIdx}" value="${m.badge || ''}" class="form-input" style="height:32px; font-size:0.8rem;" placeholder="e.g. Simultaneous Multi-Axis">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8;">Badge</label>
+                  <input type="text" id="sc-mach-badge-${mIdx}" value="${m.badge || ''}" class="form-input" style="height:32px; font-size:0.8rem;" placeholder="Precision Workstation">
                 </div>
-                <div>
-                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8; margin-bottom:3px;">Engineering Description</label>
-                  <textarea id="sc-mach-desc-${mIdx}" class="form-input" style="height:48px; font-size:0.75rem; padding:6px; resize:none;">${m.description || ''}</textarea>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:0.7rem; color:#94a3b8;">Capability Description</label>
+                  <textarea id="sc-mach-desc-${mIdx}" class="form-input" style="height:44px; font-size:0.75rem; padding:6px; resize:none;" placeholder="Technical capabilities">${m.description || ''}</textarea>
                 </div>
               </div>
 
-              <!-- Technical Specifications Table -->
-              <div style="background:rgba(2,6,23,0.5); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:10px;">
+              <!-- Specs Sub-table -->
+              <div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                   <span style="font-size:0.72rem; font-weight:700; color:#38bdf8; text-transform:uppercase;">Technical Specs</span>
                   <button type="button" class="btn btn-sm" onclick="window.SettingsController.addMachineSpec(${mIdx})" style="height:22px; font-size:0.68rem; padding:0 8px; color:#38bdf8;">+ Add Spec</button>
@@ -1697,98 +1679,87 @@ window.SessionFocusManager = {
     },
 
     addMachineSlide() {
-      if (!this.cachedShowcaseData) return;
-      if (!Array.isArray(this.cachedShowcaseData.machinery)) this.cachedShowcaseData.machinery = [];
-      const newSlide = {
+      if (!Array.isArray(this.cachedShowcaseData?.machinery)) {
+        this.cachedShowcaseData = this.cachedShowcaseData || {};
+        this.cachedShowcaseData.machinery = [];
+      }
+      this.cachedShowcaseData.machinery.push({
         id: 'mach-' + Date.now(),
-        badge: 'High Precision Workstation',
-        title: 'New CNC Machining Center',
-        description: 'Multi-axis precision station engineered for high tolerance components.',
+        badge: 'Precision Workstation',
+        title: 'New High-Precision Workstation',
+        description: 'Advanced computer-controlled engineering unit for micron-tolerance machining.',
         image: 'assets/images/machine_vmc_5axis.jpg',
         specs: [
           { key: 'Working Area', value: '1000 x 600 x 500 mm' },
-          { key: 'Positional Accuracy', value: '±0.005 mm' }
+          { key: 'Accuracy', value: '±0.005 mm' }
         ],
-        active: true,
-        sortOrder: this.cachedShowcaseData.machinery.length + 1
-      };
-      this.cachedShowcaseData.machinery.push(newSlide);
+        active: true
+      });
       this.renderShowcaseMachinery();
-      if (window.AppDialogService) window.AppDialogService.showToast('New workstation slide added!', 'info');
     },
 
     removeMachineSlide(mIdx) {
-      if (!this.cachedShowcaseData || !this.cachedShowcaseData.machinery) return;
-      if (this.cachedShowcaseData.machinery.length <= 1) {
-        if (window.AppDialogService) window.AppDialogService.showToast('At least one workstation slide is required.', 'warning');
-        return;
-      }
+      if (!Array.isArray(this.cachedShowcaseData?.machinery)) return;
       this.cachedShowcaseData.machinery.splice(mIdx, 1);
       this.renderShowcaseMachinery();
     },
 
     addMachineSpec(mIdx) {
-      if (!this.cachedShowcaseData || !this.cachedShowcaseData.machinery[mIdx]) return;
-      if (!Array.isArray(this.cachedShowcaseData.machinery[mIdx].specs)) {
-        this.cachedShowcaseData.machinery[mIdx].specs = [];
-      }
-      this.cachedShowcaseData.machinery[mIdx].specs.push({ key: 'New Parameter', value: 'Value' });
+      if (!this.cachedShowcaseData?.machinery?.[mIdx]) return;
+      const mach = this.cachedShowcaseData.machinery[mIdx];
+      mach.specs = mach.specs || [];
+      mach.specs.push({ key: 'New Spec', value: 'Value' });
       this.renderShowcaseMachinery();
     },
 
     removeMachineSpec(mIdx, sIdx) {
-      if (!this.cachedShowcaseData || !this.cachedShowcaseData.machinery[mIdx]) return;
+      if (!this.cachedShowcaseData?.machinery?.[mIdx]?.specs) return;
       this.cachedShowcaseData.machinery[mIdx].specs.splice(sIdx, 1);
       this.renderShowcaseMachinery();
     },
 
-    async uploadMachinePhoto(mIdx, fileInput) {
-      const file = fileInput.files && fileInput.files[0];
-      if (!file) return;
+    async uploadMachinePhoto(mIdx, inputEl) {
+      if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+      const file = inputEl.files[0];
 
+      // Instant local preview
+      const previewImg = document.getElementById(`sc-mach-img-preview-${mIdx}`);
+      if (previewImg) {
+        previewImg.src = URL.createObjectURL(file);
+      }
+
+      // Upload to server if API is available
       try {
-        if (window.AppDialogService) window.AppDialogService.showToast('Uploading machine photo...', 'info');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('key', `machinery-photo-${mIdx + 1}`);
 
-        const arrayBuffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-
-        let uploadRes = null;
-        if (window.ApiService && typeof window.ApiService.fetchBinary === 'function') {
-          // Send to Spring Boot Admin Media Endpoint
-          const res = await fetch(`/api/admin/showcase/media?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'image/jpeg')}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'Authorization': 'Bearer ' + (window.AuthService?.getToken() || '')
-            },
-            body: bytes
-          });
-          if (res.ok) uploadRes = await res.json();
+        let uploadedUrl = null;
+        if (window.ApiService && typeof window.ApiService.uploadFile === 'function') {
+          const uploadRes = await window.ApiService.uploadFile('/api/admin/showcase/media', formData);
+          if (uploadRes && uploadRes.url) uploadedUrl = uploadRes.url;
         }
 
-        // If local or direct preview, convert to Object URL
-        const imageUrl = uploadRes?.url || URL.createObjectURL(file);
-        if (this.cachedShowcaseData && this.cachedShowcaseData.machinery[mIdx]) {
-          this.cachedShowcaseData.machinery[mIdx].image = imageUrl;
+        if (this.cachedShowcaseData?.machinery?.[mIdx]) {
+          this.cachedShowcaseData.machinery[mIdx].image = uploadedUrl || `assets/images/${file.name}`;
         }
 
-        const previewImg = document.getElementById(`sc-mach-img-preview-${mIdx}`);
-        if (previewImg) previewImg.src = imageUrl;
-
-        if (window.AppDialogService) window.AppDialogService.showToast('✓ Machine photo uploaded successfully!', 'success');
+        if (window.AppDialogService) window.AppDialogService.showToast('Photo uploaded successfully!', 'success');
       } catch (err) {
-        console.error('Image upload failed:', err);
-        if (window.AppDialogService) window.AppDialogService.showToast('Failed to upload image. Please try again.', 'error');
+        console.warn('Media upload failed, using local asset reference:', err);
+        if (this.cachedShowcaseData?.machinery?.[mIdx]) {
+          this.cachedShowcaseData.machinery[mIdx].image = `assets/images/${file.name}`;
+        }
       }
     },
 
     renderShowcasePortfolio() {
       const container = document.getElementById('sc-portfolio-container');
-      if (!container) return;
-      const items = this.cachedShowcaseData?.portfolio?.items || [];
+      if (!container || !Array.isArray(this.cachedShowcaseData?.portfolio?.items)) return;
 
+      const items = this.cachedShowcaseData.portfolio.items;
       container.innerHTML = items.map((item, idx) => `
-        <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+        <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:12px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <input type="text" id="sc-port-title-${idx}" value="${item.title || ''}" class="form-input" style="height:30px; font-weight:700; color:#38bdf8; font-size:0.8rem;" placeholder="Title">
             <button type="button" class="btn btn-sm" onclick="window.SettingsController.removePortfolioItem(${idx})" style="height:26px; padding:0 6px; color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:0.68rem;">&times;</button>
@@ -1801,15 +1772,17 @@ window.SessionFocusManager = {
     },
 
     addPortfolioItem() {
-      if (!this.cachedShowcaseData) return;
-      if (!this.cachedShowcaseData.portfolio) this.cachedShowcaseData.portfolio = { categories: [], items: [] };
-      if (!Array.isArray(this.cachedShowcaseData.portfolio.items)) this.cachedShowcaseData.portfolio.items = [];
+      if (!this.cachedShowcaseData?.portfolio) {
+        this.cachedShowcaseData = this.cachedShowcaseData || {};
+        this.cachedShowcaseData.portfolio = { categories: [], items: [] };
+      }
+      this.cachedShowcaseData.portfolio.items = this.cachedShowcaseData.portfolio.items || [];
       this.cachedShowcaseData.portfolio.items.push({
         id: 'port-' + Date.now(),
         category: 'aerospace',
-        tag: 'Aerospace',
-        title: 'New Precision Component',
-        meta: 'Engineered from solid billet alloy with micron tolerances.',
+        tag: 'Precision Component',
+        title: 'New Precision Engineered Part',
+        meta: 'Engineered high-grade alloy with micron tolerances.',
         badges: ['High-Strength', '±0.005 mm'],
         active: true
       });
@@ -1908,7 +1881,112 @@ window.SessionFocusManager = {
 
     previewShowcase() {
       window.open('http://localhost:8089/index.html', '_blank');
-    },
-
+    }
   };
 })();
+
+// Desktop Parity: SessionFocusManager (Client-side Idle Timeout & Warning Modal)
+window.SessionFocusManager = {
+  timeoutMinutes: 60,
+  warningSeconds: 60,
+  lastActivity: Date.now(),
+  checkInterval: null,
+  countdownInterval: null,
+  isWarningShown: false,
+
+  init(timeoutMin = 60, warningSec = 60) {
+    this.timeoutMinutes = timeoutMin;
+    this.warningSeconds = warningSec;
+    this.lastActivity = Date.now();
+    
+    const resetActivity = () => {
+      if (!this.isWarningShown) {
+        this.lastActivity = Date.now();
+      }
+    };
+
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetActivity, { passive: true });
+    });
+
+    if (this.checkInterval) clearInterval(this.checkInterval);
+    this.checkInterval = setInterval(() => this.checkIdle(), 10000);
+  },
+
+  getIdleSeconds() {
+    return Math.max(0, Math.floor((Date.now() - this.lastActivity) / 1000));
+  },
+
+  getWarningThresholdSeconds() {
+    return (this.timeoutMinutes * 60) - this.warningSeconds;
+  },
+
+  getRemainingSecondsToWarning() {
+    const thresh = this.getWarningThresholdSeconds();
+    const idle = this.getIdleSeconds();
+    return Math.max(0, thresh - idle);
+  },
+
+  checkIdle() {
+    if (this.isWarningShown) return;
+    const idleMs = Date.now() - this.lastActivity;
+    const timeoutMs = this.timeoutMinutes * 60 * 1000;
+    const warningThresholdMs = timeoutMs - (this.warningSeconds * 1000);
+
+    if (idleMs >= warningThresholdMs) {
+      this.showWarning();
+    }
+  },
+
+  showWarning() {
+    this.isWarningShown = true;
+    const modal = document.getElementById('session-timeout-modal');
+    const countEl = document.getElementById('session-countdown-seconds');
+    if (modal) modal.style.display = 'flex';
+
+    let remaining = this.warningSeconds;
+    if (countEl) countEl.innerText = remaining;
+
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      remaining--;
+      if (countEl) countEl.innerText = remaining;
+      if (remaining <= 0) {
+        clearInterval(this.countdownInterval);
+        this.logoutUser();
+      }
+    }, 1000);
+  },
+
+  async extendSession() {
+    this.isWarningShown = false;
+    this.lastActivity = Date.now();
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    const modal = document.getElementById('session-timeout-modal');
+    if (modal) modal.style.display = 'none';
+    try {
+      if (window.ApiService && window.ApiService.post) {
+        await window.ApiService.post('/api/auth/session/extend', {});
+      }
+    } catch (_) {}
+    if (window.AppDialogService) window.AppDialogService.toastSuccess('Session active and renewed.');
+  },
+
+  logoutUser() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    if (this.checkInterval) clearInterval(this.checkInterval);
+    const modal = document.getElementById('session-timeout-modal');
+    if (modal) modal.style.display = 'none';
+    if (window.AuthService && window.AuthService.logout) {
+      window.AuthService.logout();
+    } else {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.reload();
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.SessionFocusManager.init(60, 60);
+});

@@ -611,6 +611,12 @@ window.NavigationRouter = (function() {
             window.SettingsController.loadModulesSettings();
           }
           break;
+        case 'view-settings-showcase':
+          if (window.SettingsController) {
+            window.SettingsController.init('SHOWCASE');
+            window.SettingsController.loadShowcaseSettings();
+          }
+          break;
         case 'view-diagnostics':
           if (window.DiagnosticsController) {
             window.DiagnosticsController.loadData();
