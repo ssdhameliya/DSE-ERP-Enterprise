@@ -163,6 +163,19 @@ window.BarcodeStudioController = (function() {
       }
     },
 
+    toggleTopActionsMenu(event) {
+      if (event) event.stopPropagation();
+      const menu = document.getElementById('bc-top-action-menu');
+      if (!menu) return;
+      const isVisible = menu.style.display === 'block';
+      document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+        m.style.display = 'none';
+      });
+      if (!isVisible) {
+        menu.style.display = 'block';
+      }
+    },
+
     onRowClick(idx, event) {
       if (event && window.RegisterUiSupport && window.RegisterUiSupport.isInteractiveTarget(event.target)) return;
       this.showPreview(idx);

@@ -1,14 +1,14 @@
 {
     "desktopVersion": "11.0.14",
-    "webBuild": 12,
-    "webVersion": "11.0.14.01",
-    "tag": "web-v11.0.14.01",
-    "releaseDate": "2026-10-31T20:00:00+05:30",
+    "webBuild": 13,
+    "webVersion": "11.0.14.02",
+    "tag": "web-v11.0.14.02",
+    "releaseDate": "2026-11-01T03:10:00+05:30",
     "environment": "Production / Enterprise",
-    "summary": "v11.0.14.01 Enterprise Web Release: Headless 3D Coverflow Showcase Studio (8th Settings Tab), Hero/KPIs/Workstations Dynamic Management & REST Media Integration",
+    "summary": "v11.0.14.02 Enterprise Web Release: Credit & Debit Note Inventory Stock Adjustment & Barcode Studio Actions Parity",
     "highlights": [
-        "1. Dynamic 3D Coverflow Showcase Studio: Added dedicated 8th tab in Settings for live management of public 3D machinery coverflow workstations, precision specs, hero typography, and plant contact coordinates.",
-        "2. Binary Media File Uploader: Instant photographic upload with dynamic in-memory client previews, bounding limits, and server resource streaming.",
-        "3. Live Preview & Instant Cloud Publishing: One-click preview launching the interactive 3D showcase alongside atomic REST PUT publishing without server restarts."
+        "1. Credit & Debit Note Inventory Reversal: Integrated item-level selection (itemId, itemCode, quantity, rate) for accurate stock adjustment in item_master via CreditDebitNoteService.",
+        "2. Dynamic Invoice & Bill Item Pickers: Added real-time cascading lookup from closed customer sales and vendor purchase orders.",
+        "3. Barcode Studio Actions Menu: Aligned top toolbar with canonical purple Actions dropdown menu matching desktop layout."
     ]
 }

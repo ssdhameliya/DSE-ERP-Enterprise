@@ -24,6 +24,8 @@ window.CreditDebitNoteController = (function() {
   let cachedAllItems = [];
   let selectedCreditItem = null;
   let selectedDebitItem = null;
+  let cachedInvoiceLines = [];
+  let cachedBillLines = [];
 
   function formatMoney(val) {
     const num = parseFloat(val) || 0;
@@ -747,10 +749,13 @@ window.CreditDebitNoteController = (function() {
     if (inpParty) inpParty.value = '';
     if (selInv) selInv.innerHTML = '<option value="">-- Select Customer Invoice --</option>';
     if (selItem) selItem.innerHTML = '<option value="">-- Auto from invoice or select product --</option>';
+    const inpQty = document.getElementById('m-cn-quantity');
+    if (inpQty) inpQty.value = '1';
     if (inpTax) inpTax.value = '';
     if (chkStock) chkStock.checked = true;
     selectedCreditItem = null;
     cachedCustomerInvoices = [];
+    cachedInvoiceLines = [];
 
     // Preload Items for fallback stock adjustment
     try {
@@ -759,7 +764,7 @@ window.CreditDebitNoteController = (function() {
       }
       if (selItem && cachedAllItems.length > 0) {
         selItem.innerHTML = '<option value="">-- Auto from invoice or select product --</option>' +
-          cachedAllItems.map(it => `<option value="${it.id}" data-code="${it.code || it.itemCode || ''}" data-desc="${it.name || it.description || ''}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
+          cachedAllItems.map(it => `<option value="ITEM_${it.id}" data-code="${it.code || it.itemCode || ''}" data-desc="${it.name || it.description || ''}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
       }
     } catch (_) {}
 
@@ -818,17 +823,121 @@ window.CreditDebitNoteController = (function() {
     modal.style.display = 'flex';
   }
 
-  function onInvoiceSelected(invNo) {
-    const selInv = cachedCustomerInvoices.find(s => (s.invoiceNo || s.number) === invNo);
+  async function onInvoiceSelected(invNo) {
+    const selItem = document.getElementById('m-cn-item');
     const inpTax = document.getElementById('m-cn-taxable');
+    const selGst = document.getElementById('m-cn-gst-rate');
+    const inpQty = document.getElementById('m-cn-quantity');
+    selectedCreditItem = null;
+    cachedInvoiceLines = [];
+
+    if (!invNo) {
+      if (selItem) selItem.innerHTML = '<option value="">-- Auto from invoice or select product --</option>';
+      if (inpTax) inpTax.value = '';
+      if (inpQty) inpQty.value = '1';
+      recalcCreditTax();
+      return;
+    }
+
+    const selInv = cachedCustomerInvoices.find(s => (s.invoiceNo || s.number) === invNo);
     if (selInv && inpTax) {
       inpTax.value = selInv.taxableAmount || selInv.subtotal || selInv.totalAmount || '';
-      recalcCreditTax();
     }
+
+    try {
+      let fullSale = selInv;
+      if (window.OperationsService && window.OperationsService.getSaleByInvoice) {
+        fullSale = await window.OperationsService.getSaleByInvoice(invNo).catch(() => selInv);
+      }
+      const lines = (fullSale && (fullSale.items || fullSale.lines)) || [];
+      cachedInvoiceLines = lines;
+
+      if (selItem) {
+        if (lines.length > 0) {
+          selItem.innerHTML = '<option value="">-- Select Specific Line Item to Adjust --</option>' +
+            lines.map((l, idx) => {
+              const code = l.itemCode || l.code || '';
+              const desc = l.itemDescription || l.description || l.name || '';
+              const qty = l.quantity != null ? l.quantity : 1;
+              const rate = l.unitPrice != null ? l.unitPrice : (l.rate != null ? l.rate : 0);
+              return `<option value="LINE_${idx}">${code ? '[' + code + '] ' : ''}${desc} (Qty: ${qty} @ ₹ ${rate})</option>`;
+            }).join('');
+        } else if (cachedAllItems.length > 0) {
+          selItem.innerHTML = '<option value="">-- Select SKU from Catalog --</option>' +
+            cachedAllItems.map(it => `<option value="ITEM_${it.id}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
+        } else {
+          selItem.innerHTML = '<option value="">-- Auto from invoice or select product --</option>';
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load invoice lines for credit note:', e);
+    }
+    recalcCreditTax();
   }
 
-  function onCreditItemSelected(itemId) {
-    // Retained for backward-compatibility if invoked
+  function onCreditItemSelected(val) {
+    const inpTax = document.getElementById('m-cn-taxable');
+    const selGst = document.getElementById('m-cn-gst-rate');
+    const inpQty = document.getElementById('m-cn-quantity');
+    let qty = parseFloat(inpQty?.value) || 1;
+
+    if (!val) {
+      selectedCreditItem = null;
+      recalcCreditTax();
+      return;
+    }
+
+    if (val.startsWith('LINE_')) {
+      const idx = parseInt(val.replace('LINE_', ''), 10);
+      const line = cachedInvoiceLines[idx];
+      if (line) {
+        selectedCreditItem = {
+          itemId: line.itemId || line.id,
+          itemCode: line.itemCode || line.code,
+          itemDescription: line.itemDescription || line.description || line.name,
+          unitPrice: line.unitPrice != null ? line.unitPrice : (line.rate != null ? line.rate : 0),
+          gstRate: line.gstRate != null ? line.gstRate : (line.gst != null ? line.gst : 18),
+          originalQty: line.quantity || 1
+        };
+        if (inpQty && line.quantity) {
+          inpQty.value = line.quantity;
+          qty = line.quantity;
+        }
+        if (inpTax) {
+          inpTax.value = Math.round(selectedCreditItem.unitPrice * qty * 100) / 100;
+        }
+        if (selGst && selectedCreditItem.gstRate != null) {
+          selGst.value = String(selectedCreditItem.gstRate);
+        }
+      }
+    } else if (val.startsWith('ITEM_')) {
+      const id = parseInt(val.replace('ITEM_', ''), 10);
+      const it = cachedAllItems.find(x => x.id === id);
+      if (it) {
+        const rate = it.sellingPrice || it.purchasePrice || 0;
+        selectedCreditItem = {
+          itemId: it.id,
+          itemCode: it.code || it.itemCode,
+          itemDescription: it.name || it.description,
+          unitPrice: rate,
+          gstRate: it.gstRate || it.gst || 18,
+          originalQty: 1
+        };
+        if (inpTax) inpTax.value = Math.round(rate * qty * 100) / 100;
+        if (selGst && selectedCreditItem.gstRate != null) selGst.value = String(selectedCreditItem.gstRate);
+      }
+    }
+    recalcCreditTax();
+  }
+
+  function onCreditQuantityChanged() {
+    const inpQty = document.getElementById('m-cn-quantity');
+    const inpTax = document.getElementById('m-cn-taxable');
+    const qty = parseFloat(inpQty?.value) || 1;
+    if (selectedCreditItem && selectedCreditItem.unitPrice != null && inpTax) {
+      inpTax.value = Math.round(selectedCreditItem.unitPrice * qty * 100) / 100;
+    }
+    recalcCreditTax();
   }
 
   function recalcCreditTax() {
@@ -850,20 +959,28 @@ window.CreditDebitNoteController = (function() {
     const taxable = parseFloat(document.getElementById('m-cn-taxable')?.value) || 0;
     const gstRate = parseFloat(document.getElementById('m-cn-gst-rate')?.value) || 18;
     const adjustStock = document.getElementById('m-cn-adjust-stock')?.checked;
+    const inpQty = document.getElementById('m-cn-quantity');
+    const qty = Math.max(1, parseFloat(inpQty?.value) || 1);
 
     if (!party) { alert('Customer name is required.'); return; }
     if (taxable <= 0) { alert('Taxable amount must be greater than zero.'); return; }
+
+    if (adjustStock && (!selectedCreditItem || !selectedCreditItem.itemId)) {
+      alert('To adjust inventory back to warehouse, please select the specific line item or product to return.');
+      return;
+    }
 
     const taxTotal = Math.round((taxable * gstRate / 100) * 100) / 100;
     const cgst = Math.round((taxTotal / 2) * 100) / 100;
     const sgst = Math.round((taxTotal - cgst) * 100) / 100;
     const total = taxable + taxTotal;
 
-    // Synthesize document-level adjustment line item (100% Desktop CreditNoteRegisterController.java parity)
-    const chosenItemCode = 'CREDIT-ADJ';
-    const chosenItemDesc = `Credit Note Adjustment: ${reason}`;
+    const chosenItemId = selectedCreditItem ? selectedCreditItem.itemId : null;
+    const chosenItemCode = selectedCreditItem ? selectedCreditItem.itemCode : 'CREDIT-ADJ';
+    const chosenItemDesc = selectedCreditItem ? selectedCreditItem.itemDescription : `Credit Note Adjustment: ${reason}`;
+    const unitPrice = selectedCreditItem ? selectedCreditItem.unitPrice : Math.round((taxable / qty) * 100) / 100;
 
-    // Build complete payload matching CreditDebitNoteDtos.CreditNoteDto with lines
+    // Build complete payload matching CreditDebitNoteDtos.CreditNoteDto with lines and itemId
     const payload = {
       partyName: party,
       originalInvoiceNo: invoice,
@@ -877,10 +994,11 @@ window.CreditDebitNoteController = (function() {
       status: 'ACTIVE',
       lines: [
         {
+          itemId: chosenItemId,
           itemCode: chosenItemCode,
           itemDescription: chosenItemDesc,
-          quantity: 1,
-          unitPrice: taxable,
+          quantity: qty,
+          unitPrice: unitPrice,
           gstRate: gstRate,
           taxableValue: taxable,
           cgstAmount: cgst,
@@ -922,10 +1040,13 @@ window.CreditDebitNoteController = (function() {
     if (inpSupp) inpSupp.value = '';
     if (selBill) selBill.innerHTML = '<option value="">-- Select Vendor Bill --</option>';
     if (selItem) selItem.innerHTML = '<option value="">-- Auto from bill or select product --</option>';
+    const inpQty = document.getElementById('m-dn-quantity');
+    if (inpQty) inpQty.value = '1';
     if (inpTax) inpTax.value = '';
     if (chkStock) chkStock.checked = true;
     selectedDebitItem = null;
     cachedSupplierBills = [];
+    cachedBillLines = [];
 
     // Preload Items for fallback stock adjustment
     try {
@@ -934,7 +1055,7 @@ window.CreditDebitNoteController = (function() {
       }
       if (selItem && cachedAllItems.length > 0) {
         selItem.innerHTML = '<option value="">-- Auto from bill or select product --</option>' +
-          cachedAllItems.map(it => `<option value="${it.id}" data-code="${it.code || it.itemCode || ''}" data-desc="${it.name || it.description || ''}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
+          cachedAllItems.map(it => `<option value="ITEM_${it.id}" data-code="${it.code || it.itemCode || ''}" data-desc="${it.name || it.description || ''}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
       }
     } catch (_) {}
 
@@ -993,17 +1114,121 @@ window.CreditDebitNoteController = (function() {
     modal.style.display = 'flex';
   }
 
-  function onBillSelected(billNo) {
-    const selBill = cachedSupplierBills.find(p => (p.invoiceNo || p.billNo || p.number) === billNo);
+  async function onBillSelected(billNo) {
+    const selItem = document.getElementById('m-dn-item');
     const inpTax = document.getElementById('m-dn-taxable');
+    const selGst = document.getElementById('m-dn-gst-rate');
+    const inpQty = document.getElementById('m-dn-quantity');
+    selectedDebitItem = null;
+    cachedBillLines = [];
+
+    if (!billNo) {
+      if (selItem) selItem.innerHTML = '<option value="">-- Auto from bill or select product --</option>';
+      if (inpTax) inpTax.value = '';
+      if (inpQty) inpQty.value = '1';
+      recalcDebitTax();
+      return;
+    }
+
+    const selBill = cachedSupplierBills.find(p => (p.invoiceNo || p.billNo || p.number) === billNo);
     if (selBill && inpTax) {
       inpTax.value = selBill.taxableAmount || selBill.subtotal || selBill.totalAmount || '';
-      recalcDebitTax();
     }
+
+    try {
+      let fullPurchase = selBill;
+      if (window.OperationsService && window.OperationsService.getPurchaseByInvoice) {
+        fullPurchase = await window.OperationsService.getPurchaseByInvoice(billNo).catch(() => selBill);
+      }
+      const lines = (fullPurchase && (fullPurchase.items || fullPurchase.lines)) || [];
+      cachedBillLines = lines;
+
+      if (selItem) {
+        if (lines.length > 0) {
+          selItem.innerHTML = '<option value="">-- Select Specific Line Item to Adjust --</option>' +
+            lines.map((l, idx) => {
+              const code = l.itemCode || l.code || '';
+              const desc = l.itemDescription || l.description || l.name || '';
+              const qty = l.quantity != null ? l.quantity : 1;
+              const rate = l.unitPrice != null ? l.unitPrice : (l.rate != null ? l.rate : 0);
+              return `<option value="LINE_${idx}">${code ? '[' + code + '] ' : ''}${desc} (Qty: ${qty} @ ₹ ${rate})</option>`;
+            }).join('');
+        } else if (cachedAllItems.length > 0) {
+          selItem.innerHTML = '<option value="">-- Select SKU from Catalog --</option>' +
+            cachedAllItems.map(it => `<option value="ITEM_${it.id}">${it.code || it.itemCode} - ${it.name || it.description || ''}</option>`).join('');
+        } else {
+          selItem.innerHTML = '<option value="">-- Auto from bill or select product --</option>';
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load bill lines for debit note:', e);
+    }
+    recalcDebitTax();
   }
 
-  function onDebitItemSelected(itemId) {
-    // Retained for backward-compatibility if invoked
+  function onDebitItemSelected(val) {
+    const inpTax = document.getElementById('m-dn-taxable');
+    const selGst = document.getElementById('m-dn-gst-rate');
+    const inpQty = document.getElementById('m-dn-quantity');
+    let qty = parseFloat(inpQty?.value) || 1;
+
+    if (!val) {
+      selectedDebitItem = null;
+      recalcDebitTax();
+      return;
+    }
+
+    if (val.startsWith('LINE_')) {
+      const idx = parseInt(val.replace('LINE_', ''), 10);
+      const line = cachedBillLines[idx];
+      if (line) {
+        selectedDebitItem = {
+          itemId: line.itemId || line.id,
+          itemCode: line.itemCode || line.code,
+          itemDescription: line.itemDescription || line.description || line.name,
+          unitPrice: line.unitPrice != null ? line.unitPrice : (line.rate != null ? line.rate : 0),
+          gstRate: line.gstRate != null ? line.gstRate : (line.gst != null ? line.gst : 18),
+          originalQty: line.quantity || 1
+        };
+        if (inpQty && line.quantity) {
+          inpQty.value = line.quantity;
+          qty = line.quantity;
+        }
+        if (inpTax) {
+          inpTax.value = Math.round(selectedDebitItem.unitPrice * qty * 100) / 100;
+        }
+        if (selGst && selectedDebitItem.gstRate != null) {
+          selGst.value = String(selectedDebitItem.gstRate);
+        }
+      }
+    } else if (val.startsWith('ITEM_')) {
+      const id = parseInt(val.replace('ITEM_', ''), 10);
+      const it = cachedAllItems.find(x => x.id === id);
+      if (it) {
+        const rate = it.purchasePrice || it.sellingPrice || 0;
+        selectedDebitItem = {
+          itemId: it.id,
+          itemCode: it.code || it.itemCode,
+          itemDescription: it.name || it.description,
+          unitPrice: rate,
+          gstRate: it.gstRate || it.gst || 18,
+          originalQty: 1
+        };
+        if (inpTax) inpTax.value = Math.round(rate * qty * 100) / 100;
+        if (selGst && selectedDebitItem.gstRate != null) selGst.value = String(selectedDebitItem.gstRate);
+      }
+    }
+    recalcDebitTax();
+  }
+
+  function onDebitQuantityChanged() {
+    const inpQty = document.getElementById('m-dn-quantity');
+    const inpTax = document.getElementById('m-dn-taxable');
+    const qty = parseFloat(inpQty?.value) || 1;
+    if (selectedDebitItem && selectedDebitItem.unitPrice != null && inpTax) {
+      inpTax.value = Math.round(selectedDebitItem.unitPrice * qty * 100) / 100;
+    }
+    recalcDebitTax();
   }
 
   function recalcDebitTax() {
@@ -1025,20 +1250,28 @@ window.CreditDebitNoteController = (function() {
     const taxable = parseFloat(document.getElementById('m-dn-taxable')?.value) || 0;
     const gstRate = parseFloat(document.getElementById('m-dn-gst-rate')?.value) || 18;
     const adjustStock = document.getElementById('m-dn-adjust-stock')?.checked;
+    const inpQty = document.getElementById('m-dn-quantity');
+    const qty = Math.max(1, parseFloat(inpQty?.value) || 1);
 
     if (!supplier) { alert('Supplier name is required.'); return; }
     if (taxable <= 0) { alert('Taxable amount must be greater than zero.'); return; }
+
+    if (adjustStock && (!selectedDebitItem || !selectedDebitItem.itemId)) {
+      alert('To reduce inventory from warehouse, please select the specific line item or product returned to vendor.');
+      return;
+    }
 
     const taxTotal = Math.round((taxable * gstRate / 100) * 100) / 100;
     const cgst = Math.round((taxTotal / 2) * 100) / 100;
     const sgst = Math.round((taxTotal - cgst) * 100) / 100;
     const total = taxable + taxTotal;
 
-    // Synthesize document-level adjustment line item (100% Desktop DebitNoteRegisterController.java parity)
-    const chosenItemCode = 'DEBIT-ADJ';
-    const chosenItemDesc = `Debit Note Adjustment: ${reason}`;
+    const chosenItemId = selectedDebitItem ? selectedDebitItem.itemId : null;
+    const chosenItemCode = selectedDebitItem ? selectedDebitItem.itemCode : 'DEBIT-ADJ';
+    const chosenItemDesc = selectedDebitItem ? selectedDebitItem.itemDescription : `Debit Note Adjustment: ${reason}`;
+    const unitPrice = selectedDebitItem ? selectedDebitItem.unitPrice : Math.round((taxable / qty) * 100) / 100;
 
-    // Build complete payload matching CreditDebitNoteDtos.DebitNoteDto with lines
+    // Build complete payload matching CreditDebitNoteDtos.DebitNoteDto with lines and itemId
     const payload = {
       supplierName: supplier,
       originalBillNo: bill,
@@ -1052,10 +1285,11 @@ window.CreditDebitNoteController = (function() {
       status: 'ACTIVE',
       lines: [
         {
+          itemId: chosenItemId,
           itemCode: chosenItemCode,
           itemDescription: chosenItemDesc,
-          quantity: 1,
-          unitPrice: taxable,
+          quantity: qty,
+          unitPrice: unitPrice,
           gstRate: gstRate,
           taxableValue: taxable,
           cgstAmount: cgst,
@@ -1100,11 +1334,13 @@ window.CreditDebitNoteController = (function() {
     openCreateCreditModal,
     onInvoiceSelected,
     onCreditItemSelected,
+    onCreditQuantityChanged,
     recalcCreditTax,
     submitCreateCreditNote,
     openCreateDebitModal,
     onBillSelected,
     onDebitItemSelected,
+    onDebitQuantityChanged,
     recalcDebitTax,
     submitCreateDebitNote,
     closeModal,

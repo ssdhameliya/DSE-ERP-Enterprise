@@ -12,9 +12,16 @@
             <div class="view-actions" style="display:flex; gap:8px; align-items:center;">
               <input type="text" id="txtScannerTest" class="form-input" placeholder="Scan USB Barcode Here to Test..."
                 style="width:250px; font-family:monospace;">
-              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printOrderDispatchLabel()">Order Dispatch Label</button>
-              <button class="btn btn-primary" onclick="window.BarcodeStudioController.printThermal()">Print Thermal Labels</button>
-              <button class="btn btn-secondary" onclick="window.BarcodeStudioController.printA4Sheet()">Print A4 Sheet</button>
+              <div class="row-action-menu-wrap" style="position:relative; display:inline-block;">
+                <button class="btn-purple" onclick="window.BarcodeStudioController.toggleTopActionsMenu(event)" style="height:32px; padding:0 14px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Barcode Actions">
+                  ::: Actions &#9660;
+                </button>
+                <div id="bc-top-action-menu" class="action-dropdown-menu" style="display:none; position:absolute; right:0; top:36px; z-index:100005; min-width:230px; white-space:nowrap; padding:6px 0; text-align:left; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+                  <div class="action-menu-item" onclick="window.BarcodeStudioController.printOrderDispatchLabel()"><span style="margin-right:8px;">🚚</span> Order Dispatch Label</div>
+                  <div class="action-menu-item" onclick="window.BarcodeStudioController.printThermal()"><span style="margin-right:8px;">🖨️</span> Print Thermal Labels</div>
+                  <div class="action-menu-item" onclick="window.BarcodeStudioController.printA4Sheet()"><span style="margin-right:8px;">📄</span> Print A4 Sheet (24-Up)</div>
+                </div>
+              </div>
             </div>
           </div>
 

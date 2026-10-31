@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -5310,6 +5310,19 @@
             </select>
           </div>
         </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Item to Return / Adjust (For Inventory Reversal)</label>
+            <select id="m-cn-item" class="form-select" onchange="window.CreditDebitNoteController.onCreditItemSelected(this.value)">
+              <option value="">-- Auto from invoice or select product --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Return Qty</label>
+            <input type="number" step="1" min="1" id="m-cn-quantity" class="form-input" value="1" placeholder="1"
+              oninput="window.CreditDebitNoteController.onCreditQuantityChanged()">
+          </div>
+        </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div class="form-group">
             <label class="form-label">Taxable Amount (&#8377;) *</label>
@@ -5394,6 +5407,19 @@
               <option value="ITC Reversal">04 - ITC Reversal / Correction</option>
               <option value="Other">05 - Other Adjustment</option>
             </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Item to Return / Adjust (For Inventory Reduction)</label>
+            <select id="m-dn-item" class="form-select" onchange="window.CreditDebitNoteController.onDebitItemSelected(this.value)">
+              <option value="">-- Auto from bill or select product --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Return Qty</label>
+            <input type="number" step="1" min="1" id="m-dn-quantity" class="form-input" value="1" placeholder="1"
+              oninput="window.CreditDebitNoteController.onDebitQuantityChanged()">
           </div>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
